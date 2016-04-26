@@ -1,0 +1,37 @@
+! For documentation of these input parameters and their default values, see the README.
+
+&bdistrib
+  ! The resolution here is low, but it doesn't matter for this test: all singular values of the transfer matrix should be exactly 1.
+  nu_plasma=32
+  nu_middle=32
+  nu_outer =32
+
+  nv_plasma=128
+  nv_middle=128
+  nv_outer =128
+
+  mpol_plasma = 6
+  mpol_middle = 6
+  mpol_outer  = 6
+
+  ntor_plasma = 6
+  ntor_middle = 6
+  ntor_outer  = 6
+
+  geometry_option_plasma = 0
+  R0_plasma = 3.0
+  a_plasma = 1.0
+  nfp_imposed = 1
+
+  geometry_option_middle=0
+  R0_middle = 3.0
+  a_middle = 1.0
+
+  geometry_option_outer=1
+  R0_outer = 4.0
+  a_outer = 3.0
+
+  pseudoinverse_thresholds = 1e-12
+
+  n_singular_vectors_to_save = 16
+/

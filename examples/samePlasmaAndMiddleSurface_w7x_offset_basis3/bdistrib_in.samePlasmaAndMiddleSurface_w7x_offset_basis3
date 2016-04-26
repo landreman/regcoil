@@ -1,0 +1,48 @@
+! For documentation of these input parameters and their default values, see the README.
+
+&bdistrib
+  basis_option_plasma = 3
+  basis_option_middle = 3
+  basis_option_outer  = 3
+
+  check_orthogonality = .t.
+
+  nu_plasma=64
+  nu_middle=64
+  nu_outer =64
+
+  nv_plasma=64
+  nv_middle=64
+  nv_outer =64
+
+  mpol_plasma = 8
+  mpol_middle = 8
+  mpol_outer  = 8
+
+  ntor_plasma = 8
+  ntor_middle = 8
+  ntor_outer  = 8
+
+  geometry_option_plasma = 2
+  R0_plasma = 10.0
+  a_plasma = 0.5
+  wout_filename='../../equilibria/wout_w7x_standardConfig.nc'
+  nfp_imposed = 1
+
+  geometry_option_middle=2
+  R0_middle = 10.0
+  a_middle = 1.5
+  separation_middle = 0
+
+  geometry_option_outer=2
+  R0_outer = 10.0
+  a_outer = 2.5
+  separation_outer = 0.3
+
+  pseudoinverse_thresholds = 1e-12
+
+  symmetry_option=3
+
+  save_level=1
+  n_singular_vectors_to_save = 16
+/

@@ -1,0 +1,28 @@
+! For documentation of these input parameters and their default values, see the README.
+
+&bdistrib
+  transfer_matrix_option = 2
+
+  nu_plasma=64
+  nu_middle=64
+
+  nv_plasma=64
+  nv_middle=64
+
+  mpol_plasma = 8
+  mpol_middle = 8
+
+  ntor_plasma = 8
+  ntor_middle = 8
+
+  geometry_option_plasma = 2
+  wout_filename='../../equilibria/wout_w7x_standardConfig.nc'
+
+  geometry_option_middle=3
+  nescin_filename_middle = '../../equilibria/nescin.w7x_standardConfig_separation0.3'
+
+  pseudoinverse_thresholds = 1e-12
+
+  save_level=1
+  n_singular_vectors_to_save = 16
+/

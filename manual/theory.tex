@@ -1,0 +1,175 @@
+\chapter{Theory}
+
+In this section we detail the theoretical background of the \bdistrib~code.
+Our discussion closely follows Ref \cite{nescoil}
+and sections 2.13 - 2.3 of Ref \cite{boozer2015}.
+
+\section{Current potential}
+
+Consider a surface defined by $\vect{r}(u,v)$, i.e. the position vector $\vect{r}$ along the surface
+is parametrized by
+two coordinates $u$ and $v$.  A vector normal to the surface is
+\begin{equation}
+\vect{N} = \frac{\partial \vect{r}}{\partial v} \times \frac{\partial\vect{r}}{\partial u}.
+\end{equation}
+(We will follow the same sign convention as \cite{nescoil}.)
+This vector does not generally have unit magnitude; a unit normal vector is
+\begin{equation}
+\vect{n} = \frac{\vect{N}}{|\vect{n}|}.
+\end{equation}
+
+A divergence-free surface current on the surface must have the form
+\begin{equation}
+\vect{K} = \vect{n}\times\nabla \Phi
+\label{eq:K}
+\end{equation}
+for a ``current potential'' $\Phi$. If we now specialize to the case of a toroidal surface,
+$\Phi$ may be not be singly valued if there is net poloidal or toroidal current on the surface.
+Here we restrict our attention to the single-valued part of $\Phi$.
+
+\section{Magnetic dipole formula}
+
+Let us now examine the magnetic field produced by the surface current (\ref{eq:K}).
+We begin with the Biot-Savart law for a surface current:
+\begin{equation}
+\vect{B}(\vect{r}) = \frac{\mu_0}{4\pi} \int d^2r' \frac{\vect{K}(\vect{r}')\times(\vect{r}-\vect{r}')}
+{|\vect{r}-\vect{r}'|^3}.
+\label{eq:biot}
+\end{equation}
+
+We specialize to the case in which $u \in [0,1)$ is the poloidal coordinate, and the toroidal coordinate
+$v$ increases from 0 to 1 in a single toroidal period, where there are $n_p$ identical toroidal periods.
+(For instance, $n_p=5$ for W7-X.) In both \vmec~and \bdistrib, $n_p$ is called {\ttfamily nfp}.
+Then any area integral on the toroidal surface (such as the integral in (\ref{eq:biot})) can be expressed as
+\begin{equation}
+\int d^2r\;Q = \sum_{\ell=1}^{n_p} \int_0^1 du \int_0^1 dv 
+\left| \frac{\partial \vect{r}}{\partial u}\times\frac{\partial\vect{r}}{\partial v}\right|Q
+=\sum_{\ell=1}^{n_p} \int_0^1 du \int_0^1 dv |\vect{N}|Q
+\end{equation}
+for any quantity $Q$.
+Thus, (\ref{eq:biot})
+becomes
+\begin{equation}
+\vect{B}(\vect{r})
+=\frac{\mu_0}{4\pi}
+\sum_{\ell'=1}^{n_p} \int_0^1 du' \int_0^1 dv' \frac{1}{|\vect{r}-\vect{r}'|}
+\left[ \vect{N}'\times\nabla' \Phi'\right]\times(\vect{r}-\vect{r}').
+\end{equation}
+We use primes to denote quantities on the surface with the current potential,
+to distinguish these quantities from the coordinates at which $\vect{B}$ is evaluated.
+
+Now observe that $\nabla'\Phi' = (\nabla' u')\partial\Phi'/\partial u' + (\nabla' v')\partial\Phi'/\partial v'$.
+Also observe
+(suppressing primes temporarily to reduce clutter)
+\begin{equation}
+\vect{N}\times\nabla u
+=\left(\frac{\partial\vect{r}}{\partial v}\times\frac{\partial \vect{r}}{\partial u}\right)
+\times\nabla u
+=
+\left(\frac{\partial\vect{r}}{\partial u}\right)
+\underbrace{\left(\frac{\partial\vect{r}}{\partial v}\cdot\nabla u\right)}_{=0}
+-
+\left(\frac{\partial\vect{r}}{\partial v}\right)
+\underbrace{\left(\frac{\partial\vect{r}}{\partial u}\cdot\nabla u\right)}_{=1}
+=
+-\frac{\partial\vect{r}}{\partial v}
+\end{equation}
+and
+\begin{equation}
+\vect{N}\times\nabla v
+=\left(\frac{\partial\vect{r}}{\partial v}\times\frac{\partial \vect{r}}{\partial u}\right)
+\times\nabla v
+=
+\left(\frac{\partial\vect{r}}{\partial u}\right)
+\underbrace{\left(\frac{\partial\vect{r}}{\partial v}\cdot\nabla v\right)}_{=1}
+-
+\left(\frac{\partial\vect{r}}{\partial v}\right)
+\underbrace{\left(\frac{\partial\vect{r}}{\partial u}\cdot\nabla v\right)}_{=0}
+=
+\frac{\partial\vect{r}}{\partial u}.
+\end{equation}
+Thus, we obtain
+\begin{equation}
+\vect{B}(\vect{r}) = \frac{\mu_0}{4\pi}
+\sum_{\ell'=1}^{n_p} \int_0^1 du' \int_0^1 dv' \frac{1}{|\vect{r}-\vect{r}'|^3}
+\left[ \frac{\partial\vect{r}'}{\partial u'} \frac{\partial\Phi'}{\partial v'}
+- \frac{\partial\vect{r}'}{\partial v'} \frac{\partial\Phi'}{\partial u'} \right]
+\times(\vect{r}-\vect{r}').
+\end{equation}
+Integrating by parts in $u'$ and $v'$,
+and using the assumption that $\Phi$ is single-valued to drop boundary contributions,
+\begin{eqnarray}
+\vect{B}(\vect{r}) 
+&=& \frac{\mu_0}{4\pi}
+\sum_{\ell'=1}^{n_p} \int_0^1 du' \int_0^1 dv' \; \Phi'
+\left[
+\frac{\partial}{\partial u'}
+\left(  \frac{1}{|\vect{r}-\vect{r}'|^3}
+\frac{\partial \vect{r}'}{\partial v'}\times (\vect{r}-\vect{r}')
+\right) \right. \\
+&&
+\hspace{1.6in}-
+\left.
+\frac{\partial}{\partial v'}
+\left( \frac{1}{|\vect{r}-\vect{r}'|^3}
+\frac{\partial \vect{r}'}{\partial u'}\times (\vect{r}-\vect{r}')
+\right)
+\right]. \nonumber
+\end{eqnarray}
+If the outer derivatives act on the $\partial\vect{r}'/\partial v'$
+and $\partial\vect{r}'/\partial u'$ terms, the resulting contributions cancel,
+so we can pull these $\partial\vect{r}'/\partial \ldots$ terms out in front of the outer
+derivatives:
+\begin{equation}
+\vect{B}(\vect{r}) = \frac{\mu_0}{4\pi}
+\sum_{\ell'=1}^{n_p} \int_0^1 du' \int_0^1 dv' \; \Phi'
+\left[
+\frac{\partial\vect{r}'}{\partial v'}
+\times
+\frac{\partial}{\partial u'}
+\left(  \frac{\vect{r}-\vect{r}'}{|\vect{r}-\vect{r}'|^3}
+\right)
+-
+\frac{\partial\vect{r}'}{\partial u'}
+\times
+\frac{\partial}{\partial v'}
+\left( \frac{\vect{r}-\vect{r}'}{|\vect{r}-\vect{r}'|^3}
+\right)
+\right].
+\label{eq:13}
+\end{equation}
+
+Next, note that for any scalar $w$ and vector $\vect{a}(w)$,
+\begin{equation}
+\frac{\partial}{\partial w}
+\left(\frac{\vect{a}}{|\vect{a}|^3}\right)
+=
+\frac{1}{|\vect{a}|^3}
+\frac{\partial\vect{a}}{\partial w}
+-
+\frac{3}{|\vect{a}|^5}
+\vect{a}\vect{a}\cdot
+\frac{\partial\vect{a}}{\partial w}.
+\end{equation}
+Using this result, and multiplying (\ref{eq:13}) by an arbitrary vector $\vect{Y}$,
+\begin{eqnarray}
+\vect{B}\cdot\vect{Y}
+= \frac{\mu_0}{4\pi}
+\sum_{\ell'=1}^{n_p} \int_0^1 du' \int_0^1 dv' \; \Phi'
+\left[
+...
+\right]
+\end{eqnarray}
+
+\section{Basis functions}
+
+\section{Fourier basis}
+
+\section{Transfer matrix}
+
+\section{Cylindrical approximation}
+
+
+
+\label{sec:requirements}
+

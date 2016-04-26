@@ -1,0 +1,11 @@
+*.o
+*.mod
+*.a
+regcoil
+*.nc
+regcoil_out*
+job.out.*
+job.err.*
+make_test.o*
+*~
+\#*

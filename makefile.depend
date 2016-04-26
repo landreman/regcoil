@@ -1,0 +1,35 @@
+# -*- mode: makefile -*-
+
+OBJ_FILES = regcoil.o build_inductance_matrix_mod.o build_inductance_matrices.o \
+	compute_Kmn.o compute_offset_surface_xyz_of_uv.o constant_v_coil_field.o \
+	expand_plasma_surface.o fzero.o global_variables.o init_basis_functions_mod.o \
+	init_Fourier_modes_mod.o init_outer_2_surfaces.o init_plasma.o \
+	init_surface_mod.o one_over_R_field.o read_bnorm.o \
+	read_efit.o read_input.o read_nescin.o splines.o svd_inductance_matrices.o \
+	transfer_matrix.o validate_input.o write_output.o
+
+# Dependencies:
+regcoil.o: global_variables.o init_basis_functions_mod.o
+build_inductance_matrix_mod.o: global_variables.o
+build_inductance_matrices.o: global_variables.o build_inductance_matrix_mod.o
+compute_Kmn.o: global_variables.o
+compute_offset_surface_xyz_of_uv.o: global_variables.o
+constant_v_coil_field.o: global_variables.o
+expand_plasma_surface.o: global_variables.o
+fzero.o: 
+global_variables.o: 
+init_basis_functions_mod.o: global_variables.o init_Fourier_modes_mod.o
+init_Fourier_modes_mod.o: global_variables.o
+init_outer_2_surfaces.o: global_variables.o init_surface_mod.o
+init_plasma.o: global_variables.o
+init_surface_mod.o: global_variables.o
+one_over_R_field.o: global_variables.o
+read_bnorm.o: global_variables.o
+read_efit.o: splines.o
+read_input.o: global_variables.o
+read_nescin.o: global_variables.o
+splines.o:
+svd_inductance_matrices.o: global_variables.o
+transfer_matrix.o: global_variables.o
+validate_input.o: global_variables.o
+write_output.o: global_variables.o

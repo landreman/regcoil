@@ -1,0 +1,36 @@
+! For documentation of these input parameters and their default values, see the README.
+
+&bdistrib
+  transfer_matrix_option = 2
+
+  basis_option_plasma = 2
+  basis_option_middle = 2
+  basis_option_outer  = 2
+  check_orthogonality = .t.
+
+  nu_plasma=64
+  nu_middle=64
+
+  nv_plasma=256
+  nv_middle=256
+
+  ! This run is not well resolved at this resolution, but it is enough for testing.
+  mpol_plasma = 8
+  mpol_middle = 8
+
+  ntor_plasma = 8
+  ntor_middle = 8
+
+  geometry_option_plasma = 0
+  R0_plasma = 3.0
+  a_plasma = 1.0
+  nfp_imposed = 1
+
+  geometry_option_middle=0
+  R0_middle = 3.0
+  a_middle = 1.7
+
+  pseudoinverse_thresholds = 1e-12
+
+  n_singular_vectors_to_save = 16
+/

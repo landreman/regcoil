@@ -1,0 +1,41 @@
+! For documentation of these input parameters and their default values, see the README.
+
+&bdistrib
+  basis_option_plasma = 2
+  basis_option_middle = 2
+  basis_option_outer  = 2
+  check_orthogonality = .t.
+
+  nu_plasma=67
+  nu_middle=66
+  nu_outer =65
+
+  nv_plasma=250
+  nv_middle=249
+  nv_outer =248
+
+  mpol_plasma = 19
+  mpol_middle = 18
+  mpol_outer  = 17
+
+  ntor_plasma = 0
+  ntor_middle = 0
+  ntor_outer  = 0
+
+  geometry_option_plasma = 0
+  R0_plasma = 10.0
+  a_plasma = 0.5
+  nfp_imposed = 1
+
+  geometry_option_middle=0
+  R0_middle = 10.0
+  a_middle = 1.0
+
+  geometry_option_outer=0
+  R0_outer = 10.0
+  a_outer = 1.5
+
+  pseudoinverse_thresholds = 1e-12
+
+  n_singular_vectors_to_save = 12
+/

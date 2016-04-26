@@ -1,0 +1,11 @@
+#!/bin/bash -l
+
+#SBATCH -p debug
+#SBATCH -N 1
+#SBATCH -t 00:30:00
+#SBATCH -J make_test
+
+### Set the job name
+
+export OMP_NUM_THREADS=32
+time make test

@@ -1,2 +1,3 @@
-# regcoil
+### REGCOIL
+
 Regularized NESCOIL
