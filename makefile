@@ -8,9 +8,25 @@
 #   module unload cray-libsci
 # to avoid warning messages about libsci during compiling.
 
-FC = ftn
+#ifdef NERSC_HOST
+#        HOSTNAME = $(NERSC_HOST)
+#else
+#        HOSTNAME="laptop"
+#endif
+#
+#ifeq $(HOSTNAME) "edison"
+#	FC = ftn
+#	EXTRA_COMPILE_FLAGS = -openmp -mkl
+#	EXTRA_LINK_FLAGS =  -openmp -mkl -Wl,-ydgemm_
+#else ifeq $(HOSTNAME) "cori"
+#else
+#	# Laptop
+#	FC = gcc
+#	
+#endif
+##LIBSTELL_DIR = /global/homes/l/landrema/20150410-02-stellinstall_245_edison/LIBSTELL/Release
 
-#LIBSTELL_DIR = /global/homes/l/landrema/20150410-02-stellinstall_245_edison/LIBSTELL/Release
+FC = ftn
 
 # NERSC documentation recommends against specifying -O3
 EXTRA_COMPILE_FLAGS = -openmp -mkl

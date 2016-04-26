@@ -170,4 +170,16 @@ subroutine validate_input
      end select
   end if
 
+  if (N_alphas < 1) then
+     stop "N_alphas must be at least 1."
+  end if
+
+  if (alpha_min <= 0) then
+     stop "alpha_min must be greater than 0."
+  end if
+
+  if (alpha_max < alpha_min) then
+     stop "alpha_max must be >= alpha_min."
+  end if
+
 end subroutine validate_input

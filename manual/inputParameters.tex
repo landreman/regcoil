@@ -128,11 +128,23 @@ and $\vect{V}$ for the transfer matrix SVD are set to 0 before computing the ove
 {real}
 {1.0}
 {If \parlink{geometry\_option\_plasma}=0,1,or 5, i.e. if the plasma surface is not a vmec equilibrium.}
-{The number of Amperes of current the links the middle surface toroidally. This
+{The number of Amperes of current the links the middle surface poloidally,
+denoted $G$ in the notes. This
 number is used to set the overall magnitude of the normal fields due to a $1/R$ external
 field or due to constant-$v$ coils. If the plasma surface is obtained from a vmec equilibrium,
 then {\ttfamily net\_poloidal\_current\_Amperes} will be determined instead
 from the {\ttfamily bvco} value in the vmec wout file.
+}
+
+\myhrule
+
+\param{net\_toroidal\_current\_Amperes}
+{real}
+{0.0}
+{Always}
+{The number of Amperes of current the links the middle surface toroidally,
+denoted $I$ in the notes. Unlike the net poloidal current, this number
+is never read from a wout file.
 }
 
 
@@ -494,4 +506,30 @@ expanded uniformly by a distance \parlink{separation\_outer}.
 {Only when \parlink{geometry\_option\_outer} is 3.}
 {Name of a \nescoil~{\ttfamily nescin} input file. The coil surface from
 this file will be used as the outer surface for \bdistrib.}
+
+\section{Parameters related to the regularization weight}
+
+\param{N\_alphas}
+{integer}
+{4}
+{Always}
+{Number of values of $\alpha$ for which the problem is solved.}
+
+\myhrule
+
+\param{alpha\_max}
+{real}
+{10.0}
+{Always}
+{Maximum value of $\alpha$ for which the problem is solved.}
+
+\myhrule
+
+\param{alpha\_min}
+{real}
+{0.1}
+{Always}
+{Minimum nonzero value of $\alpha$ for which the problem is solved.
+Note that the problem is always solved for $\alpha=0$ in addition to
+the nonzero values.}
 

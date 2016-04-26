@@ -9,7 +9,7 @@ subroutine read_input
   integer :: fileUnit, didFileAccessWork, i
   integer, parameter :: uninitialized = -9999
 
-  namelist / bdistrib / nu_plasma, nv_plasma, nu_middle, nv_middle, nu_outer, nv_outer, &
+  namelist / regcoil / nu_plasma, nv_plasma, nu_middle, nv_middle, nu_outer, nv_outer, &
        geometry_option_plasma, geometry_option_middle, geometry_option_outer, &
        R0_plasma, R0_middle, R0_outer, a_plasma, a_middle, a_outer, &
        separation_middle, separation_outer, wout_filename, pseudoinverse_thresholds, &
@@ -19,22 +19,22 @@ subroutine read_input
        mpol_transform_refinement, ntor_transform_refinement, &
        basis_option_plasma, basis_option_middle, basis_option_outer, check_orthogonality, transfer_matrix_option, &
        zero_first_transfer_vector_in_overlap, net_poloidal_current_Amperes, load_bnorm, bnorm_filename, &
-       shape_filename_plasma
+       shape_filename_plasma, N_alphas, alpha_min, alpha_max
 
   ! getcarg is in LIBSTELL
   call getcarg(1, inputFilename, numargs)
 
   if (numargs<1) then
-     stop "One argument is required: the input namelist file, which must be named bdistrib_in.XXXXX"
+     stop "One argument is required: the input namelist file, which must be named regcoil_in.XXXXX"
   end if
   if (numargs>1) then
      print *,"WARNING: Arguments after the first will be ignored."
   end if
-  if (inputFilename(1:12) .ne. "bdistrib_in.") then
-     stop "Input file must be named bdistrib_in.XXX for some extension XXX"
+  if (inputFilename(1:12) .ne. "regcoil_in.") then
+     stop "Input file must be named regcoil_in.XXX for some extension XXX"
   end if
 
-  outputFilename = "bdistrib_out" // trim(inputFilename(12:)) // ".nc"
+  outputFilename = "regcoil_out" // trim(inputFilename(12:)) // ".nc"
 
   pseudoinverse_thresholds = uninitialized
   ! Default: a single threshold
@@ -46,13 +46,13 @@ subroutine read_input
      print *,"Error opening input file ", trim(inputFilename)
      stop
   else
-     read(fileUnit, nml=bdistrib, iostat=didFileAccessWork)
+     read(fileUnit, nml=regcoil, iostat=didFileAccessWork)
      if (didFileAccessWork /= 0) then
         print *,"Error!  I was able to open the file ", trim(inputFilename), &
-               " but not read data from the bdistrib namelist in it."
+               " but not read data from the regcoil namelist in it."
         stop
      end if
-     print *,"Successfully read parameters from bdistrib namelist in ", trim(inputFilename), "."
+     print *,"Successfully read parameters from regcoil namelist in ", trim(inputFilename), "."
   end if
   close(unit = fileUnit)
 
@@ -98,11 +98,11 @@ subroutine read_input
 
   select case (symmetry_option)
   case (1)
-     print *,"Symmetry: sin(2*pi*[n*u + m*v]) type modes only"
+     print *,"Symmetry: sin(m*theta - n*zeta) modes only"
   case (2)
-     print *,"Symmetry: cos(2*pi*[n*u + m*v]) type modes only"
+     print *,"Symmetry: cos(m*theta - n*zeta) modes only"
   case (3)
-     print *,"Symmetry: both sin(2*pi*[n*u + m*v]) and cos(2*pi*[n*u + m*v]) type modes"
+     print *,"Symmetry: both sin(m*theta - n*zeta) and cos(m*theta - n*zeta) modes"
   case default
      print *,"Error! Invalid setting for symmetry_option: ",symmetry_option
      stop

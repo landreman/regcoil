@@ -123,9 +123,14 @@ module global_variables
   logical :: zero_first_transfer_vector_in_overlap = .false.
 
   real(dp) :: net_poloidal_current_Amperes = 1
+  real(dp) :: net_toroidal_current_Amperes = 0
   logical :: load_bnorm = .false.
   character(len=200) :: bnorm_filename=""
   real(dp) :: curpol = 1  ! number which multiplies data in bnorm file.
+
+  integer :: N_alphas = 4
+  real(dp) :: alpha_min = 0.1_dp, alpha_max = 10_dp
+  real(dp), dimension(:), allocatable :: alphas
 
 end module global_variables
 

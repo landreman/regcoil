@@ -14,6 +14,7 @@ program regcoil
 
   call read_input()
   call validate_input()
+  call compute_alphas()
 
   ! Define the position vector and normal vector at each grid point for the 3 surfaces:
   call init_plasma()
@@ -48,8 +49,8 @@ program regcoil
   print *,"Done. Took ",real(toc1-tic1)/countrate," sec."
 
   ! Compute several important distributions of B_normal on the plasma surface:
-  call one_over_R_field()
-  call constant_v_coil_field()
+  !call one_over_R_field()
+  call compute_h()
   call read_bnorm()
 
   ! Compute the mutual inductance matrices, which relate current on 1 surface to B_normal on an interior surface:
