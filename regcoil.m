@@ -7,31 +7,36 @@ function regcoil()
 
 clear
 
-symmetry_option = 3;
+symmetry_option = 1;
 % 1 = sines only
 % 2 = cosines only
 % 3 = both sines and cosines
 
-load_bnorm = true;
-%load_bnorm = false;
+%load_bnorm = true;
+load_bnorm = false;
 
 bnorm_filename = '/Users/mattland/Box Sync/MATLAB/bnorm.d23p4_tm';
 
 % This next value will be over-written if a VMEC equilibrium is used:
 net_poloidal_current_Amperes = 1.0;
-net_toroidal_current_Amperes = 0.1;
+net_toroidal_current_Amperes = 0.0;
 
 % Resolution parameters:
 % **********************************
-
-ntheta_plasma = 33;
-ntheta_coil   = 32;
-
-nzeta_plasma = 30;
-nzeta_coil   = 29;
-
-mpol_coil  = 7;
-ntor_coil  = 10;
+%{
+ntheta_plasma = 35;
+ntheta_coil   = 34;
+nzeta_plasma = 33;
+nzeta_coil   = 32;
+mpol_coil  = 16;
+ntor_coil  = 15;
+%}
+ntheta_plasma = 128;
+ntheta_coil   = 128;
+nzeta_plasma = 128;
+nzeta_coil   = 128;
+mpol_coil  = 32;
+ntor_coil  = 32;
 
 % Options for the shape of the plasma surface:
 % **********************************
@@ -53,21 +58,26 @@ nescin_filename = '/Users/mattland/Box Sync/MATLAB/nescin.w7x_winding_surface_fr
 
 % Options for the regularization parameter:
 % **********************************
-nalpha = 4;
-alpha_min = 0.1;
-alpha_max = 10;
+nalpha = 30;
+alpha_min = 1e-30;
+alpha_max = 1e-8;
 
 % Plotting options:
 % **********************************
 
+plot_results = true;
+%plot_results = false;
+
+max_nalpha_for_contour_plots = 18;
+
 %plot3DFigure = true;
 plot3DFigure = false;
 
-%plotGrids = true;
-plotGrids = false;
+plotGrids = true;
+%plotGrids = false;
 
-%plotVectors = true;
-plotVectors = false;
+plotVectors = true;
+%plotVectors = false;
 
 %stopAfterInitialPlots = true;
 stopAfterInitialPlots = false;
@@ -153,40 +163,6 @@ compareVariableToFortran('nalpha')
 compareVariableToFortran('alpha')
 
 % *********************************************
-% Set up Fourier arrays
-% *********************************************
-
-    function [mnmax, xm, xn] = setupFourierArrays(mpol,ntor)
-        % xm is non-negative, while xn can be negative
-        % xn is the rapidly increasing variable.
-        
-        % When xm=0, xn=1..ntor.
-        % When xm>0, xn=-ntor..ntor.
-        mnmax = ntor + mpol*(2*ntor+1);
-        
-        xm = zeros(mnmax,1);
-        xn = zeros(mnmax,1);
-        xn(1:ntor) = 1:ntor;
-        nextIndex = ntor+1;
-        for m = 1:mpol
-            indices = nextIndex:(nextIndex+2*ntor);
-            xm(indices) = m;
-            xn(indices) = (-ntor):ntor;
-            nextIndex = nextIndex + 2*ntor+1;
-        end
-        
-    end
-
-[mnmax_coil, xm_coil, xn_coil] = setupFourierArrays(mpol_coil, ntor_coil);
-
-compareVariableToFortran('mpol_coil')
-compareVariableToFortran('ntor_coil')
-compareVariableToFortran('mnmax_coil')
-compareVariableToFortran('xm_coil')
-compareVariableToFortran('xn_coil')
-compareVariableToFortran('symmetry_option')
-
-% *********************************************
 % Initialize the plasma surface:
 % *********************************************
 
@@ -238,6 +214,7 @@ switch geometry_option_plasma
         
         bvco = ncread(woutFilename,'bvco');
         net_poloidal_current_Amperes = (2*pi/mu0) * (1.5*bvco(end) - 0.5*bvco(end-1));
+        fprintf('New value for net_poloidal_current_Amperes: %g\n',net_poloidal_current_Amperes)
     otherwise
         curpol = 1;
 end
@@ -574,7 +551,7 @@ if plot3DFigure
     
     if plotGrids
         plot3(squeeze(r_coil_toplot(1,:,:)),squeeze(r_coil_toplot(2,:,:)),squeeze(r_coil_toplot(3,:,:)),'.m')
-        plot3(squeeze(r_outer_toplot(1,:,:)), squeeze(r_outer_toplot(2,:,:)), squeeze(r_outer_toplot(3,:,:)),'.b')
+        %plot3(squeeze(r_outer_toplot(1,:,:)), squeeze(r_outer_toplot(2,:,:)), squeeze(r_outer_toplot(3,:,:)),'.b')
     end
     %surf(X_coil,Y_coil,Z_coil,'FaceColor',faceColor,'EdgeColor','none')
     %surf(X_coil,Y_coil,Z_coil,'FaceColor',faceColor,'EdgeColor','none','FaceAlpha',0.75)
@@ -592,16 +569,51 @@ if stopAfterInitialPlots
 end
 
 % *********************************************
+% Set up Fourier arrays
+% *********************************************
+
+    function [mnmax, xm, xn] = setupFourierArrays(mpol,ntor)
+        % xm is non-negative, while xn can be negative
+        % xn is the rapidly increasing variable.
+        
+        % When xm=0, xn=1..ntor.
+        % When xm>0, xn=-ntor..ntor.
+        mnmax = ntor + mpol*(2*ntor+1);
+        
+        xm = zeros(mnmax,1);
+        xn = zeros(mnmax,1);
+        xn(1:ntor) = 1:ntor;
+        nextIndex = ntor+1;
+        for m = 1:mpol
+            indices = nextIndex:(nextIndex+2*ntor);
+            xm(indices) = m;
+            xn(indices) = (-ntor):ntor;
+            nextIndex = nextIndex + 2*ntor+1;
+        end
+        
+    end
+
+[mnmax_coil, xm_coil, xn_coil] = setupFourierArrays(mpol_coil, ntor_coil);
+xn_coil = xn_coil * nfp;
+
+compareVariableToFortran('mpol_coil')
+compareVariableToFortran('ntor_coil')
+compareVariableToFortran('mnmax_coil')
+compareVariableToFortran('xm_coil')
+compareVariableToFortran('xn_coil')
+compareVariableToFortran('symmetry_option')
+
+% *********************************************
 % Load BNORM data.
 % *********************************************
 
 Bnormal_from_plasma_current = zeros(ntheta_plasma,nzeta_plasma);
+[zeta_plasma_2D, theta_plasma_2D] = meshgrid(zeta_plasma, theta_plasma);
 if load_bnorm
     fid = fopen(bnorm_filename,'r');
     if fid<0
         error('Unable to open BNORM file %s.\n',bnorm_filename)
     end
-    [zeta_plasma_2D, theta_plasma_2D] = meshgrid(zeta_plasma, theta_plasma);
     while ~ feof(fid);
         [fileline,count] = fscanf(fid,'%f %f %f\n',3);
         if count == 3
@@ -651,7 +663,7 @@ for itheta_plasma = 1:ntheta_plasma
         h(itheta_plasma,izeta_plasma) = sum(sum(tempMatrix));
     end
 end
-h = h * (mu0/(8*pi*pi));
+h = h * (dtheta_plasma*dzeta_plasma*mu0/(8*pi*pi));
 Bnormal_from_net_coil_currents = h ./ norm_normal_plasma;
 Bnormal_from_net_coil_currents_1D = reshape(Bnormal_from_net_coil_currents, [ntheta_plasma*nzeta_plasma,1]);
 fprintf('Done. Took %g seconds.\n',toc)
@@ -677,6 +689,7 @@ f_z = zeros(ntheta_coil*nzeta_coil, num_basis_functions);
 fprintf('Computing Fourier functions and f.\n')
 tic
 [zeta_coil_2D, theta_coil_2D] = meshgrid(zeta_coil,theta_coil);
+zeta_coil_indices = 1:nzeta_coil;
 switch symmetry_option
     case {1}
         % sines only
@@ -685,9 +698,9 @@ switch symmetry_option
             cosangle = cos(angle);
             sinangle = sin(angle);
             basis_functions(:,imn) = reshape(sinangle, [ntheta_coil*nzeta_coil,1]);
-            f_x(:,imn) = reshape(cosangle.*squeeze(xn_coil(imn)*drdtheta_coil(1,:,:) + xm_coil(imn)*drdzeta_coil(1,:,:)), [ntheta_coil*nzeta_coil,1]);
-            f_y(:,imn) = reshape(cosangle.*squeeze(xn_coil(imn)*drdtheta_coil(2,:,:) + xm_coil(imn)*drdzeta_coil(2,:,:)), [ntheta_coil*nzeta_coil,1]);
-            f_z(:,imn) = reshape(cosangle.*squeeze(xn_coil(imn)*drdtheta_coil(3,:,:) + xm_coil(imn)*drdzeta_coil(3,:,:)), [ntheta_coil*nzeta_coil,1]);
+            f_x(:,imn) = reshape(cosangle.*squeeze(xn_coil(imn)*drdtheta_coil(1,:,zeta_coil_indices) + xm_coil(imn)*drdzeta_coil(1,:,zeta_coil_indices)), [ntheta_coil*nzeta_coil,1]);
+            f_y(:,imn) = reshape(cosangle.*squeeze(xn_coil(imn)*drdtheta_coil(2,:,zeta_coil_indices) + xm_coil(imn)*drdzeta_coil(2,:,zeta_coil_indices)), [ntheta_coil*nzeta_coil,1]);
+            f_z(:,imn) = reshape(cosangle.*squeeze(xn_coil(imn)*drdtheta_coil(3,:,zeta_coil_indices) + xm_coil(imn)*drdzeta_coil(3,:,zeta_coil_indices)), [ntheta_coil*nzeta_coil,1]);
         end
     case {2}
         % cosines only
@@ -696,9 +709,9 @@ switch symmetry_option
             cosangle = cos(angle);
             sinangle = sin(angle);
             basis_functions(:,imn) = reshape(cosangle, [ntheta_coil*nzeta_coil,1]);
-            f_x(:,imn) = reshape(-sinangle.*squeeze(xn_coil(imn)*drdtheta_coil(1,:,:) + xm_coil(imn)*drdzeta_coil(1,:,:)), [ntheta_coil*nzeta_coil,1]);
-            f_y(:,imn) = reshape(-sinangle.*squeeze(xn_coil(imn)*drdtheta_coil(2,:,:) + xm_coil(imn)*drdzeta_coil(2,:,:)), [ntheta_coil*nzeta_coil,1]);
-            f_z(:,imn) = reshape(-sinangle.*squeeze(xn_coil(imn)*drdtheta_coil(3,:,:) + xm_coil(imn)*drdzeta_coil(3,:,:)), [ntheta_coil*nzeta_coil,1]);
+            f_x(:,imn) = reshape(-sinangle.*squeeze(xn_coil(imn)*drdtheta_coil(1,:,zeta_coil_indices) + xm_coil(imn)*drdzeta_coil(1,:,zeta_coil_indices)), [ntheta_coil*nzeta_coil,1]);
+            f_y(:,imn) = reshape(-sinangle.*squeeze(xn_coil(imn)*drdtheta_coil(2,:,zeta_coil_indices) + xm_coil(imn)*drdzeta_coil(2,:,zeta_coil_indices)), [ntheta_coil*nzeta_coil,1]);
+            f_z(:,imn) = reshape(-sinangle.*squeeze(xn_coil(imn)*drdtheta_coil(3,:,zeta_coil_indices) + xm_coil(imn)*drdzeta_coil(3,:,zeta_coil_indices)), [ntheta_coil*nzeta_coil,1]);
         end
     case {3}
         % Both sines and cosines
@@ -708,13 +721,13 @@ switch symmetry_option
             sinangle = sin(angle);
             basis_functions(:,imn)            = reshape(sinangle, [ntheta_coil*nzeta_coil,1]);
             basis_functions(:,imn+mnmax_coil) = reshape(cosangle, [ntheta_coil*nzeta_coil,1]);
-            temparr = squeeze(xn_coil(imn)*drdtheta_coil(1,:,:) + xm_coil(imn)*drdzeta_coil(1,:,:));
+            temparr = squeeze(xn_coil(imn)*drdtheta_coil(1,:,zeta_coil_indices) + xm_coil(imn)*drdzeta_coil(1,:,zeta_coil_indices));
             f_x(:,imn)            = reshape( cosangle.*temparr, [ntheta_coil*nzeta_coil,1]);
             f_x(:,imn+mnmax_coil) = reshape(-sinangle.*temparr, [ntheta_coil*nzeta_coil,1]);
-            temparr = squeeze(xn_coil(imn)*drdtheta_coil(2,:,:) + xm_coil(imn)*drdzeta_coil(2,:,:));
+            temparr = squeeze(xn_coil(imn)*drdtheta_coil(2,:,zeta_coil_indices) + xm_coil(imn)*drdzeta_coil(2,:,zeta_coil_indices));
             f_y(:,imn)            = reshape( cosangle.*temparr, [ntheta_coil*nzeta_coil,1]);
             f_y(:,imn+mnmax_coil) = reshape(-sinangle.*temparr, [ntheta_coil*nzeta_coil,1]);
-            temparr = squeeze(xn_coil(imn)*drdtheta_coil(3,:,:) + xm_coil(imn)*drdzeta_coil(3,:,:));
+            temparr = squeeze(xn_coil(imn)*drdtheta_coil(3,:,zeta_coil_indices) + xm_coil(imn)*drdzeta_coil(3,:,zeta_coil_indices));
             f_z(:,imn)            = reshape( cosangle.*temparr, [ntheta_coil*nzeta_coil,1]);
             f_z(:,imn+mnmax_coil) = reshape(-sinangle.*temparr, [ntheta_coil*nzeta_coil,1]);
         end
@@ -753,12 +766,14 @@ for itheta_coil = 1:ntheta_coil
         end
     end
 end
-inductance = inductance * (mu/(4*pi));
+inductance = inductance * (mu0/(4*pi));
 fprintf('Done. Took %g sec.\n',toc)
 
 compareVariableToFortran('inductance')
 
 tic1 = tic;
+dtheta_coil = theta_coil(2)-theta_coil(1);
+dzeta_coil = zeta_coil(2)-zeta_coil(1);
 g = (dtheta_coil * dzeta_coil) * inductance * basis_functions;
 fprintf('Matmul: %g\n',toc(tic1))
 
@@ -776,8 +791,8 @@ diag_inv_norm_normal_coil = diag(1./norm_normal_coil_vec);
 
 tic
 fprintf('Computing RHS_B and RHS_J.\n')
-RHS_B = (dtheta_plasma*dzeta_plasma)*(Bnormal_from_plasma_current_1D + Bnormal_from_net_coil_currents_1D)' * g;
-RHS_J = (dtheta_coil*dzeta_coil)*((d_x ./ norm_normal_coil_vec)' * f_x + (d_y ./ norm_normal_coil_vec)' * f_y + (d_z ./ norm_normal_coil_vec)' * f_z);
+RHS_B = (dtheta_plasma*dzeta_plasma)*((Bnormal_from_plasma_current_1D + Bnormal_from_net_coil_currents_1D)' * g)';
+RHS_J = (dtheta_coil*dzeta_coil)*((d_x ./ norm_normal_coil_vec)' * f_x + (d_y ./ norm_normal_coil_vec)' * f_y + (d_z ./ norm_normal_coil_vec)' * f_z)';
 fprintf('Done. Took %g sec.\n',toc)
 
 compareVariableToFortran('RHS_B')
@@ -816,8 +831,10 @@ for ialpha=1:nalpha
     fprintf('Solving system for alpha = %g  (%d of %d)\n',alpha(ialpha), ialpha, nalpha)
     
     tic
-    matrix = matrix_B + alpha(ialpha) * matrix_J;
-    RHS    = RHS_B    + alpha(ialpha) * RHS_J;
+    %matrix = matrix_B + alpha(ialpha) * matrix_J;
+    %RHS    = RHS_B    + alpha(ialpha) * RHS_J;
+    matrix = matrix_B - alpha(ialpha) * matrix_J;
+    RHS    = RHS_B    - alpha(ialpha) * RHS_J;
     fprintf('  Summing matrices: %g sec.\n',toc)
     
     tic
@@ -826,25 +843,26 @@ for ialpha=1:nalpha
     
     tic
     single_valued_current_potential_mn(:,ialpha) = solution;
-    this_single_valued_current_potential_thetazeta = reshape(basis_functions*solution, [ntheta_coil,neta_coil]);
+    this_single_valued_current_potential_thetazeta = reshape(basis_functions*solution, [ntheta_coil,nzeta_coil]);
     single_valued_current_potential_thetazeta(:,:,ialpha) = this_single_valued_current_potential_thetazeta;
     current_potential(:,:,ialpha) = this_single_valued_current_potential_thetazeta ...
         + zeta_coil_2D * (net_poloidal_current_Amperes/(2*pi)) ...
         + theta_coil_2D * (net_toroidal_current_Amperes/(2*pi));
     
-    this_Bnormal = Bnormal_from_plasma_current + Bnormal_from_net_coil_current ...
+    this_Bnormal = Bnormal_from_plasma_current + Bnormal_from_net_coil_currents ...
         + reshape(g*solution, [ntheta_plasma,nzeta_plasma]) ./ norm_normal_plasma;
     Bnormal_total(:,:,ialpha) = this_Bnormal;
     chi2_B(ialpha) = nfp*dtheta_plasma*dzeta_plasma*sum(sum(this_Bnormal .* this_Bnormal .* norm_normal_plasma));
     
-    J_difference_x = dx - f_x*solution;
-    J_difference_y = dy - f_y*solution;
-    J_difference_z = dz - f_z*solution;
+    J_difference_x = d_x - f_x*solution;
+    J_difference_y = d_y - f_y*solution;
+    J_difference_z = d_z - f_z*solution;
     this_J2_over_N = reshape(J_difference_x.*J_difference_x + J_difference_y.*J_difference_y + J_difference_z.*J_difference_z, [ntheta_coil, nzeta_coil]) ./(norm_normal_coil);
     J2(:,:,ialpha) = this_J2_over_N ./ norm_normal_coil;
     chi2_J(ialpha) = nfp*dtheta_coil*dzeta_coil*sum(sum(this_J2_over_N));
     
     fprintf('  Diagnostics: %g sec.\n',toc)
+    fprintf('  chi2_B: %g,   chi2_J: %g\n',chi2_B(ialpha),chi2_J(ialpha))
 end
 
 compareVariableToFortran('single_valued_current_potential_mn')
@@ -855,104 +873,137 @@ compareVariableToFortran('J2')
 compareVariableToFortran('chi2_B')
 compareVariableToFortran('chi2_J')
 
-return
+%return
 
 
 % *********************************************
 % Done with the main calculation.
-% Now plot singular vectors.
+% Now plot results.
 % *********************************************
 
-if ~ plot_singular_vectors
+if ~ plot_results
     return
 end
 
-numContours = 20;
-nextFigure = 4;
-numCols = ceil(sqrt(n_singular_vectors_to_save));
-numRows = ceil(n_singular_vectors_to_save / numCols);
-
-nextFigure = nextFigure+1;
-figure(figureOffset + nextFigure)
+figure(2)
 clf
-for whichPlot = 1:n_singular_vectors_to_save
-    subplot(numRows,numCols,whichPlot)
-    data = reshape(svd_u_inductance_plasma_coil_uv(:,whichPlot),[ntheta_plasma,nzeta_plasma]);
-    contourf(zeta_plasma, theta_plasma, data, numContours,'EdgeColor','none')
+numRows=2;
+numCols=3;
+
+subplot(numRows,numCols,1)
+loglog(chi2_J, chi2_B,'o-')
+xlabel('chi2 J')
+ylabel('chi2 B')
+
+subplot(numRows,numCols,2)
+loglog(alpha, chi2_B,'o-')
+xlabel('alpha')
+ylabel('chi2 B')
+
+subplot(numRows,numCols,3)
+semilogy(alpha, chi2_B,'o-')
+xlabel('alpha')
+ylabel('chi2 B')
+
+subplot(numRows,numCols,4)
+loglog(alpha, chi2_J,'o-')
+xlabel('alpha')
+ylabel('chi2 J')
+
+subplot(numRows,numCols,5)
+semilogy(alpha, chi2_J,'o-')
+xlabel('alpha')
+ylabel('chi2 J')
+
+% ***********************************************************************
+% Plot single-valued part of the current potential
+
+figure(3)
+clf
+numContours = 25;
+
+numPlots = min([max_nalpha_for_contour_plots,nalpha]);
+ialpha_to_plot = unique(round(linspace(1,nalpha,numPlots)));
+numPlots = numel(ialpha_to_plot);
+
+numCols=ceil(sqrt(numPlots));
+numRows=ceil(numPlots / numCols);
+
+for iplot = 1:numPlots
+    subplot(numRows,numCols,iplot)
+    contourf(zeta_coil_2D, theta_coil_2D, single_valued_current_potential_thetazeta(:,:,ialpha_to_plot(iplot)), numContours,'EdgeColor','none')
     colorbar
-    xlabel('v')
-    ylabel('u')
-    title(['Singular vector u ',num2str(whichPlot)])
+    xlabel('zeta')
+    ylabel('theta')
+    title(['Single valued current potential for alpha=',num2str(alpha(ialpha_to_plot(iplot)))])
 end
-stringForTop = ['Singular vectors u of the plasma-coil inductance matrix: plasma surface'];
-annotation('textbox',[0 0.96 1 .04],'HorizontalAlignment','center',...
-    'Interpreter','none','VerticalAlignment','bottom',...
-    'FontSize',11,'LineStyle','none','String',stringForTop);
+    
 
-% **********************************
+% ***********************************************************************
+% Plot full current potential
 
-nextFigure = nextFigure+1;
-figure(figureOffset + nextFigure)
+figure(4)
 clf
 
-for whichPlot = 1:n_singular_vectors_to_save
-    subplot(numRows,numCols,whichPlot)
-    data = reshape(svd_v_inductance_plasma_coil_uv(:,whichPlot),[ntheta_coil,nzeta_coil]);
-    contourf(v_coil, u_coil, data, numContours,'EdgeColor','none')
+for iplot = 1:numPlots
+    subplot(numRows,numCols,iplot)
+    contourf(zeta_coil_2D, theta_coil_2D, current_potential(:,:,ialpha_to_plot(iplot)), numContours,'EdgeColor','none')
     colorbar
-    xlabel('v')
-    ylabel('u')
-    title(['Singular vector v ',num2str(whichPlot)])
+    xlabel('zeta')
+    ylabel('theta')
+    title(['Current potential for alpha=',num2str(alpha(ialpha_to_plot(iplot)))])
 end
-stringForTop = ['Singular vectors v of the plasma-coil inductance matrix: coil surface'];
-annotation('textbox',[0 0.96 1 .04],'HorizontalAlignment','center',...
-    'Interpreter','none','VerticalAlignment','bottom',...
-    'FontSize',11,'LineStyle','none','String',stringForTop);
-
-% **********************************
-
-for whichThreshold = 1:n_pseudoinverse_thresholds
-    nextFigure = nextFigure+1;
-    figure(figureOffset + nextFigure)
-    clf
     
-    for whichPlot = 1:n_singular_vectors_to_save
-        subplot(numRows,numCols,whichPlot)
-        data = reshape(svd_u_transferMatrix_uv(:,whichPlot,whichThreshold),[ntheta_plasma,nzeta_plasma]);
-        contourf(zeta_plasma, theta_plasma, data, numContours,'EdgeColor','none')
-        colorbar
-        xlabel('v')
-        ylabel('u')
-        title({['Singular vector u ',num2str(whichPlot)],['s=',num2str(svd_s_transferMatrix(whichPlot,whichThreshold))]})
-    end
-    stringForTop = ['Singular vectors u of the transfer matrix: plasma surface (threshold=',num2str(pseudoinverse_thresholds(whichThreshold)),')'];
-    annotation('textbox',[0 0.96 1 .04],'HorizontalAlignment','center',...
-        'Interpreter','none','VerticalAlignment','bottom',...
-        'FontSize',11,'LineStyle','none','String',stringForTop);
-    
+% ***********************************************************************
+% Plot J^2
+
+figure(5)
+clf
+
+for iplot = 1:numPlots
+    subplot(numRows,numCols,iplot)
+    contourf(zeta_coil_2D, theta_coil_2D, J2(:,:,ialpha_to_plot(iplot)), numContours,'EdgeColor','none')
+    colorbar
+    xlabel('zeta')
+    ylabel('theta')
+    title(['J^2 for alpha=',num2str(alpha(ialpha_to_plot(iplot)))])
 end
 
-% **********************************
+% ***********************************************************************
+% Plot B_normal
 
-for whichThreshold = 1:n_pseudoinverse_thresholds
-    nextFigure = nextFigure+1;
-    figure(figureOffset + nextFigure)
-    clf
-    
-    for whichPlot = 1:n_singular_vectors_to_save
-        subplot(numRows,numCols,whichPlot)
-        data = reshape(svd_v_transferMatrix_uv(:,whichPlot,whichThreshold),[ntheta_coil,nzeta_coil]);
-        contourf(v_coil, u_coil, data, numContours,'EdgeColor','none')
-        colorbar
-        xlabel('v')
-        ylabel('u')
-        title(['Singular vector v ',num2str(whichPlot)])
-    end
-    stringForTop = ['Singular vectors v of the transfer matrix: coil surface (threshold=',num2str(pseudoinverse_thresholds(whichThreshold)),')'];
-    annotation('textbox',[0 0.96 1 .04],'HorizontalAlignment','center',...
-        'Interpreter','none','VerticalAlignment','bottom',...
-        'FontSize',11,'LineStyle','none','String',stringForTop);
-    
+figure(6)
+clf
+
+numCols=ceil(sqrt(numPlots+2));
+numRows=ceil((numPlots+2) / numCols);
+
+subplot(numRows,numCols,1)
+contourf(zeta_plasma_2D, theta_plasma_2D, Bnormal_from_plasma_current, numContours,'EdgeColor','none')
+colorbar
+xlabel('zeta')
+ylabel('theta')
+title('Bnormal from plasma current')
+
+subplot(numRows,numCols,2)
+contourf(zeta_plasma_2D, theta_plasma_2D, Bnormal_from_net_coil_currents, numContours,'EdgeColor','none')
+colorbar
+xlabel('zeta')
+ylabel('theta')
+title('Bnormal from net coil currents')
+
+for iplot = 1:numPlots
+    subplot(numRows,numCols,iplot+2)
+    contourf(zeta_plasma_2D, theta_plasma_2D, Bnormal_total(:,:,ialpha_to_plot(iplot)), numContours,'EdgeColor','none')
+    colorbar
+    xlabel('zeta')
+    ylabel('theta')
+    title(['Total Bnormal for alpha=',num2str(alpha(ialpha_to_plot(iplot)))])
 end
 
 end
+
+%    stringForTop = ['Singular vectors v of the transfer matrix: coil surface (threshold=',num2str(pseudoinverse_thresholds(whichThreshold)),')'];
+%    annotation('textbox',[0 0.96 1 .04],'HorizontalAlignment','center',...
+%        'Interpreter','none','VerticalAlignment','bottom',...
+%        'FontSize',11,'LineStyle','none','String',stringForTop);
