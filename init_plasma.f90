@@ -10,14 +10,14 @@ subroutine init_plasma
 
   implicit none
 
-  integer :: i, iu, iv, imn, tic, toc, countrate, iflag, ierr, iopen, tic1, toc1, iunit
-  real(dp) :: angle, sinangle, cosangle, dsinangledu, dsinangledv, dcosangledu, dcosangledv
-  real(dp) :: angle2, sinangle2, cosangle2, dsinangle2dv, dcosangle2dv
-  real(dp) :: weight1, weight2, u, v, r_temp, z_temp, dnorm
-  integer :: nu_coordTransform, nv_coordTransform
+  integer :: i, itheta, izeta, imn, tic, toc, countrate, iflag, ierr, iopen, tic1, toc1, iunit
+  real(dp) :: angle, sinangle, cosangle, dsinangledtheta, dsinangledzeta, dcosangledtheta, dcosangledzeta
+  real(dp) :: angle2, sinangle2, cosangle2, dsinangle2dzeta, dcosangle2dzeta
+  real(dp) :: weight1, weight2, theta, zeta, r_temp, z_temp, dnorm
+  integer :: ntheta_coordTransform, nzeta_coordTransform
   real(dp), dimension(:,:), allocatable :: r_coordTransform, z_coordTransform
   real(dp), dimension(:), allocatable :: rmnc_vmecLast, zmns_vmecLast
-  real(dp) :: rootSolve_abserr, rootSolve_relerr, u_rootSolve_min, u_rootSolve_max, u_rootSolve_target, u_rootSolve_soln
+  real(dp) :: rootSolve_abserr, rootSolve_relerr, theta_rootSolve_min, theta_rootSolve_max, theta_rootSolve_target, theta_rootSolve_soln
   integer :: fzeroFlag, mpol, ntor, jm, jn, index
 
   call system_clock(tic, countrate)
@@ -164,11 +164,11 @@ subroutine init_plasma
 
      ! Beginning of coordinate transformation.
      ! Set up high-resolution grid in the "new" theta coordinate:
-     nu_coordTransform = mpol * 2 
-     nv_coordTransform = ntor * 2
-     allocate(r_coordTransform(nu_coordTransform, nv_coordTransform), stat=iflag)
+     ntheta_coordTransform = mpol * 2 
+     nzeta_coordTransform = ntor * 2
+     allocate(r_coordTransform(ntheta_coordTransform, nzeta_coordTransform), stat=iflag)
      if (iflag .ne. 0) stop 'Allocation error!'
-     allocate(z_coordTransform(nu_coordTransform, nv_coordTransform), stat=iflag)
+     allocate(z_coordTransform(ntheta_coordTransform, nzeta_coordTransform), stat=iflag)
      if (iflag .ne. 0) stop 'Allocation error!'
      r_coordTransform = 0
      z_coordTransform = 0
@@ -177,19 +177,19 @@ subroutine init_plasma
      rootSolve_abserr = 1.0e-10_dp
      rootSolve_relerr = 1.0e-10_dp
      !open(unit=5,file="testStraightFieldLines",status='new',form='formatted')
-     !write (5,*) nu_coordTransform, nv_coordTransform
-     do iv = 1,nv_coordTransform
-        v = (iv-1.0_dp)/nv_coordTransform
-        do iu = 1,nu_coordTransform
+     !write (5,*) ntheta_coordTransform, nzeta_coordTransform
+     do izeta = 1,nzeta_coordTransform
+        zeta = (izeta-1.0_dp)/nzeta_coordTransform
+        do itheta = 1,ntheta_coordTransform
            ! For each value of the new coordinates, solve for the old theta:
-           u_rootSolve_target = (iu-1.0_dp)/nu_coordTransform
-           u_rootSolve_min = u_rootSolve_target - 0.3
-           u_rootSolve_max = u_rootSolve_target + 0.3
+           theta_rootSolve_target = (itheta-1.0_dp)/ntheta_coordTransform
+           theta_rootSolve_min = theta_rootSolve_target - 0.3
+           theta_rootSolve_max = theta_rootSolve_target + 0.3
 
-           call fzero(fzero_residual, u_rootSolve_min, u_rootSolve_max, u_rootSolve_target, &
+           call fzero(fzero_residual, theta_rootSolve_min, theta_rootSolve_max, theta_rootSolve_target, &
                 rootSolve_relerr, rootSolve_abserr, fzeroFlag)
-           ! Note: fzero returns its answer in u_rootSolve_min
-           u_rootSolve_soln = u_rootSolve_min
+           ! Note: fzero returns its answer in theta_rootSolve_min
+           theta_rootSolve_soln = theta_rootSolve_min
            if (fzeroFlag == 4) then
               stop "ERROR: fzero returned error 4: no sign change in residual"
            else if (fzeroFlag > 2) then
@@ -199,13 +199,14 @@ subroutine init_plasma
            r_temp = 0
            z_temp = 0
            do imn = 1, mnmax_vmec
-              angle = twopi*(xm_vmec(imn)*u_rootSolve_soln - xn_vmec(imn)*v/nfp)
+              !angle = twopi*(xm_vmec(imn)*theta_rootSolve_soln - xn_vmec(imn)*zeta/nfp)
+              angle = xm_vmec(imn)*theta_rootSolve_soln - xn_vmec(imn)*zeta
               r_temp = r_temp + rmnc_vmecLast(imn)*cos(angle)
               z_temp = z_temp + zmns_vmecLast(imn)*sin(angle)
            end do
-           r_coordTransform(iu,iv) = r_temp
-           z_coordTransform(iu,iv) = z_temp
-           !write(5,*) u_rootSolve_soln
+           r_coordTransform(itheta,izeta) = r_temp
+           z_coordTransform(itheta,izeta) = z_temp
+           !write(5,*) theta_rootSolve_soln
         end do
      end do
      !close(unit=5)
@@ -251,19 +252,19 @@ subroutine init_plasma
 
      call system_clock(tic1)
      do imn = 1, mnmax
-        dnorm = (1.0_dp)/(nu_coordTransform*nv_coordTransform)
+        dnorm = (1.0_dp)/(ntheta_coordTransform*nzeta_coordTransform)
         if (xm(imn).ne.0 .or. xn(imn).ne.0) dnorm = 2*dnorm
         r_temp = 0
         z_temp = 0
-        do iv = 1, nv_coordTransform
-           v = (iv-1.0_dp)/nv_coordTransform
-           do iu = 1, nu_coordTransform
-              u = (iu-1.0_dp)/nu_coordTransform
-              angle = twopi*(xm(imn)*u-xn(imn)*v/nfp)
+        do izeta = 1, nzeta_coordTransform
+           zeta = (izeta-1.0_dp)/nzeta_coordTransform
+           do itheta = 1, ntheta_coordTransform
+              theta = (itheta-1.0_dp)/ntheta_coordTransform
+              angle = xm(imn)*theta-xn(imn)*zeta
               cosangle = cos(angle)
               sinangle = sin(angle)
-              r_temp = r_temp + r_coordTransform(iu,iv) * cosangle
-              z_temp = z_temp + z_coordTransform(iu,iv) * sinangle
+              r_temp = r_temp + r_coordTransform(itheta,izeta) * cosangle
+              z_temp = z_temp + z_coordTransform(itheta,izeta) * sinangle
            end do
         end do
         rmnc(imn) = r_temp*dnorm
@@ -323,101 +324,102 @@ subroutine init_plasma
      
 
 
-  nvl_plasma = nv_plasma * nfp
-  nvl_middle = nv_middle * nfp
-  nvl_outer = nv_outer * nfp
+  nzetal_plasma = nzeta_plasma * nfp
+  nzetal_coil   = nzeta_coil   * nfp
 
-  allocate(u_plasma(nu_plasma),stat=iflag)
+  allocate(theta_plasma(ntheta_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(v_plasma(nv_plasma),stat=iflag)
+  allocate(zeta_plasma(nzeta_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(vl_plasma(nvl_plasma),stat=iflag)
+  allocate(zetal_plasma(nzetal_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
-  do i=1,nu_plasma
-     u_plasma(i) = (i-1.0_dp)/nu_plasma
+  do i=1,ntheta_plasma
+     theta_plasma(i) = twopi*(i-1.0_dp)/ntheta_plasma
   end do
 
-  do i=1,nv_plasma
-     v_plasma(i) = (i-1.0_dp)/nv_plasma
+  do i=1,nzeta_plasma
+     zeta_plasma(i) = twopi/nfp*(i-1.0_dp)/nzeta_plasma
   end do
 
-  do i=1,nvl_plasma
-     vl_plasma(i) = (i-1.0_dp)/nv_plasma
+  do i=1,nzetal_plasma
+     zetal_plasma(i) = twopi*(i-1.0_dp)/nzetal_plasma
   end do
 
   ! First coordinate is the Cartesian component x, y, or z
-  allocate(r_plasma(3,nu_plasma,nvl_plasma),stat=iflag)
+  allocate(r_plasma(3,ntheta_plasma,nzetal_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(drdu_plasma(3,nu_plasma,nvl_plasma),stat=iflag)
+  allocate(drdtheta_plasma(3,ntheta_plasma,nzetal_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(drdv_plasma(3,nu_plasma,nvl_plasma),stat=iflag)
+  allocate(drdzeta_plasma(3,ntheta_plasma,nzetal_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(normal_plasma(3,nu_plasma,nvl_plasma),stat=iflag)
+  allocate(normal_plasma(3,ntheta_plasma,nzetal_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
   r_plasma=0
-  drdu_plasma=0
-  drdv_plasma=0
+  drdtheta_plasma=0
+  drdzeta_plasma=0
  
-  do iv = 1,nvl_plasma
-     angle2 = twopi*vl_plasma(iv)/nfp
+  do izeta = 1,nzetal_plasma
+     angle2 = zetal_plasma(izeta)
      sinangle2 = sin(angle2)
      cosangle2 = cos(angle2)
-     dsinangle2dv = cosangle2*twopi/nfp
-     dcosangle2dv = -sinangle2*twopi/nfp
-     do iu = 1,nu_plasma
+     dsinangle2dzeta = cosangle2
+     dcosangle2dzeta = -sinangle2
+     do itheta = 1,ntheta_plasma
         do imn = 1,mnmax
-           angle = twopi*(xm(imn)*u_plasma(iu) - xn(imn)*vl_plasma(iv)/nfp)
+           angle = xm(imn)*theta_plasma(itheta) - xn(imn)*zetal_plasma(izeta)
            sinangle = sin(angle)
            cosangle = cos(angle)
-           dsinangledu = cosangle*twopi*xm(imn)
-           dcosangledu = -sinangle*twopi*xm(imn)
-           dsinangledv = -cosangle*twopi*xn(imn)/nfp
-           dcosangledv = sinangle*twopi*xn(imn)/nfp
+           dsinangledtheta = cosangle*xm(imn)
+           dcosangledtheta = -sinangle*xm(imn)
+           dsinangledzeta = -cosangle*xn(imn)
+           dcosangledzeta = sinangle*xn(imn)
 
-           r_plasma(1,iu,iv) = r_plasma(1,iu,iv) + rmnc(imn) * cosangle * cosangle2
-           r_plasma(2,iu,iv) = r_plasma(2,iu,iv) + rmnc(imn) * cosangle * sinangle2
-           r_plasma(3,iu,iv) = r_plasma(3,iu,iv) + zmns(imn) * sinangle
+           r_plasma(1,itheta,izeta) = r_plasma(1,itheta,izeta) + rmnc(imn) * cosangle * cosangle2
+           r_plasma(2,itheta,izeta) = r_plasma(2,itheta,izeta) + rmnc(imn) * cosangle * sinangle2
+           r_plasma(3,itheta,izeta) = r_plasma(3,itheta,izeta) + zmns(imn) * sinangle
 
-           drdu_plasma(1,iu,iv) = drdu_plasma(1,iu,iv) + rmnc(imn) * dcosangledu * cosangle2
-           drdu_plasma(2,iu,iv) = drdu_plasma(2,iu,iv) + rmnc(imn) * dcosangledu * sinangle2
-           drdu_plasma(3,iu,iv) = drdu_plasma(3,iu,iv) + zmns(imn) * dsinangledu
+           drdtheta_plasma(1,itheta,izeta) = drdtheta_plasma(1,itheta,izeta) + rmnc(imn) * dcosangledtheta * cosangle2
+           drdtheta_plasma(2,itheta,izeta) = drdtheta_plasma(2,itheta,izeta) + rmnc(imn) * dcosangledtheta * sinangle2
+           drdtheta_plasma(3,itheta,izeta) = drdtheta_plasma(3,itheta,izeta) + zmns(imn) * dsinangledzeta
 
-           drdv_plasma(1,iu,iv) = drdv_plasma(1,iu,iv) + rmnc(imn) * (dcosangledv * cosangle2 + cosangle * dcosangle2dv)
-           drdv_plasma(2,iu,iv) = drdv_plasma(2,iu,iv) + rmnc(imn) * (dcosangledv * sinangle2 + cosangle * dsinangle2dv)
-           drdv_plasma(3,iu,iv) = drdv_plasma(3,iu,iv) + zmns(imn) * dsinangledv
+           drdzeta_plasma(1,itheta,izeta) = drdzeta_plasma(1,itheta,izeta) + rmnc(imn) * (dcosangledzeta * cosangle2 + cosangle * dcosangle2dzeta)
+           drdzeta_plasma(2,itheta,izeta) = drdzeta_plasma(2,itheta,izeta) + rmnc(imn) * (dcosangledzeta * sinangle2 + cosangle * dsinangle2dzeta)
+           drdzeta_plasma(3,itheta,izeta) = drdzeta_plasma(3,itheta,izeta) + zmns(imn) * dsinangledzeta
 
            if (lasym) then
-              r_plasma(1,iu,iv) = r_plasma(1,iu,iv) + rmns(imn) * sinangle * cosangle2
-              r_plasma(2,iu,iv) = r_plasma(2,iu,iv) + rmns(imn) * sinangle * sinangle2
-              r_plasma(3,iu,iv) = r_plasma(3,iu,iv) + zmnc(imn) * cosangle
+              r_plasma(1,itheta,izeta) = r_plasma(1,itheta,izeta) + rmns(imn) * sinangle * cosangle2
+              r_plasma(2,itheta,izeta) = r_plasma(2,itheta,izeta) + rmns(imn) * sinangle * sinangle2
+              r_plasma(3,itheta,izeta) = r_plasma(3,itheta,izeta) + zmnc(imn) * cosangle
 
-              drdu_plasma(1,iu,iv) = drdu_plasma(1,iu,iv) + rmns(imn) * dsinangledu * cosangle2
-              drdu_plasma(2,iu,iv) = drdu_plasma(2,iu,iv) + rmns(imn) * dsinangledu * sinangle2
-              drdu_plasma(3,iu,iv) = drdu_plasma(3,iu,iv) + zmnc(imn) * dcosangledu
+              drdtheta_plasma(1,itheta,izeta) = drdtheta_plasma(1,itheta,izeta) + rmns(imn) * dsinangledtheta * cosangle2
+              drdtheta_plasma(2,itheta,izeta) = drdtheta_plasma(2,itheta,izeta) + rmns(imn) * dsinangledtheta * sinangle2
+              drdtheta_plasma(3,itheta,izeta) = drdtheta_plasma(3,itheta,izeta) + zmnc(imn) * dcosangledtheta
 
-              drdv_plasma(1,iu,iv) = drdv_plasma(1,iu,iv) + rmns(imn) * (dsinangledv * cosangle2 + sinangle * dcosangle2dv)
-              drdv_plasma(2,iu,iv) = drdv_plasma(2,iu,iv) + rmns(imn) * (dsinangledv * sinangle2 + sinangle * dsinangle2dv)
-              drdv_plasma(3,iu,iv) = drdv_plasma(3,iu,iv) + zmnc(imn) * dcosangledv
+              drdzeta_plasma(1,itheta,izeta) = drdzeta_plasma(1,itheta,izeta) + rmns(imn) * (dsinangledzeta * cosangle2 + sinangle * dcosangle2dzeta)
+              drdzeta_plasma(2,itheta,izeta) = drdzeta_plasma(2,itheta,izeta) + rmns(imn) * (dsinangledzeta * sinangle2 + sinangle * dsinangle2dzeta)
+              drdzeta_plasma(3,itheta,izeta) = drdzeta_plasma(3,itheta,izeta) + zmnc(imn) * dcosangledzeta
            end if
         end do
      end do
   end do
 
   ! Evaluate cross product
-  normal_plasma(1,:,:) = drdv_plasma(2,:,:) * drdu_plasma(3,:,:) - drdu_plasma(2,:,:) * drdv_plasma(3,:,:)
-  normal_plasma(2,:,:) = drdv_plasma(3,:,:) * drdu_plasma(1,:,:) - drdu_plasma(3,:,:) * drdv_plasma(1,:,:)
-  normal_plasma(3,:,:) = drdv_plasma(1,:,:) * drdu_plasma(2,:,:) - drdu_plasma(1,:,:) * drdv_plasma(2,:,:)
+  normal_plasma(1,:,:) = drdzeta_plasma(2,:,:) * drdtheta_plasma(3,:,:) - drdtheta_plasma(2,:,:) * drdzeta_plasma(3,:,:)
+  normal_plasma(2,:,:) = drdzeta_plasma(3,:,:) * drdtheta_plasma(1,:,:) - drdtheta_plasma(3,:,:) * drdzeta_plasma(1,:,:)
+  normal_plasma(3,:,:) = drdzeta_plasma(1,:,:) * drdtheta_plasma(2,:,:) - drdtheta_plasma(1,:,:) * drdzeta_plasma(2,:,:)
 
-  allocate(norm_normal_plasma(nu_plasma, nvl_plasma),stat=iflag)
+  allocate(norm_normal_plasma(ntheta_plasma, nzeta_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  norm_normal_plasma = sqrt(normal_plasma(1,:,:)**2 + normal_plasma(2,:,:)**2 + normal_plasma(3,:,:)**2)
+  norm_normal_plasma = sqrt(normal_plasma(1,:,1:nzeta_plasma)**2 &
+       + normal_plasma(2,:,1:nzeta_plasma)**2 &
+       + normal_plasma(3,:,1:nzeta_plasma)**2)
 
-  du_plasma = u_plasma(2)-u_plasma(1)
-  dv_plasma = v_plasma(2)-v_plasma(1)
+  dtheta_plasma = theta_plasma(2)-theta_plasma(1)
+  dzeta_plasma = zeta_plasma(2)-zeta_plasma(1)
 
-  area_plasma = du_plasma * dv_plasma * sum(norm_normal_plasma)
+  area_plasma = nfp * dtheta_plasma * dzeta_plasma * sum(norm_normal_plasma)
 
   select case (geometry_option_plasma)
   case (2,3,4)
@@ -440,18 +442,18 @@ subroutine init_plasma
 
 contains
 
-  function fzero_residual(u_old)
+  function fzero_residual(theta_old)
 
     implicit none
 
-    real(dp) :: u_old, fzero_residual
+    real(dp) :: theta_old, fzero_residual
     integer :: imn
 
     ! residual = twopi*(u_new - u_new_target) = (twopi*u_old + lambda) - u_new_target*twopi
-    fzero_residual = twopi*(u_old - u_rootSolve_target)
+    fzero_residual = theta_old - theta_rootSolve_target
 
     do imn = 1, mnmax_vmec
-       fzero_residual = fzero_residual + lmns(imn,ns)*sin(twopi*(xm_vmec(imn)*u_old - xn_vmec(imn)/nfp*v))
+       fzero_residual = fzero_residual + lmns(imn,ns)*sin(xm_vmec(imn)*theta_old - xn_vmec(imn)*zeta)
     end do
 
   end function fzero_residual

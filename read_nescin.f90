@@ -1,6 +1,6 @@
 subroutine read_nescin(nescin_filename, r, drdu, drdv, d2rdu2, d2rdudv, d2rdv2, nu, nvl, u, vl, compute_2nd_derivs)
 
-  use global_variables, only: nfp, geometry_option_outer, xm, xn, mnmax, rmnc_global => rmnc, zmns_global => zmns, rmns_global => rmns, zmnc_global => zmnc
+  use global_variables, only: nfp, xm, xn, mnmax, rmnc_global => rmnc, zmns_global => zmns, rmns_global => rmns, zmnc_global => zmnc
   use safe_open_mod
   use stel_constants
   use stel_kinds
@@ -56,45 +56,45 @@ subroutine read_nescin(nescin_filename, r, drdu, drdv, d2rdu2, d2rdudv, d2rdv2, 
   print *,"  Reading",ntotal,"Fourier modes from nescin"
 
 
-  if (geometry_option_outer==4) then
-     ! Clear arrays associated with the plasma surface for offsetting,
-     ! and replace them with the nescin values.
-     deallocate(xm,xn,rmnc_global,zmns_global)
-     if (allocated(rmns_global)) then
-        deallocate(rmns_global)
-     end if
-     if (allocated(zmnc_global)) then
-        deallocate(zmnc_global)
-     end if
-     mnmax = ntotal
-     allocate(xm(mnmax),stat=iflag)
-     if (iflag .ne. 0) stop "Allocation error! read_nescin 1"
-     allocate(xn(mnmax),stat=iflag)
-     if (iflag .ne. 0) stop "Allocation error! read_nescin 2"
-     allocate(rmnc_global(mnmax),stat=iflag)
-     if (iflag .ne. 0) stop "Allocation error! read_nescin 3"
-     allocate(zmns_global(mnmax),stat=iflag)
-     if (iflag .ne. 0) stop "Allocation error! read_nescin 4"
-     allocate(rmns_global(mnmax),stat=iflag)
-     if (iflag .ne. 0) stop "Allocation error! read_nescin 5"
-     allocate(zmnc_global(mnmax),stat=iflag)
-     if (iflag .ne. 0) stop "Allocation error! read_nescin 6"
-  end if
+!!$  if (geometry_option_outer==4) then
+!!$     ! Clear arrays associated with the plasma surface for offsetting,
+!!$     ! and replace them with the nescin values.
+!!$     deallocate(xm,xn,rmnc_global,zmns_global)
+!!$     if (allocated(rmns_global)) then
+!!$        deallocate(rmns_global)
+!!$     end if
+!!$     if (allocated(zmnc_global)) then
+!!$        deallocate(zmnc_global)
+!!$     end if
+!!$     mnmax = ntotal
+!!$     allocate(xm(mnmax),stat=iflag)
+!!$     if (iflag .ne. 0) stop "Allocation error! read_nescin 1"
+!!$     allocate(xn(mnmax),stat=iflag)
+!!$     if (iflag .ne. 0) stop "Allocation error! read_nescin 2"
+!!$     allocate(rmnc_global(mnmax),stat=iflag)
+!!$     if (iflag .ne. 0) stop "Allocation error! read_nescin 3"
+!!$     allocate(zmns_global(mnmax),stat=iflag)
+!!$     if (iflag .ne. 0) stop "Allocation error! read_nescin 4"
+!!$     allocate(rmns_global(mnmax),stat=iflag)
+!!$     if (iflag .ne. 0) stop "Allocation error! read_nescin 5"
+!!$     allocate(zmnc_global(mnmax),stat=iflag)
+!!$     if (iflag .ne. 0) stop "Allocation error! read_nescin 6"
+!!$  end if
 
   read (iunit, *)
   read (iunit, *)
   do k = 1, ntotal
      read (iunit, *) m, n, rmnc, zmns, rmns, zmnc
 
-     if (geometry_option_outer==4) then
-        ! Set arrays associated with offsetting surfaces
-        xm(k) = m
-        xn(k) = -n*nfp
-        rmnc_global(k) = rmnc
-        zmns_global(k) = zmns
-        rmns_global(k) = rmns
-        zmnc_global(k) = zmnc
-     end if
+!!$     if (geometry_option_outer==4) then
+!!$        ! Set arrays associated with offsetting surfaces
+!!$        xm(k) = m
+!!$        xn(k) = -n*nfp
+!!$        rmnc_global(k) = rmnc
+!!$        zmns_global(k) = zmns
+!!$        rmns_global(k) = rmns
+!!$        zmnc_global(k) = zmnc
+!!$     end if
 
      do iv = 1,nvl
         angle2 = twopi*vl(iv)/nfp

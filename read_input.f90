@@ -9,16 +9,15 @@ subroutine read_input
   integer :: fileUnit, didFileAccessWork, i
   integer, parameter :: uninitialized = -9999
 
-  namelist / regcoil / nu_plasma, nv_plasma, nu_middle, nv_middle, nu_outer, nv_outer, &
-       geometry_option_plasma, geometry_option_middle, geometry_option_outer, &
-       R0_plasma, R0_middle, R0_outer, a_plasma, a_middle, a_outer, &
-       separation_middle, separation_outer, wout_filename, pseudoinverse_thresholds, &
-       save_level, n_singular_vectors_to_save, nfp_imposed, symmetry_option, mode_order, &
-       mpol_plasma, ntor_plasma, mpol_middle, ntor_middle, mpol_outer, ntor_outer, &
-       nescin_filename_middle, nescin_filename_outer, efit_filename, efit_psiN, efit_num_modes, &
+  namelist / regcoil / ntheta_plasma, nzeta_plasma, ntheta_coil, nzeta_coil, &
+       geometry_option_plasma, geometry_option_coil, &
+       R0_plasma, R0_coil, a_plasma, a_coil, &
+       separation, wout_filename, &
+       save_level, nfp_imposed, symmetry_option, &
+       mpol_coil, ntor_coil, &
+       nescin_filename, efit_filename, efit_psiN, efit_num_modes, &
        mpol_transform_refinement, ntor_transform_refinement, &
-       basis_option_plasma, basis_option_middle, basis_option_outer, check_orthogonality, transfer_matrix_option, &
-       zero_first_transfer_vector_in_overlap, net_poloidal_current_Amperes, load_bnorm, bnorm_filename, &
+       net_poloidal_current_Amperes, load_bnorm, bnorm_filename, &
        shape_filename_plasma, N_alphas, alpha_min, alpha_max
 
   ! getcarg is in LIBSTELL
@@ -36,10 +35,6 @@ subroutine read_input
 
   outputFilename = "regcoil_out" // trim(inputFilename(12:)) // ".nc"
 
-  pseudoinverse_thresholds = uninitialized
-  ! Default: a single threshold
-  pseudoinverse_thresholds(1) = 1e-12
-
   fileUnit=11
   open(unit=fileUnit, file=inputFilename, action="read", status="old", iostat=didFileAccessWork)
   if (didFileAccessWork /= 0) then
@@ -56,45 +51,14 @@ subroutine read_input
   end if
   close(unit = fileUnit)
 
-  do i=1,nmax_pseudoinverse_thresholds
-     if (pseudoinverse_thresholds(i) == uninitialized) then
-        n_pseudoinverse_thresholds = i-1
-        exit
-     end if
-  end do
-
-  save_vectors_in_uv_format = (save_level<4)
-
-  if (transfer_matrix_option==2) then
-     print *,"Overriding settings for outer surface. It will be the same as the middle surface."
-     ! Override all settings for the outer surface. It will be the same as the middle surface.
-     nu_outer = nu_middle
-     nv_outer = nv_middle
-     ! While nu and nv must be the same on the outer and middle surfaces, in principle ntor and mpol coud be different.
-     ! For now, though, for simplicity I will force them to be the same.
-     mpol_outer = mpol_middle
-     ntor_outer = ntor_middle
-     geometry_option_outer = geometry_option_middle
-     nescin_filename_outer = nescin_filename_middle
-     separation_outer = separation_middle
-     R0_outer = R0_middle
-     a_outer = a_middle
-  end if
-
 
   print *,"Resolution parameters:"
   print *,"  nu_plasma =",nu_plasma
-  print *,"  nu_middle =",nu_middle
-  print *,"  nu_outer  =",nu_outer
+  print *,"  nu_coil   =",nu_coil
   print *,"  nv_plasma =",nv_plasma
-  print *,"  nv_middle =",nv_middle
-  print *,"  nv_outer  =",nv_outer
-  print *,"  mpol_plasma =",mpol_plasma
-  print *,"  mpol_middle =",mpol_middle
-  print *,"  mpol_outer  =",mpol_outer
-  print *,"  ntor_plasma =",ntor_plasma
-  print *,"  ntor_middle =",ntor_middle
-  print *,"  ntor_outer  =",ntor_outer
+  print *,"  nv_coil   =",nv_coil
+  print *,"  mpol_coil =",mpol_coil
+  print *,"  ntor_coil =",ntor_coil
 
   select case (symmetry_option)
   case (1)

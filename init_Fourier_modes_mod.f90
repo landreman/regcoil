@@ -6,8 +6,6 @@ contains
 
   subroutine init_Fourier_modes(mpol, ntor, mnmax, xm, xn)
 
-    use global_variables, only: mode_order
-
     implicit none
 
     integer :: mpol, ntor, mnmax
@@ -45,24 +43,6 @@ contains
     if (index .ne. mnmax) then
        print *,"Error!  index=",index," but mnmax=",mnmax
        stop
-    end if
-
-    if (mode_order==2) then
-       ! Flip order
-       allocate(xm_temp(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
-       allocate(xn_temp(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
-
-       xm_temp = xm
-       xn_temp = xn
-
-       do index = 1,mnmax
-          xm(index) = xm_temp(mnmax-index+1)
-          xn(index) = xn_temp(mnmax-index+1)
-       end do
-
-       deallocate(xm_temp, xn_temp)
     end if
 
   end subroutine init_Fourier_modes
