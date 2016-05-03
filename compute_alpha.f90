@@ -11,7 +11,7 @@ subroutine compute_alpha
   
   alpha(1) = 0
   do j = 1,nalpha-1
-     alpha(j+1) = alpha_min * exp((log(alpha_max/alpha_min)*(j-1))/(nalpha-1))
+     alpha(j+1) = alpha_min * exp((log(alpha_max/alpha_min)*(j-1))/(nalpha-2))
   end do
 
   print *,"We will use the following values of the regularization weight alpha:"

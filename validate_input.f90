@@ -87,8 +87,8 @@ subroutine validate_input
      end select
   end if
 
-  if (N_alphas < 1) then
-     stop "N_alphas must be at least 1."
+  if (nalpha < 1) then
+     stop "nalpha must be at least 1."
   end if
 
   if (alpha_min <= 0) then

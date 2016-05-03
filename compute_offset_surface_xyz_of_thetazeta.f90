@@ -1,4 +1,4 @@
-subroutine compute_offset_surface_xyz_of_uv(theta_rootSolve,zeta_rootSolve_target,x_offsetSurface,y_offsetSurface,z_offsetSurface,separation)
+subroutine compute_offset_surface_xyz_of_thetazeta(theta_rootSolve,zeta_rootSolve_target,x_offsetSurface,y_offsetSurface,z_offsetSurface,separation)
 
   use stel_kinds
 
@@ -57,4 +57,4 @@ contains
     
   end function fzero_residual
   
-end subroutine compute_offset_surface_xyz_of_uv
+end subroutine compute_offset_surface_xyz_of_thetazeta

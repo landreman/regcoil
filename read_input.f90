@@ -17,8 +17,9 @@ subroutine read_input
        mpol_coil, ntor_coil, &
        nescin_filename, efit_filename, efit_psiN, efit_num_modes, &
        mpol_transform_refinement, ntor_transform_refinement, &
-       net_poloidal_current_Amperes, load_bnorm, bnorm_filename, &
-       shape_filename_plasma, N_alphas, alpha_min, alpha_max
+       net_poloidal_current_Amperes, net_toroidal_current_Amperes, &
+       load_bnorm, bnorm_filename, &
+       shape_filename_plasma, nalpha, alpha_min, alpha_max
 
   ! getcarg is in LIBSTELL
   call getcarg(1, inputFilename, numargs)
@@ -29,11 +30,11 @@ subroutine read_input
   if (numargs>1) then
      print *,"WARNING: Arguments after the first will be ignored."
   end if
-  if (inputFilename(1:12) .ne. "regcoil_in.") then
+  if (inputFilename(1:11) .ne. "regcoil_in.") then
      stop "Input file must be named regcoil_in.XXX for some extension XXX"
   end if
 
-  outputFilename = "regcoil_out" // trim(inputFilename(12:)) // ".nc"
+  outputFilename = "regcoil_out" // trim(inputFilename(11:)) // ".nc"
 
   fileUnit=11
   open(unit=fileUnit, file=inputFilename, action="read", status="old", iostat=didFileAccessWork)
@@ -53,10 +54,10 @@ subroutine read_input
 
 
   print *,"Resolution parameters:"
-  print *,"  nu_plasma =",nu_plasma
-  print *,"  nu_coil   =",nu_coil
-  print *,"  nv_plasma =",nv_plasma
-  print *,"  nv_coil   =",nv_coil
+  print *,"  ntheta_plasma =",ntheta_plasma
+  print *,"  ntheta_coil   =",ntheta_coil
+  print *,"  nzeta_plasma =",nzeta_plasma
+  print *,"  nzeta_coil   =",nzeta_coil
   print *,"  mpol_coil =",mpol_coil
   print *,"  ntor_coil =",ntor_coil
 

@@ -29,6 +29,9 @@ module global_variables
   real(dp), dimension(:,:), allocatable :: Bnormal_from_plasma_current
   real(dp), dimension(:,:), allocatable :: Bnormal_from_net_coil_currents
   real(dp), dimension(:,:), allocatable :: matrix_B, matrix_J, inductance
+  real(dp), dimension(:,:), allocatable :: single_valued_current_potential_mn
+  real(dp), dimension(:,:,:), allocatable :: single_valued_current_potential_thetazeta
+  real(dp), dimension(:,:,:), allocatable :: current_potential
   real(dp), dimension(:), allocatable :: RHS_B, RHS_J
   real(dp), dimension(:,:,:), allocatable :: Bnormal_total
   real(dp), dimension(:,:,:), allocatable :: J2

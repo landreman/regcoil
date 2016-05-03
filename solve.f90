@@ -1,6 +1,7 @@
 subroutine solve
 
   use global_variables
+  use stel_constants
   use stel_kinds
 
   implicit none
@@ -8,14 +9,15 @@ subroutine solve
   integer :: iflag, tic, toc, countrate
   real(dp), dimension(:,:), allocatable :: matrix, this_current_potential
   real(dp), dimension(:), allocatable :: RHS, solution
-  real(dp), dimension(:), allocatable :: JDifference_x, JDifference_y, Jdifference_z, this_J2_times_N
+  real(dp), dimension(:), allocatable :: JDifference_x, JDifference_y, Jdifference_z
+  real(dp), dimension(:,:), allocatable :: this_J2_times_N
   real(dp) :: factor_theta, factor_zeta
-  integer :: ialpha
+  integer :: ialpha, itheta, izeta
 
   ! Variables needed by LAPACK:
   integer :: INFO, LWORK
   real(dp), dimension(:), allocatable :: WORK
- 
+  integer, dimension(:), allocatable :: IPIV
 
   allocate(matrix(num_basis_functions, num_basis_functions), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
@@ -24,6 +26,8 @@ subroutine solve
   allocate(solution(num_basis_functions), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(WORK(1), stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(IPIV(num_basis_functions), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
   allocate(chi2_B(nalpha), stat=iflag)
@@ -48,11 +52,12 @@ subroutine solve
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(JDifference_z(ntheta_coil*nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(this_J2_times_N(ntheta_coil*nzeta_coil), stat=iflag)
+  allocate(this_J2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
+
   ! Call LAPACK's DSYSV in query mode to determine the optimal size of the work array
-  call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, RHS, num_basis_functions, WORK, -1, INFO)
+  call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, IPIV, RHS, num_basis_functions, WORK, -1, INFO)
   LWORK = WORK(1)
   print *,"Optimal LWORK:",LWORK
   deallocate(WORK)
@@ -76,10 +81,10 @@ subroutine solve
      ! Compute solution = matrix \ RHS.
      ! Use LAPACK's DSYSV since matrix is symmetric.
      ! Note: RHS will be over-written with the solution.
-     call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, RHS, num_basis_functions, WORK, LWORK, INFO)
+     call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, IPIV, RHS, num_basis_functions, WORK, LWORK, INFO)
      if (INFO /= 0) then
-        print *, "Error in LAPACK DSYSV: INFO = ", INFO
-        stop
+        print *, "!!!!!! Error in LAPACK DSYSV: INFO = ", INFO
+        !stop
      end if
      solution = RHS
 

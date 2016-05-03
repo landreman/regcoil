@@ -1,7 +1,7 @@
 subroutine read_bnorm()
 
   use global_variables, only: load_bnorm, bnorm_filename, ntheta_plasma, nzeta_plasma, &
-       Bnormal_from_plasma_current, u_plasma, v_plasma, nfp, curpol
+       Bnormal_from_plasma_current, theta_plasma, zeta_plasma, nfp, curpol
   use safe_open_mod
   use stel_constants
   use stel_kinds
@@ -14,13 +14,10 @@ subroutine read_bnorm()
 
   call system_clock(tic,countrate)
 
-  allocate(Bnormal_from_plasma_current_1D(ntheta_plasma*nzeta_plasma),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
   allocate(Bnormal_from_plasma_current(ntheta_plasma,nzeta_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
   Bnormal_from_plasma_current = 0
-  Bnormal_from_plasma_current_1D = 0
 
   if (.not. load_bnorm) then
      print *,"Not reading a bnorm file, so Bnormal_from_plasma_current arrays will all be 0."
@@ -41,7 +38,7 @@ subroutine read_bnorm()
      do izeta = 1,nzeta_plasma
         do itheta = 1,ntheta_plasma
            Bnormal_from_plasma_current(itheta,izeta) = Bnormal_from_plasma_current(itheta,izeta) + &
-                bf*sin(mm*u_plasma(izeta) + nn*v_plasma(izeta)) ! DO I NEED NFP HERE ?!?!?!
+                bf*sin(mm*theta_plasma(izeta) + nn*zeta_plasma(izeta)) ! DO I NEED NFP HERE ?!?!?!
 
            ! To see that it should be (mu+nv) rather than (mu-nv) in the above line, you can examine
            ! BNORM/Sources/bn_fouri.f (where the arrays in the bnorm files are computed)
@@ -58,14 +55,14 @@ subroutine read_bnorm()
   ! bsubvmnc.  Let's undo this scaling now.
   Bnormal_from_plasma_current = Bnormal_from_plasma_current * curpol
 
-  ! I'll use an explicit loop here so there is no ambiguity about the order of theta vs zeta in the 1D vector:
-  do izeta = 1,nzeta_plasma
-     do itheta = 1,ntheta_plasma
-        Bnormal_from_plasma_current_1D((izeta-1)*ntheta_plasma+itheta) = Bnormal_from_plasma_current(itheta,izeta)
-     end do
-  end do
-  ! The syntax in the next line might be faster? But I should check the order.
-  !Bnormal_from_plasma_current_1D = reshape(Bnormal_from_plasma_current, (/ntheta_plasma*nzeta_plasma/))
+!!$  ! I'll use an explicit loop here so there is no ambiguity about the order of theta vs zeta in the 1D vector:
+!!$  do izeta = 1,nzeta_plasma
+!!$     do itheta = 1,ntheta_plasma
+!!$        Bnormal_from_plasma_current_1D((izeta-1)*ntheta_plasma+itheta) = Bnormal_from_plasma_current(itheta,izeta)
+!!$     end do
+!!$  end do
+!!$  ! The syntax in the next line might be faster? But I should check the order.
+!!$  !Bnormal_from_plasma_current_1D = reshape(Bnormal_from_plasma_current, (/ntheta_plasma*nzeta_plasma/))
 
   call system_clock(toc)
   print *,"Done reading B_normal on the plasma surface due to plasma current."

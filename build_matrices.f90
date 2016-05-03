@@ -4,6 +4,7 @@ subroutine build_matrices()
   use stel_constants
   use stel_kinds
   use omp_lib
+  use init_Fourier_modes_mod
   
   implicit none
 
@@ -14,8 +15,8 @@ subroutine build_matrices()
   integer :: minSymmetry, maxSymmetry, whichSymmetry, offset
   real(dp) :: angle, sinangle, cosangle
   real(dp), dimension(:,:,:), allocatable :: factor_for_h
-  real(dp), dimension(:), allocatable :: norm_normal_plasma_inv1D
-  real(dp), dimension(:,:), allocatable :: g_over_N_plasma
+  real(dp), dimension(:), allocatable :: norm_normal_plasma_inv1D, norm_normal_coil_inv1D
+  real(dp), dimension(:,:), allocatable :: g_over_N_plasma, f_x_over_N_coil, f_y_over_N_coil, f_z_over_N_coil
   
   ! Variables needed by BLAS DGEMM:
   character :: TRANSA, TRANSB
@@ -238,7 +239,15 @@ subroutine build_matrices()
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(norm_normal_plasma_inv1D(ntheta_plasma*nzeta_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(norm_normal_coil_inv1D(ntheta_coil*nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
   allocate(g_over_N_plasma(ntheta_plasma*nzeta_plasma,num_basis_functions),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(f_x_over_N_coil(ntheta_coil*nzeta_coil,num_basis_functions),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(f_y_over_N_coil(ntheta_coil*nzeta_coil,num_basis_functions),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(f_z_over_N_coil(ntheta_coil*nzeta_coil,num_basis_functions),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
   call system_clock(tic)
@@ -251,14 +260,21 @@ subroutine build_matrices()
   call system_clock(tic)
 
   norm_normal_plasma_inv1D = reshape(1/norm_normal_plasma, (/ ntheta_plasma*nzeta_plasma /))
+  norm_normal_coil_inv1D   = reshape(1/norm_normal_coil,   (/ ntheta_coil  *nzeta_coil /))
   do j = 1,num_basis_functions
      g_over_N_plasma(:,j) = g(:,j) * norm_normal_plasma_inv1D
+     f_x_over_N_coil(:,j) = f_x(:,j) * norm_normal_coil_inv1D
+     f_y_over_N_coil(:,j) = f_y(:,j) * norm_normal_coil_inv1D
+     f_z_over_N_coil(:,j) = f_z(:,j) * norm_normal_coil_inv1D
   end do
   matrix_B = 0
+  deallocate(norm_normal_plasma_inv1D)
+  deallocate(norm_normal_coil_inv1D)
 
   call system_clock(toc)
   print *,"Prepare for matrix_B:",real(toc-tic)/countrate,"sec."
   call system_clock(tic)
+
 
   ! Here we carry out matrix_B = (g ^ T) * g_over_N_plasma
   ! A = g
@@ -278,12 +294,86 @@ subroutine build_matrices()
 
   call system_clock(toc)
   print *,"matmul for matrix_B:",real(toc-tic)/countrate,"sec."
-  call system_clock(tic)
 
   deallocate(g_over_N_plasma)
-  deallocate(norm_normal_plasma_inv1D)
     
 
+
+  matrix_J = 0
+
+  call system_clock(tic)
+  ! Here we carry out matrix_J += dtheta*dzeta*(f_x ^ T) * f_x_over_N_coil
+  ! A = f_x
+  ! B = f_x_over_N_plasma
+  ! C = matrix_J
+  M = num_basis_functions ! # rows of A^T
+  N = num_basis_functions ! # cols of B
+  K = ntheta_coil*nzeta_coil ! Common dimension of A^T and B
+  LDA = K ! Would be M if not taking the transpose.
+  LDB = K
+  LDC = M
+  TRANSA = 'T' ! DO take a transpose!
+  TRANSB = 'N'
+  BLAS_ALPHA = dtheta_coil*dzeta_coil
+  BLAS_BETA=1
+  call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_x,LDA,f_x_over_N_coil,LDB,BLAS_BETA,matrix_J,LDC)
+
+  call system_clock(toc)
+  print *,"matmul 1 for matrix_J:",real(toc-tic)/countrate,"sec."
+
+  call system_clock(tic)
+  ! Here we carry out matrix_J += dtheta*dzeta*(f_y ^ T) * f_y_over_N_coil
+  ! A = f_y
+  ! B = f_y_over_N_plasma
+  ! C = matrix_J
+  M = num_basis_functions ! # rows of A^T
+  N = num_basis_functions ! # cols of B
+  K = ntheta_coil*nzeta_coil ! Common dimension of A^T and B
+  LDA = K ! Would be M if not taking the transpose.
+  LDB = K
+  LDC = M
+  TRANSA = 'T' ! DO take a transpose!
+  TRANSB = 'N'
+  BLAS_ALPHA = dtheta_coil*dzeta_coil
+  BLAS_BETA=1
+  call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_y,LDA,f_y_over_N_coil,LDB,BLAS_BETA,matrix_J,LDC)
+
+  call system_clock(toc)
+  print *,"matmul 2 for matrix_J:",real(toc-tic)/countrate,"sec."
+
+  call system_clock(tic)
+  ! Here we carry out matrix_J += dtheta*dzeta*(f_z ^ T) * f_z_over_N_coil
+  ! A = f_z
+  ! B = f_z_over_N_plasma
+  ! C = matrix_J
+  M = num_basis_functions ! # rows of A^T
+  N = num_basis_functions ! # cols of B
+  K = ntheta_coil*nzeta_coil ! Common dimension of A^T and B
+  LDA = K ! Would be M if not taking the transpose.
+  LDB = K
+  LDC = M
+  TRANSA = 'T' ! DO take a transpose!
+  TRANSB = 'N'
+  BLAS_ALPHA = dtheta_coil*dzeta_coil
+  BLAS_BETA=1
+  call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_z,LDA,f_z_over_N_coil,LDB,BLAS_BETA,matrix_J,LDC)
+
+  call system_clock(toc)
+  print *,"matmul 3 for matrix_J:",real(toc-tic)/countrate,"sec."
+
+
+
+  call system_clock(tic)
+
+  RHS_J = (matmul(d_x, f_x_over_N_coil) + matmul(d_y, f_y_over_N_coil) + matmul(d_z, f_z_over_N_coil)) &
+       * (dtheta_coil*dzeta_coil)
+
+  call system_clock(toc)
+  print *,"Matmuls for RHS_J:",real(toc-tic)/countrate,"sec."
+
+  deallocate(f_x_over_N_coil)
+  deallocate(f_y_over_N_coil)
+  deallocate(f_z_over_N_coil)
 
 end subroutine build_matrices
 

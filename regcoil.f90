@@ -8,7 +8,8 @@ program regcoil
 
   integer :: tic, toc, countrate
 
-  print *,"This is REGCOIL, a regularized least-squares method for computing stellarator coils."
+  print *,"This is REGCOIL,"
+  print *,"a regularized least-squares method for computing stellarator coils."
   call system_clock(tic,countrate)
 
   call read_input()

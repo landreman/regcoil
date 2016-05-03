@@ -255,7 +255,6 @@ subroutine write_output
 
   call cdf_write(ncid, vn_norm_normal_plasma,  norm_normal_plasma)
   call cdf_write(ncid, vn_norm_normal_coil,  norm_normal_coil)
-  call cdf_write(ncid, vn_basis_functions, basis_functions)
   call cdf_write(ncid, vn_Bnormal_from_plasma_current, Bnormal_from_plasma_current)
   call cdf_write(ncid, vn_Bnormal_from_net_coil_currents, Bnormal_from_net_coil_currents)
   call cdf_write(ncid, vn_inductance, inductance)
