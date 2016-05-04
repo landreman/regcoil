@@ -18,49 +18,50 @@ load_bnorm = false;
 bnorm_filename = '/Users/mattland/Box Sync/MATLAB/bnorm.d23p4_tm';
 
 % This next value will be over-written if a VMEC equilibrium is used:
-net_poloidal_current_Amperes = 1.0;
-net_toroidal_current_Amperes = 0.0;
+net_poloidal_current_Amperes = 1.4;
+net_toroidal_current_Amperes = 0.3;
 
 % Resolution parameters:
 % **********************************
-%{
+
 ntheta_plasma = 35;
 ntheta_coil   = 34;
 nzeta_plasma = 33;
 nzeta_coil   = 32;
 mpol_coil  = 16;
 ntor_coil  = 15;
-%}
+
+%{
 ntheta_plasma = 128;
 ntheta_coil   = 128;
 nzeta_plasma = 128;
 nzeta_coil   = 128;
 mpol_coil  = 32;
 ntor_coil  = 32;
-
+%}
 % Options for the shape of the plasma surface:
 % **********************************
-geometry_option_plasma = 2;
+geometry_option_plasma = 0;
 R0_plasma = 3.0;
-a_plasma = 0.5;
+a_plasma = 1.0;
 nfp_imposed = 1;
 %woutFilename = 'C:\Users\landreman\Box Sync\MATLAB\20150601-01 Sfincs version 3\equilibria\wout_w7x_standardConfig.nc';
 woutFilename = '/Users/mattland/Box Sync/MATLAB/wout_d23p4_tm.nc';
 
 % Options for the shape of the coil surface:
 % **********************************
-geometry_option_coil = 3;
+geometry_option_coil = 0;
 R0_coil = 3.0;
-a_coil = 1.0;
+a_coil = 1.7;
 separation = 0.35;
 %nescin_filename = 'nescin.w7x_standardConfig_separation0.3';
 nescin_filename = '/Users/mattland/Box Sync/MATLAB/nescin.w7x_winding_surface_from_Drevlak';
 
 % Options for the regularization parameter:
 % **********************************
-nalpha = 30;
-alpha_min = 1e-30;
-alpha_max = 1e-8;
+nalpha = 4;
+alpha_min = 0.1;
+alpha_max = 10;
 
 % Plotting options:
 % **********************************
@@ -92,7 +93,7 @@ compareToFortran = true;
 %compareToFortran = false;
 
 %fortranNcFilename = 'C:\Users\landreman\Box Sync\MATLAB\bdistrib_out.compareToMatlab.nc';
-fortranNcFilename = 'C:\Users\landreman\Box Sync\MATLAB\bdistrib_out.w7x.nc';
+fortranNcFilename = '/Users/mattland/regcoil/examples/compareToMatlab1/regcoil_out.compareToMatlab1.nc';
 
 fortranComparisonThreshhold_abs = 1e-5;
 
@@ -352,25 +353,25 @@ compareVariableToFortran('area_plasma')
                 y = (R0_to_use + a * cos(theta_2D)) .* sin(zetal_2D);
                 z = a * sin(theta_2D);
                 
-                dxdtheta = -a * sin(theta_2D) .* cos(zeta_2D);
-                dydtheta = -a * sin(theta_2D) .* sin(zeta_2D);
+                dxdtheta = -a * sin(theta_2D) .* cos(zetal_2D);
+                dydtheta = -a * sin(theta_2D) .* sin(zetal_2D);
                 dzdtheta = a * cos(theta_2D);
                 
-                dxdzeta = -(R0_to_use + a * cos(theta_2D)) .* sin(zeta_2D);
-                dydzeta =  (R0_to_use + a * cos(theta_2D)) .* cos(zeta_2D);
+                dxdzeta = -(R0_to_use + a * cos(theta_2D)) .* sin(zetal_2D);
+                dydzeta =  (R0_to_use + a * cos(theta_2D)) .* cos(zetal_2D);
                 dzdzeta = zeros(size(theta_2D));
                 
                 if false
-                    d2xdtheta2 = -a * cos(theta_2D) .* cos(zeta_2D);
-                    d2ydtheta2 = -a * cos(theta_2D) .* sin(zeta_2D);
+                    d2xdtheta2 = -a * cos(theta_2D) .* cos(zetal_2D);
+                    d2ydtheta2 = -a * cos(theta_2D) .* sin(zetal_2D);
                     d2zdtheta2 = -a * sin(theta_2D);
 
-                    d2xdthetadzeta =  a * sin(theta_2D) .* sin(zeta_2D);
-                    d2ydthetadzeta = -a * sin(theta_2D) .* cos(zeta_2D);
+                    d2xdthetadzeta =  a * sin(theta_2D) .* sin(zetal_2D);
+                    d2ydthetadzeta = -a * sin(theta_2D) .* cos(zetal_2D);
                     d2zdthetadzeta = zeros(size(theta_2D));
 
-                    d2xdzeta2 = -(R0_to_use + a * cos(theta_2D)) .* cos(zeta_2D);
-                    d2ydzeta2 = -(R0_to_use + a * cos(theta_2D)) .* sin(zeta_2D);
+                    d2xdzeta2 = -(R0_to_use + a * cos(theta_2D)) .* cos(zetal_2D);
+                    d2ydzeta2 = -(R0_to_use + a * cos(theta_2D)) .* sin(zetal_2D);
                     d2zdzeta2 = zeros(size(theta_2D));
                 end
             case 2
@@ -822,8 +823,8 @@ single_valued_current_potential_mn = zeros(num_basis_functions, nalpha);
 single_valued_current_potential_thetazeta = zeros(ntheta_coil, nzeta_coil, nalpha);
 current_potential = zeros(ntheta_coil, nzeta_coil, nalpha);
 [zeta_coil_2D, theta_coil_2D] = meshgrid(zeta_coil, theta_coil);
-chi2_B = zeros(nalpha);
-chi2_J = zeros(nalpha);
+chi2_B = zeros(nalpha,1);
+chi2_J = zeros(nalpha,1);
 Bnormal_total = zeros(ntheta_plasma, nzeta_plasma, nalpha);
 J2 = zeros(ntheta_coil, nzeta_coil, nalpha);
 

@@ -382,7 +382,7 @@ subroutine init_plasma
 
            drdtheta_plasma(1,itheta,izeta) = drdtheta_plasma(1,itheta,izeta) + rmnc(imn) * dcosangledtheta * cosangle2
            drdtheta_plasma(2,itheta,izeta) = drdtheta_plasma(2,itheta,izeta) + rmnc(imn) * dcosangledtheta * sinangle2
-           drdtheta_plasma(3,itheta,izeta) = drdtheta_plasma(3,itheta,izeta) + zmns(imn) * dsinangledzeta
+           drdtheta_plasma(3,itheta,izeta) = drdtheta_plasma(3,itheta,izeta) + zmns(imn) * dsinangledtheta
 
            drdzeta_plasma(1,itheta,izeta) = drdzeta_plasma(1,itheta,izeta) + rmnc(imn) * (dcosangledzeta * cosangle2 + cosangle * dcosangle2dzeta)
            drdzeta_plasma(2,itheta,izeta) = drdzeta_plasma(2,itheta,izeta) + rmnc(imn) * (dcosangledzeta * sinangle2 + cosangle * dsinangle2dzeta)

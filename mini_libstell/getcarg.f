@@ -11,29 +11,29 @@ C   L o c a l   V a r i a b l e s
 C-----------------------------------------------
       INTEGER :: numchars
 C-----------------------------------------------
-!DEC$ IF DEFINED (WIN32)
-      INTEGER :: nargs
-      numargs = nargs() - 1
-      CALL getarg(narg, arg, numchars)
-!DEC$ ELSEIF DEFINED (LINUX)
+c$$$!DEC$ IF DEFINED (WIN32)
+c$$$      INTEGER :: nargs
+c$$$      numargs = nargs() - 1
+c$$$      CALL getarg(narg, arg, numchars)
+c$$$!DEC$ ELSEIF DEFINED (LINUX)
       INTEGER iargc
       numargs = iargc()
       CALL getarg(narg, arg)
-!DEC$ ELSEIF DEFINED (VMS)
-      CALL lib$get_foreign(arg,,numchars)
-      numargs = MIN(1,numchars)
-!DEC$ ELSEIF DEFINED (CRAY)
-      INTEGER :: ier
-      INTEGER ipxfargc
-      numargs = ipxfargc()
-      CALL pxfgetarg(narg, arg, numchars, ier)
-!DEC$ ELSEIF DEFINED (MACOSX)
-      numargs = command_argument_count()
-      CALL get_command_argument(narg,arg)
-!DEC$ ELSE
-      INTEGER iargc, getarg
-      numargs = iargc()
-      numchars = getarg(narg, arg)
-!DEC$ ENDIF
+c$$$!DEC$ ELSEIF DEFINED (VMS)
+c$$$      CALL lib$get_foreign(arg,,numchars)
+c$$$      numargs = MIN(1,numchars)
+c$$$!DEC$ ELSEIF DEFINED (CRAY)
+c$$$      INTEGER :: ier
+c$$$      INTEGER ipxfargc
+c$$$      numargs = ipxfargc()
+c$$$      CALL pxfgetarg(narg, arg, numchars, ier)
+c$$$!DEC$ ELSEIF DEFINED (MACOSX)
+c$$$      numargs = command_argument_count()
+c$$$      CALL get_command_argument(narg,arg)
+c$$$!DEC$ ELSE
+c$$$      INTEGER iargc, getarg
+c$$$      numargs = iargc()
+c$$$      numchars = getarg(narg, arg)
+c$$$!DEC$ ENDIF
 
       END SUBROUTINE getcarg

@@ -104,7 +104,7 @@ C-----------------------------------------------
 !DEC$ IF DEFINED (NETCDF)
       PRIVATE :: read_mgrid_bin, read_mgrid_nc
 !DEC$ ELSE
-      PRIVATE :: read_mgrid_bin
+! MJL 20160504      PRIVATE :: read_mgrid_bin
 !DEC$ ENDIF
       
       CONTAINS
@@ -133,7 +133,7 @@ C-----------------------------------------------
 !DEC$ IF DEFINED (VMS)
       CHARACTER(LEN=*), PARAMETER :: mgrid_defarea='vmec$:[makegrid]'
 !DEC$ ELSE
-      CHARACTER(LEN=*), PARAMETER :: mgrid_defarea='$HOME/vmec/MAKEGRID'
+! MJL 20160504      CHARACTER(LEN=*), PARAMETER :: mgrid_defarea='$HOME/vmec/MAKEGRID'
 !DEC$ ENDIF
 C-----------------------------------------------
 C   L o c a l   V a r i a b l e s

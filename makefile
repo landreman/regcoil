@@ -8,32 +8,37 @@
 #   module unload cray-libsci
 # to avoid warning messages about libsci during compiling.
 
-#ifdef NERSC_HOST
-#        HOSTNAME = $(NERSC_HOST)
-#else
-#        HOSTNAME="laptop"
-#endif
-#
-#ifeq $(HOSTNAME) "edison"
-#	FC = ftn
-#	EXTRA_COMPILE_FLAGS = -openmp -mkl
-#	EXTRA_LINK_FLAGS =  -openmp -mkl -Wl,-ydgemm_
-#else ifeq $(HOSTNAME) "cori"
-#else
-#	# Laptop
-#	FC = gcc
-#	
-#endif
+ifdef NERSC_HOST
+        HOSTNAME = $(NERSC_HOST)
+else
+        HOSTNAME="laptop"
+endif
+
+ifeq ($(HOSTNAME),edison)
+	FC = ftn
+	EXTRA_COMPILE_FLAGS = -openmp -mkl
+	EXTRA_LINK_FLAGS =  -openmp -mkl -Wl,-ydgemm_
+else ifeq ($(HOSTNAME),cori)
+	FC = ftn
+	EXTRA_COMPILE_FLAGS = -openmp -mkl
+	EXTRA_LINK_FLAGS =  -openmp -mkl -Wl,-ydgemm_
+else
+	#FC = gfortran
+	FC = mpif90
+	#EXTRA_COMPILE_FLAGS = -openmp -I/opt/local/include -ffree-form -ffree-line-length-none -ffixed-line-length-none -traditional
+	EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none
+	EXTRA_LINK_FLAGS =  -fopenmp
+endif
 ##LIBSTELL_DIR = /global/homes/l/landrema/20150410-02-stellinstall_245_edison/LIBSTELL/Release
 
-FC = ftn
+#FC = ftn
 
-# NERSC documentation recommends against specifying -O3
-EXTRA_COMPILE_FLAGS = -openmp -mkl
-#EXTRA_COMPILE_FLAGS = -O3 -openmp -mkl
-#EXTRA_COMPILE_FLAGS = -O0 -g -openmp
-# -mkl MUST APPEAR AT THE END!!
-EXTRA_LINK_FLAGS =  -openmp -mkl -Wl,-ydgemm_
+## NERSC documentation recommends against specifying -O3
+#EXTRA_COMPILE_FLAGS = -openmp -mkl
+##EXTRA_COMPILE_FLAGS = -O3 -openmp -mkl
+##EXTRA_COMPILE_FLAGS = -O0 -g -openmp
+## -mkl MUST APPEAR AT THE END!!
+#EXTRA_LINK_FLAGS =  -openmp -mkl -Wl,-ydgemm_
 
 # Above, the link flag "-Wl,-ydgemm_" causes the linker to report which version of DGEMM (the BLAS3 matrix-matrix-multiplication subroutine) is used.
 
@@ -72,3 +77,9 @@ test: $(TARGET)
 
 retest: $(TARGET)
 	@echo "Testing existing output files for examples without re-running then." && cd examples && export REGCOIL_RETEST=yes && ./runExamples.py
+
+test_make:
+	@echo HOSTNAME is $(HOSTNAME)
+	@echo FC is $(FC)
+	@echo EXTRA_COMPILE_FLAGS is $(EXTRA_COMPILE_FLAGS)
+	@echo EXTRA_LINK_FLAGS is $(EXTRA_LINK_FLAGS)
