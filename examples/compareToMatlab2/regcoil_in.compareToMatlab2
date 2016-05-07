@@ -19,17 +19,18 @@
 !  mpol_coil = 16
 !  ntor_coil = 15
 
-  geometry_option_plasma = 0
-  R0_plasma = 3.0
-  a_plasma = 1.0
-  nfp_imposed = 1
+  geometry_option_plasma = 2
+  !R0_plasma = 3.0
+  !a_plasma = 1.0
+  wout_filename = '../../equilibria/wout_d23p4_tm.nc'
 
-  geometry_option_coil=0
-  R0_coil = 3.0
-  a_coil = 1.7
+  geometry_option_coil=3
+  !R0_coil = 3.0
+  !a_coil = 1.7
+  nescin_filename = '../../equilibria/nescin.w7x_winding_surface_from_Drevlak'
 
   net_poloidal_current_Amperes = 1.4
   net_toroidal_current_Amperes = 0.3
 
-  symmetry_option = 3
+  symmetry_option = 1
 /

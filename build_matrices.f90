@@ -104,9 +104,9 @@ subroutine build_matrices()
                  f_z(index_coil, imn) = cosangle*(xn_coil(imn)*drdtheta_coil(3,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(3,itheta_coil,izeta_coil))
               else
                  basis_functions(index_coil, imn+offset) = cosangle
-                 f_x(index_coil, imn) = -sinangle*(xn_coil(imn)*drdtheta_coil(1,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(1,itheta_coil,izeta_coil))
-                 f_y(index_coil, imn) = -sinangle*(xn_coil(imn)*drdtheta_coil(2,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(2,itheta_coil,izeta_coil))
-                 f_z(index_coil, imn) = -sinangle*(xn_coil(imn)*drdtheta_coil(3,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(3,itheta_coil,izeta_coil))
+                 f_x(index_coil, imn+offset) = -sinangle*(xn_coil(imn)*drdtheta_coil(1,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(1,itheta_coil,izeta_coil))
+                 f_y(index_coil, imn+offset) = -sinangle*(xn_coil(imn)*drdtheta_coil(2,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(2,itheta_coil,izeta_coil))
+                 f_z(index_coil, imn+offset) = -sinangle*(xn_coil(imn)*drdtheta_coil(3,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(3,itheta_coil,izeta_coil))
               end if
            end do
         end do

@@ -42,7 +42,7 @@ subroutine solve
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(single_valued_current_potential_mn(num_basis_functions,nalpha), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(Bnormal_total(ntheta_coil,nzeta_coil,nalpha), stat=iflag)
+  allocate(Bnormal_total(ntheta_plasma,nzeta_plasma,nalpha), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(J2(ntheta_coil,nzeta_coil,nalpha), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
