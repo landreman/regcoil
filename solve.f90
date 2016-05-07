@@ -68,7 +68,7 @@ subroutine solve
   factor_theta = net_toroidal_current_Amperes / twopi
 
   do ialpha = 1,nalpha
-     print "(a,f10.3,a,i3,a,i3,a)"," Solving system for alpha=",alpha(ialpha)," (",ialpha," of ",nalpha,")"
+     print "(a,e10.3,a,i3,a,i3,a)"," Solving system for alpha=",alpha(ialpha)," (",ialpha," of ",nalpha,")"
      call system_clock(tic,countrate)
 
      matrix = matrix_B + alpha(ialpha) * matrix_J

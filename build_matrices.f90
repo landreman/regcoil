@@ -59,11 +59,11 @@ subroutine build_matrices()
   allocate(d_z(ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
-  d_x = reshape((net_poloidal_current_Amperes * drdtheta_coil(1,:,:) - net_toroidal_current_Amperes * drdzeta_coil(1,:,:)) / twopi, &
+  d_x = reshape((net_poloidal_current_Amperes * drdtheta_coil(1,:,1:nzeta_coil) - net_toroidal_current_Amperes * drdzeta_coil(1,:,1:nzeta_coil)) / twopi, &
        (/ ntheta_coil*nzeta_coil /))
-  d_y = reshape((net_poloidal_current_Amperes * drdtheta_coil(2,:,:) - net_toroidal_current_Amperes * drdzeta_coil(2,:,:)) / twopi, &
+  d_y = reshape((net_poloidal_current_Amperes * drdtheta_coil(2,:,1:nzeta_coil) - net_toroidal_current_Amperes * drdzeta_coil(2,:,1:nzeta_coil)) / twopi, &
        (/ ntheta_coil*nzeta_coil /))
-  d_z = reshape((net_poloidal_current_Amperes * drdtheta_coil(3,:,:) - net_toroidal_current_Amperes * drdzeta_coil(3,:,:)) / twopi, &
+  d_z = reshape((net_poloidal_current_Amperes * drdtheta_coil(3,:,1:nzeta_coil) - net_toroidal_current_Amperes * drdzeta_coil(3,:,1:nzeta_coil)) / twopi, &
        (/ ntheta_coil*nzeta_coil /))
 
   select case (symmetry_option)
@@ -144,16 +144,19 @@ subroutine build_matrices()
   print *,"  Number of OpenMP threads:",omp_get_num_threads()
   !$OMP END MASTER
 
+  ! Note: the outermost loop below must be over the plasma variables rather than over the coil variables.
+  ! This ensures the multiple threads write to different indices in h() rather than to the same indices in h(),
+  ! in which case the h(index+plasma)=h(index_plasma)+... update does not work properly.
   !$OMP DO PRIVATE(index_plasma,index_coil,x,y,z,izetal_coil,dx,dy,dz,dr2inv,dr32inv)
-  do izeta_coil = 1, nzeta_coil
-     do itheta_coil = 1, ntheta_coil
-        index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
-        do izeta_plasma = 1, nzeta_plasma
-           do itheta_plasma = 1, ntheta_plasma
-              index_plasma = (izeta_plasma-1)*ntheta_plasma + itheta_plasma
-              x = r_plasma(1,itheta_plasma,izeta_plasma)
-              y = r_plasma(2,itheta_plasma,izeta_plasma)
-              z = r_plasma(3,itheta_plasma,izeta_plasma)
+  do izeta_plasma = 1, nzeta_plasma
+     do itheta_plasma = 1, ntheta_plasma
+        index_plasma = (izeta_plasma-1)*ntheta_plasma + itheta_plasma
+        x = r_plasma(1,itheta_plasma,izeta_plasma)
+        y = r_plasma(2,itheta_plasma,izeta_plasma)
+        z = r_plasma(3,itheta_plasma,izeta_plasma)
+        do izeta_coil = 1, nzeta_coil
+           do itheta_coil = 1, ntheta_coil
+              index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
               do l_coil = 0, (nfp-1)
                  izetal_coil = izeta_coil + l_coil*nzeta_coil
                  dx = x - r_coil(1,itheta_coil,izetal_coil)
@@ -194,9 +197,11 @@ subroutine build_matrices()
   call system_clock(toc)
   print *,"Done. Took",real(toc-tic)/countrate,"sec."
   
-  h = h * (mu0/(8*pi*pi))
+  h = h * (dtheta_coil*dzeta_coil*mu0/(8*pi*pi))
+  inductance = inductance * (mu0/(4*pi))
   deallocate(factor_for_h)
   Bnormal_from_net_coil_currents = reshape(h, (/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma
+  !Bnormal_from_net_coil_currents = transpose(reshape(h, (/ nzeta_plasma, ntheta_plasma /))) / norm_normal_plasma
   
   call system_clock(tic)
 
@@ -252,7 +257,7 @@ subroutine build_matrices()
 
   call system_clock(tic)
 
-  RHS_B = dtheta_plasma*dzeta_plasma*matmul( &
+  RHS_B = -dtheta_plasma*dzeta_plasma*matmul( &
        reshape(Bnormal_from_plasma_current+Bnormal_from_net_coil_currents, (/ ntheta_plasma*nzeta_plasma /)), g)
 
   call system_clock(toc)
@@ -276,7 +281,7 @@ subroutine build_matrices()
   call system_clock(tic)
 
 
-  ! Here we carry out matrix_B = (g ^ T) * g_over_N_plasma
+  ! Here we carry out matrix_B = (dtheta*dzeta)*(g ^ T) * g_over_N_plasma
   ! A = g
   ! B = g_over_N_plasma
   ! C = inductance
@@ -288,7 +293,7 @@ subroutine build_matrices()
   LDC = M
   TRANSA = 'T' ! DO take a transpose!
   TRANSB = 'N'
-  BLAS_ALPHA = -dtheta_plasma*dzeta_plasma
+  BLAS_ALPHA = dtheta_plasma*dzeta_plasma
   BLAS_BETA=0
   call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,g,LDA,g_over_N_plasma,LDB,BLAS_BETA,matrix_B,LDC)
 

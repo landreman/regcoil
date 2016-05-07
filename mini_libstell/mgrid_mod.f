@@ -105,6 +105,7 @@ C-----------------------------------------------
       PRIVATE :: read_mgrid_bin, read_mgrid_nc
 !DEC$ ELSE
 ! MJL 20160504      PRIVATE :: read_mgrid_bin
+      PRIVATE :: read_mgrid_bin
 !DEC$ ENDIF
       
       CONTAINS
@@ -134,6 +135,7 @@ C-----------------------------------------------
       CHARACTER(LEN=*), PARAMETER :: mgrid_defarea='vmec$:[makegrid]'
 !DEC$ ELSE
 ! MJL 20160504      CHARACTER(LEN=*), PARAMETER :: mgrid_defarea='$HOME/vmec/MAKEGRID'
+      CHARACTER(LEN=*), PARAMETER :: mgrid_defarea='$HOME/vmec/MAKEGRID'
 !DEC$ ENDIF
 C-----------------------------------------------
 C   L o c a l   V a r i a b l e s

@@ -100,7 +100,7 @@ subroutine write_output
        nalpha_dim = (/'nalpha'/)
 
   ! Arrays with dimension 2:
-  character(len=*), parameter, dimension(*) :: &
+  character(len=*), parameter, dimension(2) :: &
        ntheta_nzeta_plasma_dim = (/'ntheta_plasma','nzeta_plasma'/), &
        ntheta_nzeta_coil_dim = (/'ntheta_coil','nzeta_coil'/), &
        nthetanzeta_plasma_nthetanzeta_coil_dim = (/'ntheta_nzeta_plasma','ntheta_nzeta_coil'/), &
