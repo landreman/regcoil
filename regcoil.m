@@ -19,6 +19,7 @@ bnorm_filename = '/Users/mattland/Box Sync/MATLAB/bnorm.d23p4_tm';
 
 % This next value will be over-written if a VMEC equilibrium is used:
 net_poloidal_current_Amperes = 1.4;
+%net_toroidal_current_Amperes = 0.3;
 net_toroidal_current_Amperes = 0.3;
 
 % Resolution parameters:
@@ -30,7 +31,14 @@ nzeta_plasma = 33;
 nzeta_coil   = 32;
 mpol_coil  = 16;
 ntor_coil  = 15;
-
+%{
+ntheta_plasma = 32;
+ntheta_coil   = 32;
+nzeta_plasma = 32;
+nzeta_coil   = 32;
+mpol_coil  = 8;
+ntor_coil  = 8;
+%}
 %{
 ntheta_plasma = 128;
 ntheta_coil   = 128;
@@ -59,9 +67,9 @@ nescin_filename = '/Users/mattland/Box Sync/MATLAB/nescin.w7x_winding_surface_fr
 
 % Options for the regularization parameter:
 % **********************************
-nalpha = 4;
-alpha_min = 0.1;
-alpha_max = 10;
+nalpha = 5;
+alpha_min = 1e-30;
+alpha_max = 1;
 
 % Plotting options:
 % **********************************
@@ -95,7 +103,7 @@ compareToFortran = true;
 %fortranNcFilename = 'C:\Users\landreman\Box Sync\MATLAB\bdistrib_out.compareToMatlab.nc';
 fortranNcFilename = '/Users/mattland/regcoil/examples/compareToMatlab1/regcoil_out.compareToMatlab1.nc';
 
-fortranComparisonThreshhold_abs = 1e-5;
+fortranComparisonThreshhold_abs = 1e-11;
 
 % *************************************************************************
 % *************************************************************************
@@ -152,6 +160,8 @@ compareVariableToFortran('nzeta_plasma')
 compareVariableToFortran('nzeta_coil')
 compareVariableToFortran('geometry_option_plasma')
 compareVariableToFortran('geometry_option_coil')
+compareVariableToFortran('net_poloidal_current_Amperes')
+compareVariableToFortran('net_toroidal_current_Amperes')
 
 % *********************************************
 % Set up range of alpha to try
@@ -664,7 +674,10 @@ for itheta_plasma = 1:ntheta_plasma
         h(itheta_plasma,izeta_plasma) = sum(sum(tempMatrix));
     end
 end
-h = h * (dtheta_plasma*dzeta_plasma*mu0/(8*pi*pi));
+
+dtheta_coil = theta_coil(2)-theta_coil(1);
+dzeta_coil = zeta_coil(2)-zeta_coil(1);
+h = h * (dtheta_coil*dzeta_coil*mu0/(8*pi*pi));
 Bnormal_from_net_coil_currents = h ./ norm_normal_plasma;
 Bnormal_from_net_coil_currents_1D = reshape(Bnormal_from_net_coil_currents, [ntheta_plasma*nzeta_plasma,1]);
 fprintf('Done. Took %g seconds.\n',toc)
@@ -773,8 +786,6 @@ fprintf('Done. Took %g sec.\n',toc)
 compareVariableToFortran('inductance')
 
 tic1 = tic;
-dtheta_coil = theta_coil(2)-theta_coil(1);
-dzeta_coil = zeta_coil(2)-zeta_coil(1);
 g = (dtheta_coil * dzeta_coil) * inductance * basis_functions;
 fprintf('Matmul: %g\n',toc(tic1))
 
@@ -786,13 +797,13 @@ compareVariableToFortran('g')
 % *********************************************
 
 norm_normal_plasma_vec = reshape(norm_normal_plasma,[ntheta_plasma*nzeta_plasma,1]);
-norm_normal_coil_vec = reshape(norm_normal_coil,[ntheta_coil*nzeta_coil,1]);
+norm_normal_coil_vec   = reshape(norm_normal_coil,  [ntheta_coil*nzeta_coil,    1]);
 diag_inv_norm_normal_plasma = diag(1./norm_normal_plasma_vec);
-diag_inv_norm_normal_coil = diag(1./norm_normal_coil_vec);
+diag_inv_norm_normal_coil   = diag(1./norm_normal_coil_vec);
 
 tic
 fprintf('Computing RHS_B and RHS_J.\n')
-RHS_B = (dtheta_plasma*dzeta_plasma)*((Bnormal_from_plasma_current_1D + Bnormal_from_net_coil_currents_1D)' * g)';
+RHS_B = (-dtheta_plasma*dzeta_plasma)*((Bnormal_from_plasma_current_1D + Bnormal_from_net_coil_currents_1D)' * g)';
 RHS_J = (dtheta_coil*dzeta_coil)*((d_x ./ norm_normal_coil_vec)' * f_x + (d_y ./ norm_normal_coil_vec)' * f_y + (d_z ./ norm_normal_coil_vec)' * f_z)';
 fprintf('Done. Took %g sec.\n',toc)
 
@@ -801,7 +812,7 @@ compareVariableToFortran('RHS_J')
 
 tic
 fprintf('Computing matrix_B.\n')
-matrix_B = (-dtheta_plasma*dzeta_plasma)*( (g') * diag_inv_norm_normal_plasma * g );
+matrix_B = (dtheta_plasma*dzeta_plasma)*( (g') * diag_inv_norm_normal_plasma * g );
 fprintf('Done. Took %g sec.\n',toc)
 compareVariableToFortran('matrix_B')
 
@@ -832,10 +843,10 @@ for ialpha=1:nalpha
     fprintf('Solving system for alpha = %g  (%d of %d)\n',alpha(ialpha), ialpha, nalpha)
     
     tic
-    %matrix = matrix_B + alpha(ialpha) * matrix_J;
-    %RHS    = RHS_B    + alpha(ialpha) * RHS_J;
-    matrix = matrix_B - alpha(ialpha) * matrix_J;
-    RHS    = RHS_B    - alpha(ialpha) * RHS_J;
+    matrix = matrix_B + alpha(ialpha) * matrix_J;
+    RHS    = RHS_B    + alpha(ialpha) * RHS_J;
+    %matrix = matrix_B - alpha(ialpha) * matrix_J;
+    %RHS    = RHS_B    - alpha(ialpha) * RHS_J;
     fprintf('  Summing matrices: %g sec.\n',toc)
     
     tic
