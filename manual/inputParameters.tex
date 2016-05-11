@@ -94,20 +94,15 @@ Regardless of this parameter, all singular \emph{values} will be saved in the ou
 
 \param{save\_level}
 {integer}
-{3}
+{2}
 {Always}
 {Option related determining how many variables are saved in the \netCDF~output file.  The larger the value, the smaller the output file.\\
 
 {\ttfamily save\_level} = 0: Save everything.\\
 
-{\ttfamily save\_level} = 1: Do not save the basis functions or $K_{mn}$.\\
+{\ttfamily save\_level} = 1: Do not save the inductance matrix.\\
 
-{\ttfamily save\_level} = 2: Also do not save the inductance matrices.\\
-
-{\ttfamily save\_level} = 3: Also do not save the {\ttfamily drdu}, {\ttfamily drdv}, and {\ttfamily normal} arrays.\\
-
-{\ttfamily save\_level} = 4: Also do not save the singular vectors as functions of $(u,v)$. The vectors
-will still be saved as amplitudes of basis functions.
+{\ttfamily save\_level} = 2: Also do not save the matrix $g$.\\
 }
 
 \myhrule

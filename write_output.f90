@@ -172,8 +172,12 @@ subroutine write_output
   call cdf_define(ncid, vn_norm_normal_coil,  norm_normal_coil,  dimname=ntheta_nzeta_coil_dim)
   call cdf_define(ncid, vn_Bnormal_from_plasma_current, Bnormal_from_plasma_current, dimname=ntheta_nzeta_plasma_dim)
   call cdf_define(ncid, vn_Bnormal_from_net_coil_currents, Bnormal_from_net_coil_currents, dimname=ntheta_nzeta_plasma_dim)
-  call cdf_define(ncid, vn_inductance, inductance, dimname=nthetanzeta_plasma_nthetanzeta_coil_dim)
-  call cdf_define(ncid, vn_g, g, dimname=nthetanzeta_plasma_basis_dim)
+  if (save_level<1) then
+     call cdf_define(ncid, vn_inductance, inductance, dimname=nthetanzeta_plasma_nthetanzeta_coil_dim)
+  end if
+  if (save_level<2) then
+     call cdf_define(ncid, vn_g, g, dimname=nthetanzeta_plasma_basis_dim)
+  end if
   call cdf_define(ncid, vn_matrix_B, matrix_B, dimname=basis_basis_dim)
   call cdf_define(ncid, vn_matrix_J, matrix_J, dimname=basis_basis_dim)
   call cdf_define(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn, &
@@ -257,8 +261,12 @@ subroutine write_output
   call cdf_write(ncid, vn_norm_normal_coil,  norm_normal_coil)
   call cdf_write(ncid, vn_Bnormal_from_plasma_current, Bnormal_from_plasma_current)
   call cdf_write(ncid, vn_Bnormal_from_net_coil_currents, Bnormal_from_net_coil_currents)
-  call cdf_write(ncid, vn_inductance, inductance)
-  call cdf_write(ncid, vn_g, g)
+  if (save_level<1) then
+     call cdf_write(ncid, vn_inductance, inductance)
+  end if
+  if (save_level<2) then
+     call cdf_write(ncid, vn_g, g)
+  end if
   call cdf_write(ncid, vn_matrix_B, matrix_B)
   call cdf_write(ncid, vn_matrix_J, matrix_J)
   call cdf_write(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn)

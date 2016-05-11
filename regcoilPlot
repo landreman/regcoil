@@ -145,6 +145,16 @@ plt.tight_layout()
 
 
 ########################################################
+# Pick the alpha values to show in the 2D plots
+########################################################
+
+max_nalpha_for_contour_plots = 16
+numPlots = min(nalpha,max_nalpha_for_contour_plots)
+ialpha_to_plot = np.sort(list(set(map(int,np.linspace(1,nalpha,numPlots)))))
+numPlots = len(ialpha_to_plot)
+print "ialpha_to_plot:",ialpha_to_plot
+
+########################################################
 # Now make plot of chi^2 over alpha scan
 ########################################################
 
@@ -159,37 +169,42 @@ plt.subplot(numRows,numCols,1)
 plt.loglog(chi2_J,chi2_B,'.-r')
 plt.xlabel('chi2_J')
 plt.ylabel('chi2_B')
+for j in range(numPlots):
+    plt.plot(chi2_J[ialpha_to_plot[j]-1], chi2_B[ialpha_to_plot[j]-1],'ob')
 
 plt.subplot(numRows,numCols,2)
 plt.loglog(alpha,chi2_B,'.-r')
 plt.xlabel('alpha')
 plt.ylabel('chi2_B')
+for j in range(numPlots):
+    plt.plot(alpha[ialpha_to_plot[j]-1], chi2_B[ialpha_to_plot[j]-1],'ob')
 
 plt.subplot(numRows,numCols,3)
 plt.semilogy(alpha,chi2_B,'.-r')
 plt.xlabel('alpha')
 plt.ylabel('chi2_B')
+for j in range(numPlots):
+    plt.plot(alpha[ialpha_to_plot[j]-1], chi2_B[ialpha_to_plot[j]-1],'ob')
 
 plt.subplot(numRows,numCols,5)
 plt.loglog(alpha,chi2_J,'.-r')
 plt.xlabel('alpha')
 plt.ylabel('chi2_J')
+for j in range(numPlots):
+    plt.plot(alpha[ialpha_to_plot[j]-1], chi2_J[ialpha_to_plot[j]-1],'ob')
 
 plt.subplot(numRows,numCols,6)
 plt.semilogy(alpha,chi2_J,'.-r')
 plt.xlabel('alpha')
 plt.ylabel('chi2_J')
+for j in range(numPlots):
+    plt.plot(alpha[ialpha_to_plot[j]-1], chi2_J[ialpha_to_plot[j]-1],'ob')
 
 plt.tight_layout()
 
 ########################################################
 # Prepare for plotting current potential
 ########################################################
-
-max_nalpha_for_contour_plots = 6
-numPlots = min(nalpha,max_nalpha_for_contour_plots)
-ialpha_to_plot = list(set(map(int,np.linspace(1,nalpha,numPlots))))
-numPlots = len(ialpha_to_plot)
 
 numCols = int(np.ceil(np.sqrt(numPlots)))
 numRows = int(np.ceil(numPlots*1.0/numCols))

@@ -101,12 +101,12 @@ C-----------------------------------------------
      1    rlim, zlim, reslim, seplim
       CHARACTER(LEN=1) :: mgrid_mode
 
-!DEC$ IF DEFINED (NETCDF)
+!!DEC$ IF DEFINED (NETCDF)
       PRIVATE :: read_mgrid_bin, read_mgrid_nc
-!DEC$ ELSE
+!!DEC$ ELSE
 ! MJL 20160504      PRIVATE :: read_mgrid_bin
-      PRIVATE :: read_mgrid_bin
-!DEC$ ENDIF
+!      PRIVATE :: read_mgrid_bin
+!!DEC$ ENDIF
       
       CONTAINS
 
@@ -131,12 +131,11 @@ C-----------------------------------------------
 C-----------------------------------------------
 C   L o c a l   P a r a m e t e r s
 C-----------------------------------------------
-!DEC$ IF DEFINED (VMS)
-      CHARACTER(LEN=*), PARAMETER :: mgrid_defarea='vmec$:[makegrid]'
-!DEC$ ELSE
-! MJL 20160504      CHARACTER(LEN=*), PARAMETER :: mgrid_defarea='$HOME/vmec/MAKEGRID'
+!!DEC$ IF DEFINED (VMS)
+!      CHARACTER(LEN=*), PARAMETER :: mgrid_defarea='vmec$:[makegrid]'
+!!DEC$ ELSE
       CHARACTER(LEN=*), PARAMETER :: mgrid_defarea='$HOME/vmec/MAKEGRID'
-!DEC$ ENDIF
+!!DEC$ ENDIF
 C-----------------------------------------------
 C   L o c a l   V a r i a b l e s
 C-----------------------------------------------
