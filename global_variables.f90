@@ -4,6 +4,8 @@ module global_variables
 
   implicit none
 
+  integer :: general_option=1
+
   integer :: ntheta_plasma=64, nzeta_plasma=64, nzetal_plasma
   integer :: ntheta_coil=64, nzeta_coil=64, nzetal_coil
 
@@ -17,6 +19,7 @@ module global_variables
   character(len=200) :: wout_filename=""
   character(len=200) :: shape_filename_plasma=""
   character(len=200) :: nescin_filename=""
+  character(len=200) :: nescout_filename=""
   character(len=200) :: efit_filename=""
   character(len=200) :: outputFilename
 

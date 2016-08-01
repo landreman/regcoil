@@ -11,6 +11,20 @@ In this section we describe all the parameters which can be included in the inpu
 
 \section{General parameters}
 
+\param{general\_option}
+{integer}
+{1}
+{Always}
+{Determines the overall flow of program execution.\\
+
+{\ttfamily general\_option} = 1: Compute the current potential for a range of alpha.\\
+
+{\ttfamily general\_option} = 2: Do not compute the current potential, but rather load the current potential computed
+by NESCOIL in the file \parlink{nescout\_filename}, reporting the $\chi^2_B$ and $\chi^2_J$ for it.
+}
+
+\myhrule
+
 \param{transfer\_matrix\_option}
 {integer}
 {1}

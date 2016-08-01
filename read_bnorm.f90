@@ -38,7 +38,7 @@ subroutine read_bnorm()
      do izeta = 1,nzeta_plasma
         do itheta = 1,ntheta_plasma
            Bnormal_from_plasma_current(itheta,izeta) = Bnormal_from_plasma_current(itheta,izeta) + &
-                bf*sin(mm*theta_plasma(itheta) + nn*nfp*zeta_plasma(izeta)) ! DO I NEED NFP HERE ?!?!?!
+                bf*sin(mm*theta_plasma(itheta) + nn*nfp*zeta_plasma(izeta))
 
            ! To see that it should be (mu+nv) rather than (mu-nv) in the above line, you can examine
            ! BNORM/Sources/bn_fouri.f (where the arrays in the bnorm files are computed)

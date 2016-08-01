@@ -26,7 +26,7 @@ else
 	#FC = gfortran
 	FC = mpif90
 	#EXTRA_COMPILE_FLAGS = -openmp -I/opt/local/include -ffree-form -ffree-line-length-none -ffixed-line-length-none -traditional
-	EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none
+	EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none -cpp
 	EXTRA_LINK_FLAGS =  -fopenmp
 endif
 ##LIBSTELL_DIR = /global/homes/l/landrema/20150410-02-stellinstall_245_edison/LIBSTELL/Release

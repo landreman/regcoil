@@ -7,7 +7,7 @@ function regcoil()
 
 clear
 
-symmetry_option = 1;
+symmetry_option = 3;
 % 1 = sines only
 % 2 = cosines only
 % 3 = both sines and cosines
@@ -25,12 +25,21 @@ net_toroidal_current_Amperes = 0.3;
 % Resolution parameters:
 % **********************************
 
+ntheta_plasma = 32;
+ntheta_coil   = 33;
+nzeta_plasma = 34;
+nzeta_coil   = 35;
+mpol_coil  = 15;
+ntor_coil  = 8;
+
+%{
 ntheta_plasma = 35;
 ntheta_coil   = 34;
 nzeta_plasma = 33;
 nzeta_coil   = 32;
 mpol_coil  = 16;
 ntor_coil  = 15;
+%}
 %{
 ntheta_plasma = 32;
 ntheta_coil   = 32;
@@ -49,21 +58,23 @@ ntor_coil  = 32;
 %}
 % Options for the shape of the plasma surface:
 % **********************************
-geometry_option_plasma = 0;
+geometry_option_plasma = 2;
 R0_plasma = 3.0;
 a_plasma = 1.0;
 nfp_imposed = 1;
 %woutFilename = 'C:\Users\landreman\Box Sync\MATLAB\20150601-01 Sfincs version 3\equilibria\wout_w7x_standardConfig.nc';
-woutFilename = '/Users/mattland/Box Sync/MATLAB/wout_d23p4_tm.nc';
+%woutFilename = '/Users/mattland/Box Sync/MATLAB/wout_d23p4_tm.nc';
+woutFilename = 'equilibria/wout_d23p4_tm.nc';
 
 % Options for the shape of the coil surface:
 % **********************************
-geometry_option_coil = 0;
+geometry_option_coil = 3;
 R0_coil = 3.0;
 a_coil = 1.7;
 separation = 0.35;
 %nescin_filename = 'nescin.w7x_standardConfig_separation0.3';
-nescin_filename = '/Users/mattland/Box Sync/MATLAB/nescin.w7x_winding_surface_from_Drevlak';
+%nescin_filename = '/Users/mattland/Box Sync/MATLAB/nescin.w7x_winding_surface_from_Drevlak';
+nescin_filename = 'equilibria/nescin.w7x_winding_surface_from_Drevlak';
 
 % Options for the regularization parameter:
 % **********************************
@@ -101,7 +112,8 @@ compareToFortran = true;
 %compareToFortran = false;
 
 %fortranNcFilename = 'C:\Users\landreman\Box Sync\MATLAB\bdistrib_out.compareToMatlab.nc';
-fortranNcFilename = '/Users/mattland/regcoil/examples/compareToMatlab1/regcoil_out.compareToMatlab1.nc';
+%fortranNcFilename = '/Users/mattland/regcoil/examples/compareToMatlab1/regcoil_out.compareToMatlab1.nc';
+fortranNcFilename = 'examples/compareToMatlab2/regcoil_out.compareToMatlab2.nc';
 
 fortranComparisonThreshhold_abs = 1e-11;
 
@@ -160,8 +172,6 @@ compareVariableToFortran('nzeta_plasma')
 compareVariableToFortran('nzeta_coil')
 compareVariableToFortran('geometry_option_plasma')
 compareVariableToFortran('geometry_option_coil')
-compareVariableToFortran('net_poloidal_current_Amperes')
-compareVariableToFortran('net_toroidal_current_Amperes')
 
 % *********************************************
 % Set up range of alpha to try
@@ -229,6 +239,9 @@ switch geometry_option_plasma
     otherwise
         curpol = 1;
 end
+
+compareVariableToFortran('net_poloidal_current_Amperes')
+compareVariableToFortran('net_toroidal_current_Amperes')
 
 nzetal_plasma = nzeta_plasma * nfp;
 nzetal_coil   = nzeta_coil   * nfp;
@@ -917,12 +930,12 @@ semilogy(alpha, chi2_B,'o-')
 xlabel('alpha')
 ylabel('chi2 B')
 
-subplot(numRows,numCols,4)
+subplot(numRows,numCols,5)
 loglog(alpha, chi2_J,'o-')
 xlabel('alpha')
 ylabel('chi2 J')
 
-subplot(numRows,numCols,5)
+subplot(numRows,numCols,6)
 semilogy(alpha, chi2_J,'o-')
 xlabel('alpha')
 ylabel('chi2 J')

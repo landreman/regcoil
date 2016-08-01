@@ -19,7 +19,7 @@ subroutine read_input
        mpol_transform_refinement, ntor_transform_refinement, &
        net_poloidal_current_Amperes, net_toroidal_current_Amperes, &
        load_bnorm, bnorm_filename, &
-       shape_filename_plasma, nalpha, alpha_min, alpha_max
+       shape_filename_plasma, nalpha, alpha_min, alpha_max, general_option, nescout_filename
 
   ! getcarg is in LIBSTELL
   call getcarg(1, inputFilename, numargs)

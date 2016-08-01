@@ -1,7 +1,8 @@
 # -*- mode: makefile -*-
 
 OBJ_FILES = regcoil.o build_matrices.o \
-	compute_alpha.o compute_offset_surface_xyz_of_thetazeta.o \
+	compute_alpha.o compute_diagnostics_for_nescout_potential.o \
+	compute_offset_surface_xyz_of_thetazeta.o \
 	expand_plasma_surface.o fzero.o global_variables.o \
 	init_Fourier_modes_mod.o init_coil_surface.o init_plasma.o \
 	init_surface_mod.o read_bnorm.o \
@@ -12,6 +13,7 @@ OBJ_FILES = regcoil.o build_matrices.o \
 regcoil.o: global_variables.o
 build_matrices.o: global_variables.o init_Fourier_modes_mod.o
 compute_alpha.o: global_variables.o
+compute_diagnostics_for_nescout_potential.o: global_variables.o
 compute_offset_surface_xyz_of_thetazeta.o: global_variables.o
 expand_plasma_surface.o: global_variables.o
 fzero.o: 

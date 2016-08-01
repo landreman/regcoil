@@ -2,7 +2,7 @@
 
 program regcoil
 
-  use global_variables, only: totalTime, outputFilename
+  use global_variables, only: totalTime, outputFilename, general_option
 
   implicit none
 
@@ -24,13 +24,21 @@ program regcoil
   call read_bnorm()
   call build_matrices()
 
-  ! Assemble transfer matrix and compute its SVD:
-  call solve()
+  if (general_option==1) then
+     call solve()
+  elseif (general_option==2) then
+     call compute_diagnostics_for_nescout_potential()
+  else
+     print *,"Invalid general_option:",general_option
+     stop
+  end if
 
   call system_clock(toc)
   totalTime = real(toc-tic)/countrate
 
-  call write_output()
+  if (general_option==1) then
+     call write_output()
+  end if
 
   print *,"REGCOIL complete. Total time=",totalTime,"sec."
   print *,"You can run regcoilPlot ",trim(outputFilename)," to plot results."
