@@ -172,12 +172,13 @@ plt.ylabel('chi2_B')
 for j in range(numPlots):
     plt.plot(chi2_J[ialpha_to_plot[j]-1], chi2_B[ialpha_to_plot[j]-1],'ob')
 
-plt.subplot(numRows,numCols,2)
-plt.loglog(alpha,chi2_B,'.-r')
-plt.xlabel('alpha')
-plt.ylabel('chi2_B')
-for j in range(numPlots):
-    plt.plot(alpha[ialpha_to_plot[j]-1], chi2_B[ialpha_to_plot[j]-1],'ob')
+if nalpha>1:
+    plt.subplot(numRows,numCols,2)
+    plt.loglog(alpha,chi2_B,'.-r')
+    plt.xlabel('alpha')
+    plt.ylabel('chi2_B')
+    for j in range(numPlots):
+        plt.plot(alpha[ialpha_to_plot[j]-1], chi2_B[ialpha_to_plot[j]-1],'ob')
 
 plt.subplot(numRows,numCols,3)
 plt.semilogy(alpha,chi2_B,'.-r')
@@ -186,12 +187,13 @@ plt.ylabel('chi2_B')
 for j in range(numPlots):
     plt.plot(alpha[ialpha_to_plot[j]-1], chi2_B[ialpha_to_plot[j]-1],'ob')
 
-plt.subplot(numRows,numCols,5)
-plt.loglog(alpha,chi2_J,'.-r')
-plt.xlabel('alpha')
-plt.ylabel('chi2_J')
-for j in range(numPlots):
-    plt.plot(alpha[ialpha_to_plot[j]-1], chi2_J[ialpha_to_plot[j]-1],'ob')
+if nalpha>1:
+    plt.subplot(numRows,numCols,5)
+    plt.loglog(alpha,chi2_J,'.-r')
+    plt.xlabel('alpha')
+    plt.ylabel('chi2_J')
+    for j in range(numPlots):
+        plt.plot(alpha[ialpha_to_plot[j]-1], chi2_J[ialpha_to_plot[j]-1],'ob')
 
 plt.subplot(numRows,numCols,6)
 plt.semilogy(alpha,chi2_J,'.-r')
