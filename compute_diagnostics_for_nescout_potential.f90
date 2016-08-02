@@ -61,7 +61,7 @@ subroutine compute_diagnostics_for_nescout_potential
 
   matrix = matrix_B
   RHS    =    RHS_B
-  ialpha=1
+  ialpha=0
 
   print *,"Opening nescout file",nescout_filename
   call safe_open(iunit, istat, trim(nescout_filename), 'old', 'formatted')
@@ -92,6 +92,7 @@ subroutine compute_diagnostics_for_nescout_potential
      end do innerLoop
      ! If we make it here, then we have found a current potential.
      print *,"Found a current potential in the nescout file."
+     ialpha = ialpha + 1
      solution = 0
      do mm = 0,mpol_coil
         !print *,"mm=",mm

@@ -1,8 +1,13 @@
 subroutine validate_input
 
   use global_variables
+  use safe_open_mod
 
   implicit none
+
+  integer :: iunit = 7, istat, j
+  character(300) :: myline
+  character(*), parameter :: matchString = "---- Phi(m,n) for"
 
   if (ntheta_plasma < 1) then
      stop "Error! ntheta_plasma must be >= 1."
@@ -97,6 +102,32 @@ subroutine validate_input
 
   if (alpha_max < alpha_min) then
      stop "alpha_max must be >= alpha_min."
+  end if
+
+  if (general_option<1) then
+     stop "general_option must be at least 1."
+  end if
+  if (general_option>2) then
+     stop "general_option must be no more than 2."
+  end if
+
+  if (general_option==2) then
+     ! Replace nalpha with the number of current potentials saved in the nescout file.
+     print *,"Opening nescout file",nescout_filename
+     call safe_open(iunit, istat, trim(nescout_filename), 'old', 'formatted')
+     if (istat .ne. 0) then
+        stop 'Error opening nescout file'
+     endif
+     j = 0
+     do
+        read (iunit,"(a)",iostat=istat) myline
+        if (istat<0) exit
+        if (myline(:len(matchString)) == matchString) then
+           j = j + 1
+        end if
+     end do
+     print *,"Detected",j,"current potentials in the nescout file."
+     nalpha = j
   end if
 
 end subroutine validate_input
