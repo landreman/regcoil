@@ -1,6 +1,7 @@
 subroutine compute_diagnostics_for_nescout_potential
 
   use global_variables
+  use safe_open_mod
   use stel_constants
   use stel_kinds
 
@@ -93,30 +94,34 @@ subroutine compute_diagnostics_for_nescout_potential
      print *,"Found a current potential in the nescout file."
      solution = 0
      do mm = 0,mpol_coil
+        !print *,"mm=",mm
         do nn = -ntor_coil, ntor_coil
+           !print *," nn=",nn
            read (iunit, *) m, n, amplitude
            if ((m .ne. mm) .or. (n .ne. nn)) then
               print *,"Something weird happened:"
-              print *,"mm=",mm
-              print *,"m =",m
-              print *,"nn=",nn
-              print *,"n =",n
+              print *,"regcoil m=",mm
+              print *,"nescoil m=",m
+              print *,"regcoil n=",nn
+              print *,"nescoil n=",n
+              print *,"Are you sure the mpol and ntor for regcoil match those from nescoil?"
               stop
            end if
            if (mm==0 .and. nn>0) then
-              solution(nn) = amplitude*2 ! Need *2 here since nescoil prints n<0 values for m=0.
+              solution(nn) = amplitude*(-2) ! Need *2 here since nescoil prints n<0 values for m=0.
            elseif (mm>0) then
               ! Nescoil convention is m*u+n*v
               ! Regcoil convention is m*u-n*v
               ! so need to swap sign of n.
-              index = ntor_coil + mm*(ntor_coil*2+1) + ntor_coil - nn + 1
-              if ((xm(index) .ne. m) .or. (xn(index) .ne. nfp*n)) then
+              index = ntor_coil + (mm-1)*(ntor_coil*2+1) + ntor_coil - nn + 1
+              !print *,"index=",index
+              if ((xm_coil(index) .ne. m) .or. (xn_coil(index) .ne. -nfp*n)) then
                  print *,"Indexing error:"
                  print *,"index=",index
                  print *,"m =",m
-                 print *,"xm=",xm(index)
+                 print *,"xm_coil=",xm_coil(index)
                  print *,"n =",n
-                 print *,"xn=",xn(index)
+                 print *,"xn_coil=",xn_coil(index)
                  print *,"Are you sure the mpol and ntor for regcoil match those from nescoil?"
                  stop
               end if
@@ -125,7 +130,7 @@ subroutine compute_diagnostics_for_nescout_potential
         end do
      end do
      ! Convert from nescoil normalization to regcoil normalization:
-     solution = solution * mu0/curpol_nescout
+     solution = solution * curpol_nescout / mu0
      ! Verify next line in the nescout file is what we expect:
      read (iunit,"(a)",iostat=status) myline
      if (myline(:len(matchString_phi2)) .ne. matchString_phi2) then

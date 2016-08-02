@@ -36,10 +36,8 @@ program regcoil
   call system_clock(toc)
   totalTime = real(toc-tic)/countrate
 
-  if (general_option==1) then
-     call write_output()
-  end if
-
+  call write_output()
+ 
   print *,"REGCOIL complete. Total time=",totalTime,"sec."
   print *,"You can run regcoilPlot ",trim(outputFilename)," to plot results."
 
