@@ -38,7 +38,7 @@ module global_variables
   real(dp), dimension(:), allocatable :: RHS_B, RHS_J
   real(dp), dimension(:,:,:), allocatable :: Bnormal_total
   real(dp), dimension(:,:,:), allocatable :: J2
-  real(dp), dimension(:), allocatable :: chi2_B, chi2_J
+  real(dp), dimension(:), allocatable :: chi2_B, chi2_J, max_Bnormal, max_J
 
   real(dp), dimension(:), allocatable :: theta_coil, zeta_coil, zetal_coil
   real(dp), dimension(:,:,:), allocatable :: r_coil, drdtheta_coil, drdzeta_coil, normal_coil

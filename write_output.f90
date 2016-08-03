@@ -53,7 +53,9 @@ subroutine write_output
        vn_RHS_J = "RHS_J", &
        vn_alpha = "alpha", &
        vn_chi2_B = "chi2_B", &
-       vn_chi2_J = "chi2_J"
+       vn_chi2_J = "chi2_J", &
+       vn_max_Bnormal = "max_Bnormal", &
+       vn_max_J = "max_J"
 
   ! Arrays with dimension 2
   character(len=*), parameter :: &
@@ -165,6 +167,8 @@ subroutine write_output
   call cdf_define(ncid, vn_alpha, alpha, dimname=nalpha_dim)
   call cdf_define(ncid, vn_chi2_B, chi2_B, dimname=nalpha_dim)
   call cdf_define(ncid, vn_chi2_J, chi2_J, dimname=nalpha_dim)
+  call cdf_define(ncid, vn_max_Bnormal, max_Bnormal, dimname=nalpha_dim)
+  call cdf_define(ncid, vn_max_J, max_J, dimname=nalpha_dim)
 
   ! Arrays with dimension 2
 
@@ -254,6 +258,8 @@ subroutine write_output
   call cdf_write(ncid, vn_alpha, alpha)
   call cdf_write(ncid, vn_chi2_B, chi2_B)
   call cdf_write(ncid, vn_chi2_J, chi2_J)
+  call cdf_write(ncid, vn_max_Bnormal, max_Bnormal)
+  call cdf_write(ncid, vn_max_J, max_J)
 
   ! Arrays with dimension 2
 

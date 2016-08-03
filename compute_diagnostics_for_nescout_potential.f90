@@ -35,6 +35,10 @@ subroutine compute_diagnostics_for_nescout_potential
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(chi2_J(nalpha), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(max_Bnormal(nalpha), stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(max_J(nalpha), stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
   allocate(current_potential(ntheta_coil,nzeta_coil,nalpha), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(single_valued_current_potential_thetazeta(ntheta_coil,nzeta_coil,nalpha), stat=iflag)
@@ -171,6 +175,9 @@ subroutine compute_diagnostics_for_nescout_potential
 
      Bnormal_total(:,:,ialpha) = (reshape(matmul(g,solution),(/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma) &
           + Bnormal_from_plasma_current + Bnormal_from_net_coil_currents
+
+     max_Bnormal(ialpha) = sqrt(maxval(Bnormal_total(:,:,ialpha)))
+     max_J(ialpha)       = sqrt(maxval(           J2(:,:,ialpha)))
 
      chi2_B(ialpha) = nfp * dtheta_plasma * dzeta_plasma &
           * sum(Bnormal_total(:,:,ialpha) * Bnormal_total(:,:,ialpha) * norm_normal_plasma)
