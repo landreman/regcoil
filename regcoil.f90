@@ -24,14 +24,17 @@ program regcoil
   call read_bnorm()
   call build_matrices()
 
-  if (general_option==1) then
+  select case (general_option)
+  case (1)
      call solve()
-  elseif (general_option==2) then
+  case (2)
      call compute_diagnostics_for_nescout_potential()
-  else
+  case (3)
+     call svd_scan()
+  case default
      print *,"Invalid general_option:",general_option
      stop
-  end if
+  end select
 
   call system_clock(toc)
   totalTime = real(toc-tic)/countrate
