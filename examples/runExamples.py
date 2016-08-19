@@ -17,14 +17,14 @@ def verifyVariableExists(str):
 
     return temp
 
-retestStr = verifyVariableExists("BDISTRIB_RETEST")
+retestStr = verifyVariableExists("REGCOIL_RETEST")
 
 if retestStr=="yes":
     retest=True
 elif retestStr=="no":
     retest=False
 else:
-    print "Error! BDISTRIB_RETEST must be either 'yes' or 'no'. There is likely an error in the main makefile."
+    print "Error! REGCOIL_RETEST must be either 'yes' or 'no'. There is likely an error in the main makefile."
     exit(1)
 
 wereThereAnyErrors = False
@@ -39,16 +39,16 @@ directoriesThatArentExamples = []
 for subdirectory in subdirectories:
     print "Examining subdirectory "+subdirectory
     if os.path.isfile(subdirectory+"/tests.py"):
-        if os.path.isfile(subdirectory+"/bdistrib_in."+subdirectory):
+        if os.path.isfile(subdirectory+"/regcoil_in."+subdirectory):
             examplesToRun.append(subdirectory)
         else:
-            print "WARNING: directory "+subdirectory+" contains a tests.py file but no bdistrib_in.XXX file of the same name as the directory."
+            print "WARNING: directory "+subdirectory+" contains a tests.py file but no regcoil_in.XXX file of the same name as the directory."
     else:
         directoriesThatArentExamples.append(subdirectory)
 
 print
 if len(examplesToRun) == 0:
-    print "Error: No subdirectories of examples/ found containing a tests.py and one bdistrib_in.XXX file."
+    print "Error: No subdirectories of examples/ found containing a tests.py and one regcoil_in.XXX file."
     exit(1)
 
 if len(directoriesThatArentExamples)>0:
@@ -79,26 +79,26 @@ if True:
 
         if not retest:
             try:
-                os.remove("bdistrib_out."+subdirectory+".nc")
+                os.remove("regcoil_out."+subdirectory+".nc")
             except:
                 # If the .nc output file does not exist, there will be an exception, but we can safely ignore it.
                 pass
             
-            print "Launching BDISTRIB..."
+            print "Launching REGCOIL..."
             # Flush everything printed to stdout so far:
             stdout.flush()
 
-            inputFile = "bdistrib_in."+subdirectory
+            inputFile = "regcoil_in."+subdirectory
             try:
-                # Next we launch BDISTRIB.
-                subprocess.call(["srun","-n","1","-c","24","../../bdistrib",inputFile])
-                #subprocess.call(["../../bdistrib",inputFile])
+                # Next we launch REGCOIL.
+                #subprocess.call(["srun","-n","1","-c","24","../../regcoil",inputFile])
+                subprocess.call(["../../regcoil",inputFile])
             except:
-                print "An error occurred when attempting to launch BDISTRIB."
+                print "An error occurred when attempting to launch REGCOIL."
                 raise
 
         print " "
-        print "BDISTRIB execution complete. About to run tests on output."
+        print "REGCOIL execution complete. About to run tests on output."
         stdout.flush()
 
         try:

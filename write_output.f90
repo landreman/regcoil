@@ -182,8 +182,8 @@ subroutine write_output
   if (save_level<2) then
      call cdf_define(ncid, vn_g, g, dimname=nthetanzeta_plasma_basis_dim)
   end if
-  call cdf_define(ncid, vn_matrix_B, matrix_B, dimname=basis_basis_dim)
-  call cdf_define(ncid, vn_matrix_J, matrix_J, dimname=basis_basis_dim)
+  !call cdf_define(ncid, vn_matrix_B, matrix_B, dimname=basis_basis_dim)
+  !call cdf_define(ncid, vn_matrix_J, matrix_J, dimname=basis_basis_dim)
   call cdf_define(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn, &
        dimname=basis_nalpha_dim)
 
@@ -273,8 +273,8 @@ subroutine write_output
   if (save_level<2) then
      call cdf_write(ncid, vn_g, g)
   end if
-  call cdf_write(ncid, vn_matrix_B, matrix_B)
-  call cdf_write(ncid, vn_matrix_J, matrix_J)
+  !call cdf_write(ncid, vn_matrix_B, matrix_B)
+  !call cdf_write(ncid, vn_matrix_J, matrix_J)
   call cdf_write(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn)
 
   ! Arrays with dimension 3

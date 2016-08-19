@@ -22,7 +22,9 @@ subroutine svd_scan
 
 
   deallocate(alpha)
-  nalpha = num_basis_functions
+  ! Nescoil seems to require keeping at least 2 singular values in a svd scan. We will do the same to keep the number
+  ! of solutions the same as nescoil.
+  nalpha = num_basis_functions-1
   allocate(alpha(nalpha))
   alpha=0
 
@@ -78,7 +80,7 @@ subroutine svd_scan
         !index = index+1
         index = (izeta-1)*ntheta_plasma + itheta
         factor = sqrt(norm_normal_plasma(itheta,izeta))
-        RHS(index) = (Bnormal_from_plasma_current(itheta,izeta) + Bnormal_from_net_coil_currents(itheta,izeta))*factor
+        RHS(index) = -(Bnormal_from_plasma_current(itheta,izeta) + Bnormal_from_net_coil_currents(itheta,izeta))*factor
         svd_matrix(index,:) = g(index,:) / factor
      end do
   end do
@@ -142,13 +144,19 @@ subroutine svd_scan
   factor_zeta  = net_poloidal_current_Amperes / twopi
   factor_theta = net_toroidal_current_Amperes / twopi
 
-  solution = 0
-  do ialpha = 1,nalpha
+  !solution = 0
+  ! Add the contribution from the ialpha-th singular vectors and singular value:
+  solution = solution + VT(1,:) * (1/singular_values(1)) * U_transpose_times_RHS(1)
+  do ialpha = nalpha,1,-1
      print "(a,e10.3,a,i3,a,i3,a)"," Solving system for alpha=",alpha(ialpha)," (",ialpha," of ",nalpha,")"
      call system_clock(tic,countrate)
 
      ! Add the contribution from the ialpha-th singular vectors and singular value:
-     solution = solution + VT(ialpha,:) * (1/singular_values(ialpha)) * U_transpose_times_RHS(ialpha)
+     !solution = solution + VT(ialpha,:) * (1/singular_values(ialpha)) * U_transpose_times_RHS(ialpha)
+     ! Go in reverse order, like NESCOIL
+     index = num_basis_functions-ialpha+1
+     print *,"index=",index
+     solution = solution + VT(index,:) * (1/singular_values(index)) * U_transpose_times_RHS(index)
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! Now compute diagnostics

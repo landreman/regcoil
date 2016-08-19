@@ -65,6 +65,10 @@ print "Bnormal_total.shape: ",Bnormal_total.shape
 
 f.close()
 
+if np.max(np.abs(alpha)) < 1.0e-200:
+    print "alpha array appears to be all 0. Changing it to all 1 to avoid a python error."
+    alpha += 1
+
 
 ########################################################
 # For 3D plotting, 'close' the arrays in u and v

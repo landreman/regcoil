@@ -2,7 +2,7 @@ def readOutputFile():
     import os
 
     head, dirname = os.path.split(os.getcwd())
-    outputFilename = "bdistrib_out."+dirname+".nc"
+    outputFilename = "regcoil_out."+dirname+".nc"
     
     if not os.path.isfile(outputFilename):
         print "Error! The output file "+outputFilename+" has not been created."

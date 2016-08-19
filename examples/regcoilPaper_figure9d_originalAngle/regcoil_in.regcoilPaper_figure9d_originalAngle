@@ -1,0 +1,29 @@
+! For documentation of these input parameters and their default values, see the manual.
+
+&regcoil
+  nalpha = 10
+  alpha_min = 1e-15
+  alpha_max = 1e-14
+
+  ntheta_plasma = 128
+  ntheta_coil   = 128
+  nzeta_plasma  = 128
+  nzeta_coil    = 128
+  mpol_coil = 32
+  ntor_coil = 32
+
+
+  geometry_option_plasma = 2
+  wout_filename = '../../equilibria/wout_d23p4_tm.nc'
+
+  geometry_option_coil=3
+  nescin_filename = '../../equilibria/nescin.d23p4_tm_uniform_0.5m_offset'
+
+  load_bnorm=.t.
+  bnorm_filename='../../equilibria/bnorm.d23p4_tm'
+
+  net_poloidal_current_Amperes = 1.0
+  net_toroidal_current_Amperes = 0.0
+
+  symmetry_option = 1
+/
