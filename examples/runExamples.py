@@ -30,6 +30,13 @@ else:
 wereThereAnyErrors = False
 examplesWithErrors = []
 
+try:
+    submitCommand = os.environ["REGCOIL_COMMAND_TO_SUBMIT_JOB"]
+except:
+    submitCommand = ""
+
+print "REGCOIL_COMMAND_TO_SUBMIT_JOB=",submitCommand
+
 # Get a list of the subdirectories:
 subdirectories = filter(os.path.isdir, os.listdir("."))
 
@@ -85,14 +92,19 @@ if True:
                 pass
             
             print "Launching REGCOIL..."
+
+            inputFile = "regcoil_in."+subdirectory
+            submitCommand2 = submitCommand+" ../../regcoil "+inputFile
+            submitCommandSplit = submitCommand2.split()
+            print "About to submit the following command: ",submitCommandSplit
             # Flush everything printed to stdout so far:
             stdout.flush()
 
-            inputFile = "regcoil_in."+subdirectory
             try:
                 # Next we launch REGCOIL.
-                #subprocess.call(["srun","-n","1","-c","24","../../regcoil",inputFile])
-                subprocess.call(["../../regcoil",inputFile])
+                #subprocess.call(["srun","-n","1","-c","32","../../regcoil",inputFile])
+                #subprocess.call(["../../regcoil",inputFile])
+                subprocess.call(submitCommandSplit)
             except:
                 print "An error occurred when attempting to launch REGCOIL."
                 raise

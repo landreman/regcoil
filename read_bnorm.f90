@@ -8,7 +8,7 @@ subroutine read_bnorm()
   
   implicit none
 
-  integer :: iunit, i, mm, nn, itheta, izeta, index, iflag
+  integer :: iunit, i, mm, nn, itheta, izeta, index, iflag, num_modes_added
   real(dp) :: bf
   integer :: tic, toc, countrate
 
@@ -31,10 +31,12 @@ subroutine read_bnorm()
      stop 'Unable to open bnorm_filename.'
   end if
 
+  num_modes_added = 0
   do
      read(iunit,*,iostat = i) mm, nn, bf
      if (i .ne. 0) exit
-     print *,"  Adding a mode with m=",mm,",  n=",nn
+     num_modes_added = num_modes_added+1
+     !print *,"  Adding a mode with m=",mm,",  n=",nn
      do izeta = 1,nzeta_plasma
         do itheta = 1,ntheta_plasma
            Bnormal_from_plasma_current(itheta,izeta) = Bnormal_from_plasma_current(itheta,izeta) + &
@@ -65,6 +67,11 @@ subroutine read_bnorm()
 !!$  !Bnormal_from_plasma_current_1D = reshape(Bnormal_from_plasma_current, (/ntheta_plasma*nzeta_plasma/))
 
   call system_clock(toc)
+  if (num_modes_added>0) then
+     print *,"Number of modes read from bnorm file:",num_modes_added
+  else
+     print *,"WARNING!!! No modes found in the bnorm file."
+  end if
   print *,"Done reading B_normal on the plasma surface due to plasma current."
   print *,"Took ",real(toc-tic)/countrate," sec."
 

@@ -8,6 +8,11 @@
 #   module unload cray-libsci
 # to avoid warning messages about libsci during compiling.
 
+# For batch systems, set the following variable to the command used to run jobs.
+# This variable is used by 'make test'.
+REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -n 1 -c 32
+#REGCOIL_COMMAND_TO_SUBMIT_JOB =
+
 ifdef NERSC_HOST
         HOSTNAME = $(NERSC_HOST)
 else
@@ -20,8 +25,8 @@ ifeq ($(HOSTNAME),edison)
 	EXTRA_LINK_FLAGS =  -openmp -mkl -Wl,-ydgemm_
 else ifeq ($(HOSTNAME),cori)
 	FC = ftn
-	EXTRA_COMPILE_FLAGS = -openmp -mkl
-	EXTRA_LINK_FLAGS =  -openmp -mkl -Wl,-ydgemm_
+	EXTRA_COMPILE_FLAGS = -qopenmp -mkl
+	EXTRA_LINK_FLAGS =  -qopenmp -mkl -Wl,-ydgemm_
 else
 	#FC = gfortran
 	FC = mpif90
