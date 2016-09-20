@@ -92,16 +92,16 @@ subroutine validate_input
      end select
   end if
 
-  if (nalpha < 1) then
-     stop "nalpha must be at least 1."
+  if (nlambda < 1) then
+     stop "nlambda must be at least 1."
   end if
 
-  if (alpha_min <= 0) then
-     stop "alpha_min must be greater than 0."
+  if (lambda_min <= 0) then
+     stop "lambda_min must be greater than 0."
   end if
 
-  if (alpha_max < alpha_min) then
-     stop "alpha_max must be >= alpha_min."
+  if (lambda_max < lambda_min) then
+     stop "lambda_max must be >= lambda_min."
   end if
 
   if (general_option<1) then
@@ -112,7 +112,7 @@ subroutine validate_input
   end if
 
   if (general_option==2) then
-     ! Replace nalpha with the number of current potentials saved in the nescout file.
+     ! Replace nlambda with the number of current potentials saved in the nescout file.
      print *,"Opening nescout file",nescout_filename
      call safe_open(iunit, istat, trim(nescout_filename), 'old', 'formatted')
      if (istat .ne. 0) then
@@ -127,7 +127,7 @@ subroutine validate_input
         end if
      end do
      print *,"Detected",j,"current potentials in the nescout file."
-     nalpha = j
+     nlambda = j
   end if
 
 end subroutine validate_input

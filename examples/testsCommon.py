@@ -18,17 +18,29 @@ def readOutputFile():
     print "Reading output file "+outputFilename
     return f
 
-def shouldBe(latestValue, trueValue, relativeTolerance):
-    relativeDifference = abs((latestValue - trueValue) / trueValue)
-    if relativeDifference > relativeTolerance:
-        print "*** TEST FAILED!!  Variable "+variableName+" should be close to "+str(trueValue)+", but it is instead "+str(latestValue)
-        print "Actual / correct = ",latestValue/trueValue
-        return 1
+def shouldBe(latestValue, trueValue, relativeTolerance, absoluteTolerance):
+    difference = abs(latestValue-trueValue)
+    relativeDifference = abs(difference / trueValue)
+    relativeTest = (relativeDifference <= relativeTolerance)
+    absoluteTest = (difference <= absoluteTolerance)
+    string = "Variable "+variableName+" should be close to "+str(trueValue)+", and it was "+str(latestValue)
+    if relativeTest:
+        if absoluteTest:
+            print "    Test passed. "+string+". Both abs and rel tol met."
+            return 0
+        else:
+            print "    Test passed. "+string+". Rel tol met. Abs tol not met."
+            return 0
     else:
-        print "    Test passed:   Variable "+variableName+" should be close to "+str(trueValue)+", and it came out to be "+str(latestValue)+", which is within tolerance."
-        return 0
+        if absoluteTest:
+            print "    Test passed. "+string+". Abs tol met. Rel tol not met."
+            return 0
+        else:
+            print "*** TEST FAILED! "+string+". Rel tol met. Abs tol not met."
+            return 1
 
-def arrayShouldBe(latestValues, trueValues, relativeTolerance, requireSameLength = True):
+
+def arrayShouldBe(latestValues, trueValues, relativeTolerance, absoluteTolerance, requireSameLength = True):
     # These next few lines are a hack so this function can be called on scalars without an exception
     try:
         temp = len(latestValues)
@@ -52,6 +64,6 @@ def arrayShouldBe(latestValues, trueValues, relativeTolerance, requireSameLength
 
     numArrayErrors = 0
     for i in range(len(trueValues)):
-        numArrayErrors += shouldBe(latestValues[i],trueValues[i],relativeTolerance)
+        numArrayErrors += shouldBe(latestValues[i],trueValues[i],relativeTolerance, absoluteTolerance)
 
     return numArrayErrors

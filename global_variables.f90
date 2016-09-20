@@ -31,14 +31,14 @@ module global_variables
 
   real(dp), dimension(:,:), allocatable :: Bnormal_from_plasma_current
   real(dp), dimension(:,:), allocatable :: Bnormal_from_net_coil_currents
-  real(dp), dimension(:,:), allocatable :: matrix_B, matrix_J, inductance
+  real(dp), dimension(:,:), allocatable :: matrix_B, matrix_K, inductance
   real(dp), dimension(:,:), allocatable :: single_valued_current_potential_mn
   real(dp), dimension(:,:,:), allocatable :: single_valued_current_potential_thetazeta
   real(dp), dimension(:,:,:), allocatable :: current_potential
-  real(dp), dimension(:), allocatable :: RHS_B, RHS_J
+  real(dp), dimension(:), allocatable :: RHS_B, RHS_K
   real(dp), dimension(:,:,:), allocatable :: Bnormal_total
-  real(dp), dimension(:,:,:), allocatable :: J2
-  real(dp), dimension(:), allocatable :: chi2_B, chi2_J, max_Bnormal, max_J
+  real(dp), dimension(:,:,:), allocatable :: K2
+  real(dp), dimension(:), allocatable :: chi2_B, chi2_K, max_Bnormal, max_K
 
   real(dp), dimension(:), allocatable :: theta_coil, zeta_coil, zetal_coil
   real(dp), dimension(:,:,:), allocatable :: r_coil, drdtheta_coil, drdzeta_coil, normal_coil
@@ -77,9 +77,9 @@ module global_variables
   character(len=200) :: bnorm_filename=""
   real(dp) :: curpol = 1  ! number which multiplies data in bnorm file.
 
-  integer :: nalpha = 4
-  real(dp) :: alpha_min = 0.1_dp, alpha_max = 10_dp
-  real(dp), dimension(:), allocatable :: alpha
+  integer :: nlambda = 4
+  real(dp) :: lambda_min = 0.1_dp, lambda_max = 10_dp
+  real(dp), dimension(:), allocatable :: lambda
 
 end module global_variables
 

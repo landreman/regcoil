@@ -45,17 +45,30 @@ r_coil  = f.variables['r_coil'][()]
 xm_coil = f.variables['xm_coil'][()]
 xn_coil = f.variables['xn_coil'][()]
 mnmax_coil = f.variables['mnmax_coil'][()]
-nalpha = f.variables['nalpha'][()]
-alpha = f.variables['alpha'][()]
 chi2_B = f.variables['chi2_B'][()]
-chi2_J = f.variables['chi2_J'][()]
 single_valued_current_potential_thetazeta = f.variables['single_valued_current_potential_thetazeta'][()]
 current_potential = f.variables['current_potential'][()]
-J2 = f.variables['J2'][()]
 Bnormal_from_plasma_current = f.variables['Bnormal_from_plasma_current'][()]
 Bnormal_from_net_coil_currents = f.variables['Bnormal_from_net_coil_currents'][()]
 Bnormal_total = f.variables['Bnormal_total'][()]
 # = f.variables[''][()]
+
+# lambda used to be called alpha, so try both names for backward-compatibility.
+# Also, we used 'lambdas' instead of 'lambda' to avoid conflict with python's keyword lambda.
+try:
+    nlambda = f.variables['nlambda'][()]
+    lambdas = f.variables['lambda'][()]
+except:
+    nlambda = f.variables['nalpha'][()]
+    lambdas = f.variables['alpha'][()]
+
+# K used to be called J, so try both names for backward-compatibility.
+try:
+    chi2_K = f.variables['chi2_K'][()]
+    K2 = f.variables['K2'][()]
+except:
+    chi2_K = f.variables['chi2_J'][()]
+    K2 = f.variables['J2'][()]
 
 print "ntheta_plasma: ",ntheta_plasma
 print "nzetal_plasma: ",nzetal_plasma
@@ -65,9 +78,9 @@ print "Bnormal_total.shape: ",Bnormal_total.shape
 
 f.close()
 
-if np.max(np.abs(alpha)) < 1.0e-200:
-    print "alpha array appears to be all 0. Changing it to all 1 to avoid a python error."
-    alpha += 1
+if np.max(np.abs(lambdas)) < 1.0e-200:
+    print "lambda array appears to be all 0. Changing it to all 1 to avoid a python error."
+    lambdas += 1
 
 
 ########################################################
@@ -140,8 +153,8 @@ for whichPlot in range(4):
     plt.gca().set_aspect('equal',adjustable='box')
     plt.legend(fontsize='x-small')
     plt.title('zeta='+str(zeta))
-    plt.xlabel('R')
-    plt.ylabel('Z')
+    plt.xlabel('R [meters]')
+    plt.ylabel('Z [meters]')
     plt.xlim([Rmin,Rmax])
     plt.ylim([Zmin,Zmax])
 
@@ -149,17 +162,17 @@ plt.tight_layout()
 
 
 ########################################################
-# Pick the alpha values to show in the 2D plots
+# Pick the lambda values to show in the 2D plots
 ########################################################
 
-max_nalpha_for_contour_plots = 16
-numPlots = min(nalpha,max_nalpha_for_contour_plots)
-ialpha_to_plot = np.sort(list(set(map(int,np.linspace(1,nalpha,numPlots)))))
-numPlots = len(ialpha_to_plot)
-print "ialpha_to_plot:",ialpha_to_plot
+max_nlambda_for_contour_plots = 16
+numPlots = min(nlambda,max_nlambda_for_contour_plots)
+ilambda_to_plot = np.sort(list(set(map(int,np.linspace(1,nlambda,numPlots)))))
+numPlots = len(ilambda_to_plot)
+print "ilambda_to_plot:",ilambda_to_plot
 
 ########################################################
-# Now make plot of chi^2 over alpha scan
+# Now make plot of chi^2 over lambda scan
 ########################################################
 
 figureNum += 1
@@ -170,43 +183,44 @@ numRows = 2
 numCols = 3
 
 plt.subplot(numRows,numCols,1)
-plt.loglog(chi2_J,chi2_B,'.-r')
-plt.xlabel('chi2_J')
-plt.ylabel('chi2_B')
+plt.loglog(chi2_K,chi2_B,'.-r')
+plt.xlabel('chi2_K [A^2]')
+plt.ylabel('chi2_B [T^2 m^2]')
 for j in range(numPlots):
-    plt.plot(chi2_J[ialpha_to_plot[j]-1], chi2_B[ialpha_to_plot[j]-1],'ob')
+    plt.plot(chi2_K[ilambda_to_plot[j]-1], chi2_B[ilambda_to_plot[j]-1],'ob')
 
-if nalpha>1:
+if nlambda>1:
     plt.subplot(numRows,numCols,2)
-    plt.loglog(alpha,chi2_B,'.-r')
-    plt.xlabel('alpha')
-    plt.ylabel('chi2_B')
+    plt.loglog(lambdas,chi2_B,'.-r')
+    plt.xlabel('lambda [T^2 m^2 / A^2]')
+    plt.ylabel('chi2_B [T^2 m^2]')
     for j in range(numPlots):
-        plt.plot(alpha[ialpha_to_plot[j]-1], chi2_B[ialpha_to_plot[j]-1],'ob')
+        plt.plot(lambdas[ilambda_to_plot[j]-1], chi2_B[ilambda_to_plot[j]-1],'ob')
 
 plt.subplot(numRows,numCols,3)
-plt.semilogy(alpha,chi2_B,'.-r')
-plt.xlabel('alpha')
-plt.ylabel('chi2_B')
+plt.semilogy(lambdas,chi2_B,'.-r')
+plt.xlabel('lambda [T^2 m^2 / A^2]')
+plt.ylabel('chi2_B [T^2 m^2]')
 for j in range(numPlots):
-    plt.plot(alpha[ialpha_to_plot[j]-1], chi2_B[ialpha_to_plot[j]-1],'ob')
+    plt.plot(lambdas[ilambda_to_plot[j]-1], chi2_B[ilambda_to_plot[j]-1],'ob')
 
-if nalpha>1:
+if nlambda>1:
     plt.subplot(numRows,numCols,5)
-    plt.loglog(alpha,chi2_J,'.-r')
-    plt.xlabel('alpha')
-    plt.ylabel('chi2_J')
+    plt.loglog(lambdas,chi2_K,'.-r')
+    plt.xlabel('lambda [T^2 m^2 / A^2]')
+    plt.ylabel('chi2_K [A^2]')
     for j in range(numPlots):
-        plt.plot(alpha[ialpha_to_plot[j]-1], chi2_J[ialpha_to_plot[j]-1],'ob')
+        plt.plot(lambdas[ilambda_to_plot[j]-1], chi2_K[ilambda_to_plot[j]-1],'ob')
 
 plt.subplot(numRows,numCols,6)
-plt.semilogy(alpha,chi2_J,'.-r')
-plt.xlabel('alpha')
-plt.ylabel('chi2_J')
+plt.semilogy(lambdas,chi2_K,'.-r')
+plt.xlabel('lambda [T^2 m^2 / A^2]')
+plt.ylabel('chi2_K [A^2]')
 for j in range(numPlots):
-    plt.plot(alpha[ialpha_to_plot[j]-1], chi2_J[ialpha_to_plot[j]-1],'ob')
+    plt.plot(lambdas[ilambda_to_plot[j]-1], chi2_K[ilambda_to_plot[j]-1],'ob')
 
 plt.tight_layout()
+plt.figtext(0.5,0.99,"Blue dots indicate the points in the lambda scan that are plotted in later figures",horizontalalignment='center',verticalalignment='top',fontsize='small')
 
 ########################################################
 # Prepare for plotting current potential
@@ -230,11 +244,11 @@ fig.patch.set_facecolor('white')
 
 for whichPlot in range(numPlots):
     plt.subplot(numRows,numCols,whichPlot+1)
-    plt.contourf(zeta_coil, theta_coil, np.transpose(single_valued_current_potential_thetazeta[ialpha_to_plot[whichPlot]-1,:,:]), numContours)
+    plt.contourf(zeta_coil, theta_coil, np.transpose(single_valued_current_potential_thetazeta[ilambda_to_plot[whichPlot]-1,:,:]), numContours)
     plt.colorbar()
     plt.xlabel('zeta',fontsize='x-small')
     plt.ylabel('theta',fontsize='x-small')
-    plt.title('alpha='+str(alpha[ialpha_to_plot[whichPlot]-1]),fontsize='x-small')
+    plt.title('lambda='+str(lambdas[ilambda_to_plot[whichPlot]-1]),fontsize='x-small')
 
 plt.tight_layout()
 plt.figtext(0.5,0.99,"Single-valued part of the current potential",horizontalalignment='center',verticalalignment='top',fontsize='small')
@@ -249,17 +263,17 @@ fig.patch.set_facecolor('white')
 
 for whichPlot in range(numPlots):
     plt.subplot(numRows,numCols,whichPlot+1)
-    plt.contourf(zeta_coil, theta_coil, np.transpose(current_potential[ialpha_to_plot[whichPlot]-1,:,:]), numContours)
+    plt.contourf(zeta_coil, theta_coil, np.transpose(current_potential[ilambda_to_plot[whichPlot]-1,:,:]), numContours)
     plt.colorbar()
     plt.xlabel('zeta',fontsize='x-small')
     plt.ylabel('theta',fontsize='x-small')
-    plt.title('alpha='+str(alpha[ialpha_to_plot[whichPlot]-1]),fontsize='x-small')
+    plt.title('lambda='+str(lambdas[ilambda_to_plot[whichPlot]-1]),fontsize='x-small')
 
 plt.tight_layout()
 plt.figtext(0.5,0.99,"Total current potential",horizontalalignment='center',verticalalignment='top',fontsize='small')
 
 ########################################################
-# Plot J^2
+# Plot the current density K
 ########################################################
 
 figureNum += 1
@@ -268,14 +282,14 @@ fig.patch.set_facecolor('white')
 
 for whichPlot in range(numPlots):
     plt.subplot(numRows,numCols,whichPlot+1)
-    plt.contourf(zeta_coil, theta_coil, np.transpose(J2[ialpha_to_plot[whichPlot]-1,:,:]), numContours)
+    plt.contourf(zeta_coil, theta_coil, np.sqrt(np.transpose(K2[ilambda_to_plot[whichPlot]-1,:,:])), numContours)
     plt.colorbar()
     plt.xlabel('zeta',fontsize='x-small')
     plt.ylabel('theta',fontsize='x-small')
-    plt.title('alpha='+str(alpha[ialpha_to_plot[whichPlot]-1]),fontsize='x-small')
+    plt.title('lambda='+str(lambdas[ilambda_to_plot[whichPlot]-1]),fontsize='x-small')
 
 plt.tight_layout()
-plt.figtext(0.5,0.99,"J^2",horizontalalignment='center',verticalalignment='top',fontsize='small')
+plt.figtext(0.5,0.99,"K [A/m]",horizontalalignment='center',verticalalignment='top',fontsize='small')
 
 ########################################################
 # Plot Bnormal
@@ -307,14 +321,14 @@ plt.title('From net coil currents',fontsize='x-small')
 
 for whichPlot in range(numPlots-2):
     plt.subplot(numRows,numCols,whichPlot+3)
-    plt.contourf(zeta_plasma, theta_plasma, np.transpose(Bnormal_total[ialpha_to_plot[whichPlot]-1,:,:]), numContours)
+    plt.contourf(zeta_plasma, theta_plasma, np.transpose(Bnormal_total[ilambda_to_plot[whichPlot]-1,:,:]), numContours)
     plt.colorbar()
     plt.xlabel('zeta',fontsize='x-small')
     plt.ylabel('theta',fontsize='x-small')
-    plt.title('Total, alpha='+str(alpha[ialpha_to_plot[whichPlot]-1]),fontsize='x-small')
+    plt.title('Total, lambda='+str(lambdas[ilambda_to_plot[whichPlot]-1]),fontsize='x-small')
 
 plt.tight_layout()
-plt.figtext(0.5,0.99,"Bnormal",horizontalalignment='center',verticalalignment='top',fontsize='small')
+plt.figtext(0.5,0.99,"Bnormal [Tesla]",horizontalalignment='center',verticalalignment='top',fontsize='small')
 
 
 

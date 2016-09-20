@@ -6,53 +6,54 @@
 # main BDISTRIB directory.
 
 execfile('../testsCommon.py')
+absoluteTolerance = 1e-100
 
 numFailures = 0
 
 f = readOutputFile()
 
-variableName = 'alpha'
+variableName = 'lambda'
 data = f.variables[variableName][()]
-desiredTolerance = 1e-12
+relativeTolerance = 1e-12
 numFailures += arrayShouldBe(data, [0, 1e-15, 1.33352143216332e-15, 1.77827941003892e-15,\
                                     2.37137370566166e-15, 3.16227766016838e-15, 4.21696503428582e-15,\
-                                    5.62341325190349e-15, 7.49894209332456e-15, 1e-14],desiredTolerance)
+                                    5.62341325190349e-15, 7.49894209332456e-15, 1e-14],relativeTolerance,absoluteTolerance)
 
 
 variableName = 'chi2_B'
 data = f.variables[variableName][()]
-desiredTolerance = 0.03
-# Skip the alpha=0 case, which is pathological, and make sure the other ones are within a few % of the high-res results:
+relativeTolerance = 0.03
+# Skip the lambda=0 case, which is pathological, and make sure the other ones are within a few % of the high-res results:
 numFailures += arrayShouldBe(data[1:], [0.174519878306313, 0.233148551834137, \
     0.310446213587783, 0.411565852326815, 0.542616084841207, \
-    0.710568315783369, 0.922890554110523, 1.18673864681126, 1.50770781013225],desiredTolerance)
+    0.710568315783369, 0.922890554110523, 1.18673864681126, 1.50770781013225],relativeTolerance,absoluteTolerance)
 
-variableName = 'chi2_J'
+variableName = 'chi2_K'
 data = f.variables[variableName][()]
-desiredTolerance = 0.01
+relativeTolerance = 0.01
 numFailures += arrayShouldBe(data[1:], [1.74957088182873e+15, 1.6989658516062e+15,\
     1.64892520707378e+15, 1.59982527129183e+15, 1.55209554042516e+15,\
     1.50621123410416e+15, 1.46269693947801e+15, 1.42212837760326e+15,\
-    1.38509938973785e+15], desiredTolerance)
+    1.38509938973785e+15], relativeTolerance,absoluteTolerance)
 
 variableName = 'max_Bnormal'
 data = f.variables[variableName][()]
-desiredTolerance = 0.03
+relativeTolerance = 0.03
 numFailures += arrayShouldBe(data[1:], [0.117555544291034, 0.134561224876993,\
     0.153923792979921, 0.176347144447289, 0.201603899107085,\
-    0.229977435728317, 0.261839981656698, 0.296625161466877, 0.333988791941713], desiredTolerance)
+    0.229977435728317, 0.261839981656698, 0.296625161466877, 0.333988791941713], relativeTolerance,absoluteTolerance)
 
-variableName = 'max_J'
+variableName = 'max_K'
 data = f.variables[variableName][()]
-desiredTolerance = 0.06
+relativeTolerance = 0.06
 numFailures += arrayShouldBe(data[1:], [ 8824481.60102707, 8355450.23653953,\
     7884212.39105115, 7412969.17310808, 6945281.57578389, 6485916.75531679,\
-    6040435.92861007, 5614638.75966927, 5214018.48872153], desiredTolerance)
+    6040435.92861007, 5614638.75966927, 5214018.48872153], relativeTolerance,absoluteTolerance)
 
 variableName = 'single_valued_current_potential_mn'
 data = f.variables[variableName][()]
-print data.shape
-desiredTolerance = 1e-4
+#print data.shape
+relativeTolerance = 1e-4
 numFailures += arrayShouldBe(data[0,:], [-636481.60416242, -102835.333542226, -39124.0186294881, -6816.08113940242,
    542.692475698608, -2686.1108530638, -601.765971600708, 26.2180240803913,
     -150.847194134617, -58.2551976061389, 60.0317419077943, -15.997364372303,
@@ -96,7 +97,7 @@ numFailures += arrayShouldBe(data[0,:], [-636481.60416242, -102835.333542226, -3
     -94636.1096069281, -12455.6660070208, 205.614622738596,
     -13352.0580607509, 88.0140555713081, -751.856883151767, -231.62025244395,
     24.2787971083689, 79.1321103557964, 68.1790577884637, 33.0664705300337,
-    62.1791798540125, -8.96468981509356, -551.338416161408   ],desiredTolerance,requireSameLength=False)
+    62.1791798540125, -8.96468981509356, -551.338416161408   ],relativeTolerance,absoluteTolerance,requireSameLength=False)
 
 
 f.close()

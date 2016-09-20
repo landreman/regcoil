@@ -35,7 +35,7 @@ subroutine write_output
        vn_net_poloidal_current_Amperes = "net_poloidal_current_Amperes", &
        vn_net_toroidal_current_Amperes = "net_toroidal_current_Amperes", &
        vn_curpol = "curpol", &
-       vn_nalpha = "nalpha", &
+       vn_nlambda = "nlambda", &
        vn_totalTime = "totalTime"
 
   ! Arrays with dimension 1
@@ -50,12 +50,12 @@ subroutine write_output
        vn_xn_coil = "xn_coil", &
        vn_h = "h", &
        vn_RHS_B = "RHS_B", &
-       vn_RHS_J = "RHS_J", &
-       vn_alpha = "alpha", &
+       vn_RHS_K = "RHS_K", &
+       vn_lambda = "lambda", &
        vn_chi2_B = "chi2_B", &
-       vn_chi2_J = "chi2_J", &
+       vn_chi2_K = "chi2_K", &
        vn_max_Bnormal = "max_Bnormal", &
-       vn_max_J = "max_J"
+       vn_max_K = "max_K"
 
   ! Arrays with dimension 2
   character(len=*), parameter :: &
@@ -66,7 +66,7 @@ subroutine write_output
        vn_inductance = "inductance", &
        vn_g = "g", &
        vn_matrix_B = "matrix_B", &
-       vn_matrix_J = "matrix_J", &
+       vn_matrix_K = "matrix_K", &
        vn_single_valued_current_potential_mn = "single_valued_current_potential_mn"
 
   ! Arrays with dimension 3
@@ -82,7 +82,7 @@ subroutine write_output
        vn_single_valued_current_potential_thetazeta = "single_valued_current_potential_thetazeta", &
        vn_current_potential = "current_potential", &
        vn_Bnormal_total = "Bnormal_total", &
-       vn_J2 = "J2"
+       vn_K2 = "K2"
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Now create variables that name the dimensions.
@@ -99,7 +99,7 @@ subroutine write_output
        mnmax_coil_dim = (/'mnmax_coil'/), &
        nthetanzeta_plasma_dim = (/'ntheta_nzeta_plasma'/), &
        num_basis_functions_dim = (/'num_basis_functions'/), &
-       nalpha_dim = (/'nalpha'/)
+       nlambda_dim = (/'nlambda'/)
 
   ! Arrays with dimension 2:
   character(len=*), parameter, dimension(2) :: &
@@ -108,14 +108,14 @@ subroutine write_output
        nthetanzeta_plasma_nthetanzeta_coil_dim = (/'ntheta_nzeta_plasma','ntheta_nzeta_coil'/), &
        nthetanzeta_plasma_basis_dim = (/'ntheta_nzeta_plasma','num_basis_functions'/), &
        basis_basis_dim = (/'num_basis_functions','num_basis_functions'/), &
-       basis_nalpha_dim = (/'num_basis_functions','nalpha'/)
+       basis_nlambda_dim = (/'num_basis_functions','nlambda'/)
 
   ! Arrays with dimension 3:
   character(len=*), parameter, dimension(3) :: &
        xyz_ntheta_nzetal_plasma_dim = (/'xyz','ntheta_plasma','nzetal_plasma'/), &
        xyz_ntheta_nzetal_coil_dim = (/'xyz','ntheta_coil','nzetal_coil'/), &
-       ntheta_nzeta_coil_nalpha_dim = (/'ntheta_coil','nzeta_coil','nalpha'/), &
-       ntheta_nzeta_plasma_nalpha_dim = (/'ntheta_plasma','nzeta_plasma','nalpha'/)
+       ntheta_nzeta_coil_nlambda_dim = (/'ntheta_coil','nzeta_coil','nlambda'/), &
+       ntheta_nzeta_plasma_nlambda_dim = (/'ntheta_plasma','nzeta_plasma','nlambda'/)
 
   call cdf_open(ncid,outputFilename,'w',ierr)
   IF (ierr .ne. 0) then
@@ -148,7 +148,7 @@ subroutine write_output
   call cdf_define(ncid, vn_net_poloidal_current_Amperes, net_poloidal_current_Amperes)
   call cdf_define(ncid, vn_net_toroidal_current_Amperes, net_toroidal_current_Amperes)
   call cdf_define(ncid, vn_curpol, curpol)
-  call cdf_define(ncid, vn_nalpha, nalpha)
+  call cdf_define(ncid, vn_nlambda, nlambda)
   call cdf_define(ncid, vn_totalTime, totalTime)
 
   ! Arrays with dimension 1
@@ -163,12 +163,12 @@ subroutine write_output
   call cdf_define(ncid, vn_xn_coil, xn_coil, dimname=mnmax_coil_dim)
   call cdf_define(ncid, vn_h, h, dimname=nthetanzeta_plasma_dim)
   call cdf_define(ncid, vn_RHS_B, RHS_B, dimname=num_basis_functions_dim)
-  call cdf_define(ncid, vn_RHS_J, RHS_J, dimname=num_basis_functions_dim)
-  call cdf_define(ncid, vn_alpha, alpha, dimname=nalpha_dim)
-  call cdf_define(ncid, vn_chi2_B, chi2_B, dimname=nalpha_dim)
-  call cdf_define(ncid, vn_chi2_J, chi2_J, dimname=nalpha_dim)
-  call cdf_define(ncid, vn_max_Bnormal, max_Bnormal, dimname=nalpha_dim)
-  call cdf_define(ncid, vn_max_J, max_J, dimname=nalpha_dim)
+  call cdf_define(ncid, vn_RHS_K, RHS_K, dimname=num_basis_functions_dim)
+  call cdf_define(ncid, vn_lambda, lambda, dimname=nlambda_dim)
+  call cdf_define(ncid, vn_chi2_B, chi2_B, dimname=nlambda_dim)
+  call cdf_define(ncid, vn_chi2_K, chi2_K, dimname=nlambda_dim)
+  call cdf_define(ncid, vn_max_Bnormal, max_Bnormal, dimname=nlambda_dim)
+  call cdf_define(ncid, vn_max_K, max_K, dimname=nlambda_dim)
 
   ! Arrays with dimension 2
 
@@ -183,9 +183,9 @@ subroutine write_output
      call cdf_define(ncid, vn_g, g, dimname=nthetanzeta_plasma_basis_dim)
   end if
   !call cdf_define(ncid, vn_matrix_B, matrix_B, dimname=basis_basis_dim)
-  !call cdf_define(ncid, vn_matrix_J, matrix_J, dimname=basis_basis_dim)
+  !call cdf_define(ncid, vn_matrix_K, matrix_K, dimname=basis_basis_dim)
   call cdf_define(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn, &
-       dimname=basis_nalpha_dim)
+       dimname=basis_nlambda_dim)
 
   ! Arrays with dimension 3
 
@@ -205,10 +205,10 @@ subroutine write_output
   !end if
 
   call cdf_define(ncid, vn_single_valued_current_potential_thetazeta, single_valued_current_potential_thetazeta, &
-       dimname=ntheta_nzeta_coil_nalpha_dim)
-  call cdf_define(ncid, vn_current_potential, current_potential, dimname=ntheta_nzeta_coil_nalpha_dim)
-  call cdf_define(ncid, vn_Bnormal_total, Bnormal_total, dimname=ntheta_nzeta_plasma_nalpha_dim)
-  call cdf_define(ncid, vn_J2, J2, dimname=ntheta_nzeta_coil_nalpha_dim)
+       dimname=ntheta_nzeta_coil_nlambda_dim)
+  call cdf_define(ncid, vn_current_potential, current_potential, dimname=ntheta_nzeta_coil_nlambda_dim)
+  call cdf_define(ncid, vn_Bnormal_total, Bnormal_total, dimname=ntheta_nzeta_plasma_nlambda_dim)
+  call cdf_define(ncid, vn_K2, K2, dimname=ntheta_nzeta_coil_nlambda_dim)
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
   ! Done with cdf_define calls. Now write the data.
@@ -239,7 +239,7 @@ subroutine write_output
   call cdf_write(ncid, vn_net_poloidal_current_Amperes, net_poloidal_current_Amperes)
   call cdf_write(ncid, vn_net_toroidal_current_Amperes, net_toroidal_current_Amperes)
   call cdf_write(ncid, vn_curpol, curpol)
-  call cdf_write(ncid, vn_nalpha, nalpha)
+  call cdf_write(ncid, vn_nlambda, nlambda)
   call cdf_write(ncid, vn_totalTime, totalTime)
 
   ! Arrays with dimension 1
@@ -254,12 +254,12 @@ subroutine write_output
   call cdf_write(ncid, vn_xn_coil, xn_coil)
   call cdf_write(ncid, vn_h, h)
   call cdf_write(ncid, vn_RHS_B, RHS_B)
-  call cdf_write(ncid, vn_RHS_J, RHS_J)
-  call cdf_write(ncid, vn_alpha, alpha)
+  call cdf_write(ncid, vn_RHS_K, RHS_K)
+  call cdf_write(ncid, vn_lambda, lambda)
   call cdf_write(ncid, vn_chi2_B, chi2_B)
-  call cdf_write(ncid, vn_chi2_J, chi2_J)
+  call cdf_write(ncid, vn_chi2_K, chi2_K)
   call cdf_write(ncid, vn_max_Bnormal, max_Bnormal)
-  call cdf_write(ncid, vn_max_J, max_J)
+  call cdf_write(ncid, vn_max_K, max_K)
 
   ! Arrays with dimension 2
 
@@ -274,7 +274,7 @@ subroutine write_output
      call cdf_write(ncid, vn_g, g)
   end if
   !call cdf_write(ncid, vn_matrix_B, matrix_B)
-  !call cdf_write(ncid, vn_matrix_J, matrix_J)
+  !call cdf_write(ncid, vn_matrix_K, matrix_K)
   call cdf_write(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn)
 
   ! Arrays with dimension 3
@@ -297,7 +297,7 @@ subroutine write_output
   call cdf_write(ncid, vn_single_valued_current_potential_thetazeta, single_valued_current_potential_thetazeta)
   call cdf_write(ncid, vn_current_potential, current_potential)
   call cdf_write(ncid, vn_Bnormal_total, Bnormal_total)
-  call cdf_write(ncid, vn_J2, J2)
+  call cdf_write(ncid, vn_K2, K2)
 
   ! Finish up:
   call cdf_close(ncid)

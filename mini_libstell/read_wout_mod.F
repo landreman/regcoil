@@ -309,7 +309,6 @@ C-----------------------------------------------
       CALL parse_extension(filename, file_or_extension, isnc)
       CALL flush(6)
 !SPH  IF (.not.isnc) STOP 'ISNC ERR IN READ_WOUT_MOD'
-      print *,"Hello from readw_and_open"
       IF (isnc) THEN
 #if defined(NETCDF)
          CALL read_wout_nc(filename, ierr)
@@ -877,7 +876,6 @@ C-----------------------------------------------
      1                                          zaxis_cs, zaxis_cc
 C-----------------------------------------------
 ! Open cdf File
-      print *,"Hello from read_wout_nc"
       CALL cdf_open(nwout,filename,'r', ierr)
       IF (ierr .ne. 0) THEN
          PRINT *,' Error opening wout .nc file'
@@ -887,8 +885,6 @@ C-----------------------------------------------
 ! Be sure all arrays are deallocated
       CALL read_wout_deallocate
 
-      print *,"~~~~1"
-      
       ! ANIMEC/FLOW -SAL
       i_animec = 0
       i_flow   = 0
@@ -899,15 +895,12 @@ C-----------------------------------------------
       IF (ierror.eq.0) vmec_type = 2
 
 ! Read in scalar variables
-      print *,"~~~~2"
       CALL cdf_read(nwout, vn_error, ierr_vmec)
-      print *,"~~~~3"
 
 ! Next 2 lines commented out by MJL 20150717. They were being triggered by a W7X file.
 !      IF (ierr_vmec.ne.norm_term_flag .and. ierr_vmec.ne.more_iter_flag)
 !     1   GOTO 1000
 
-      print *,"~~~~4"
       CALL cdf_read(nwout, vn_version, version_)
       CALL cdf_read(nwout, vn_extension, input_extension)
       CALL cdf_read(nwout, vn_mgrid, mgrid_file)
@@ -1161,10 +1154,7 @@ C-----------------------------------------------
       IF (ierror == 0) ALLOCATE (prprmnc(dimlens(1),dimlens(2)),
      1                           stat = ierror)
 
-      print *,"~~~~5"
-
       IF (.NOT. lasym) GO TO 800
-      print *,"~~~~6"
 
       CALL cdf_inquire(nwout, vn_rmns, dimlens)
       ALLOCATE (rmns(dimlens(1),dimlens(2)), stat = ierror)
@@ -1222,7 +1212,6 @@ C-----------------------------------------------
      1                           stat = ierror)
 
  800  CONTINUE
-      print *,"~~~~7"
 
 ! Read Arrays
       CALL cdf_read(nwout, vn_pmod, xm)
@@ -1365,10 +1354,7 @@ C-----------------------------------------------
          CALL cdf_read(nwout, vn_curlab, curlabel)
       ENDIF
 
-      print *,"~~~~8"
-
  1000 CONTINUE
-      print *,"~~~~9"
 
       CALL cdf_close(nwout, ierr)
 

@@ -14,7 +14,7 @@ program regcoil
 
   call read_input()
   call validate_input()
-  call compute_alpha()
+  call compute_lambda()
 
   ! Define the position vector and normal vector at each grid point for the surfaces:
   call init_plasma()

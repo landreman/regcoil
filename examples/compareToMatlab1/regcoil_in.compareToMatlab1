@@ -1,9 +1,9 @@
 ! For documentation of these input parameters and their default values, see the README.
 
 &regcoil
-  nalpha = 5
-  alpha_min = 1e-30
-  alpha_max = 1
+  nlambda = 5
+  lambda_min = 1e-30
+  lambda_max = 1
 
   ntheta_plasma = 32
   ntheta_coil   = 33

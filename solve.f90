@@ -9,10 +9,10 @@ subroutine solve
   integer :: iflag, tic, toc, countrate
   real(dp), dimension(:,:), allocatable :: matrix, this_current_potential
   real(dp), dimension(:), allocatable :: RHS, solution
-  real(dp), dimension(:), allocatable :: JDifference_x, JDifference_y, Jdifference_z
-  real(dp), dimension(:,:), allocatable :: this_J2_times_N
+  real(dp), dimension(:), allocatable :: KDifference_x, KDifference_y, KDifference_z
+  real(dp), dimension(:,:), allocatable :: this_K2_times_N
   real(dp) :: factor_theta, factor_zeta
-  integer :: ialpha, itheta, izeta
+  integer :: ilambda, itheta, izeta
 
   ! Variables needed by LAPACK:
   integer :: INFO, LWORK
@@ -30,33 +30,33 @@ subroutine solve
   allocate(IPIV(num_basis_functions), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
-  allocate(chi2_B(nalpha), stat=iflag)
+  allocate(chi2_B(nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(chi2_J(nalpha), stat=iflag)
+  allocate(chi2_K(nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(max_Bnormal(nalpha), stat=iflag)
+  allocate(max_Bnormal(nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(max_J(nalpha), stat=iflag)
+  allocate(max_K(nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(current_potential(ntheta_coil,nzeta_coil,nalpha), stat=iflag)
+  allocate(current_potential(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(single_valued_current_potential_thetazeta(ntheta_coil,nzeta_coil,nalpha), stat=iflag)
+  allocate(single_valued_current_potential_thetazeta(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(this_current_potential(ntheta_coil,nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(single_valued_current_potential_mn(num_basis_functions,nalpha), stat=iflag)
+  allocate(single_valued_current_potential_mn(num_basis_functions,nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(Bnormal_total(ntheta_plasma,nzeta_plasma,nalpha), stat=iflag)
+  allocate(Bnormal_total(ntheta_plasma,nzeta_plasma,nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(J2(ntheta_coil,nzeta_coil,nalpha), stat=iflag)
+  allocate(K2(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(JDifference_x(ntheta_coil*nzeta_coil), stat=iflag)
+  allocate(KDifference_x(ntheta_coil*nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(JDifference_y(ntheta_coil*nzeta_coil), stat=iflag)
+  allocate(KDifference_y(ntheta_coil*nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(JDifference_z(ntheta_coil*nzeta_coil), stat=iflag)
+  allocate(KDifference_z(ntheta_coil*nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(this_J2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
+  allocate(this_K2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
 
@@ -71,12 +71,12 @@ subroutine solve
   factor_zeta  = net_poloidal_current_Amperes / twopi
   factor_theta = net_toroidal_current_Amperes / twopi
 
-  do ialpha = 1,nalpha
-     print "(a,e10.3,a,i3,a,i3,a)"," Solving system for alpha=",alpha(ialpha)," (",ialpha," of ",nalpha,")"
+  do ilambda = 1,nlambda
+     print "(a,e10.3,a,i3,a,i3,a)"," Solving system for lambda=",lambda(ilambda)," (",ilambda," of ",nlambda,")"
      call system_clock(tic,countrate)
 
-     matrix = matrix_B + alpha(ialpha) * matrix_J
-     RHS    =    RHS_B + alpha(ialpha) *    RHS_J
+     matrix = matrix_B + lambda(ilambda) * matrix_K
+     RHS    =    RHS_B + lambda(ilambda) *    RHS_K
 
      call system_clock(toc)
      print *,"  Additions: ",real(toc-tic)/countrate," sec."
@@ -100,37 +100,37 @@ subroutine solve
      ! Now compute diagnostics
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-     single_valued_current_potential_mn(:,ialpha) = solution
+     single_valued_current_potential_mn(:,ilambda) = solution
      this_current_potential = reshape(matmul(basis_functions, solution), (/ ntheta_coil, nzeta_coil /)) ! Could use BLAS2 for this line for extra speed.
-     single_valued_current_potential_thetazeta(:,:,ialpha) = this_current_potential
+     single_valued_current_potential_thetazeta(:,:,ilambda) = this_current_potential
      do izeta = 1,nzeta_coil
         do itheta = 1,ntheta_coil
            this_current_potential(itheta,izeta) = this_current_potential(itheta,izeta) &
                 + factor_zeta*zeta_coil(izeta) + factor_theta*theta_coil(itheta)
         end do
      end do
-     current_potential(:,:,ialpha) = this_current_potential
+     current_potential(:,:,ilambda) = this_current_potential
 
-     JDifference_x = d_x - matmul(f_x, solution)
-     JDifference_y = d_y - matmul(f_y, solution)
-     JDifference_z = d_z - matmul(f_z, solution)
-     this_J2_times_N = reshape(JDifference_x*Jdifference_x + JDifference_y*JDifference_y + JDifference_z*JDifference_z, (/ ntheta_coil, nzeta_coil /)) &
+     KDifference_x = d_x - matmul(f_x, solution)
+     KDifference_y = d_y - matmul(f_y, solution)
+     KDifference_z = d_z - matmul(f_z, solution)
+     this_K2_times_N = reshape(KDifference_x*KDifference_x + KDifference_y*KDifference_y + KDifference_z*KDifference_z, (/ ntheta_coil, nzeta_coil /)) &
           / norm_normal_coil
-     chi2_J(ialpha) = nfp * dtheta_coil * dzeta_coil * sum(this_J2_times_N)
-     J2(:,:,ialpha) = this_J2_times_N / norm_normal_coil
+     chi2_K(ilambda) = nfp * dtheta_coil * dzeta_coil * sum(this_K2_times_N)
+     K2(:,:,ilambda) = this_K2_times_N / norm_normal_coil
 
-     Bnormal_total(:,:,ialpha) = (reshape(matmul(g,solution),(/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma) &
+     Bnormal_total(:,:,ilambda) = (reshape(matmul(g,solution),(/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma) &
           + Bnormal_from_plasma_current + Bnormal_from_net_coil_currents
 
-     max_Bnormal(ialpha) = maxval(abs(Bnormal_total(:,:,ialpha)))
-     max_J(ialpha) = sqrt(maxval(J2(:,:,ialpha)))
+     max_Bnormal(ilambda) = maxval(abs(Bnormal_total(:,:,ilambda)))
+     max_K(ilambda) = sqrt(maxval(K2(:,:,ilambda)))
 
-     chi2_B(ialpha) = nfp * dtheta_plasma * dzeta_plasma &
-          * sum(Bnormal_total(:,:,ialpha) * Bnormal_total(:,:,ialpha) * norm_normal_plasma)
+     chi2_B(ilambda) = nfp * dtheta_plasma * dzeta_plasma &
+          * sum(Bnormal_total(:,:,ilambda) * Bnormal_total(:,:,ilambda) * norm_normal_plasma)
 
      call system_clock(toc)
      print *,"  Diagnostics: ",real(toc-tic)/countrate," sec."
-     print *,"  chi2_B:",chi2_B(ialpha),"chi2_J:",chi2_J(ialpha)
+     print *,"  chi2_B:",chi2_B(ilambda),"chi2_K:",chi2_K(ilambda)
   end do
 
 end subroutine solve

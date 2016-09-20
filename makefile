@@ -10,7 +10,7 @@
 
 # For batch systems, set the following variable to the command used to run jobs.
 # This variable is used by 'make test'.
-REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -n 1 -c 32
+REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -n 1 -c 24
 #REGCOIL_COMMAND_TO_SUBMIT_JOB =
 
 ifdef NERSC_HOST

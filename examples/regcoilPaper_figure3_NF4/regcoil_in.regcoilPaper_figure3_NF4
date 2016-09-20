@@ -3,9 +3,9 @@
 &regcoil
   general_option=1
 
-  nalpha=1
-  alpha_min = 1e-50
-  alpha_max = 1
+  nlambda=1
+  lambda_min = 1e-50
+  lambda_max = 1
 
   ntheta_plasma=128
   ntheta_coil  =128
