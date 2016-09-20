@@ -1,4 +1,4 @@
-TARGET = bdistribManual
+TARGET = regcoilManual
 
 .PHONY: all
 

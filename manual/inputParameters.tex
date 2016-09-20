@@ -17,25 +17,10 @@ In this section we describe all the parameters which can be included in the inpu
 {Always}
 {Determines the overall flow of program execution.\\
 
-{\ttfamily general\_option} = 1: Compute the current potential for a range of alpha.\\
+{\ttfamily general\_option} = 1: Compute the current potential for a range of lambda.\\
 
 {\ttfamily general\_option} = 2: Do not compute the current potential, but rather load the current potential computed
-by NESCOIL in the file \parlink{nescout\_filename}, reporting the $\chi^2_B$ and $\chi^2_J$ for it.
-}
-
-\myhrule
-
-\param{transfer\_matrix\_option}
-{integer}
-{1}
-{Always}
-{Which method is used to compute the transfer matrix.\\
-
-{\ttfamily transfer\_matrix\_option} = 1: 3-surface approach: parameterize the solutions to Laplace's equation using a surface current on an outer surface
-which is outside the control surface.\\
-
-{\ttfamily transfer\_matrix\_option} = 2: 2-surface approach: parameterize the solutions to Laplace's equation using monopoles on the control surface. In this case
-all parameters associated with the outer surface are changed to match the middle surface.
+by NESCOIL in the file \parlink{nescout\_filename}, reporting the $\chi^2_B$ and $\chi^2_K$ for it.
 }
 
 \myhrule
@@ -76,26 +61,6 @@ will be linear combinations of the Fourier functions, as constructed using the C
 
 \myhrule
 
-\param{pseudoinverse\_thresholds}
-{real array}
-{1e-12}
-{Always}
-{To form the pseudoinverse of the outer-to-middle inductance matrix, singular values larger than this threshold
-will be replaced by their inverse, whereas singular values smaller than this threshold will be replaced by zero.
-You can supply more than one threshold value in order to compare results for different choices.
-Good threshold values are in the range 1e-6 to 1e-13, i.e. small compared to 1 but larger than machine precision.}
-
-\myhrule
-
-\param{check\_orthogonality}
-{logical}
-{\false}
-{Always}
-{If this parameter is set to \true, the integrals $\int d^2a\; w f_i f_j$ will be computed for all $i$ and $j$,
-to be sure the result is $\delta_{i,j}$ to machine precision.}
-
-\myhrule
-
 \param{n\_singular\_vectors\_to\_save}
 {integer}
 {12}
@@ -121,26 +86,12 @@ Regardless of this parameter, all singular \emph{values} will be saved in the ou
 
 \myhrule
 
-\param{zero\_first\_transfer\_vector\_in\_overlap}
-{logical}
-{\false}
-{Always}
-{A tool for determining which axis of the {\ttfamily overlap\_plasma} and {\ttfamily overlap\_middle}
-matrices corresponds to the transfer matrix versus the plasma-middle inductance matrix.
-When this parameter is true, the first column (i.e. first singular vector) in both $\vect{U}$
-and $\vect{V}$ for the transfer matrix SVD are set to 0 before computing the overlap matrices.
-}
-
-\myhrule
-
 \param{net\_poloidal\_current\_Amperes}
 {real}
 {1.0}
 {If \parlink{geometry\_option\_plasma}=0,1,or 5, i.e. if the plasma surface is not a vmec equilibrium.}
-{The number of Amperes of current the links the middle surface poloidally,
-denoted $G$ in the notes. This
-number is used to set the overall magnitude of the normal fields due to a $1/R$ external
-field or due to constant-$v$ coils. If the plasma surface is obtained from a vmec equilibrium,
+{The number of Amperes of current the links the coil winding surface poloidally,
+denoted $G$ in \cite{regcoilPaper}. If the plasma surface is obtained from a vmec equilibrium,
 then {\ttfamily net\_poloidal\_current\_Amperes} will be determined instead
 from the {\ttfamily bvco} value in the vmec wout file.
 }
@@ -151,8 +102,8 @@ from the {\ttfamily bvco} value in the vmec wout file.
 {real}
 {0.0}
 {Always}
-{The number of Amperes of current the links the middle surface toroidally,
-denoted $I$ in the notes. Unlike the net poloidal current, this number
+{The number of Amperes of current the links the coil winding surface toroidally,
+denoted $I$ in \cite{regcoilPaper}. Unlike the net poloidal current, this number
 is never read from a wout file.
 }
 
@@ -166,120 +117,63 @@ resolution increases.
 
 \myhrule
 
-\param{nu\_plasma}
+\param{ntheta\_plasma}
 {integer}
 {64}
 {Always}
-{Number of grid points in poloidal angle used to evaluate the integral \todo{XXX} in the outer-to-plasma surface inductance matrix.
-Often 64 is a good value.
-It is resonable and common but not mandatory to use the same value for nu\_plasma, \parlink{nu\_middle}, and \parlink{nu\_outer}.}
+{Number of grid points in poloidal angle used to evaluate surface integrals on the plasma surface.
+Often 64 or 128 is a good value.
+It is resonable and common but not mandatory to use the same value for {\ttfamily ntheta\_plasma} and \parlink{ntheta\_coil}.}
 
 \myhrule
 
-\param{nu\_middle}
+\param{ntheta\_coil}
 {integer}
 {64}
 {Always}
-{Number of grid points in poloidal angle used to evaluate the integral \todo{XXX} in the outer-to-middle surface inductance matrix.
-Often 64 is a good value.
-It is resonable and common but not mandatory to use the same value for \parlink{nu\_plasma}, nu\_middle, and \parlink{nu\_outer}.}
+{Number of grid points in poloidal angle used to evaluate surface integrals on the coil winding surface.
+Often 64 or 128 is a good value.
+It is resonable and common but not mandatory to use the same value for \parlink{ntheta\_plasma} and {\ttfamily ntheta\_coil}.}
 
 \myhrule
 
-\param{nu\_outer}
+
+\param{nzeta\_plasma}
 {integer}
 {64}
 {Always}
-{Number of grid points in poloidal angle used to evaluate the integral \todo{XXX} in the outer-to-plasma surface and outer-to-middle surface inductance matrices.
-Often 64 is a good value.
-It is resonable and common but not mandatory to use the same value for \parlink{nu\_plasma}, \parlink{nu\_middle}, and nu\_outer.}
+{Number of grid points in toroidal angle used to evaluate surface integrals on the plasma surface.
+Often 64 or 128 is a good value.
+It is resonable and common but not mandatory to use the same value for {\ttfamily nzeta\_plasma} and \parlink{nzeta\_coil}.}
 
 \myhrule
 
-\param{nv\_plasma}
+\param{nzeta\_coil}
 {integer}
 {64}
 {Always}
-{Number of grid points in poloidal angle used to evaluate the integral \todo{XXX} in the outer-to-plasma surface inductance matrix.
-A value of 64 is often good when the number of field periods is more than 1. A higher value like 256 may be needed when the number of field periods is 1.
-It is resonable and common but not mandatory to use the same value for nv\_plasma, \parlink{nv\_middle}, and \parlink{nv\_outer}.}
+{Number of grid points in toroidal angle used to evaluate surface integrals on the coil winding surface.
+Often 64 or 128 is a good value.
+It is resonable and common but not mandatory to use the same value for \parlink{nzeta\_plasma} and {\ttfamily nzeta\_coil}.}
 
 \myhrule
 
-\param{nv\_middle}
-{integer}
-{64}
-{Always}
-{Number of grid points in poloidal angle used to evaluate the integral \todo{XXX} in the outer-to-middle surface inductance matrix.
-A value of 64 is often good when the number of field periods is more than 1. A higher value like 256 may be needed when the number of field periods is 1.
-It is resonable and common but not mandatory to use the same value for \parlink{nv\_plasma}, nv\_middle, and \parlink{nv\_outer}.}
-
-\myhrule
-
-\param{nv\_outer}
-{integer}
-{64}
-{Always}
-{Number of grid points in poloidal angle used to evaluate the integral \todo{XXX} in the outer-to-plasma surface and outer-to-middle surface inductance matrices.
-A value of 64 is often good when the number of field periods is more than 1. A higher value like 256 may be needed when the number of field periods is 1.
-It is resonable and common but not mandatory to use the same value for \parlink{nv\_plasma}, \parlink{nv\_middle}, and nv\_outer.}
-
-\myhrule
-
-\param{mpol\_plasma}
+\param{mpol\_coil}
 {integer}
 {8}
 {Always}
-{Maximum poloidal mode number to include for the Fourier basis functions on the plasma surface. The value can be positive or zero.
-It is resonable and common but not mandatory to use the same value for {\ttfamily mpol\_plasma}, \parlink{mpol\_middle}, and \parlink{mpol\_outer}.}
+{Maximum poloidal mode number to include for the single-valued part of the current potential on the coil winding surface.
+}
 
 \myhrule
 
-\param{mpol\_middle}
+\param{ntor\_coil}
 {integer}
 {8}
 {Always}
-{Maximum poloidal mode number to include for the Fourier basis functions on the middle surface. The value can be positive or zero.
-It is resonable and common but not mandatory to use the same value for \parlink{mpol\_plasma}, {\ttfamily mpol\_middle}, and \parlink{mpol\_outer}.}
-
-\myhrule
-
-\param{mpol\_outer}
-{integer}
-{8}
-{Always}
-{Maximum poloidal mode number to include for the Fourier basis functions on the outer surface. The value can be positive or zero.
-It is resonable and common but not mandatory to use the same value for \parlink{mpol\_plasma}, \parlink{mpol\_middle}, and {\ttfamily mpol\_outer}.}
-
-\myhrule
-
-\param{ntor\_plasma}
-{integer}
-{8}
-{Always}
-{Maximum toroidal mode number to include for the Fourier basis functions on the plasma surface. The value can be positive or zero.
-It is resonable and common but not mandatory to use the same value for {\ttfamily ntor\_plasma}, \parlink{ntor\_middle}, and \parlink{ntor\_outer}.
-You can set the three {\ttfamily ntor} parameters to zero to examine only axisymmetric modes.}
-
-\myhrule
-
-\param{ntor\_middle}
-{integer}
-{8}
-{Always}
-{Maximum toroidal mode number to include for the Fourier basis functions on the middle surface. The value can be positive or zero.
-It is resonable and common but not mandatory to use the same value for \parlink{ntor\_plasma}, {\ttfamily ntor\_middle}, and \parlink{ntor\_outer}.
-You can set the three {\ttfamily ntor} parameters to zero to examine only axisymmetric modes.}
-
-\myhrule
-
-\param{ntor\_outer}
-{integer}
-{8}
-{Always}
-{Maximum toroidal mode number to include for the Fourier basis functions on the outer surface. The value can be positive or zero.
-It is resonable and common but not mandatory to use the same value for \parlink{ntor\_plasma}, \parlink{ntor\_middle}, and {\ttfamily ntor\_outer}.
-You can set the three {\ttfamily ntor} parameters to zero to examine only axisymmetric modes.}
+{
+Maximum toroidal mode number to include for the single-valued part of the current potential on the coil winding surface.
+}
 
 \myhrule
 
@@ -291,9 +185,8 @@ You can set the three {\ttfamily ntor} parameters to zero to examine only axisym
 when transforming from the original poloidal angle to the straight-field-line angle.
 Since the original \vmec~angle is chosen to minimize the number of Fourier modes required,
 more modes are required in any other coordinate.
-This parameter does not affect the sets of basis functions,
-or the time required to assemble the inductance matrices or
-computed SVDs, but it does affect the time required to compute constant-offset surfaces.
+This parameter affects the time required to compute constant-offset surfaces,
+but does not affect the time for other calculations.
 }
 
 \myhrule
@@ -306,9 +199,8 @@ computed SVDs, but it does affect the time required to compute constant-offset s
 when transforming from the original poloidal angle to the straight-field-line angle.
 Since the original \vmec~angle is chosen to minimize the number of Fourier modes required,
 more modes are required in any other coordinate.
-This parameter does not affect the sets of basis functions,
-or the time required to assemble the inductance matrices or
-computed SVDs, but it does affect the time required to compute constant-offset surfaces.
+This parameter affects the time required to compute constant-offset surfaces,
+but does not affect the time for other calculations.
 }
 
 \section{Geometry parameters for the plasma surface}
@@ -320,9 +212,9 @@ computed SVDs, but it does affect the time required to compute constant-offset s
 {This option controls which type of geometry is used for the plasma surface.\\
 
 {\ttfamily geometry\_option\_plasma} = 0: The plasma surface will be a plain circular torus. The major radius will be \parlink{R0\_plasma}.
-     The minor radius will be \parlink{a\_plasma}.\\
+     The minor radius will be \parlink{a\_plasma}. This option exists just for testing purposes.\\
 
-{\ttfamily geometry\_option\_plasma} = 1: Identical to option 0. (This option exists just for consistency with \parlink{geometry\_option\_middle} and \parlink{geometry\_option\_outer}.)\\
+{\ttfamily geometry\_option\_plasma} = 1: Identical to option 0.\\
 
 {\ttfamily geometry\_option\_plasma} = 2: The plasma surface will be the last surface in the full radial grid of the \vmec~file specified by \parlink{wout\_ilename}.
 The poloidal angle used will be the normal \vmec~angle which is not a straight-field-line coordinate.
@@ -402,143 +294,84 @@ A value of 1 corresponds to the last closed flux surface, and 0 corresponds to t
 the plasma surface. Each of these functions will be expanded in a sum of functions $\sin(m\theta)$ and $\cos(m\theta)$,
 where $m$ ranges from 0 to {\ttfamily efit\_num\_modes}$-1$.}
 
-\section{Geometry parameters for the middle surface}
+\section{Geometry parameters for the coil winding surface}
 
-\param{geometry\_option\_middle}
+\param{geometry\_option\_coil}
 {integer}
 {0}
 {Always}
-{This option controls which type of geometry is used for the middle surface.\\
+{This option controls which type of geometry is used for the coil surface.\\
 
-{\ttfamily geometry\_option\_middle} = 0: The middle surface will be a plain circular torus. The major radius will be the 
+{\ttfamily geometry\_option\_coil} = 0: The coil surface will be a plain circular torus. The major radius will be the 
 same as the plasma surface: either \parlink{R0\_plasma} if \parlink{geometry\_option\_plasma} is 0 or 1, or {\ttfamily Rmajor\_p} from the \vmec~{\ttfamily wout} file
 if  \parlink{geometry\_option\_plasma} is 2.
-     The minor radius will be \parlink{a\_middle}.\\
+     The minor radius will be \parlink{a\_coil}.\\
 
-{\ttfamily geometry\_option\_middle} = 1: Identical to option 0, except the major radius of the middle surface will be set by \parlink{R0\_middle}.\\
+{\ttfamily geometry\_option\_coil} = 1: Identical to option 0, except the major radius of the coil surface will be set by \parlink{R0\_coil}.\\
 
-{\ttfamily geometry\_option\_middle} = 2: The middle surface will computing by expanding the plasma surface uniformly by a distance \parlink{separation\_middle}.\\
+{\ttfamily geometry\_option\_coil} = 2: The coil surface will computing by expanding the plasma surface uniformly by a distance \parlink{separation\_coil}.\\
 
-{\ttfamily geometry\_option\_middle} = 3: The middle surface will be the `coil' surface in the \nescoil~`nescin' input file specified by \parlink{nescin\_filename\_middle}.
+{\ttfamily geometry\_option\_coil} = 3: The coil surface will be the `coil' surface in the \nescoil~`nescin' input file specified by \parlink{nescin\_filename\_coil}.
 }
 
 \myhrule
 
-\param{R0\_middle}
+\param{R0\_coil}
 {real}
 {10.0}
-{Only when \parlink{geometry\_option\_middle} is 1.}
-{Major radius of the middle surface, when this surface is a plain circular torus.}
+{Only when \parlink{geometry\_option\_coil} is 1.}
+{Major radius of the coil surface, when this surface is a plain circular torus.}
 
 \myhrule
 
-\param{a\_middle}
+\param{a\_coil}
 {real}
 {1.0}
-{Only when \parlink{geometry\_option\_middle} is 0 or 1.}
-{Minor radius of the middle surface, when this surface is a plain circular torus.}
+{Only when \parlink{geometry\_option\_coil} is 0 or 1.}
+{Minor radius of the coil surface, when this surface is a plain circular torus.}
 
 
 \myhrule
 
-\param{separation\_middle}
+\param{separation\_coil}
 {real}
 {0.2}
-{Only when \parlink{geometry\_option\_middle} is 2.}
-{Amount by which the middle surface is offset from the plasma surface.}
+{Only when \parlink{geometry\_option\_coil} is 2.}
+{Amount by which the coil surface is offset from the plasma surface.}
 
 \myhrule
 
-\param{nescin\_filename\_middle}
+\param{nescin\_filename\_coil}
 {string}
 {`'}
-{Only when \parlink{geometry\_option\_middle} is 3.}
+{Only when \parlink{geometry\_option\_coil} is 3.}
 {Name of a \nescoil~{\ttfamily nescin} input file. The coil surface from
-this file will be used as the middle surface for \bdistrib.}
+this file will be used as the coil surface for \regcoil.}
 
-
-\section{Geometry parameters for the outer surface}
-
-Note that all parameters in this namelist are ignored
-when \parlink{transfer\_matrix\_option} = 2.
-
-\myhrule
-
-\param{geometry\_option\_outer}
-{integer}
-{0}
-{Always}
-{This option controls which type of geometry is used for the outer surface.\\
-
-{\ttfamily geometry\_option\_outer} = 0: The outer surface will be a plain circular torus. The major radius will be \parlink{R0\_outer}.
-     The minor radius will be \parlink{a\_outer}.\\
-
-{\ttfamily geometry\_option\_outer} = 1: Identical to option 0.\\
-
-{\ttfamily geometry\_option\_outer} = 2: The outer surface will computing by expanding the plasma surface uniformly by a distance \parlink{separation\_outer}.\\
-
-{\ttfamily geometry\_option\_outer} = 3: The outer surface will be the `coil' surface from the \nescoil~`nescin' input file specified by \parlink{nescin\_filename\_outer}.\\
-
-{\ttfamily geometry\_option\_outer} = 4: The outer surface will be the `coil' surface from the \nescoil~`nescin' input file specified by \parlink{nescin\_filename\_outer},
-expanded uniformly by a distance \parlink{separation\_outer}.
-}
-
-\myhrule
-
-\param{R0\_outer}
-{real}
-{10.0}
-{Only when \parlink{geometry\_option\_outer} is 1.}
-{Major radius of the outer surface, when this surface is a plain circular torus.}
-
-\myhrule
-
-\param{a\_outer}
-{real}
-{1.5}
-{Only when \parlink{geometry\_option\_outer} is 0 or 1.}
-{Minor radius of the outer surface, when this surface is a plain circular torus.}
-
-\myhrule
-
-\param{separation\_outer}
-{real}
-{0.4}
-{Only when \parlink{geometry\_option\_outer} is 2.}
-{Amount by which the outer surface is offset from the plasma surface.  (Not the offset between the outer and \emph{middle} surfaces!).}
-
-\myhrule
-
-\param{nescin\_filename\_outer}
-{string}
-{`'}
-{Only when \parlink{geometry\_option\_outer} is 3.}
-{Name of a \nescoil~{\ttfamily nescin} input file. The coil surface from
-this file will be used as the outer surface for \bdistrib.}
 
 \section{Parameters related to the regularization weight}
 
-\param{N\_alphas}
+\param{N\_lambdas}
 {integer}
 {4}
 {Always}
-{Number of values of $\alpha$ for which the problem is solved.}
+{Number of values of $\lambda$ for which the problem is solved.}
 
 \myhrule
 
-\param{alpha\_max}
+\param{lambda\_max}
 {real}
 {10.0}
 {Always}
-{Maximum value of $\alpha$ for which the problem is solved.}
+{Maximum value of $\lambda$ for which the problem is solved.}
 
 \myhrule
 
-\param{alpha\_min}
+\param{lambda\_min}
 {real}
 {0.1}
 {Always}
-{Minimum nonzero value of $\alpha$ for which the problem is solved.
-Note that the problem is always solved for $\alpha=0$ in addition to
+{Minimum nonzero value of $\lambda$ for which the problem is solved.
+Note that the problem is always solved for $\lambda=0$ in addition to
 the nonzero values.}
 

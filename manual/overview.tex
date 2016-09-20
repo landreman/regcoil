@@ -7,14 +7,14 @@ There are some similarities between this program and the \nescoil~code used to c
 relationship by which the current potential on the coil surface gives rise to a normal component of the magnetic field $\vect{B}$ on the plasma
 surface.  \nescoil~takes the normal component of $\vect{B}$ on the plasma surface associated with net poloidal coil current plus plasma
 current, and effectively multiplies the result by the (pseudo)inverse of the inductance matrix, yielding the current potential required
-to achieve a magnetic surface (zero normal component of $\vect{B}$) on the plasma surface.  In \bdistrib, however,
+to achieve a magnetic surface (zero normal component of $\vect{B}$) on the plasma surface.  In \regcoil, however,
 we do not consider net coil current or plasma current, and we compute two inductance matrices instead of one.  The two inductance matrices
-in \bdistrib~refer to the same outer surface (on which the current potential is defined), but to different surfaces on which the normal $\vect{B}$
+in \regcoil~refer to the same outer surface (on which the current potential is defined), but to different surfaces on which the normal $\vect{B}$
 is evaluated. Multiplying one inductance matrix by the (pseudo)inverse of the other gives the so-called `transfer matrix'.
 Applying a singular value decomposition (SVD) to this transfer matrix, the singular vectors represent modes of the magnetic field,
 and the singular values represent the efficiency by which these modes propagate from one toroidal surface to the other.
 
-In \bdistrib~the three toroidal surfaces are named `plasma', `middle', and `outer', in order from the innermost to outermost. The
+In \regcoil~the three toroidal surfaces are named `plasma', `middle', and `outer', in order from the innermost to outermost. The
 `plasma' surface can correspond to the outermost surface of a \vmec~equilibrium, or it can be a plain circular toroidal surface. The name
 of the relevant surface appears as a suffix on most variables.
 
@@ -45,7 +45,6 @@ paper. Note that this vector does not have unit magnitude.
 
 \begin{itemize}
 
-\item {\ttfamily LIBSTELL} (for reading \vmec~{\ttfamily wout} files, and for the {\ttfamily ezcdf} subroutines)
 \item {\ttfamily NetCDF} (for writing the output file)
 \item {\ttfamily BLAS/LAPACK} (for matrix multiplication and the SVD subroutine)
 
@@ -53,7 +52,7 @@ paper. Note that this vector does not have unit magnitude.
 
 If {\ttfamily OpenMP} is available, calculations with the code are parallelized.  The plotting and testing functions use \python,
 {\ttfamily numpy}, and {\ttfamily scipy}.
-The plotting routines \bdistribPlot~and {\ttfamily compareSingularValuesPlot} use {\ttfamily matplotlib}.
+The plotting routines \regcoilPlot~and {\ttfamily compareRegcoil} use {\ttfamily matplotlib}.
 
 \section{Parallelization}
 
@@ -61,19 +60,19 @@ The code does not use {\ttfamily MPI}, and so it runs on a single computing node
 on the node to accelerate computations.  The multi-threaded parallelization is done in part using {\ttfamily OpenMP}
 and in part using a multi-threaded {\ttfamily BLAS} routine.
 
-The slowest steps in \bdistrib~occur when assembling the two
+The slowest steps in \regcoil~occur when assembling the two
 inductance matrices.  For each of these two matrices, there are two slow steps.
 The first is computation of the magnetic dipole formula between each pair of points
 on the two toroidal surfaces.  The loop for this computation is parallelized using {\ttfamily OpenMP}.
 The other slow step is the integration of this result against each of the basis functions,
 which is done using matrix multiplication with the {\ttfamily BLAS} subroutine {\ttfamily DGEMM}.
-To parallelize this step you can link \bdistrib~with a multi-threaded  {\ttfamily BLAS} library,
+To parallelize this step you can link \regcoil~with a multi-threaded  {\ttfamily BLAS} library,
 such as the Intel Math Kernel Library (MKL).
 
 \section{\ttfamily make test}
 
-To test that your \bdistrib~executable is working, you can run {\ttfamily make test}.  Doing so will run
-\bdistrib~for some or all of the examples in the {\ttfamily examples/} directories.
+To test that your \regcoil~executable is working, you can run {\ttfamily make test}.  Doing so will run
+\regcoil~for some or all of the examples in the {\ttfamily examples/} directories.
 After each example completes, several of the output quantities (typically the singular values
 of the transfer matrix)
 will be checked, using the
@@ -83,9 +82,12 @@ that your code modifications have not broken anything and that previous results
 can be recovered.
 
 If you run {\ttfamily make retest},
-no new runs of \bdistrib~will be performed, but the {\ttfamily tests.py} script
+no new runs of \regcoil~will be performed, but the {\ttfamily tests.py} script
 will be run on any existing output files in the \path{/examples/} directories.
 
+\section{Units}
+
+All input and output parameters use SI units: meters, Teslas, Amperes, and combinations thereof.
 
 \section{Questions, Bugs, and Feedback}
 
