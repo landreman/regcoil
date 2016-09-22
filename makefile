@@ -1,17 +1,10 @@
 # makefile for NERSC Edison and Cori
 # You must first load the cray-netcdf module:
 #   module load cray-netcdf
-# For Cori is is also necessary to run
-#   module swap intel/16.0.0.109 intel/15.0.1.133
-# to avoid a bug in the Intel MKL!!!
 # It is convenient to run
 #   module unload cray-libsci
 # to avoid warning messages about libsci during compiling.
 
-# For batch systems, set the following variable to the command used to run jobs.
-# This variable is used by 'make test'.
-REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -n 1 -c 24
-#REGCOIL_COMMAND_TO_SUBMIT_JOB =
 
 ifdef NERSC_HOST
         HOSTNAME = $(NERSC_HOST)
@@ -23,16 +16,27 @@ ifeq ($(HOSTNAME),edison)
 	FC = ftn
 	EXTRA_COMPILE_FLAGS = -openmp -mkl
 	EXTRA_LINK_FLAGS =  -openmp -mkl -Wl,-ydgemm_
+	# For batch systems, set the following variable to the command used to run jobs.
+	# This variable is used by 'make test'.
+	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -n 1 -c 24
+
 else ifeq ($(HOSTNAME),cori)
 	FC = ftn
 	EXTRA_COMPILE_FLAGS = -qopenmp -mkl
 	EXTRA_LINK_FLAGS =  -qopenmp -mkl -Wl,-ydgemm_
+	# For batch systems, set the following variable to the command used to run jobs.
+	# This variable is used by 'make test'.
+	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -n 1 -c 24
 else
 	#FC = gfortran
 	FC = mpif90
 	#EXTRA_COMPILE_FLAGS = -openmp -I/opt/local/include -ffree-form -ffree-line-length-none -ffixed-line-length-none -traditional
 	EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none -cpp
-	EXTRA_LINK_FLAGS =  -fopenmp
+	EXTRA_LINK_FLAGS =  -fopenmp -L/opt/local/lib -lnetcdff  -lnetcdf -framework Accelerate
+
+	# For batch systems, set the following variable to the command used to run jobs.
+	# This variable is used by 'make test'.
+	REGCOIL_COMMAND_TO_SUBMIT_JOB =
 endif
 ##LIBSTELL_DIR = /global/homes/l/landrema/20150410-02-stellinstall_245_edison/LIBSTELL/Release
 

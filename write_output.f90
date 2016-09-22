@@ -103,19 +103,19 @@ subroutine write_output
 
   ! Arrays with dimension 2:
   character(len=*), parameter, dimension(2) :: &
-       ntheta_nzeta_plasma_dim = (/'ntheta_plasma','nzeta_plasma'/), &
-       ntheta_nzeta_coil_dim = (/'ntheta_coil','nzeta_coil'/), &
-       nthetanzeta_plasma_nthetanzeta_coil_dim = (/'ntheta_nzeta_plasma','ntheta_nzeta_coil'/), &
-       nthetanzeta_plasma_basis_dim = (/'ntheta_nzeta_plasma','num_basis_functions'/), &
-       basis_basis_dim = (/'num_basis_functions','num_basis_functions'/), &
-       basis_nlambda_dim = (/'num_basis_functions','nlambda'/)
+       ntheta_nzeta_plasma_dim = (/ character(len=50) :: 'ntheta_plasma','nzeta_plasma'/), &
+       ntheta_nzeta_coil_dim = (/ character(len=50) :: 'ntheta_coil','nzeta_coil'/), &
+       nthetanzeta_plasma_nthetanzeta_coil_dim = (/ character(len=50) :: 'ntheta_nzeta_plasma','ntheta_nzeta_coil'/), &
+       nthetanzeta_plasma_basis_dim = (/ character(len=50) :: 'ntheta_nzeta_plasma','num_basis_functions'/), &
+       basis_basis_dim = (/ character(len=50) :: 'num_basis_functions','num_basis_functions'/), &
+       basis_nlambda_dim = (/ character(len=50) :: 'num_basis_functions','nlambda'/)
 
   ! Arrays with dimension 3:
   character(len=*), parameter, dimension(3) :: &
-       xyz_ntheta_nzetal_plasma_dim = (/'xyz','ntheta_plasma','nzetal_plasma'/), &
-       xyz_ntheta_nzetal_coil_dim = (/'xyz','ntheta_coil','nzetal_coil'/), &
-       ntheta_nzeta_coil_nlambda_dim = (/'ntheta_coil','nzeta_coil','nlambda'/), &
-       ntheta_nzeta_plasma_nlambda_dim = (/'ntheta_plasma','nzeta_plasma','nlambda'/)
+       xyz_ntheta_nzetal_plasma_dim = (/ character(len=50) :: 'xyz','ntheta_plasma','nzetal_plasma'/), &
+       xyz_ntheta_nzetal_coil_dim = (/ character(len=50) :: 'xyz','ntheta_coil','nzetal_coil'/), &
+       ntheta_nzeta_coil_nlambda_dim = (/ character(len=50) :: 'ntheta_coil','nzeta_coil','nlambda'/), &
+       ntheta_nzeta_plasma_nlambda_dim = (/ character(len=50) :: 'ntheta_plasma','nzeta_plasma','nlambda'/)
 
   call cdf_open(ncid,outputFilename,'w',ierr)
   IF (ierr .ne. 0) then
