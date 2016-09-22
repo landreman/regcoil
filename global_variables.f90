@@ -78,7 +78,7 @@ module global_variables
   real(dp) :: curpol = 1  ! number which multiplies data in bnorm file.
 
   integer :: nlambda = 4
-  real(dp) :: lambda_min = 0.1_dp, lambda_max = 10_dp
+  real(dp) :: lambda_min = 1.0d-19, lambda_max = 1.0d-13
   real(dp), dimension(:), allocatable :: lambda
 
 end module global_variables

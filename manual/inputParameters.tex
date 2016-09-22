@@ -17,10 +17,25 @@ In this section we describe all the parameters which can be included in the inpu
 {Always}
 {Determines the overall flow of program execution.\\
 
-{\ttfamily general\_option} = 1: Compute the current potential for a range of lambda.\\
+{\ttfamily general\_option} = 1: Compute the current potential for a range of $\lambda$.\\
 
 {\ttfamily general\_option} = 2: Do not compute the current potential, but rather load the current potential computed
-by NESCOIL in the file \parlink{nescout\_filename}, reporting the $\chi^2_B$ and $\chi^2_K$ for it.
+by \nescoil~in the file \parlink{nescout\_filename}, compute the $\chi^2_B$ and $\chi^2_K$ for it,
+and save results.\\
+
+{\ttfamily general\_option} = 3: Emulate \nescoil's truncated singular value decomposition (TSVD) solver.
+The least-squares problem solved will be minimization of only $\chi^2_B$ (i.e. $\lambda=0$.)
+Output quantities will be saved in the same arrays as if $\lambda$ were scanned.
+
+}
+
+\myhrule
+
+\param{nescout\_filename}
+{string}
+{`'}
+{Only when \parlink{general\_option}=2.}
+{Name of a \nescoil~output file which can be read in for processing.
 }
 
 \myhrule
@@ -29,45 +44,17 @@ by NESCOIL in the file \parlink{nescout\_filename}, reporting the $\chi^2_B$ and
 {integer}
 {1}
 {Always}
-{Determines which set of basis functions is used.\\
+{Determines whether stellarator symmetry is imposed.\\
 
-{\ttfamily symmetry\_option} = 1: Use $\sin(2 \pi [mu+nv])$ basis functions.\\
+{\ttfamily symmetry\_option} = 1: Force the single-valued part of the current potential
+to be odd in $\theta$ and $\zeta$. This option corresponds to stellarator symmetry.\\
 
-{\ttfamily symmetry\_option} = 2: Use $\cos(2 \pi [mu+nv])$ basis functions.\\
+{\ttfamily symmetry\_option} = 2: Force the single-valued part of the current potential
+to be even in $\theta$ and $\zeta$. I'm not sure why you would ever use this option,
+but it is available for completeness.\\
 
-{\ttfamily symmetry\_option} = 3: Use both $\sin(2 \pi [mu+nv])$ and $\cos(2 \pi [mu+nv])$ basis functions.
+{\ttfamily symmetry\_option} = 3: No symmetry in the current potential is imposed.
 }
-
-\myhrule
-
-\param{basis\_option\_plasma}
-{integer}
-{1}
-{Always}
-{Determines which basis functions are used, as well as which weight $w$ is used to define orthogonality.
-This option controls only the plasma surface. Analogous options {\ttfamily basis\_option\_middle} and {\ttfamily basis\_option\_outer}
-exist for the other two surfaces.\\
-
-{\ttfamily basis\_option\_plasma} = 1: Use $w = 1 / (n_p |\vect{N}|)$, so the basis functions
-are the Fourier functions $\sqrt{2} \sin(2\pi[mu+nv])$ and/or $\sqrt{2} \cos(2\pi[mu+nv])$ (
-as determined by \parlink{symmetry\_option}).\\
-
-{\ttfamily basis\_option\_plasma} = 2: Use a constant weight, $w = 1/A$ where $A$ is the surface area. The basis functions
-will be Fourier functions scaled by $\sqrt{2A/[n_p |\vect{N}|]}$.\\
-
-{\ttfamily basis\_option\_plasma} = 3: Use a constant weight, $w = 1/A$. The basis functions
-will be linear combinations of the Fourier functions, as constructed using the Cholesky method.
-}
-
-\myhrule
-
-\param{n\_singular\_vectors\_to\_save}
-{integer}
-{12}
-{Always}
-{Number of columns of $U$ and $V$ to save in the output file, where $U$ and $V$ are the matrices of left and right singular vectors of the transfer matrix,
-$T = U\Sigma V^{T}$.
-Regardless of this parameter, all singular \emph{values} will be saved in the output file.}
 
 \myhrule
 
@@ -83,6 +70,27 @@ Regardless of this parameter, all singular \emph{values} will be saved in the ou
 
 {\ttfamily save\_level} = 2: Also do not save the matrix $g$.\\
 }
+
+\myhrule
+
+\param{load\_bnorm}
+{logical}
+{\false}
+{When \parlink{general\_option}=1 or 3.}
+{Whether or not an output file from the \bnorm~code is to be loaded.
+Set this option to \true~if there is significant current in the plasma,
+meaning the coils will need to cancel the associated magnetic field component normal
+to the target plasma surface.
+}
+
+\myhrule
+
+\param{bnorm\_filename}
+{string}
+{`'}
+{When \parlink{general\_option}=1 or 3 and \parlink{load\_bnorm}=\true.}
+{Output file from the \bnorm~code which contains the magnetic field normal to the target
+plasma surface associated with current inside the plasma.}
 
 \myhrule
 
@@ -354,23 +362,23 @@ this file will be used as the coil surface for \regcoil.}
 \param{N\_lambdas}
 {integer}
 {4}
-{Always}
+{Only when \parlink{general\_option}=1.}
 {Number of values of $\lambda$ for which the problem is solved.}
 
 \myhrule
 
 \param{lambda\_max}
 {real}
-{10.0}
-{Always}
+{1.0e-13}
+{Only when \parlink{general\_option}=1.}
 {Maximum value of $\lambda$ for which the problem is solved.}
 
 \myhrule
 
 \param{lambda\_min}
 {real}
-{0.1}
-{Always}
+{1.0e-19}
+{Only when \parlink{general\_option}=1.}
 {Minimum nonzero value of $\lambda$ for which the problem is solved.
 Note that the problem is always solved for $\lambda=0$ in addition to
 the nonzero values.}
