@@ -14,42 +14,32 @@ endif
 
 ifeq ($(HOSTNAME),edison)
 	FC = ftn
+	## NERSC documentation recommends against specifying -O3
+	## -mkl MUST APPEAR AT THE END!!
 	EXTRA_COMPILE_FLAGS = -openmp -mkl
 	EXTRA_LINK_FLAGS =  -openmp -mkl -Wl,-ydgemm_
-	# For batch systems, set the following variable to the command used to run jobs.
-	# This variable is used by 'make test'.
+	# Above, the link flag "-Wl,-ydgemm_" causes the linker to report which version of DGEMM (the BLAS3 matrix-matrix-multiplication subroutine) is used.
+	# For batch systems, set the following variable to the command used to run jobs. This variable is used by 'make test'.
 	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -n 1 -c 24
 
 else ifeq ($(HOSTNAME),cori)
 	FC = ftn
+	## NERSC documentation recommends against specifying -O3
+	## -mkl MUST APPEAR AT THE END!!
 	EXTRA_COMPILE_FLAGS = -qopenmp -mkl
 	EXTRA_LINK_FLAGS =  -qopenmp -mkl -Wl,-ydgemm_
-	# For batch systems, set the following variable to the command used to run jobs.
-	# This variable is used by 'make test'.
-	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -n 1 -c 24
+	# Above, the link flag "-Wl,-ydgemm_" causes the linker to report which version of DGEMM (the BLAS3 matrix-matrix-multiplication subroutine) is used.
+	# For batch systems, set the following variable to the command used to run jobs. This variable is used by 'make test'.
+	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -n 1 -c 32
 else
-	#FC = gfortran
 	FC = mpif90
-	#EXTRA_COMPILE_FLAGS = -openmp -I/opt/local/include -ffree-form -ffree-line-length-none -ffixed-line-length-none -traditional
 	EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none -cpp
 	EXTRA_LINK_FLAGS =  -fopenmp -L/opt/local/lib -lnetcdff  -lnetcdf -framework Accelerate
 
-	# For batch systems, set the following variable to the command used to run jobs.
-	# This variable is used by 'make test'.
+	# For batch systems, set the following variable to the command used to run jobs. This variable is used by 'make test'.
 	REGCOIL_COMMAND_TO_SUBMIT_JOB =
 endif
-##LIBSTELL_DIR = /global/homes/l/landrema/20150410-02-stellinstall_245_edison/LIBSTELL/Release
 
-#FC = ftn
-
-## NERSC documentation recommends against specifying -O3
-#EXTRA_COMPILE_FLAGS = -openmp -mkl
-##EXTRA_COMPILE_FLAGS = -O3 -openmp -mkl
-##EXTRA_COMPILE_FLAGS = -O0 -g -openmp
-## -mkl MUST APPEAR AT THE END!!
-#EXTRA_LINK_FLAGS =  -openmp -mkl -Wl,-ydgemm_
-
-# Above, the link flag "-Wl,-ydgemm_" causes the linker to report which version of DGEMM (the BLAS3 matrix-matrix-multiplication subroutine) is used.
 
 # End of system-dependent variable assignments
 

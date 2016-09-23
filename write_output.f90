@@ -58,6 +58,8 @@ subroutine write_output
        vn_max_K = "max_K"
 
   ! Arrays with dimension 2
+  ! The form of the array declarations here is inspired by
+  ! http://stackoverflow.com/questions/21552430/gfortran-does-not-allow-character-arrays-with-varying-component-lengths
   character(len=*), parameter :: &
        vn_norm_normal_plasma  = "norm_normal_plasma", &
        vn_norm_normal_coil  = "norm_normal_coil", &

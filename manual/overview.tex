@@ -66,11 +66,6 @@ If you run {\ttfamily make retest},
 no new runs of \regcoil~will be performed, but the {\ttfamily tests.py} script
 will be run on any existing output files in the \path{/examples/} directories.
 
-\section{Plotting results}
-
-The python program \regcoilPlot~will display many of the output quantities from a single \regcoil~calculation.
-Results from multiple \regcoil~calculations can be compared using the python program {\ttfamily compareRegcoil}.
-
 \section{Units}
 
 As in \vmec, all of \regcoil's input and output parameters use SI units: meters, Teslas, Amperes, and combinations thereof.
@@ -82,6 +77,32 @@ to the target plasma surface, which the coils must cancel. The contribution of p
 is not computed directly by \regcoil, but it can be computed using the \bnorm~code which is 
 often distributed with \vmec.  You can then set \parlink{load\_bnorm}={\ttfamily .true.} and specify \parlink{bnorm\_filename}
 in the \regcoil~input namelist to load the \bnorm~results into \regcoil.
+
+\section{Matlab version}
+
+Both \fortran~and \matlab~versions of \regcoil~are included in the repository.  The \matlab~version is
+contained in the file {\ttfamily regcoil.m}. For normal
+use you will want to use the \fortran~version, since it is much faster.  The \matlab~version was originally
+written as a check of the \fortran~version, to verify that two independent implementations of the algorithm
+in different languages give identical results.  The \matlab~version reads in an output file from the \fortran~version
+and verifies that each significant variable is identical.  A few of the features in the \fortran~version
+are not available in the \matlab~version.
+
+\section{Plotting results}
+
+The python program \regcoilPlot~will display many of the output quantities from a single \regcoil~calculation.
+Results from multiple \regcoil~calculations can be compared using the python program {\ttfamily compareRegcoil}.
+
+You can also make a 3D figure of the shapes of discrete coils using the \matlab~program {\ttfamily m20160811\_01\_plotCoilsFromRegcoil.m}.
+Two different sets of coils can be plotted together using the \matlab~program {\ttfamily m20160811\_02\_compare2CoilsetsFromRegcoil.m}.
+The latter program was used to generate the figure on the cover of this manual.
+
+\section{Cutting coils}
+
+Once a suitable current potential has been computed with \regcoil, you can `cut' discrete coils
+using the python script {\ttfamily cutCoilsFromRegcoil}. You can run this script with no arguments
+to see a list of the input parameters. This script will generate a coils file suitable for input to the
+{\ttfamily makegrid} code (distributed with \vmec), which in turn generates an mgrid file used as input for free-boundary \vmec.
 
 \section{Questions, Bugs, and Feedback}
 

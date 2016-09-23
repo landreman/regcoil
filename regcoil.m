@@ -78,9 +78,9 @@ nescin_filename = 'equilibria/nescin.w7x_winding_surface_from_Drevlak';
 
 % Options for the regularization parameter:
 % **********************************
-nalpha = 5;
-alpha_min = 1e-30;
-alpha_max = 1;
+nlambda = 5;
+lambda_min = 1e-30;
+lambda_max = 1;
 
 % Plotting options:
 % **********************************
@@ -88,7 +88,7 @@ alpha_max = 1;
 plot_results = true;
 %plot_results = false;
 
-max_nalpha_for_contour_plots = 18;
+max_nlambda_for_contour_plots = 18;
 
 %plot3DFigure = true;
 plot3DFigure = false;
@@ -174,14 +174,14 @@ compareVariableToFortran('geometry_option_plasma')
 compareVariableToFortran('geometry_option_coil')
 
 % *********************************************
-% Set up range of alpha to try
+% Set up range of lambda to try
 % *********************************************
 
-alpha = zeros(nalpha,1);
-alpha(2:end) = alpha_min * exp((0:(nalpha-2))/(nalpha-2)*log(alpha_max/alpha_min));
+lambda = zeros(nlambda,1);
+lambda(2:end) = lambda_min * exp((0:(nlambda-2))/(nlambda-2)*log(lambda_max/lambda_min));
 
-compareVariableToFortran('nalpha')
-compareVariableToFortran('alpha')
+compareVariableToFortran('nlambda')
+compareVariableToFortran('lambda')
 
 % *********************************************
 % Initialize the plasma surface:
@@ -815,13 +815,13 @@ diag_inv_norm_normal_plasma = diag(1./norm_normal_plasma_vec);
 diag_inv_norm_normal_coil   = diag(1./norm_normal_coil_vec);
 
 tic
-fprintf('Computing RHS_B and RHS_J.\n')
+fprintf('Computing RHS_B and RHS_K.\n')
 RHS_B = (-dtheta_plasma*dzeta_plasma)*((Bnormal_from_plasma_current_1D + Bnormal_from_net_coil_currents_1D)' * g)';
-RHS_J = (dtheta_coil*dzeta_coil)*((d_x ./ norm_normal_coil_vec)' * f_x + (d_y ./ norm_normal_coil_vec)' * f_y + (d_z ./ norm_normal_coil_vec)' * f_z)';
+RHS_K = (dtheta_coil*dzeta_coil)*((d_x ./ norm_normal_coil_vec)' * f_x + (d_y ./ norm_normal_coil_vec)' * f_y + (d_z ./ norm_normal_coil_vec)' * f_z)';
 fprintf('Done. Took %g sec.\n',toc)
 
 compareVariableToFortran('RHS_B')
-compareVariableToFortran('RHS_J')
+compareVariableToFortran('RHS_K')
 
 tic
 fprintf('Computing matrix_B.\n')
@@ -830,36 +830,36 @@ fprintf('Done. Took %g sec.\n',toc)
 compareVariableToFortran('matrix_B')
 
 tic
-fprintf('Computing matrix_J.\n')
-matrix_J = (dtheta_coil*dzeta_coil)*( ...
+fprintf('Computing matrix_K.\n')
+matrix_K = (dtheta_coil*dzeta_coil)*( ...
     (f_x') * diag_inv_norm_normal_coil * f_x ...
     +(f_y') * diag_inv_norm_normal_coil * f_y ...
     +(f_z') * diag_inv_norm_normal_coil * f_z );
 fprintf('Done. Took %g sec.\n',toc)
-compareVariableToFortran('matrix_J')
+compareVariableToFortran('matrix_K')
 
 
 % *********************************************
-% Solve the system for each alpha:
+% Solve the system for each lambda:
 % *********************************************
 
-single_valued_current_potential_mn = zeros(num_basis_functions, nalpha);
-single_valued_current_potential_thetazeta = zeros(ntheta_coil, nzeta_coil, nalpha);
-current_potential = zeros(ntheta_coil, nzeta_coil, nalpha);
+single_valued_current_potential_mn = zeros(num_basis_functions, nlambda);
+single_valued_current_potential_thetazeta = zeros(ntheta_coil, nzeta_coil, nlambda);
+current_potential = zeros(ntheta_coil, nzeta_coil, nlambda);
 [zeta_coil_2D, theta_coil_2D] = meshgrid(zeta_coil, theta_coil);
-chi2_B = zeros(nalpha,1);
-chi2_J = zeros(nalpha,1);
-Bnormal_total = zeros(ntheta_plasma, nzeta_plasma, nalpha);
-J2 = zeros(ntheta_coil, nzeta_coil, nalpha);
+chi2_B = zeros(nlambda,1);
+chi2_K = zeros(nlambda,1);
+Bnormal_total = zeros(ntheta_plasma, nzeta_plasma, nlambda);
+K2 = zeros(ntheta_coil, nzeta_coil, nlambda);
 
-for ialpha=1:nalpha
-    fprintf('Solving system for alpha = %g  (%d of %d)\n',alpha(ialpha), ialpha, nalpha)
+for ilambda=1:nlambda
+    fprintf('Solving system for lambda = %g  (%d of %d)\n',lambda(ilambda), ilambda, nlambda)
     
     tic
-    matrix = matrix_B + alpha(ialpha) * matrix_J;
-    RHS    = RHS_B    + alpha(ialpha) * RHS_J;
-    %matrix = matrix_B - alpha(ialpha) * matrix_J;
-    %RHS    = RHS_B    - alpha(ialpha) * RHS_J;
+    matrix = matrix_B + lambda(ilambda) * matrix_K;
+    RHS    = RHS_B    + lambda(ilambda) * RHS_K;
+    %matrix = matrix_B - lambda(ilambda) * matrix_K;
+    %RHS    = RHS_B    - lambda(ilambda) * RHS_K;
     fprintf('  Summing matrices: %g sec.\n',toc)
     
     tic
@@ -867,36 +867,36 @@ for ialpha=1:nalpha
     fprintf('  Solve: %g sec.\n',toc)
     
     tic
-    single_valued_current_potential_mn(:,ialpha) = solution;
+    single_valued_current_potential_mn(:,ilambda) = solution;
     this_single_valued_current_potential_thetazeta = reshape(basis_functions*solution, [ntheta_coil,nzeta_coil]);
-    single_valued_current_potential_thetazeta(:,:,ialpha) = this_single_valued_current_potential_thetazeta;
-    current_potential(:,:,ialpha) = this_single_valued_current_potential_thetazeta ...
+    single_valued_current_potential_thetazeta(:,:,ilambda) = this_single_valued_current_potential_thetazeta;
+    current_potential(:,:,ilambda) = this_single_valued_current_potential_thetazeta ...
         + zeta_coil_2D * (net_poloidal_current_Amperes/(2*pi)) ...
         + theta_coil_2D * (net_toroidal_current_Amperes/(2*pi));
     
     this_Bnormal = Bnormal_from_plasma_current + Bnormal_from_net_coil_currents ...
         + reshape(g*solution, [ntheta_plasma,nzeta_plasma]) ./ norm_normal_plasma;
-    Bnormal_total(:,:,ialpha) = this_Bnormal;
-    chi2_B(ialpha) = nfp*dtheta_plasma*dzeta_plasma*sum(sum(this_Bnormal .* this_Bnormal .* norm_normal_plasma));
+    Bnormal_total(:,:,ilambda) = this_Bnormal;
+    chi2_B(ilambda) = nfp*dtheta_plasma*dzeta_plasma*sum(sum(this_Bnormal .* this_Bnormal .* norm_normal_plasma));
     
-    J_difference_x = d_x - f_x*solution;
-    J_difference_y = d_y - f_y*solution;
-    J_difference_z = d_z - f_z*solution;
-    this_J2_over_N = reshape(J_difference_x.*J_difference_x + J_difference_y.*J_difference_y + J_difference_z.*J_difference_z, [ntheta_coil, nzeta_coil]) ./(norm_normal_coil);
-    J2(:,:,ialpha) = this_J2_over_N ./ norm_normal_coil;
-    chi2_J(ialpha) = nfp*dtheta_coil*dzeta_coil*sum(sum(this_J2_over_N));
+    K_difference_x = d_x - f_x*solution;
+    K_difference_y = d_y - f_y*solution;
+    K_difference_z = d_z - f_z*solution;
+    this_K2_over_N = reshape(K_difference_x.*K_difference_x + K_difference_y.*K_difference_y + K_difference_z.*K_difference_z, [ntheta_coil, nzeta_coil]) ./(norm_normal_coil);
+    K2(:,:,ilambda) = this_K2_over_N ./ norm_normal_coil;
+    chi2_K(ilambda) = nfp*dtheta_coil*dzeta_coil*sum(sum(this_K2_over_N));
     
     fprintf('  Diagnostics: %g sec.\n',toc)
-    fprintf('  chi2_B: %g,   chi2_J: %g\n',chi2_B(ialpha),chi2_J(ialpha))
+    fprintf('  chi2_B: %g,   chi2_K: %g\n',chi2_B(ilambda),chi2_K(ilambda))
 end
 
 compareVariableToFortran('single_valued_current_potential_mn')
 compareVariableToFortran('single_valued_current_potential_thetazeta')
 compareVariableToFortran('current_potential')
 compareVariableToFortran('Bnormal_total')
-compareVariableToFortran('J2')
+compareVariableToFortran('K2')
 compareVariableToFortran('chi2_B')
-compareVariableToFortran('chi2_J')
+compareVariableToFortran('chi2_K')
 
 %return
 
@@ -916,29 +916,29 @@ numRows=2;
 numCols=3;
 
 subplot(numRows,numCols,1)
-loglog(chi2_J, chi2_B,'o-')
-xlabel('chi2 J')
+loglog(chi2_K, chi2_B,'o-')
+xlabel('chi2 K')
 ylabel('chi2 B')
 
 subplot(numRows,numCols,2)
-loglog(alpha, chi2_B,'o-')
-xlabel('alpha')
+loglog(lambda, chi2_B,'o-')
+xlabel('lambda')
 ylabel('chi2 B')
 
 subplot(numRows,numCols,3)
-semilogy(alpha, chi2_B,'o-')
-xlabel('alpha')
+semilogy(lambda, chi2_B,'o-')
+xlabel('lambda')
 ylabel('chi2 B')
 
 subplot(numRows,numCols,5)
-loglog(alpha, chi2_J,'o-')
-xlabel('alpha')
-ylabel('chi2 J')
+loglog(lambda, chi2_K,'o-')
+xlabel('lambda')
+ylabel('chi2 K')
 
 subplot(numRows,numCols,6)
-semilogy(alpha, chi2_J,'o-')
-xlabel('alpha')
-ylabel('chi2 J')
+semilogy(lambda, chi2_K,'o-')
+xlabel('lambda')
+ylabel('chi2 K')
 
 % ***********************************************************************
 % Plot single-valued part of the current potential
@@ -947,20 +947,20 @@ figure(3)
 clf
 numContours = 25;
 
-numPlots = min([max_nalpha_for_contour_plots,nalpha]);
-ialpha_to_plot = unique(round(linspace(1,nalpha,numPlots)));
-numPlots = numel(ialpha_to_plot);
+numPlots = min([max_nlambda_for_contour_plots,nlambda]);
+ilambda_to_plot = unique(round(linspace(1,nlambda,numPlots)));
+numPlots = numel(ilambda_to_plot);
 
 numCols=ceil(sqrt(numPlots));
 numRows=ceil(numPlots / numCols);
 
 for iplot = 1:numPlots
     subplot(numRows,numCols,iplot)
-    contourf(zeta_coil_2D, theta_coil_2D, single_valued_current_potential_thetazeta(:,:,ialpha_to_plot(iplot)), numContours,'EdgeColor','none')
+    contourf(zeta_coil_2D, theta_coil_2D, single_valued_current_potential_thetazeta(:,:,ilambda_to_plot(iplot)), numContours,'EdgeColor','none')
     colorbar
     xlabel('zeta')
     ylabel('theta')
-    title(['Single valued current potential for alpha=',num2str(alpha(ialpha_to_plot(iplot)))])
+    title(['Single valued current potential for lambda=',num2str(lambda(ilambda_to_plot(iplot)))])
 end
     
 
@@ -972,26 +972,26 @@ clf
 
 for iplot = 1:numPlots
     subplot(numRows,numCols,iplot)
-    contourf(zeta_coil_2D, theta_coil_2D, current_potential(:,:,ialpha_to_plot(iplot)), numContours,'EdgeColor','none')
+    contourf(zeta_coil_2D, theta_coil_2D, current_potential(:,:,ilambda_to_plot(iplot)), numContours,'EdgeColor','none')
     colorbar
     xlabel('zeta')
     ylabel('theta')
-    title(['Current potential for alpha=',num2str(alpha(ialpha_to_plot(iplot)))])
+    title(['Current potential for lambda=',num2str(lambda(ilambda_to_plot(iplot)))])
 end
     
 % ***********************************************************************
-% Plot J^2
+% Plot K^2
 
 figure(5)
 clf
 
 for iplot = 1:numPlots
     subplot(numRows,numCols,iplot)
-    contourf(zeta_coil_2D, theta_coil_2D, J2(:,:,ialpha_to_plot(iplot)), numContours,'EdgeColor','none')
+    contourf(zeta_coil_2D, theta_coil_2D, K2(:,:,ilambda_to_plot(iplot)), numContours,'EdgeColor','none')
     colorbar
     xlabel('zeta')
     ylabel('theta')
-    title(['J^2 for alpha=',num2str(alpha(ialpha_to_plot(iplot)))])
+    title(['K^2 for lambda=',num2str(lambda(ilambda_to_plot(iplot)))])
 end
 
 % ***********************************************************************
@@ -1019,11 +1019,11 @@ title('Bnormal from net coil currents')
 
 for iplot = 1:numPlots
     subplot(numRows,numCols,iplot+2)
-    contourf(zeta_plasma_2D, theta_plasma_2D, Bnormal_total(:,:,ialpha_to_plot(iplot)), numContours,'EdgeColor','none')
+    contourf(zeta_plasma_2D, theta_plasma_2D, Bnormal_total(:,:,ilambda_to_plot(iplot)), numContours,'EdgeColor','none')
     colorbar
     xlabel('zeta')
     ylabel('theta')
-    title(['Total Bnormal for alpha=',num2str(alpha(ialpha_to_plot(iplot)))])
+    title(['Total Bnormal for lambda=',num2str(lambda(ilambda_to_plot(iplot)))])
 end
 
 end
