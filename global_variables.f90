@@ -59,7 +59,7 @@ module global_variables
   integer, dimension(:), allocatable :: xm, xn
   logical :: lasym
 
-  integer :: save_level = 2
+  integer :: save_level = 3
   integer :: nfp_imposed = 1
 
   integer :: symmetry_option = 1

@@ -192,7 +192,7 @@ subroutine write_output
   call cdf_define(ncid, vn_r_plasma,  r_plasma,  dimname=xyz_ntheta_nzetal_plasma_dim)
   call cdf_define(ncid, vn_r_coil,  r_coil,  dimname=xyz_ntheta_nzetal_coil_dim)
 
-  !if (save_level < 3) then
+  if (save_level < 3) then
      call cdf_define(ncid, vn_drdtheta_plasma,  drdtheta_plasma,  dimname=xyz_ntheta_nzetal_plasma_dim)
      call cdf_define(ncid, vn_drdtheta_coil,  drdtheta_coil,  dimname=xyz_ntheta_nzetal_coil_dim)
      
@@ -202,7 +202,7 @@ subroutine write_output
      call cdf_define(ncid, vn_normal_plasma,  normal_plasma,  dimname=xyz_ntheta_nzetal_plasma_dim)
      call cdf_define(ncid, vn_normal_coil,  normal_coil,  dimname=xyz_ntheta_nzetal_coil_dim)
 
-  !end if
+  end if
 
   call cdf_define(ncid, vn_single_valued_current_potential_thetazeta, single_valued_current_potential_thetazeta, &
        dimname=ntheta_nzeta_coil_nlambda_dim)
@@ -282,7 +282,7 @@ subroutine write_output
   call cdf_write(ncid, vn_r_plasma, r_plasma)
   call cdf_write(ncid, vn_r_coil, r_coil)
 
-  !if (save_level < 3) then
+  if (save_level < 3) then
      call cdf_write(ncid, vn_drdtheta_plasma, drdtheta_plasma)
      call cdf_write(ncid, vn_drdtheta_coil, drdtheta_coil)
 
@@ -292,7 +292,7 @@ subroutine write_output
      call cdf_write(ncid, vn_normal_plasma, normal_plasma)
      call cdf_write(ncid, vn_normal_coil, normal_coil)
 
-  !end if
+  end if
 
   call cdf_write(ncid, vn_single_valued_current_potential_thetazeta, single_valued_current_potential_thetazeta)
   call cdf_write(ncid, vn_current_potential, current_potential)

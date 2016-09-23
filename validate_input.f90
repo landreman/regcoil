@@ -41,8 +41,8 @@ subroutine validate_input
      stop "Error! save_level must be >= 0."
   end if
 
-  if (save_level > 2) then
-     stop "Error! save_level must be <= 2."
+  if (save_level > 3) then
+     stop "Error! save_level must be <= 3."
   end if
 
 

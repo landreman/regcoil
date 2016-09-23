@@ -21,12 +21,14 @@ In this section we describe all the parameters which can be included in the inpu
 
 {\ttfamily general\_option} = 2: Do not compute the current potential, but rather load the current potential computed
 by \nescoil~in the file \parlink{nescout\_filename}, compute the $\chi^2_B$ and $\chi^2_K$ for it,
-and save results.\\
+and save results. For this setting, \parlink{N\_lambda} will be over-written with the number of
+current potential solutions found in the nescout file.\\
 
 {\ttfamily general\_option} = 3: Emulate \nescoil's truncated singular value decomposition (TSVD) solver.
 The least-squares problem solved will be minimization of only $\chi^2_B$ (i.e. $\lambda=0$.)
 Output quantities will be saved in the same arrays as if $\lambda$ were scanned.
-
+For this setting, \parlink{N\_lambda} will be over-written with the number of
+singular values.
 }
 
 \myhrule
@@ -60,7 +62,7 @@ but it is available for completeness.\\
 
 \param{save\_level}
 {integer}
-{2}
+{3}
 {Always}
 {Option related determining how many variables are saved in the \netCDF~output file.  The larger the value, the smaller the output file.\\
 
@@ -69,6 +71,8 @@ but it is available for completeness.\\
 {\ttfamily save\_level} = 1: Do not save the inductance matrix.\\
 
 {\ttfamily save\_level} = 2: Also do not save the matrix $g$.\\
+
+{\ttfamily save\_level} = 3: Also do not save the normal vector or derivatives of the position vector.
 }
 
 \myhrule
@@ -217,7 +221,7 @@ but does not affect the time for other calculations.
 {integer}
 {0}
 {Always}
-{This option controls which type of geometry is used for the plasma surface.\\
+{This option controls how you specify the shape of the target plasma surface.\\
 
 {\ttfamily geometry\_option\_plasma} = 0: The plasma surface will be a plain circular torus. The major radius will be \parlink{R0\_plasma}.
      The minor radius will be \parlink{a\_plasma}. This option exists just for testing purposes.\\
@@ -237,8 +241,19 @@ The poloidal angle used will be the straight-field-line coordinate, obtained by 
 This option exists in order to examine changes when using a different poloidal coordinate compared to {\ttfamily geometry\_option\_plasma} = 3.\\
 
 {\ttfamily geometry\_option\_plasma} = 5: The plasma surface will be the flux surface with normalized poloidal flux
-\parlink{efit\_psiN} taken from the {\ttfamily efit} file specified by \parlink{efit\_filename}.
+\parlink{efit\_psiN} taken from the {\ttfamily efit} file specified by \parlink{efit\_filename}. \\
+
+{\ttfamily geometry\_option\_plasma} = 6: The plasma surface will be loaded from an ASCII file, specified by \parlink{shape\_filename\_plasma}. The first line of this file is ignored. The second line is an integer giving the number of Fourier modes
+to read. The remaining lines contain $m$, $n$, $rmnc$, $zmns$, $rmns$, $zmnc$.
 }
+
+\myhrule
+
+\param{shape\_filename\_plasma}
+{string}
+{`'}
+{Only when \parlink{geometry\_option\_plasma} is 6.}
+{ASCII file from which to read in the plasma shape.}
 
 \myhrule
 
@@ -317,9 +332,9 @@ if  \parlink{geometry\_option\_plasma} is 2.
 
 {\ttfamily geometry\_option\_coil} = 1: Identical to option 0, except the major radius of the coil surface will be set by \parlink{R0\_coil}.\\
 
-{\ttfamily geometry\_option\_coil} = 2: The coil surface will computing by expanding the plasma surface uniformly by a distance \parlink{separation\_coil}.\\
+{\ttfamily geometry\_option\_coil} = 2: The coil surface will computing by expanding the plasma surface uniformly by a distance \parlink{separation}.\\
 
-{\ttfamily geometry\_option\_coil} = 3: The coil surface will be the `coil' surface in the \nescoil~`nescin' input file specified by \parlink{nescin\_filename\_coil}.
+{\ttfamily geometry\_option\_coil} = 3: The coil surface will be the `coil' surface in the \nescoil~`nescin' input file specified by \parlink{nescin\_filename}.
 }
 
 \myhrule
@@ -341,7 +356,7 @@ if  \parlink{geometry\_option\_plasma} is 2.
 
 \myhrule
 
-\param{separation\_coil}
+\param{separation}
 {real}
 {0.2}
 {Only when \parlink{geometry\_option\_coil} is 2.}
@@ -349,7 +364,7 @@ if  \parlink{geometry\_option\_plasma} is 2.
 
 \myhrule
 
-\param{nescin\_filename\_coil}
+\param{nescin\_filename}
 {string}
 {`'}
 {Only when \parlink{geometry\_option\_coil} is 3.}

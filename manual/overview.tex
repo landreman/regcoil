@@ -1,43 +1,19 @@
 \chapter{Overview}
 
-This program computes efficiency-ordered distributions of magnetic fields as described in \cite{boozer2015}.  The main method is described on page 12, and some key definitions are given on page 9.
+This program is an implementation of the \regcoil~algorithm described in \cite{regcoilPaper},
+and was used for many of the calculations in \cite{regcoilPaper}.
+In addition, this program can read output files from the \nescoil~code \cite{nescoil},
+processing the results to compute quantities like the current density
+and residual magnetic field normal to the target plasma surface.
 
-There are some similarities between this program and the \nescoil~code used to compute stellarator coils \cite{nescoil}.
-\nescoil~effectively computes the `inductance' between a plasma surface and a coil surface, meaning the linear
-relationship by which the current potential on the coil surface gives rise to a normal component of the magnetic field $\vect{B}$ on the plasma
-surface.  \nescoil~takes the normal component of $\vect{B}$ on the plasma surface associated with net poloidal coil current plus plasma
-current, and effectively multiplies the result by the (pseudo)inverse of the inductance matrix, yielding the current potential required
-to achieve a magnetic surface (zero normal component of $\vect{B}$) on the plasma surface.  In \regcoil, however,
-we do not consider net coil current or plasma current, and we compute two inductance matrices instead of one.  The two inductance matrices
-in \regcoil~refer to the same outer surface (on which the current potential is defined), but to different surfaces on which the normal $\vect{B}$
-is evaluated. Multiplying one inductance matrix by the (pseudo)inverse of the other gives the so-called `transfer matrix'.
-Applying a singular value decomposition (SVD) to this transfer matrix, the singular vectors represent modes of the magnetic field,
-and the singular values represent the efficiency by which these modes propagate from one toroidal surface to the other.
+%In the various variable names in the code and output file, `r' refers
+%to the position vector, not to a radius.  In various arrays with a
+%dimension of length 3, this dimension always corresponds to Cartesian
+%coordinates $(x,y,z)$.
 
-In \regcoil~the three toroidal surfaces are named `plasma', `middle', and `outer', in order from the innermost to outermost. The
-`plasma' surface can correspond to the outermost surface of a \vmec~equilibrium, or it can be a plain circular toroidal surface. The name
-of the relevant surface appears as a suffix on most variables.
-
-On each surface we use a poloidal angle $u$ and a toroidal angle $v$,
-defined as in \nescoil.  The coordinate $u$ lies in the range $[0,1]$. The
-surfaces have \nfp~identical toroidal periods, and an increase in $v$
-by 1 corresponds to 1 of these periods. Thus, $v$ increases by \nfp~in a
-complete toroidal revolution. In the output file, there is an array {\ttfamily v}
-corresponding to one toroidal period, as well as an array {\ttfamily vl}
-corresponding to all \nfp~toroidal periods.  Note that $v$ is
-proportional to the standard cylindrical angle $\phi$: $\phi = 2\pi v/$\nfp.
-Generally, field lines are not straight in the $(u,v)$ coordinates.  On
-the plasma surface, $u$ is identical to the \vmec~poloidal angle divided
-by $2\pi$, while the \vmec~toroidal angle differs by $2\pi/$\nfp compared to $v$.
-
-In the various variable names in the code and output file, `r' refers
-to the position vector, not to a radius.  In various arrays with a
-dimension of length 3, this dimension always corresponds to Cartesian
-coordinates $(x,y,z)$.
-
-The `normal' quantities in the code and output file refer to the
-surface normal vector N = (dr/dv) cross (dr/du) as in the NESCOIL
-paper. Note that this vector does not have unit magnitude.
+%The `normal' quantities in the code and output file refer to the
+%surface normal vector N = (dr/dv) cross (dr/du) as in the NESCOIL
+%paper. Note that this vector does not have unit magnitude.
 
 
 
@@ -46,11 +22,16 @@ paper. Note that this vector does not have unit magnitude.
 \begin{itemize}
 
 \item {\ttfamily NetCDF} (for writing the output file)
-\item {\ttfamily BLAS/LAPACK} (for matrix multiplication and the SVD subroutine)
+\item {\ttfamily BLAS} (for matrix multiplication)
+\item {\ttfamily LAPACK} (for solving linear systems and for singular value decomposiiton)
 
 \end{itemize}
 
-If {\ttfamily OpenMP} is available, calculations with the code are parallelized.  The plotting and testing functions use \python,
+Most of these libraries will be available on any high-performace computing system. {\ttfamily BLAS} and {\ttfamily LAPACK}
+are pre-installed on Apple/Mac computers as part of the Accelerate framework.
+
+If {\ttfamily OpenMP} is available, calculations with the code are parallelized.
+The plotting and testing functions use \python,
 {\ttfamily numpy}, and {\ttfamily scipy}.
 The plotting routines \regcoilPlot~and {\ttfamily compareRegcoil} use {\ttfamily matplotlib}.
 
@@ -58,23 +39,23 @@ The plotting routines \regcoilPlot~and {\ttfamily compareRegcoil} use {\ttfamily
 
 The code does not use {\ttfamily MPI}, and so it runs on a single computing node.  However, it is possible to use multiple threads
 on the node to accelerate computations.  The multi-threaded parallelization is done in part using {\ttfamily OpenMP}
-and in part using a multi-threaded {\ttfamily BLAS} routine.
+and in part using a multi-threaded {\ttfamily BLAS} routine. Typically the number of threads is set by
+setting the environment variable {\ttfamily OMP\_NUM\_THREADS}.
 
-The slowest steps in \regcoil~occur when assembling the two
-inductance matrices.  For each of these two matrices, there are two slow steps.
-The first is computation of the magnetic dipole formula between each pair of points
-on the two toroidal surfaces.  The loop for this computation is parallelized using {\ttfamily OpenMP}.
-The other slow step is the integration of this result against each of the basis functions,
-which is done using matrix multiplication with the {\ttfamily BLAS} subroutine {\ttfamily DGEMM}.
-To parallelize this step you can link \regcoil~with a multi-threaded  {\ttfamily BLAS} library,
-such as the Intel Math Kernel Library (MKL).
+%The slowest steps in \regcoil~are typically the assembly of the
+%matrices described in appendix B of \cite{regcoilPaper}.  For each of these two matrices, there are two slow steps.
+%The first is computation of the magnetic dipole formula between each pair of points
+%on the two toroidal surfaces.  The loop for this computation is parallelized using {\ttfamily OpenMP}.
+%The other slow step is the integration of this result against Fourier modes,
+%which is done using matrix multiplication with the {\ttfamily BLAS} subroutine {\ttfamily DGEMM}.
+%To parallelize this step you can link \regcoil~with a multi-threaded  {\ttfamily BLAS} library,
+%such as the Intel Math Kernel Library (MKL).
 
 \section{\ttfamily make test}
 
 To test that your \regcoil~executable is working, you can run {\ttfamily make test}.  Doing so will run
 \regcoil~for some or all of the examples in the {\ttfamily examples/} directories.
-After each example completes, several of the output quantities (typically the singular values
-of the transfer matrix)
+After each example completes, several of the output quantities
 will be checked, using the
 {\ttfamily tests.py} script in the example's directory.
 The {\ttfamily make test} feature is very useful when making changes to the code, since it allows you to check
@@ -85,9 +66,22 @@ If you run {\ttfamily make retest},
 no new runs of \regcoil~will be performed, but the {\ttfamily tests.py} script
 will be run on any existing output files in the \path{/examples/} directories.
 
+\section{Plotting results}
+
+The python program \regcoilPlot~will display many of the output quantities from a single \regcoil~calculation.
+Results from multiple \regcoil~calculations can be compared using the python program {\ttfamily compareRegcoil}.
+
 \section{Units}
 
-All input and output parameters use SI units: meters, Teslas, Amperes, and combinations thereof.
+As in \vmec, all of \regcoil's input and output parameters use SI units: meters, Teslas, Amperes, and combinations thereof.
+
+\section{Plasma current}
+
+If there is current inside the plasma, then this current will contribute to the magnetic field normal
+to the target plasma surface, which the coils must cancel. The contribution of plasma current to the normal field
+is not computed directly by \regcoil, but it can be computed using the \bnorm~code which is 
+often distributed with \vmec.  You can then set \parlink{load\_bnorm}={\ttfamily .true.} and specify \parlink{bnorm\_filename}
+in the \regcoil~input namelist to load the \bnorm~results into \regcoil.
 
 \section{Questions, Bugs, and Feedback}
 
