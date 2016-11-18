@@ -12,6 +12,7 @@ module init_surface_mod
          normal, norm_normal, area, &
          geometry_option, R_specified, a, separation, dtheta, dzeta, nescin_filename, which_surface)
 
+      use compute_offset_surface_mod
       use global_variables, only: R0_plasma, nfp
       use stel_kinds
       use stel_constants
