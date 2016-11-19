@@ -1,22 +1,35 @@
 module compute_offset_surface_mod
 
+  use stel_kinds
+
   implicit none
+
+  private
+
+  public :: compute_offset_surface_xyz_of_thetazeta
+
+  real(dp) :: theta_rootSolve, zeta_rootSolve_target, separation
+  !$OMP threadprivate(theta_rootSolve, zeta_rootSolve_target, separation)
 
 contains
 
-  subroutine compute_offset_surface_xyz_of_thetazeta(theta_rootSolve,zeta_rootSolve_target,x_offsetSurface,y_offsetSurface,z_offsetSurface,separation)
+  subroutine compute_offset_surface_xyz_of_thetazeta(theta_rootSolve_in,zeta_rootSolve_target_in,x_offsetSurface,y_offsetSurface,z_offsetSurface,separation_in)
 
     use stel_kinds
     
     implicit none
     
-    real(dp), intent(in) :: theta_rootSolve, zeta_rootSolve_target, separation
+    real(dp), intent(in) :: theta_rootSolve_in, zeta_rootSolve_target_in, separation_in
     real(dp), intent(out) :: x_offsetSurface, y_offsetSurface, z_offsetSurface
     
     integer :: fzeroFlag
     real(dp) :: rootSolve_abserr, rootSolve_relerr, zeta_rootSolve_min, zeta_rootSolve_max
     real(dp) :: zeta_plasma_rootSolveSolution
     
+    theta_rootSolve = theta_rootSolve_in
+    zeta_rootSolve_target = zeta_rootSolve_target_in
+    separation = separation_in
+
     !rootSolve_abserr = 0
     !rootSolve_relerr = 0
     rootSolve_abserr = 1.0e-10_dp
