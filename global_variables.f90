@@ -85,6 +85,7 @@ module global_variables
   real(dp) :: current_density_target = 8.0d+6
   real(dp) :: lambda_search_tolerance = 1.0d-5
   integer :: exit_code = 0
+  real(dp) :: chi2_B_target = 0
 
 end module global_variables
 

@@ -105,7 +105,7 @@ subroutine auto_regularization_solve
              * sum(Bnormal_total(:,:,ilambda) * Bnormal_total(:,:,ilambda) * norm_normal_plasma)
         ! chi2_B, chi2_K, and Bnormal_total for this ilambda will be over-written with the real values below.
 
-        lambda(ilambda) = chi2_B(ilambda) / chi2_K(ilambda)
+        lambda(ilambda) = chi2_B(ilambda) / chi2_K(ilambda) / 1000
         next_stage = 2
 
      case (2)
@@ -253,7 +253,7 @@ subroutine auto_regularization_solve
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
      last_above_target = (target_function(ilambda) > current_density_target)
-     if (ilambda==1) initial_above_target = last_above_target
+     if (stage==1) initial_above_target = last_above_target
      if (stage==2 .and. (last_above_target .neqv. initial_above_target)) then
         ! If we've bracketed the target, move on to stage 3.
         next_stage = 3  
@@ -312,7 +312,7 @@ subroutine auto_regularization_solve
         Brendt_xm = 0.5*(Brendt_c - Brendt_b)
         if (abs(Brendt_xm) <= Brendt_tol1 .or. (Brendt_fb==0)) then
            ! We met the requested tolerance
-           print *,"Requested tolerance has been met"
+           print *,"Requested tolerance has been met."
            exit_code=0
            Nlambda = ilambda
            exit
@@ -320,6 +320,16 @@ subroutine auto_regularization_solve
      end if
      stage = next_stage
   end do
+
+  chi2_B_target = chi2_B(Nlambda)
+
+  if (exit_code == -1) then
+     print *,"********************************************************************************"
+     print *,"********************************************************************************"
+     print *,"The lambda search did not converge within Nlambda iterations!"
+     print *,"********************************************************************************"
+     print *,"********************************************************************************"
+  end if
 
 contains
  

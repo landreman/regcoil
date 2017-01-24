@@ -8,6 +8,7 @@ subroutine validate_input
   integer :: iunit = 7, istat, j
   character(300) :: myline
   character(*), parameter :: matchString = "---- Phi(m,n) for"
+  character(len=*), parameter :: line="******************************************************************"
 
   if (ntheta_plasma < 1) then
      stop "Error! ntheta_plasma must be >= 1."
@@ -128,6 +129,32 @@ subroutine validate_input
      end do
      print *,"Detected",j,"current potentials in the nescout file."
      nlambda = j
+  end if
+
+  if (current_density_target<=0) then
+     stop "current_density_target must be positive."
+  end if
+
+  if (current_density_target < 1e5) then
+     print *,line
+     print *,"Warning! The value of current_density_target you have set"
+     print *,"is surprisingly small."
+     if (general_option .ne. 5) then
+        print *,"It is recommended that you run with general_option=5 to verify that this"
+        print *,"value of current_density_target is attainable."
+     end if
+     print *,line
+  end if
+
+  if (current_density_target > 3e8) then
+     print *,line
+     print *,"Warning! The value of current_density_target you have set"
+     print *,"is surprisingly large."
+     if (general_option .ne. 5) then
+        print *,"It is recommended that you run with general_option=5 to verify that this"
+        print *,"value of current_density_target is attainable."
+     end if
+     print *,line
   end if
 
 end subroutine validate_input

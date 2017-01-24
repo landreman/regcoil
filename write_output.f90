@@ -37,7 +37,8 @@ subroutine write_output
        vn_curpol = "curpol", &
        vn_nlambda = "nlambda", &
        vn_totalTime = "totalTime", &
-       vn_exit_code = "exit_code"
+       vn_exit_code = "exit_code", &
+       vn_chi2_B_target = "chi2_B_target"
 
   ! Arrays with dimension 1
   character(len=*), parameter :: &
@@ -154,6 +155,7 @@ subroutine write_output
   call cdf_define(ncid, vn_nlambda, nlambda)
   call cdf_define(ncid, vn_totalTime, totalTime)
   call cdf_define(ncid, vn_exit_code, exit_code)
+  if (general_option==4 .or. general_option==5) call cdf_define(ncid, vn_chi2_B_target, chi2_B_target)
 
   ! Arrays with dimension 1
 
@@ -246,6 +248,7 @@ subroutine write_output
   call cdf_write(ncid, vn_nlambda, nlambda)
   call cdf_write(ncid, vn_totalTime, totalTime)
   call cdf_write(ncid, vn_exit_code, exit_code)
+  if (general_option==4 .or. general_option==5) call cdf_write(ncid, vn_chi2_B_target, chi2_B_target)
 
   ! Arrays with dimension 1
 
