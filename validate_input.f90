@@ -107,8 +107,8 @@ subroutine validate_input
   if (general_option<1) then
      stop "general_option must be at least 1."
   end if
-  if (general_option>3) then
-     stop "general_option must be no more than 3."
+  if (general_option>5) then
+     stop "general_option must be no more than 5."
   end if
 
   if (general_option==2) then

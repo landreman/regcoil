@@ -36,22 +36,28 @@ max_lambda = 0
 for whichFile in range(1,len(sys.argv)):
     filename = sys.argv[whichFile]
     f = netcdf.netcdf_file(filename,'r',mmap=False)
-    chi2_B_many.append(f.variables['chi2_B'][()])
     # lambda used to be called alpha, so try both names for backward-compatibility.
     # Also, we used 'lambdas' instead of 'lambda' to avoid conflict with python's keyword lambda.
     try:
         lambdas = f.variables['lambda'][()]
     except:
         lambdas = f.variables['alpha'][()]
+    permutation = np.argsort(lambdas)
+    lambdas = lambdas[permutation]
+    if lambdas[-1]>1.0e199:
+        lambdas[-1] = np.inf
+
     lambda_many.append(lambdas)
     max_lambda = np.max((max_lambda,np.max(lambdas)))
     print "max_lambda:",max_lambda
 
+    chi2_B_many.append(f.variables['chi2_B'][()][permutation])
+
     # K used to be called J, so try both names for backward-compatibility:
     try:
-        chi2_K_many.append(f.variables['chi2_K'][()])
+        chi2_K_many.append(f.variables['chi2_K'][()][permutation])
     except:
-        chi2_K_many.append(f.variables['chi2_J'][()])
+        chi2_K_many.append(f.variables['chi2_J'][()][permutation])
 
     f.close()
 

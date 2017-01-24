@@ -82,6 +82,21 @@ if np.max(np.abs(lambdas)) < 1.0e-200:
     print "lambda array appears to be all 0. Changing it to all 1 to avoid a python error."
     lambdas += 1
 
+########################################################
+# Sort in order of lambda, since for a lambda search (general_option=4 or 5),
+# the output arrays are in the order of the search, which is not so convenient for plotting.
+########################################################
+
+permutation = np.argsort(lambdas)
+lambdas = lambdas[permutation]
+chi2_K = chi2_K[permutation]
+chi2_B = chi2_B[permutation]
+Bnormal_total = Bnormal_total[permutation,:,:]
+single_valued_current_potential_thetazeta = single_valued_current_potential_thetazeta[permutation,:,:]
+K2 = K2[permutation,:,:]
+current_potential = current_potential[permutation,:,:]
+if lambdas[-1]>1.0e199:
+    lambdas[-1] = np.inf
 
 ########################################################
 # For 3D plotting, 'close' the arrays in u and v

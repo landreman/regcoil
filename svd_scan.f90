@@ -148,7 +148,7 @@ subroutine svd_scan
   ! Add the contribution from the ilambda-th singular vectors and singular value:
   solution = solution + VT(1,:) * (1/singular_values(1)) * U_transpose_times_RHS(1)
   do ilambda = nlambda,1,-1
-     print "(a,e10.3,a,i3,a,i3,a)"," Solving system for lambda=",lambda(ilambda)," (",ilambda," of ",nlambda,")"
+     print "(a,es10.3,a,i3,a,i3,a)"," Solving system for lambda=",lambda(ilambda)," (",ilambda," of ",nlambda,")"
      call system_clock(tic,countrate)
 
      ! Add the contribution from the ilambda-th singular vectors and singular value:
@@ -192,7 +192,8 @@ subroutine svd_scan
 
      call system_clock(toc)
      print *,"  Diagnostics: ",real(toc-tic)/countrate," sec."
-     print *,"  chi2_B:",chi2_B(ilambda),"chi2_K:",chi2_K(ilambda)
+     print "(a,es10.3,a,es10.3)","   chi2_B:",chi2_B(ilambda),",  chi2_K:",chi2_K(ilambda)
+     print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda),",  rms K:",sqrt(chi2_K(ilambda)/area_coil)
   end do
 
 end subroutine svd_scan

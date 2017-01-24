@@ -28,7 +28,18 @@ current potential solutions found in the nescout file.\\
 The least-squares problem solved will be minimization of only $\chi^2_B$ (i.e. $\lambda=0$.)
 Output quantities will be saved in the same arrays as if $\lambda$ were scanned.
 For this setting, \parlink{N\_lambda} will be over-written with the number of
-singular values.
+singular values.\\
+
+{\ttfamily general\_option} = 4: Search for a value of the regularization weight such that
+a certain target is met. The target is chosen using \parlink{target\_option}.
+Use this value of {\ttfamily general\_option} for running \regcoil~inside
+a fixed-boundary plasma shape optimization, in which case {\ttfamily chi2\_B\_target}
+is the objective function you should minimize in the optimization.\\
+
+{\ttfamily general\_option} = 5: Same as 4, except that before the $\lambda$ search is carried out,
+the system is solved
+for $\lambda=0$ and $\lambda=\infty$ to check whether the current density target is attainable.
+Thus, this option takes a little more time than {\ttfamily general\_option}=4 but is more robust.
 }
 
 \myhrule
@@ -377,8 +388,9 @@ this file will be used as the coil surface for \regcoil.}
 \param{N\_lambdas}
 {integer}
 {4}
-{Only when \parlink{general\_option}=1.}
-{Number of values of $\lambda$ for which the problem is solved.}
+{Only when \parlink{general\_option}=1, 4, or 5.}
+{When \parlink{general\_option}=1, {\ttfamily N\_lambda} is the number of values of $\lambda$ for which the problem is solved.
+When \parlink{general\_option}=4 or 5, {\ttfamily N\_lambda} is the upper limit on the number of values of $\lambda$ for which the problem is solved.}
 
 \myhrule
 
@@ -398,3 +410,34 @@ this file will be used as the coil surface for \regcoil.}
 Note that the problem is always solved for $\lambda=0$ in addition to
 the nonzero values.}
 
+\myhrule
+
+\param{target\_option}
+{integer}
+{1}
+{Only when \parlink{general\_option}=4 or 5.}
+{Controls which target is used to find determine $\lambda$:\\
+
+{\ttfamily target\_option} = 2: Search for the $\lambda$ value such that the maximum
+current density over the winding surface equals \parlink{current\_density\_target}.\\
+
+{\ttfamily target\_option} = 1: Search for the $\lambda$ value such that the root-mean-square current density
+$\left( \int d^2a\; K^2 \right)^{1/2}$ equals \parlink{current\_density\_target}.
+}
+
+\myhrule
+
+\param{current\_density\_target}
+{real}
+{8.0e6}
+{Only when \parlink{general\_option}=4 or 5.}
+{The value of root-mean-square or maximum current density used to determine $\lambda$.
+See \parlink{target\_option}.}
+
+\myhrule
+
+\param{lambda\_search\_tolerance}
+{real}
+{1.0e-5}
+{Only when \parlink{general\_option}=4 or 5.}
+{Relative tolerance for the lambda root-finding.}
