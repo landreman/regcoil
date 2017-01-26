@@ -48,8 +48,8 @@ module global_variables
 
   real(dp) :: dtheta_plasma, dzeta_plasma, dtheta_coil, dzeta_coil
 
-  integer :: mpol_coil=8
-  integer :: ntor_coil=8
+  integer :: mpol_coil=12
+  integer :: ntor_coil=12
   integer :: mnmax_coil
   integer :: num_basis_functions
   integer, dimension(:), allocatable :: xm_coil, xn_coil

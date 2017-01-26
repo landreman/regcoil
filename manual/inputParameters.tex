@@ -21,13 +21,13 @@ In this section we describe all the parameters which can be included in the inpu
 
 {\ttfamily general\_option} = 2: Do not compute the current potential, but rather load the current potential computed
 by \nescoil~in the file \parlink{nescout\_filename}, compute the $\chi^2_B$ and $\chi^2_K$ for it,
-and save results. For this setting, \parlink{N\_lambda} will be over-written with the number of
+and save results. For this setting, \parlink{Nlambda} will be over-written with the number of
 current potential solutions found in the nescout file.\\
 
 {\ttfamily general\_option} = 3: Emulate \nescoil's truncated singular value decomposition (TSVD) solver.
 The least-squares problem solved will be minimization of only $\chi^2_B$ (i.e. $\lambda=0$.)
 Output quantities will be saved in the same arrays as if $\lambda$ were scanned.
-For this setting, \parlink{N\_lambda} will be over-written with the number of
+For this setting, \parlink{Nlambda} will be over-written with the number of
 singular values.\\
 
 {\ttfamily general\_option} = 4: Search for a value of the regularization weight such that
@@ -183,7 +183,7 @@ It is resonable and common but not mandatory to use the same value for \parlink{
 
 \param{mpol\_coil}
 {integer}
-{8}
+{12}
 {Always}
 {Maximum poloidal mode number to include for the single-valued part of the current potential on the coil winding surface.
 }
@@ -192,7 +192,7 @@ It is resonable and common but not mandatory to use the same value for \parlink{
 
 \param{ntor\_coil}
 {integer}
-{8}
+{12}
 {Always}
 {
 Maximum toroidal mode number to include for the single-valued part of the current potential on the coil winding surface.
@@ -385,12 +385,12 @@ this file will be used as the coil surface for \regcoil.}
 
 \section{Parameters related to the regularization weight}
 
-\param{N\_lambdas}
+\param{Nlambda}
 {integer}
 {4}
 {Only when \parlink{general\_option}=1, 4, or 5.}
-{When \parlink{general\_option}=1, {\ttfamily N\_lambda} is the number of values of $\lambda$ for which the problem is solved.
-When \parlink{general\_option}=4 or 5, {\ttfamily N\_lambda} is the upper limit on the number of values of $\lambda$ for which the problem is solved.}
+{When \parlink{general\_option}=1, {\ttfamily Nlambda} is the number of values of $\lambda$ for which the problem is solved.
+When \parlink{general\_option}=4 or 5, {\ttfamily Nlambda} is the upper limit on the number of values of $\lambda$ for which the problem is solved.}
 
 \myhrule
 
@@ -431,8 +431,11 @@ $\left( \int d^2a\; K^2 \right)^{1/2}$ equals \parlink{current\_density\_target}
 {real}
 {8.0e6}
 {Only when \parlink{general\_option}=4 or 5.}
-{The value of root-mean-square or maximum current density used to determine $\lambda$.
-See \parlink{target\_option}.}
+{The value of root-mean-square or maximum surface current density used to determine $\lambda$.
+See \parlink{target\_option}.
+As with all other input and output quantities, this surface current density is specified in SI units,
+so the units are Amperes/meter.
+}
 
 \myhrule
 
