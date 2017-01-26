@@ -4,6 +4,7 @@
 #SBATCH -N 1
 #SBATCH -t 00:30:00
 #SBATCH -J make_test
+#SBATCH -C haswell
 
 ### Set the job name
 

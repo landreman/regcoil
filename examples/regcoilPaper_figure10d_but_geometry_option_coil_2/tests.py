@@ -54,7 +54,7 @@ numFailures += arrayShouldBe(data[1:], [ 8824481.60102707, 8355450.23653953,\
 
 variableName = 'single_valued_current_potential_mn'
 data = f.variables[variableName][()]
-print data.shape
+#print data.shape
 # We cannot exactly match data[0,:] with the example regcoilPaper_figure10d_originalAngle_loRes,
 # since this data corresponds to no regularization and so is hyper-sensitive to differences in the offsetting algorithm.
 # But we can match data[1,:], which corresponds to a sensible amount of regularization.

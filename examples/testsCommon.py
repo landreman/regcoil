@@ -39,7 +39,7 @@ def shouldBe(latestValue, trueValue, relativeTolerance, absoluteTolerance):
             print "    Test passed. "+string+". Abs tol met. Rel tol not met."
             return 0
         else:
-            print "*** TEST FAILED! "+string+". Rel tol met. Abs tol not met."
+            print "*** TEST FAILED! "+string+". Neither rel nor abs tol met."
             return 1
 
 

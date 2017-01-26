@@ -1,6 +1,6 @@
 # makefile for NERSC Edison and Cori
-# You must first load the cray-netcdf module:
-#   module load cray-netcdf
+# You must first load the cray-netcdf module and python module:
+#   module load cray-netcdf python
 # It is convenient to run
 #   module unload cray-libsci
 # to avoid warning messages about libsci during compiling.
