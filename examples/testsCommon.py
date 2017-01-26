@@ -20,8 +20,11 @@ def readOutputFile():
 
 def shouldBe(latestValue, trueValue, relativeTolerance, absoluteTolerance):
     difference = abs(latestValue-trueValue)
-    relativeDifference = abs(difference / trueValue)
-    relativeTest = (relativeDifference <= relativeTolerance)
+    if abs(trueValue) > 0:
+        relativeDifference = abs(difference / trueValue)
+        relativeTest = (relativeDifference <= relativeTolerance)
+    else:
+        relativeTest = False
     absoluteTest = (difference <= absoluteTolerance)
     string = "Variable "+variableName+" should be close to "+str(trueValue)+", and it was "+str(latestValue)
     if relativeTest:

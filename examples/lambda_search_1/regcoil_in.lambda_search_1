@@ -1,0 +1,24 @@
+! For documentation of these input parameters and their default values, see the manual.
+
+&regcoil
+  general_option = 5  ! Determine lambda to meet a current density target
+  current_density_target = 8.0e6 
+
+  nlambda = 20
+
+  ntheta_plasma = 64
+  ntheta_coil   = 64
+  nzeta_plasma  = 64
+  nzeta_coil    = 64
+  mpol_coil = 12
+  ntor_coil = 12
+
+  geometry_option_plasma = 2
+  wout_filename = '../../equilibria/wout_d23p4_tm.nc'
+
+  geometry_option_coil = 2 ! Uniform offset from plasma surface 
+  separation = 0.5
+
+  ! load_bnorm=.t.
+  ! bnorm_filename='../../equilibria/bnorm.d23p4_tm'
+/

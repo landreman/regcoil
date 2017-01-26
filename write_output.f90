@@ -190,7 +190,7 @@ subroutine write_output
   end if
   !call cdf_define(ncid, vn_matrix_B, matrix_B, dimname=basis_basis_dim)
   !call cdf_define(ncid, vn_matrix_K, matrix_K, dimname=basis_basis_dim)
-  call cdf_define(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,Nlambda), &
+  call cdf_define(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda), &
        dimname=basis_nlambda_dim)
 
   ! Arrays with dimension 3
@@ -283,7 +283,7 @@ subroutine write_output
   end if
   !call cdf_write(ncid, vn_matrix_B, matrix_B)
   !call cdf_write(ncid, vn_matrix_K, matrix_K)
-  call cdf_write(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,Nlambda))
+  call cdf_write(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda))
 
   ! Arrays with dimension 3
 

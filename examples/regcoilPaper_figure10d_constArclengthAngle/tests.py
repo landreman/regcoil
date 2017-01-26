@@ -3,7 +3,7 @@
 # This python script checks the output file for an example to 
 # see if the results are close to expected values.  This script may be
 # run directly, and it is also called when "make test" is run from the
-# main BDISTRIB directory.
+# main REGCOIL directory.
 
 execfile('../testsCommon.py')
 absoluteTolerance = 1e-100

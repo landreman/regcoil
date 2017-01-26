@@ -157,9 +157,9 @@ module init_surface_mod
 !!$         end if
 
          if (geometry_option==2) then
-            print *,"  Constructing a surface offset from the plasma by ",separation
+            print "(a,f10.4,a)","   Constructing a surface offset from the plasma by ",separation," meters."
          else
-            print *,"  Constructing a surface offset from the nescin surface by ",separation
+            print "(a,f10.4,a)","   Constructing a surface offset from the nescin surface by ",separation," meters."
          end if
 
          ! Finite differences to use:

@@ -266,6 +266,7 @@ subroutine auto_regularization_solve
         print *,"it is too low."
         print *,"********************************************************************************"
         print *,"********************************************************************************"
+        Nlambda = ilambda
         exit_code = -2
         exit
      end if
@@ -276,6 +277,7 @@ subroutine auto_regularization_solve
         print *,"it is too high."
         print *,"********************************************************************************"
         print *,"********************************************************************************"
+        Nlambda = ilambda
         exit_code = -3
         exit
      end if
