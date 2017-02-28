@@ -30,7 +30,7 @@ contains
     real(dp) :: angle2, sinangle2, cosangle2, dsinangle2dzeta, dcosangle2dzeta
     real(dp) :: weight1, weight2, theta, r_temp, z_temp, dnorm
     integer :: ntheta_coordTransform, nzeta_coordTransform
-    real(dp), dimension(:,:), allocatable :: r_coordTransform, z_coordTransform
+    real(dp), dimension(:,:), allocatable :: r_coordTransform, z_coordTransform, major_R_squared
     real(dp), dimension(:), allocatable :: rmnc_vmecLast, zmns_vmecLast
     real(dp) :: rootSolve_abserr, rootSolve_relerr, theta_rootSolve_min, theta_rootSolve_max, theta_rootSolve_soln
     integer :: fzeroFlag, mpol, ntor, jm, jn, index
@@ -435,6 +435,21 @@ contains
     dzeta_plasma = zeta_plasma(2)-zeta_plasma(1)
     
     area_plasma = nfp * dtheta_plasma * dzeta_plasma * sum(norm_normal_plasma)
+
+    ! Compute plasma volume using \int (1/2) R^2 dZ dzeta.
+    ! These quantities will be evaluated on the half theta grid, which is the natural grid for dZ,
+    ! but we will need to interpolate R^2 from the full to half grid.
+    allocate(major_R_squared(ntheta_plasma,nzeta_plasma))
+    major_R_squared = r_plasma(1,:,:)*r_plasma(1,:,:) + r_plasma(2,:,:)*r_plasma(2,:,:)
+    ! First handle the interior of the theta grid:
+    volume_plasma = sum((major_R_squared(1:ntheta_plasma-1,:) + major_R_squared(2:ntheta_plasma,:)) * (0.5d+0) & ! R^2, interpolated from full to half grid
+         * (r_plasma(3,2:ntheta_plasma,:)-r_plasma(3,1:ntheta_plasma-1,:))) ! dZ
+    ! Add the contribution from the ends of the theta grid:
+    volume_plasma = volume_plasma + sum((major_R_squared(1,:) + major_R_squared(ntheta_plasma,:)) * (0.5d+0) & ! R^2, interpolated from full to half grid
+         * (r_plasma(3,1,:)-r_plasma(3,ntheta_plasma,:))) ! dZ
+    volume_plasma = abs(volume_plasma * dzeta_plasma / 2) ! r_plasma includes all nfp periods already, so no factor of nfp needed.
+    deallocate(major_R_squared)
+    print "(a,es10.3,a,es10.3,a)"," Plasma surface area:",area_plasma," m^2. Volume:",volume_plasma," m^3."
     
     select case (geometry_option_plasma)
     case (2,3,4)

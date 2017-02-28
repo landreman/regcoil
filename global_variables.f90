@@ -69,7 +69,7 @@ module global_variables
   real(dp) :: efit_psiN = 0.98
 
   real(dp) :: mpol_transform_refinement=5, ntor_transform_refinement=1
-  real(dp) :: area_plasma, area_coil
+  real(dp) :: area_plasma, area_coil, volume_plasma, volume_coil
 
   real(dp) :: net_poloidal_current_Amperes = 1
   real(dp) :: net_toroidal_current_Amperes = 0

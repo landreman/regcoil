@@ -32,6 +32,8 @@ subroutine write_output
        vn_symmetry_option = "symmetry_option", &
        vn_area_plasma = "area_plasma", &
        vn_area_coil = "area_coil", &
+       vn_volume_plasma = "volume_plasma", &
+       vn_volume_coil = "volume_coil", &
        vn_net_poloidal_current_Amperes = "net_poloidal_current_Amperes", &
        vn_net_toroidal_current_Amperes = "net_toroidal_current_Amperes", &
        vn_curpol = "curpol", &
@@ -149,6 +151,8 @@ subroutine write_output
   call cdf_define(ncid, vn_symmetry_option, symmetry_option)
   call cdf_define(ncid, vn_area_plasma, area_plasma)
   call cdf_define(ncid, vn_area_coil, area_coil)
+  call cdf_define(ncid, vn_volume_plasma, volume_plasma)
+  call cdf_define(ncid, vn_volume_coil, volume_coil)
   call cdf_define(ncid, vn_net_poloidal_current_Amperes, net_poloidal_current_Amperes)
   call cdf_define(ncid, vn_net_toroidal_current_Amperes, net_toroidal_current_Amperes)
   call cdf_define(ncid, vn_curpol, curpol)
@@ -242,6 +246,8 @@ subroutine write_output
   call cdf_write(ncid, vn_symmetry_option, symmetry_option)
   call cdf_write(ncid, vn_area_plasma, area_plasma)
   call cdf_write(ncid, vn_area_coil, area_coil)
+  call cdf_write(ncid, vn_volume_plasma, volume_plasma)
+  call cdf_write(ncid, vn_volume_coil, volume_coil)
   call cdf_write(ncid, vn_net_poloidal_current_Amperes, net_poloidal_current_Amperes)
   call cdf_write(ncid, vn_net_toroidal_current_Amperes, net_toroidal_current_Amperes)
   call cdf_write(ncid, vn_curpol, curpol)

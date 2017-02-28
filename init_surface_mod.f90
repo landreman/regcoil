@@ -13,7 +13,7 @@ module init_surface_mod
          geometry_option, R_specified, a, separation, dtheta, dzeta, nescin_filename, which_surface)
 
       use compute_offset_surface_mod
-      use global_variables, only: R0_plasma, nfp
+      use global_variables, only: R0_plasma, nfp, volume_coil
       use stel_kinds
       use stel_constants
       use omp_lib
@@ -27,7 +27,7 @@ module init_surface_mod
       real(dp), dimension(:,:,:), allocatable :: r, drdtheta, drdzeta, normal
       ! These next 2 arrays are not used now, but may be needed in the future for Merkel's regularization
       real(dp), dimension(:,:,:), allocatable :: d2rdtheta2, d2rdthetadzeta, d2rdzeta2
-      real(dp), dimension(:,:), allocatable :: norm_normal
+      real(dp), dimension(:,:), allocatable :: norm_normal, major_R_squared
       real(dp) :: R0_to_use
       real(dp) :: angle, sinangle, cosangle, dsinangledtheta, dcosangledtheta
       real(dp) :: angle2, sinangle2, cosangle2, dsinangle2dzeta, dcosangle2dzeta
@@ -227,6 +227,21 @@ module init_surface_mod
       norm_normal = sqrt(normal(1,:,1:nzeta)**2 + normal(2,:,1:nzeta)**2 + normal(3,:,1:nzeta)**2)
 
       area = nfp * dtheta * dzeta * sum(norm_normal)
+
+      ! Compute coil surface volume using \int (1/2) R^2 dZ dzeta.
+      ! These quantities will be evaluated on the half theta grid, which is the natural grid for dZ,
+      ! but we will need to interpolate R^2 from the full to half grid.
+      allocate(major_R_squared(ntheta,nzeta))
+      major_R_squared = r(1,:,:)*r(1,:,:) + r(2,:,:)*r(2,:,:)
+      ! First handle the interior of the theta grid:
+      volume_coil = sum((major_R_squared(1:ntheta-1,:) + major_R_squared(2:ntheta,:)) * (0.5d+0) & ! R^2, interpolated from full to half grid
+           * (r(3,2:ntheta,:)-r(3,1:ntheta-1,:))) ! dZ
+      ! Add the contribution from the ends of the theta grid:
+      volume_coil = volume_coil + sum((major_R_squared(1,:) + major_R_squared(ntheta,:)) * (0.5d+0) & ! R^2, interpolated from full to half grid
+           * (r(3,1,:)-r(3,ntheta,:))) ! dZ
+      volume_coil = abs(volume_coil * dzeta / 2) ! r includes all nfp periods already, so no factor of nfp needed.
+      deallocate(major_R_squared)
+      print "(a,es10.3,a,es10.3,a)"," Coil surface area:",area," m^2. Volume:",volume_coil," m^3."
 
     end subroutine init_surface
 
