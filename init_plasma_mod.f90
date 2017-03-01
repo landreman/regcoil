@@ -439,7 +439,7 @@ contains
     ! Compute plasma volume using \int (1/2) R^2 dZ dzeta.
     ! These quantities will be evaluated on the half theta grid, which is the natural grid for dZ,
     ! but we will need to interpolate R^2 from the full to half grid.
-    allocate(major_R_squared(ntheta_plasma,nzeta_plasma))
+    allocate(major_R_squared(ntheta_plasma,nzetal_plasma))
     major_R_squared = r_plasma(1,:,:)*r_plasma(1,:,:) + r_plasma(2,:,:)*r_plasma(2,:,:)
     ! First handle the interior of the theta grid:
     volume_plasma = sum((major_R_squared(1:ntheta_plasma-1,:) + major_R_squared(2:ntheta_plasma,:)) * (0.5d+0) & ! R^2, interpolated from full to half grid
