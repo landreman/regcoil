@@ -2,7 +2,7 @@
 
 &regcoil
   general_option = 5  ! Determine lambda to meet a current density target
-  current_density_target = 2.0e8
+  current_density_target = 2.0d+8
 
   nlambda = 20
 
