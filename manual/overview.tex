@@ -1,7 +1,8 @@
 \chapter{Overview}
 
 This program is an implementation of the \regcoil~algorithm described in \cite{regcoilPaper},
-and was used for many of the calculations in \cite{regcoilPaper}.
+and was used for the calculations in \cite{regcoilPaper}.
+This paper is available in the Git repository for this program.
 In addition, this program can read output files from the \nescoil~code \cite{nescoil},
 processing the results to compute quantities like the current density
 and residual magnetic field normal to the target plasma surface.
@@ -28,7 +29,7 @@ and residual magnetic field normal to the target plasma surface.
 \end{itemize}
 
 Most of these libraries will be available on any high-performace computing system. {\ttfamily BLAS} and {\ttfamily LAPACK}
-are pre-installed on Apple/Mac computers as part of the Accelerate framework.
+are available on Apple Mac computers (as part of the Accelerate framework) if you install Xcode through the App store.
 
 If {\ttfamily OpenMP} is available, calculations with the code are parallelized.
 The plotting and testing functions use \python,
