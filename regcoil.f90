@@ -4,6 +4,7 @@ program regcoil
 
   use global_variables, only: totalTime, outputFilename, general_option
   use init_plasma_mod
+  use init_sensitivity
 
   implicit none
 
@@ -24,6 +25,13 @@ program regcoil
   ! Initialize some of the vectors and matrices needed:
   call read_bnorm()
   call build_matrices()
+
+  ! Initialize sensitivity arrays
+  select case (general_option)
+  case (1,4,5)
+    print *,"Initializing sensitivity."
+    call init_partials()
+  end select
 
   select case (general_option)
   case (1)
