@@ -65,21 +65,21 @@ subroutine solve
   allocate(this_K2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 ! Sensitivity matrices
-  allocate(dchi2Kdrmnc(mnmax_coil, nlambda),stat=iflag)
+  allocate(dchi2Kdrmnc(mnmax_sensitivity, nlambda),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dchi2Kdrmns(mnmax_coil, nlambda),stat=iflag)
+  allocate(dchi2Kdrmns(mnmax_sensitivity, nlambda),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dchi2Kdzmnc(mnmax_coil, nlambda),stat=iflag)
+  allocate(dchi2Kdzmnc(mnmax_sensitivity, nlambda),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dchi2Kdzmns(mnmax_coil, nlambda),stat=iflag)
+  allocate(dchi2Kdzmns(mnmax_sensitivity, nlambda),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dchi2Bdrmnc(mnmax_coil, nlambda),stat=iflag)
+  allocate(dchi2Bdrmnc(mnmax_sensitivity, nlambda),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dchi2Bdrmns(mnmax_coil, nlambda),stat=iflag)
+  allocate(dchi2Bdrmns(mnmax_sensitivity, nlambda),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dchi2Bdzmnc(mnmax_coil, nlambda),stat=iflag)
+  allocate(dchi2Bdzmnc(mnmax_sensitivity, nlambda),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dchi2Bdzmns(mnmax_coil, nlambda),stat=iflag)
+  allocate(dchi2Bdzmns(mnmax_sensitivity, nlambda),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dKDifferencedrmnc(3,ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
@@ -177,7 +177,7 @@ subroutine solve
      ! dfdrmnc(3, mnmax_coil, ntheta_coil*nzeta_coil, num_basis_functions)
      ! f_x(ntheta_coil*nzeta_coil, num_basis_functions)
      ! norm_normal_coil(ntheta_coil,nzeta_coil)
-     do imn=1,mnmax_coil
+     do imn=1,mnmax_sensitivity
        dKDifferencedrmnc(1,:) = dddrmnc(1,imn,:)-matmul(dfdrmnc(1,imn,:,:), solution)
        dKDifferencedrmnc(2,:) = dddrmnc(2,imn,:)-matmul(dfdrmnc(2,imn,:,:), solution)
        dKDifferencedrmnc(3,:) = dddrmnc(3,imn,:)-matmul(dfdrmnc(3,imn,:,:), solution)
@@ -221,7 +221,7 @@ subroutine solve
      ! dgdrmnc(mnmax_coil, ntheta_plasma*nzeta_plasma, num_basis_functions)
      ! solution(num_basis_functions)
      ! dBnormaldrmnc(ntheta_plasma,nzeta_plasma)
-     do imn=1,mnmax_coil
+     do imn=1,mnmax_sensitivity
        dBnormaldrmnc(:,:) = reshape(matmul(dgdrmnc(imn,:,:),solution),(/ ntheta_plasma, nzeta_plasma /))*norm_normal_plasma
        dBnormaldrmns(:,:) = reshape(matmul(dgdrmns(imn,:,:),solution),(/ ntheta_plasma, nzeta_plasma /))*norm_normal_plasma
        dBnormaldzmnc(:,:) = reshape(matmul(dgdzmnc(imn,:,:),solution),(/ ntheta_plasma, nzeta_plasma /))*norm_normal_plasma

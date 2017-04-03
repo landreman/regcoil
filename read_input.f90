@@ -20,7 +20,8 @@ subroutine read_input
        net_poloidal_current_Amperes, net_toroidal_current_Amperes, &
        load_bnorm, bnorm_filename, &
        shape_filename_plasma, nlambda, lambda_min, lambda_max, general_option, nescout_filename, &
-       target_option, current_density_target, lambda_search_tolerance
+       target_option, current_density_target, lambda_search_tolerance, sensitivity_option, &
+       nmax_sensitivity, mmax_sensitivity
 
   ! getcarg is in LIBSTELL
   call getcarg(1, inputFilename, numargs)
@@ -64,6 +65,11 @@ subroutine read_input
   print "(a,i4)","   nzeta_coil    =",nzeta_coil
   print "(a,i4)","   mpol_coil     =",mpol_coil
   print "(a,i4)","   ntor_coil     =",ntor_coil
+
+  print *,"Sensitivity parameters:"
+  print "(a,i4)","   sensitivity_option =",sensitivity_option
+  print "(a,i4)","   nmax_sensitivity =",nmax_sensitivity
+  print "(a,i4)","   mmax_sensitivity =",mmax_sensitivity
 
   select case (symmetry_option)
   case (1)
