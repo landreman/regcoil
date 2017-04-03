@@ -71,7 +71,16 @@ subroutine write_output
        vn_g = "g", &
        vn_matrix_B = "matrix_B", &
        vn_matrix_K = "matrix_K", &
-       vn_single_valued_current_potential_mn = "single_valued_current_potential_mn"
+       vn_single_valued_current_potential_mn = "single_valued_current_potential_mn", &
+! Sensitivity Output
+       vn_dchi2Bdrmnc = "rmnc chi2B sensitivity", &
+       vn_dchi2Bdrmns = "rmns chi2B sensitivity", &
+       vn_dchi2Bdzmnc = "zmnc chi2B sensitivity", &
+       vn_dchi2Bdzmns = "zmns chi2B sensitivity", &
+       vn_dchi2Kdrmnc = "rmnc chi2K sensitivity", &
+       vn_dchi2Kdrmns = "rmns chi2K sensitivity", &
+       vn_dchi2Kdzmnc = "zmnc chi2K sensitivity", &
+       vn_dchi2Kdzmns = "zmns chi2K sensitivity"
 
   ! Arrays with dimension 3
   character(len=*), parameter :: &
@@ -114,7 +123,8 @@ subroutine write_output
        nthetanzeta_plasma_nthetanzeta_coil_dim = (/ character(len=50) :: 'ntheta_nzeta_plasma','ntheta_nzeta_coil'/), &
        nthetanzeta_plasma_basis_dim = (/ character(len=50) :: 'ntheta_nzeta_plasma','num_basis_functions'/), &
        basis_basis_dim = (/ character(len=50) :: 'num_basis_functions','num_basis_functions'/), &
-       basis_nlambda_dim = (/ character(len=50) :: 'num_basis_functions','nlambda'/)
+       basis_nlambda_dim = (/ character(len=50) :: 'num_basis_functions','nlambda'/), &
+       mnmax_coil_nlambda = (/ character(len=50) :: 'mnmax_coil', 'nlambda'/)
 
   ! Arrays with dimension 3:
   character(len=*), parameter, dimension(3) :: &
@@ -196,6 +206,15 @@ subroutine write_output
   !call cdf_define(ncid, vn_matrix_K, matrix_K, dimname=basis_basis_dim)
   call cdf_define(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda), &
        dimname=basis_nlambda_dim)
+  ! Sensitivity output
+  call cdf_define(ncid, vn_dchi2Bdrmnc, dchi2Bdrmnc(:,1:Nlambda),dimname=mnmax_coil_nlambda)
+  call cdf_define(ncid, vn_dchi2Bdrmns, dchi2Bdrmns(:,1:Nlambda),dimname=mnmax_coil_nlambda)
+  call cdf_define(ncid, vn_dchi2Bdzmnc, dchi2Bdzmnc(:,1:Nlambda),dimname=mnmax_coil_nlambda)
+  call cdf_define(ncid, vn_dchi2Bdzmns, dchi2Bdzmns(:,1:Nlambda),dimname=mnmax_coil_nlambda)
+  call cdf_define(ncid, vn_dchi2Kdrmnc, dchi2Kdrmnc(:,1:Nlambda),dimname=mnmax_coil_nlambda)
+  call cdf_define(ncid, vn_dchi2Kdrmns, dchi2Kdrmns(:,1:Nlambda),dimname=mnmax_coil_nlambda)
+  call cdf_define(ncid, vn_dchi2Kdzmnc, dchi2Kdzmnc(:,1:Nlambda),dimname=mnmax_coil_nlambda)
+  call cdf_define(ncid, vn_dchi2Kdzmns, dchi2Kdzmns(:,1:Nlambda),dimname=mnmax_coil_nlambda)
 
   ! Arrays with dimension 3
 
@@ -290,6 +309,15 @@ subroutine write_output
   !call cdf_write(ncid, vn_matrix_B, matrix_B)
   !call cdf_write(ncid, vn_matrix_K, matrix_K)
   call cdf_write(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda))
+  ! Write sensitivity output
+  call cdf_write(ncid, vn_dchi2Bdrmnc, dchi2Bdrmnc(:,1:Nlambda))
+  call cdf_write(ncid, vn_dchi2Bdrmns, dchi2Bdrmns(:,1:Nlambda))
+  call cdf_write(ncid, vn_dchi2Bdzmnc, dchi2Bdzmnc(:,1:Nlambda))
+  call cdf_write(ncid, vn_dchi2Bdzmns, dchi2Bdzmns(:,1:Nlambda))
+  call cdf_write(ncid, vn_dchi2Kdrmnc, dchi2Kdrmnc(:,1:Nlambda))
+  call cdf_write(ncid, vn_dchi2Kdrmns, dchi2Kdrmns(:,1:Nlambda))
+  call cdf_write(ncid, vn_dchi2Kdzmnc, dchi2Kdzmnc(:,1:Nlambda))
+  call cdf_write(ncid, vn_dchi2Kdzmns, dchi2Kdzmns(:,1:Nlambda))
 
   ! Arrays with dimension 3
 

@@ -87,5 +87,14 @@ module global_variables
   integer :: exit_code = 0
   real(dp) :: chi2_B_target = 0
 
+! Needed for chi2_K sensitivity calculation
+  real(dp), dimension(:,:,:), allocatable :: dddrmnc, dddrmns, dddzmnc, dddzmns
+  real(dp), dimension(:,:,:,:), allocatable :: dfdrmnc, dfdrmns, dfdzmnc, dfdzmns
+  real(dp), dimension(:,:,:), allocatable :: dnorm_normaldrmnc, dnorm_normaldrmns
+  real(dp), dimension(:,:,:), allocatable :: dnorm_normaldzmnc, dnorm_normaldzmns
+  real(dp), dimension(:,:), allocatable :: dchi2Kdrmnc, dchi2Kdrmns, dchi2Kdzmnc, dchi2Kdzmns
+  real(dp), dimension(:,:), allocatable :: dchi2Bdrmnc, dchi2Bdrmns, dchi2Bdzmnc, dchi2Bdzmns
+  real(dp), dimension(:,:,:), allocatable :: dgdrmnc,dgdrmns,dgdzmnc,dgdzmns
+
 end module global_variables
 
