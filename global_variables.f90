@@ -91,6 +91,7 @@ module global_variables
   integer :: sensitivity_option = 1
   integer :: nmax_sensitivity = 0
   integer :: mmax_sensitivity = 0
+
   integer :: mnmax_sensitivity
   integer, dimension(:), allocatable :: xm_sensitivity, xn_sensitivity
   real(dp), dimension(:,:,:), allocatable :: dddrmnc, dddrmns, dddzmnc, dddzmns
@@ -100,6 +101,7 @@ module global_variables
   real(dp), dimension(:,:), allocatable :: dchi2Kdrmnc, dchi2Kdrmns, dchi2Kdzmnc, dchi2Kdzmns
   real(dp), dimension(:,:), allocatable :: dchi2Bdrmnc, dchi2Bdrmns, dchi2Bdzmnc, dchi2Bdzmns
   real(dp), dimension(:,:,:), allocatable :: dgdrmnc,dgdrmns,dgdzmnc,dgdzmns
+
 
 end module global_variables
 

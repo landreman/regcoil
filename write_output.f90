@@ -124,7 +124,7 @@ subroutine write_output
        nthetanzeta_plasma_basis_dim = (/ character(len=50) :: 'ntheta_nzeta_plasma','num_basis_functions'/), &
        basis_basis_dim = (/ character(len=50) :: 'num_basis_functions','num_basis_functions'/), &
        basis_nlambda_dim = (/ character(len=50) :: 'num_basis_functions','nlambda'/), &
-       mnmax_coil_nlambda = (/ character(len=50) :: 'mnmax_coil', 'nlambda'/)
+       mnmax_sensitivity_nlambda = (/ character(len=50) :: 'mnmax_sensitivity', 'nlambda'/)
 
   ! Arrays with dimension 3:
   character(len=*), parameter, dimension(3) :: &
@@ -132,6 +132,9 @@ subroutine write_output
        xyz_ntheta_nzetal_coil_dim = (/ character(len=50) :: 'xyz','ntheta_coil','nzetal_coil'/), &
        ntheta_nzeta_coil_nlambda_dim = (/ character(len=50) :: 'ntheta_coil','nzeta_coil','nlambda'/), &
        ntheta_nzeta_plasma_nlambda_dim = (/ character(len=50) :: 'ntheta_plasma','nzeta_plasma','nlambda'/)
+
+  print *,"Beginning write output."
+  call flush(6)
 
   call cdf_open(ncid,outputFilename,'w',ierr)
   IF (ierr .ne. 0) then
@@ -207,14 +210,16 @@ subroutine write_output
   call cdf_define(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda), &
        dimname=basis_nlambda_dim)
   ! Sensitivity output
-  call cdf_define(ncid, vn_dchi2Bdrmnc, dchi2Bdrmnc(:,1:Nlambda),dimname=mnmax_coil_nlambda)
-  call cdf_define(ncid, vn_dchi2Bdrmns, dchi2Bdrmns(:,1:Nlambda),dimname=mnmax_coil_nlambda)
-  call cdf_define(ncid, vn_dchi2Bdzmnc, dchi2Bdzmnc(:,1:Nlambda),dimname=mnmax_coil_nlambda)
-  call cdf_define(ncid, vn_dchi2Bdzmns, dchi2Bdzmns(:,1:Nlambda),dimname=mnmax_coil_nlambda)
-  call cdf_define(ncid, vn_dchi2Kdrmnc, dchi2Kdrmnc(:,1:Nlambda),dimname=mnmax_coil_nlambda)
-  call cdf_define(ncid, vn_dchi2Kdrmns, dchi2Kdrmns(:,1:Nlambda),dimname=mnmax_coil_nlambda)
-  call cdf_define(ncid, vn_dchi2Kdzmnc, dchi2Kdzmnc(:,1:Nlambda),dimname=mnmax_coil_nlambda)
-  call cdf_define(ncid, vn_dchi2Kdzmns, dchi2Kdzmns(:,1:Nlambda),dimname=mnmax_coil_nlambda)
+  if (sensitivity_option > 1) then
+    call cdf_define(ncid, vn_dchi2Bdrmnc, dchi2Bdrmnc(:,1:Nlambda),dimname=mnmax_sensitivity_nlambda)
+    call cdf_define(ncid, vn_dchi2Bdrmns, dchi2Bdrmns(:,1:Nlambda),dimname=mnmax_sensitivity_nlambda)
+    call cdf_define(ncid, vn_dchi2Bdzmnc, dchi2Bdzmnc(:,1:Nlambda),dimname=mnmax_sensitivity_nlambda)
+    call cdf_define(ncid, vn_dchi2Bdzmns, dchi2Bdzmns(:,1:Nlambda),dimname=mnmax_sensitivity_nlambda)
+    call cdf_define(ncid, vn_dchi2Kdrmnc, dchi2Kdrmnc(:,1:Nlambda),dimname=mnmax_sensitivity_nlambda)
+    call cdf_define(ncid, vn_dchi2Kdrmns, dchi2Kdrmns(:,1:Nlambda),dimname=mnmax_sensitivity_nlambda)
+    call cdf_define(ncid, vn_dchi2Kdzmnc, dchi2Kdzmnc(:,1:Nlambda),dimname=mnmax_sensitivity_nlambda)
+    call cdf_define(ncid, vn_dchi2Kdzmns, dchi2Kdzmns(:,1:Nlambda),dimname=mnmax_sensitivity_nlambda)
+  endif
 
   ! Arrays with dimension 3
 
@@ -310,14 +315,16 @@ subroutine write_output
   !call cdf_write(ncid, vn_matrix_K, matrix_K)
   call cdf_write(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda))
   ! Write sensitivity output
-  call cdf_write(ncid, vn_dchi2Bdrmnc, dchi2Bdrmnc(:,1:Nlambda))
-  call cdf_write(ncid, vn_dchi2Bdrmns, dchi2Bdrmns(:,1:Nlambda))
-  call cdf_write(ncid, vn_dchi2Bdzmnc, dchi2Bdzmnc(:,1:Nlambda))
-  call cdf_write(ncid, vn_dchi2Bdzmns, dchi2Bdzmns(:,1:Nlambda))
-  call cdf_write(ncid, vn_dchi2Kdrmnc, dchi2Kdrmnc(:,1:Nlambda))
-  call cdf_write(ncid, vn_dchi2Kdrmns, dchi2Kdrmns(:,1:Nlambda))
-  call cdf_write(ncid, vn_dchi2Kdzmnc, dchi2Kdzmnc(:,1:Nlambda))
-  call cdf_write(ncid, vn_dchi2Kdzmns, dchi2Kdzmns(:,1:Nlambda))
+  if (sensitivity_option > 1) then
+    call cdf_write(ncid, vn_dchi2Bdrmnc, dchi2Bdrmnc(:,1:Nlambda))
+    call cdf_write(ncid, vn_dchi2Bdrmns, dchi2Bdrmns(:,1:Nlambda))
+    call cdf_write(ncid, vn_dchi2Bdzmnc, dchi2Bdzmnc(:,1:Nlambda))
+    call cdf_write(ncid, vn_dchi2Bdzmns, dchi2Bdzmns(:,1:Nlambda))
+    call cdf_write(ncid, vn_dchi2Kdrmnc, dchi2Kdrmnc(:,1:Nlambda))
+    call cdf_write(ncid, vn_dchi2Kdrmns, dchi2Kdrmns(:,1:Nlambda))
+    call cdf_write(ncid, vn_dchi2Kdzmnc, dchi2Kdzmnc(:,1:Nlambda))
+    call cdf_write(ncid, vn_dchi2Kdzmns, dchi2Kdzmns(:,1:Nlambda))
+  endif
 
   ! Arrays with dimension 3
 
@@ -343,5 +350,8 @@ subroutine write_output
 
   ! Finish up:
   call cdf_close(ncid)
+
+  print *,"Write output complete."
+  call flush(6)
 
 end subroutine write_output

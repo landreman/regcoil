@@ -65,54 +65,58 @@ subroutine solve
   allocate(this_K2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 ! Sensitivity matrices
-  allocate(dchi2Kdrmnc(mnmax_sensitivity, nlambda),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dchi2Kdrmns(mnmax_sensitivity, nlambda),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dchi2Kdzmnc(mnmax_sensitivity, nlambda),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dchi2Kdzmns(mnmax_sensitivity, nlambda),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dchi2Bdrmnc(mnmax_sensitivity, nlambda),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dchi2Bdrmns(mnmax_sensitivity, nlambda),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dchi2Bdzmnc(mnmax_sensitivity, nlambda),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dchi2Bdzmns(mnmax_sensitivity, nlambda),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dKDifferencedrmnc(3,ntheta_coil*nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dKDifferencedrmns(3,ntheta_coil*nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dKDifferencedzmnc(3,ntheta_coil*nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dKDifferencedzmns(3,ntheta_coil*nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(rmncterm1(ntheta_coil,nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(rmnsterm1(ntheta_coil,nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(zmncterm1(ntheta_coil,nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(zmnsterm1(ntheta_coil,nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(rmncterm2(ntheta_coil,nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(rmnsterm2(ntheta_coil,nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(zmncterm2(ntheta_coil,nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(zmnsterm2(ntheta_coil,nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dBnormaldrmnc(ntheta_plasma,nzeta_plasma),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dBnormaldrmns(ntheta_plasma,nzeta_plasma),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dBnormaldzmnc(ntheta_plasma,nzeta_plasma),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dBnormaldzmns(ntheta_plasma,nzeta_plasma),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (sensitivity_option > 1) then
+    print *,"Allocating sensitivity matrices."
+    allocate(dchi2Kdrmnc(mnmax_sensitivity, nlambda),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dchi2Kdrmns(mnmax_sensitivity, nlambda),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dchi2Kdzmnc(mnmax_sensitivity, nlambda),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dchi2Kdzmns(mnmax_sensitivity, nlambda),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dchi2Bdrmnc(mnmax_sensitivity, nlambda),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dchi2Bdrmns(mnmax_sensitivity, nlambda),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dchi2Bdzmnc(mnmax_sensitivity, nlambda),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dchi2Bdzmns(mnmax_sensitivity, nlambda),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dKDifferencedrmnc(3,ntheta_coil*nzeta_coil),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dKDifferencedrmns(3,ntheta_coil*nzeta_coil),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dKDifferencedzmnc(3,ntheta_coil*nzeta_coil),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dKDifferencedzmns(3,ntheta_coil*nzeta_coil),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(rmncterm1(ntheta_coil,nzeta_coil),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(rmnsterm1(ntheta_coil,nzeta_coil),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(zmncterm1(ntheta_coil,nzeta_coil),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(zmnsterm1(ntheta_coil,nzeta_coil),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(rmncterm2(ntheta_coil,nzeta_coil),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(rmnsterm2(ntheta_coil,nzeta_coil),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(zmncterm2(ntheta_coil,nzeta_coil),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(zmnsterm2(ntheta_coil,nzeta_coil),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dBnormaldrmnc(ntheta_plasma,nzeta_plasma),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dBnormaldrmns(ntheta_plasma,nzeta_plasma),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dBnormaldzmnc(ntheta_plasma,nzeta_plasma),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dBnormaldzmns(ntheta_plasma,nzeta_plasma),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    print *,"Allocation complete."
+  endif
 
   ! Call LAPACK's DSYSV in query mode to determine the optimal size of the work array
   call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, IPIV, RHS, num_basis_functions, WORK, -1, INFO)
@@ -120,7 +124,7 @@ subroutine solve
   print *,"Optimal LWORK:",LWORK
   deallocate(WORK)
   allocate(WORK(LWORK), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'  
+  if (iflag .ne. 0) stop 'Allocation error!'
 
   factor_zeta  = net_poloidal_current_Amperes / twopi
   factor_theta = net_toroidal_current_Amperes / twopi
@@ -172,41 +176,46 @@ subroutine solve
           / norm_normal_coil
      chi2_K(ilambda) = nfp * dtheta_coil * dzeta_coil * sum(this_K2_times_N)
      K2(:,:,ilambda) = this_K2_times_N / norm_normal_coil
-     ! sensitivity computation
-     ! dddrmnc(3, mnmax_coil, ntheta_coil*nzeta_coil)
-     ! dfdrmnc(3, mnmax_coil, ntheta_coil*nzeta_coil, num_basis_functions)
-     ! f_x(ntheta_coil*nzeta_coil, num_basis_functions)
-     ! norm_normal_coil(ntheta_coil,nzeta_coil)
-     do imn=1,mnmax_sensitivity
-       dKDifferencedrmnc(1,:) = dddrmnc(1,imn,:)-matmul(dfdrmnc(1,imn,:,:), solution)
-       dKDifferencedrmnc(2,:) = dddrmnc(2,imn,:)-matmul(dfdrmnc(2,imn,:,:), solution)
-       dKDifferencedrmnc(3,:) = dddrmnc(3,imn,:)-matmul(dfdrmnc(3,imn,:,:), solution)
-       dKDifferencedrmns(1,:) = dddrmns(1,imn,:)-matmul(dfdrmns(1,imn,:,:), solution)
-       dKDifferencedrmns(2,:) = dddrmns(2,imn,:)-matmul(dfdrmns(2,imn,:,:), solution)
-       dKDifferencedrmns(3,:) = dddrmns(3,imn,:)-matmul(dfdrmns(3,imn,:,:), solution)
-       dKDifferencedzmnc(1,:) = dddrmnc(1,imn,:)-matmul(dfdzmnc(1,imn,:,:), solution)
-       dKDifferencedzmnc(2,:) = dddrmnc(2,imn,:)-matmul(dfdzmnc(2,imn,:,:), solution)
-       dKDifferencedzmnc(3,:) = dddrmnc(3,imn,:)-matmul(dfdzmnc(3,imn,:,:), solution)
-       dKDifferencedzmns(1,:) = dddzmns(1,imn,:)-matmul(dfdzmns(1,imn,:,:), solution)
-       dKDifferencedzmns(2,:) = dddzmns(2,imn,:)-matmul(dfdzmns(2,imn,:,:), solution)
-       dKDifferencedzmns(3,:) = dddzmns(3,imn,:)-matmul(dfdzmns(3,imn,:,:), solution)
-       rmncterm1(:,:) = -dnorm_normaldrmnc(imn,:,:)*this_K2_times_N/norm_normal_coil
-       rmnsterm1(:,:) = -dnorm_normaldrmns(imn,:,:)*this_K2_times_N/norm_normal_coil
-       zmncterm1(:,:) = -dnorm_normaldzmnc(imn,:,:)*this_K2_times_N/norm_normal_coil
-       zmnsterm1(:,:) = -dnorm_normaldzmns(imn,:,:)*this_K2_times_N/norm_normal_coil
-       rmncterm2(:,:) = reshape(KDifference_x*dKDifferencedrmnc(1,:) + KDifference_y*dKDifferencedrmnc(2,:) &
-         + KDifference_z*dKDifferencedrmnc(3,:),(/ ntheta_coil, nzeta_coil/))
-       rmnsterm2(:,:) = reshape(KDifference_x*dKDifferencedrmns(1,:) + KDifference_y*dKDifferencedrmns(2,:) &
-         + KDifference_z*dKDifferencedrmns(3,:),(/ ntheta_coil, nzeta_coil/))
-       zmncterm2(:,:) = reshape(KDifference_x*dKDifferencedzmnc(1,:) + KDifference_y*dKDifferencedzmnc(2,:) &
-         + KDifference_z*dKDifferencedzmnc(3,:),(/ ntheta_coil, nzeta_coil/))
-       zmnsterm2(:,:) = reshape(KDifference_x*dKDifferencedzmns(1,:) + KDifference_y*dKDifferencedzmns(2,:) &
-         + KDifference_z*dKDifferencedzmns(3,:),(/ ntheta_coil, nzeta_coil/))
-       dchi2Kdrmnc(imn,ilambda) = nfp*dtheta_coil*dzeta_coil*(sum(rmncterm1) + sum(rmncterm2))
-       dchi2Kdrmns(imn,ilambda) = nfp*dtheta_coil*dzeta_coil*(sum(rmnsterm1) + sum(rmnsterm2))
-       dchi2Kdzmnc(imn,ilambda) = nfp*dtheta_coil*dzeta_coil*(sum(zmncterm1) + sum(zmncterm2))
-       dchi2Kdzmns(imn,ilambda) = nfp*dtheta_coil*dzeta_coil*(sum(zmnsterm1) + sum(zmnsterm2))
-     enddo
+
+     if (sensitivity_option > 1) then
+
+       print *,"Computing chi2_K sensitivity."
+       ! sensitivity computation
+       ! dddrmnc(3, mnmax_sensitivity, ntheta_coil*nzeta_coil)
+       ! dfdrmnc(3, mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions)
+       ! f_x(ntheta_coil*nzeta_coil, num_basis_functions)
+       ! norm_normal_coil(ntheta_coil,nzeta_coil)
+       do imn=1,mnmax_sensitivity
+         dKDifferencedrmnc(1,:) = dddrmnc(1,imn,:)-matmul(dfdrmnc(1,imn,:,:), solution)
+         dKDifferencedrmnc(2,:) = dddrmnc(2,imn,:)-matmul(dfdrmnc(2,imn,:,:), solution)
+         dKDifferencedrmnc(3,:) = dddrmnc(3,imn,:)-matmul(dfdrmnc(3,imn,:,:), solution)
+         dKDifferencedrmns(1,:) = dddrmns(1,imn,:)-matmul(dfdrmns(1,imn,:,:), solution)
+         dKDifferencedrmns(2,:) = dddrmns(2,imn,:)-matmul(dfdrmns(2,imn,:,:), solution)
+         dKDifferencedrmns(3,:) = dddrmns(3,imn,:)-matmul(dfdrmns(3,imn,:,:), solution)
+         dKDifferencedzmnc(1,:) = dddrmnc(1,imn,:)-matmul(dfdzmnc(1,imn,:,:), solution)
+         dKDifferencedzmnc(2,:) = dddrmnc(2,imn,:)-matmul(dfdzmnc(2,imn,:,:), solution)
+         dKDifferencedzmnc(3,:) = dddrmnc(3,imn,:)-matmul(dfdzmnc(3,imn,:,:), solution)
+         dKDifferencedzmns(1,:) = dddzmns(1,imn,:)-matmul(dfdzmns(1,imn,:,:), solution)
+         dKDifferencedzmns(2,:) = dddzmns(2,imn,:)-matmul(dfdzmns(2,imn,:,:), solution)
+         dKDifferencedzmns(3,:) = dddzmns(3,imn,:)-matmul(dfdzmns(3,imn,:,:), solution)
+         rmncterm1(:,:) = -dnorm_normaldrmnc(imn,:,:)*this_K2_times_N/norm_normal_coil
+         rmnsterm1(:,:) = -dnorm_normaldrmns(imn,:,:)*this_K2_times_N/norm_normal_coil
+         zmncterm1(:,:) = -dnorm_normaldzmnc(imn,:,:)*this_K2_times_N/norm_normal_coil
+         zmnsterm1(:,:) = -dnorm_normaldzmns(imn,:,:)*this_K2_times_N/norm_normal_coil
+         rmncterm2(:,:) = reshape(KDifference_x*dKDifferencedrmnc(1,:) + KDifference_y*dKDifferencedrmnc(2,:) &
+           + KDifference_z*dKDifferencedrmnc(3,:),(/ ntheta_coil, nzeta_coil/))
+         rmnsterm2(:,:) = reshape(KDifference_x*dKDifferencedrmns(1,:) + KDifference_y*dKDifferencedrmns(2,:) &
+           + KDifference_z*dKDifferencedrmns(3,:),(/ ntheta_coil, nzeta_coil/))
+         zmncterm2(:,:) = reshape(KDifference_x*dKDifferencedzmnc(1,:) + KDifference_y*dKDifferencedzmnc(2,:) &
+           + KDifference_z*dKDifferencedzmnc(3,:),(/ ntheta_coil, nzeta_coil/))
+         zmnsterm2(:,:) = reshape(KDifference_x*dKDifferencedzmns(1,:) + KDifference_y*dKDifferencedzmns(2,:) &
+           + KDifference_z*dKDifferencedzmns(3,:),(/ ntheta_coil, nzeta_coil/))
+         dchi2Kdrmnc(imn,ilambda) = nfp*dtheta_coil*dzeta_coil*(sum(rmncterm1) + sum(rmncterm2))
+         dchi2Kdrmns(imn,ilambda) = nfp*dtheta_coil*dzeta_coil*(sum(rmnsterm1) + sum(rmnsterm2))
+         dchi2Kdzmnc(imn,ilambda) = nfp*dtheta_coil*dzeta_coil*(sum(zmncterm1) + sum(zmncterm2))
+         dchi2Kdzmns(imn,ilambda) = nfp*dtheta_coil*dzeta_coil*(sum(zmnsterm1) + sum(zmnsterm2))
+       enddo
+     endif
 
      Bnormal_total(:,:,ilambda) = (reshape(matmul(g,solution),(/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma) &
           + Bnormal_from_plasma_current + Bnormal_from_net_coil_currents
@@ -217,26 +226,61 @@ subroutine solve
      chi2_B(ilambda) = nfp * dtheta_plasma * dzeta_plasma &
           * sum(Bnormal_total(:,:,ilambda) * Bnormal_total(:,:,ilambda) * norm_normal_plasma)
 
-     ! Compute chi2_B sensitivity
-     ! dgdrmnc(mnmax_coil, ntheta_plasma*nzeta_plasma, num_basis_functions)
-     ! solution(num_basis_functions)
-     ! dBnormaldrmnc(ntheta_plasma,nzeta_plasma)
-     do imn=1,mnmax_sensitivity
-       dBnormaldrmnc(:,:) = reshape(matmul(dgdrmnc(imn,:,:),solution),(/ ntheta_plasma, nzeta_plasma /))*norm_normal_plasma
-       dBnormaldrmns(:,:) = reshape(matmul(dgdrmns(imn,:,:),solution),(/ ntheta_plasma, nzeta_plasma /))*norm_normal_plasma
-       dBnormaldzmnc(:,:) = reshape(matmul(dgdzmnc(imn,:,:),solution),(/ ntheta_plasma, nzeta_plasma /))*norm_normal_plasma
-       dBnormaldzmns(:,:) = reshape(matmul(dgdzmns(imn,:,:),solution),(/ ntheta_plasma, nzeta_plasma /))*norm_normal_plasma
-       dchi2Bdrmnc(imn,ilambda) = 2*nfp*dtheta_plasma*dzeta_plasma*sum(Bnormal_total(:,:,ilambda)*dBnormaldrmnc*norm_normal_plasma)
-       dchi2Bdrmns(imn,ilambda) = 2*nfp*dtheta_plasma*dzeta_plasma*sum(Bnormal_total(:,:,ilambda)*dBnormaldrmns*norm_normal_plasma)
-       dchi2Bdzmnc(imn,ilambda) = 2*nfp*dtheta_plasma*dzeta_plasma*sum(Bnormal_total(:,:,ilambda)*dBnormaldzmnc*norm_normal_plasma)
-       dchi2Bdzmns(imn,ilambda) = 2*nfp*dtheta_plasma*dzeta_plasma*sum(Bnormal_total(:,:,ilambda)*dBnormaldzmns*norm_normal_plasma)
-     enddo
+     if (sensitivity_option > 1) then
+       print *,"Computing chi2_B sensitivity."
+       ! Compute chi2_B sensitivity
+       ! dgdrmnc(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, num_basis_functions)
+       ! solution(num_basis_functions)
+       ! dBnormaldrmnc(ntheta_plasma,nzeta_plasma)
+       do imn=1,mnmax_sensitivity
+         dBnormaldrmnc(:,:) = reshape(matmul(dgdrmnc(imn,:,:),solution),(/ ntheta_plasma, nzeta_plasma /))*norm_normal_plasma
+         dBnormaldrmns(:,:) = reshape(matmul(dgdrmns(imn,:,:),solution),(/ ntheta_plasma, nzeta_plasma /))*norm_normal_plasma
+         dBnormaldzmnc(:,:) = reshape(matmul(dgdzmnc(imn,:,:),solution),(/ ntheta_plasma, nzeta_plasma /))*norm_normal_plasma
+         dBnormaldzmns(:,:) = reshape(matmul(dgdzmns(imn,:,:),solution),(/ ntheta_plasma, nzeta_plasma /))*norm_normal_plasma
+         dchi2Bdrmnc(imn,ilambda) = 2*nfp*dtheta_plasma*dzeta_plasma*sum(Bnormal_total(:,:,ilambda)*dBnormaldrmnc*norm_normal_plasma)
+         dchi2Bdrmns(imn,ilambda) = 2*nfp*dtheta_plasma*dzeta_plasma*sum(Bnormal_total(:,:,ilambda)*dBnormaldrmns*norm_normal_plasma)
+         dchi2Bdzmnc(imn,ilambda) = 2*nfp*dtheta_plasma*dzeta_plasma*sum(Bnormal_total(:,:,ilambda)*dBnormaldzmnc*norm_normal_plasma)
+         dchi2Bdzmns(imn,ilambda) = 2*nfp*dtheta_plasma*dzeta_plasma*sum(Bnormal_total(:,:,ilambda)*dBnormaldzmns*norm_normal_plasma)
+       enddo
+       print *,"Sensitivity computation complete."
+     endif
 
      call system_clock(toc)
      print *,"  Diagnostics: ",real(toc-tic)/countrate," sec."
      print "(a,es10.3,a,es10.3)","   chi2_B:",chi2_B(ilambda),",  chi2_K:",chi2_K(ilambda)
      print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda),",  rms K:",sqrt(chi2_K(ilambda)/area_coil)
   end do
+
+  print *,"Deallocating dynamic memory in solve."
+  if (sensitivity_option > 1) then
+    deallocate(rmncterm1)
+    deallocate(rmnsterm1)
+    deallocate(zmncterm1)
+    deallocate(zmnsterm1)
+    deallocate(rmncterm2)
+    deallocate(rmnsterm2)
+    deallocate(zmncterm2)
+    deallocate(zmnsterm2)
+    deallocate(dKDifferencedrmnc)
+    deallocate(dKDifferencedrmns)
+    deallocate(dKDifferencedzmnc)
+    deallocate(dKDifferencedzmns)
+    deallocate(dBnormaldrmnc)
+    deallocate(dBnormaldrmns)
+    deallocate(dBnormaldzmnc)
+    deallocate(dBnormaldzmns)
+  endif
+
+  deallocate(matrix)
+  deallocate(RHS)
+  deallocate(solution)
+  deallocate(WORK)
+  deallocate(IPIV)
+  deallocate(this_current_potential)
+  deallocate(KDifference_x)
+  deallocate(KDifference_y)
+  deallocate(KDifference_z)
+  deallocate(this_K2_times_N)
 
 end subroutine solve
 

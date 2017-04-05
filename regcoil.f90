@@ -2,9 +2,8 @@
 
 program regcoil
 
-  use global_variables, only: totalTime, outputFilename, general_option
+  use global_variables, only: totalTime, outputFilename, general_option, sensitivity_option
   use init_plasma_mod
-  use init_sensitivity
 
   implicit none
 
@@ -13,7 +12,6 @@ program regcoil
   print *,"This is REGCOIL,"
   print *,"a regularized least-squares method for computing stellarator coil shapes."
   call system_clock(tic,countrate)
-
   call read_input()
   call validate_input()
   call compute_lambda()
@@ -26,15 +24,19 @@ program regcoil
   call read_bnorm()
   call build_matrices()
 
-  ! Initialize sensitivity arrays
-  select case (general_option)
-  case (1,4,5)
-    print *,"Initializing sensitivity."
-    call init_partials()
-  end select
+  !Initialize sensitivity arrays
+  if (sensitivity_option > 1) then
+    select case (general_option)
+    case (1,4,5)
+      print *,"Initializing sensitivity."
+      call init_sensitivity()
+    end select
+  endif
 
   select case (general_option)
   case (1)
+     print *,"Case 1."
+     call flush(6)
      call solve()
   case (2)
      call compute_diagnostics_for_nescout_potential()
@@ -51,8 +53,10 @@ program regcoil
   totalTime = real(toc-tic)/countrate
 
   call write_output()
- 
+
   print *,"REGCOIL complete. Total time=",totalTime,"sec."
   print *,"You can run regcoilPlot ",trim(outputFilename)," to plot results."
+
+  call free_sensitivity()
 
 end program regcoil
