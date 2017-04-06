@@ -40,7 +40,11 @@ subroutine write_output
        vn_nlambda = "nlambda", &
        vn_totalTime = "totalTime", &
        vn_exit_code = "exit_code", &
-       vn_chi2_B_target = "chi2_B_target"
+       vn_chi2_B_target = "chi2_B_target", &
+       vn_sensitivity_option = "sensitivity_option", &
+       vn_nmax_sensitivity = "nmax_sensitivity", &
+       vn_mmax_sensitivity = "mmax_sensitivity", &
+       vn_mnmax_sensitivity = "mnmax_sensitivity"
 
   ! Arrays with dimension 1
   character(len=*), parameter :: &
@@ -59,7 +63,9 @@ subroutine write_output
        vn_chi2_B = "chi2_B", &
        vn_chi2_K = "chi2_K", &
        vn_max_Bnormal = "max_Bnormal", &
-       vn_max_K = "max_K"
+       vn_max_K = "max_K", &
+       vn_xn_sensitivity = "xn_sensitivity", &
+       vn_xm_sensitivity = "xm_sensitivity"
 
   ! Arrays with dimension 2
   character(len=*), parameter :: &
@@ -95,7 +101,11 @@ subroutine write_output
        vn_single_valued_current_potential_thetazeta = "single_valued_current_potential_thetazeta", &
        vn_current_potential = "current_potential", &
        vn_Bnormal_total = "Bnormal_total", &
-       vn_K2 = "K2"
+       vn_K2 = "K2", &
+       vn_dnorm_normaldrmnc = "dnorm_normaldrmnc", &
+       vn_dnorm_normaldrmns = "dnorm_normaldrmns", &
+       vn_dnorm_normaldzmnc = "dnorm_normaldzmnc", &
+       vn_dnorm_normaldzmns = "dnorm_normaldzmns"
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Now create variables that name the dimensions.
@@ -112,7 +122,8 @@ subroutine write_output
        mnmax_coil_dim = (/'mnmax_coil'/), &
        nthetanzeta_plasma_dim = (/'ntheta_nzeta_plasma'/), &
        num_basis_functions_dim = (/'num_basis_functions'/), &
-       nlambda_dim = (/'nlambda'/)
+       nlambda_dim = (/'nlambda'/), &
+       mnmax_sensitivity_dim = (/'mnmax_sensitivity'/)
 
   ! Arrays with dimension 2:
   ! The form of the array declarations here is inspired by
@@ -131,7 +142,8 @@ subroutine write_output
        xyz_ntheta_nzetal_plasma_dim = (/ character(len=50) :: 'xyz','ntheta_plasma','nzetal_plasma'/), &
        xyz_ntheta_nzetal_coil_dim = (/ character(len=50) :: 'xyz','ntheta_coil','nzetal_coil'/), &
        ntheta_nzeta_coil_nlambda_dim = (/ character(len=50) :: 'ntheta_coil','nzeta_coil','nlambda'/), &
-       ntheta_nzeta_plasma_nlambda_dim = (/ character(len=50) :: 'ntheta_plasma','nzeta_plasma','nlambda'/)
+       ntheta_nzeta_plasma_nlambda_dim = (/ character(len=50) :: 'ntheta_plasma','nzeta_plasma','nlambda'/), &
+       mnmax_sensitivity_ntheta_nzeta_coil_dim = (/ character(len=50) :: 'mnmax_sensitivity', 'ntheta_coil', 'nzeta_coil'/)
 
   print *,"Beginning write output."
   call flush(6)
@@ -173,6 +185,10 @@ subroutine write_output
   call cdf_define(ncid, vn_totalTime, totalTime)
   call cdf_define(ncid, vn_exit_code, exit_code)
   if (general_option==4 .or. general_option==5) call cdf_define(ncid, vn_chi2_B_target, chi2_B_target)
+  call cdf_define(ncid, vn_sensitivity_option, sensitivity_option)
+  call cdf_define(ncid, vn_mmax_sensitivity, mmax_sensitivity)
+  call cdf_define(ncid, vn_nmax_sensitivity, nmax_sensitivity)
+  call cdf_define(ncid, vn_mnmax_sensitivity, mnmax_sensitivity)
 
   ! Arrays with dimension 1
 
@@ -192,6 +208,10 @@ subroutine write_output
   call cdf_define(ncid, vn_chi2_K, chi2_K(1:Nlambda), dimname=nlambda_dim)
   call cdf_define(ncid, vn_max_Bnormal, max_Bnormal(1:Nlambda), dimname=nlambda_dim)
   call cdf_define(ncid, vn_max_K, max_K(1:Nlambda), dimname=nlambda_dim) ! We only write elements 1:Nlambda in case of a lambda search.
+  if (sensitivity_option > 1) then
+    call cdf_define(ncid, vn_xn_sensitivity, xn_sensitivity, dimname=mnmax_sensitivity_dim)
+    call cdf_define(ncid, vn_xm_sensitivity, xm_sensitivity, dimname=mnmax_sensitivity_dim)
+  endif
 
   ! Arrays with dimension 2
 
@@ -243,6 +263,12 @@ subroutine write_output
   call cdf_define(ncid, vn_current_potential, current_potential(:,:,1:Nlambda), dimname=ntheta_nzeta_coil_nlambda_dim)
   call cdf_define(ncid, vn_Bnormal_total, Bnormal_total(:,:,1:Nlambda), dimname=ntheta_nzeta_plasma_nlambda_dim)
   call cdf_define(ncid, vn_K2, K2(:,:,1:Nlambda), dimname=ntheta_nzeta_coil_nlambda_dim)
+  if (sensitivity_option > 1) then
+    call cdf_define(ncid, vn_dnorm_normaldrmnc, dnorm_normaldrmnc, dimname=mnmax_sensitivity_ntheta_nzeta_coil_dim)
+    call cdf_define(ncid, vn_dnorm_normaldrmns, dnorm_normaldrmns, dimname=mnmax_sensitivity_ntheta_nzeta_coil_dim)
+    call cdf_define(ncid, vn_dnorm_normaldzmnc, dnorm_normaldzmnc, dimname=mnmax_sensitivity_ntheta_nzeta_coil_dim)
+    call cdf_define(ncid, vn_dnorm_normaldzmns, dnorm_normaldzmns, dimname=mnmax_sensitivity_ntheta_nzeta_coil_dim)
+  endif
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
   ! Done with cdf_define calls. Now write the data.
@@ -279,6 +305,10 @@ subroutine write_output
   call cdf_write(ncid, vn_totalTime, totalTime)
   call cdf_write(ncid, vn_exit_code, exit_code)
   if (general_option==4 .or. general_option==5) call cdf_write(ncid, vn_chi2_B_target, chi2_B_target)
+  call cdf_write(ncid, vn_sensitivity_option, sensitivity_option)
+  call cdf_write(ncid, vn_mmax_sensitivity, mmax_sensitivity)
+  call cdf_write(ncid, vn_nmax_sensitivity, nmax_sensitivity)
+  call cdf_write(ncid, vn_mnmax_sensitivity, mnmax_sensitivity)
 
   ! Arrays with dimension 1
 
@@ -298,6 +328,10 @@ subroutine write_output
   call cdf_write(ncid, vn_chi2_K, chi2_K(1:Nlambda))
   call cdf_write(ncid, vn_max_Bnormal, max_Bnormal(1:Nlambda))
   call cdf_write(ncid, vn_max_K, max_K(1:Nlambda))
+  if (sensitivity_option > 1) then
+    call cdf_write(ncid, vn_xn_sensitivity, xn_sensitivity)
+    call cdf_write(ncid, vn_xm_sensitivity, xm_sensitivity)
+  endif
 
   ! Arrays with dimension 2
 
@@ -347,6 +381,12 @@ subroutine write_output
   call cdf_write(ncid, vn_current_potential, current_potential(:,:,1:Nlambda))
   call cdf_write(ncid, vn_Bnormal_total, Bnormal_total(:,:,1:Nlambda))
   call cdf_write(ncid, vn_K2, K2(:,:,1:Nlambda))
+  if (sensitivity_option > 1) then
+    call cdf_write(ncid, vn_dnorm_normaldrmnc, dnorm_normaldrmnc)
+    call cdf_write(ncid, vn_dnorm_normaldrmns, dnorm_normaldrmns)
+    call cdf_write(ncid, vn_dnorm_normaldzmnc, dnorm_normaldzmnc)
+    call cdf_write(ncid, vn_dnorm_normaldzmns, dnorm_normaldzmns)
+  endif
 
   ! Finish up:
   call cdf_close(ncid)

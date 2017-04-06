@@ -6,7 +6,7 @@ subroutine init_sensitivity()
 
   implicit none
 
-  integer :: imn, iflag, minSymmetry, maxSymmetry, offset, whichSymmetry
+  integer :: imn, iflag, minSymmetry, maxSymmetry, offset, whichSymmetry, tic, toc, countrate
   real(dp), dimension(:,:,:,:), allocatable :: dnormdrmnc, dnormdrmns, dnormdzmnc, dnormdzmns
   real(dp), dimension(:), allocatable :: drdrmnc, drdrmns, drdzmnc, drdzmns
   real(dp), dimension(:), allocatable :: dinductancednorm, dinductancedr
@@ -27,13 +27,13 @@ subroutine init_sensitivity()
   real(dp) :: angle_coil, sinangle_coil, cosangle_coil
 
   ! Variables needed by BLAS DGEMM:
-  !character :: TRANSA, TRANSB
-  !integer :: M, N, K, LDA, LDB, LDC
-  !real(dp) :: BLAS_ALPHA=1, BLAS_BETA=0
+  character :: TRANSA, TRANSB
+  integer :: M, N, K, LDA, LDB, LDC
+  real(dp) :: BLAS_ALPHA=1, BLAS_BETA=0
 
-  ! Initialize Fourier arrays
-  call init_Fourier_modes(mmax_sensitivity, nmax_sensitivity, mnmax_sensitivity, &
-  xm_sensitivity, xn_sensitivity)
+  ! Initialize Fourier arrays - need to include m = 0, n = 0 mode
+  call init_Fourier_modes_sensitivity(mmax_sensitivity, nmax_sensitivity, mnmax_sensitivity, &
+xm_sensitivity, xn_sensitivity)
 
   print *, "mnmax_sensitivity: ", mnmax_sensitivity
 
@@ -52,67 +52,68 @@ subroutine init_sensitivity()
   if (iflag .ne. 0) stop 'Allocation error!'
 
   allocate(dinductancedrmnc(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, &
-  ntheta_coil*nzeta_coil),stat=iflag) ! valgrind invalid write
+  ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dinductancedrmns(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, &
-  ntheta_coil*nzeta_coil),stat=iflag) ! valgrind invalid write
+  ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dinductancedzmnc(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, &
-  ntheta_coil*nzeta_coil),stat=iflag) ! valgrind invalid write
+  ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dinductancedzmns(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, &
-  ntheta_coil*nzeta_coil),stat=iflag) ! valgrind invalid write
+  ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
-  allocate(dnorm_normaldrmnc(mnmax_sensitivity,ntheta_coil,nzeta_coil),stat=iflag) ! valgrind invalid write
+  allocate(dnorm_normaldrmnc(mnmax_sensitivity,ntheta_coil,nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dnorm_normaldrmns(mnmax_sensitivity,ntheta_coil,nzeta_coil),stat=iflag) ! valgrind invalid write
+  allocate(dnorm_normaldrmns(mnmax_sensitivity,ntheta_coil,nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dnorm_normaldzmnc(mnmax_sensitivity,ntheta_coil,nzeta_coil),stat=iflag) ! valgrind invalid write
+  allocate(dnorm_normaldzmnc(mnmax_sensitivity,ntheta_coil,nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dnorm_normaldzmns(mnmax_sensitivity,ntheta_coil,nzeta_coil),stat=iflag) ! valgrind invalid write
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  allocate(dddrmnc(3, mnmax_sensitivity,ntheta_coil*nzeta_coil),stat=iflag) ! valgrind invalid write
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dddrmns(3, mnmax_sensitivity,ntheta_coil*nzeta_coil),stat=iflag) ! valgrind invalid write
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dddzmnc(3, mnmax_sensitivity,ntheta_coil*nzeta_coil),stat=iflag) ! valgrind invalid write
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dddzmns(3, mnmax_sensitivity,ntheta_coil*nzeta_coil),stat=iflag) ! valgrind invalid write
+  allocate(dnorm_normaldzmns(mnmax_sensitivity,ntheta_coil,nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
-  allocate(dgdrmnc(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, num_basis_functions),stat=iflag) ! valgrind invalid write
+  allocate(dddrmnc(3, mnmax_sensitivity,ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dgdrmns(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, num_basis_functions),stat=iflag) ! valgrind invalid write
+  allocate(dddrmns(3, mnmax_sensitivity,ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dgdzmnc(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, num_basis_functions),stat=iflag) ! valgrind invalid write
+  allocate(dddzmnc(3, mnmax_sensitivity,ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dgdzmns(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, num_basis_functions),stat=iflag) ! valgrind invalid write
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  allocate(dnormdrmnc(3, mnmax_sensitivity,ntheta_coil,nzetal_coil),stat=iflag) ! valgrind invalid write/read
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dnormdrmns(3, mnmax_sensitivity,ntheta_coil,nzetal_coil),stat=iflag) ! valgrind invalid write
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dnormdzmnc(3, mnmax_sensitivity,ntheta_coil,nzetal_coil),stat=iflag) ! valgrind invalid write
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dnormdzmns(3, mnmax_sensitivity,ntheta_coil,nzetal_coil),stat=iflag) ! valgrind invalid write
+  allocate(dddzmns(3, mnmax_sensitivity,ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
-  allocate(dfdrmnc(3, mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag) ! valgrind invalid write
+  allocate(dgdrmnc(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, num_basis_functions),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dfdrmns(3, mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag) ! valgrind invalid write
+  allocate(dgdrmns(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, num_basis_functions),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dfdzmnc(3, mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag) ! valgrind invalid write  
+  allocate(dgdzmnc(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, num_basis_functions),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dfdzmns(3, mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag) ! valgrind invalid write
+  allocate(dgdzmns(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, num_basis_functions),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+
+  allocate(dnormdrmnc(3, mnmax_sensitivity,ntheta_coil,nzetal_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(dnormdrmns(3, mnmax_sensitivity,ntheta_coil,nzetal_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(dnormdzmnc(3, mnmax_sensitivity,ntheta_coil,nzetal_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(dnormdzmns(3, mnmax_sensitivity,ntheta_coil,nzetal_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+
+  allocate(dfdrmnc(3, mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(dfdrmns(3, mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(dfdzmnc(3, mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(dfdzmns(3, mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
   print *,"Allocation complete."
 
   ! Computing chi2_B sensitivity
   print *,"Computing chi2_B sensitivity."
+  call system_clock(tic,countrate)
 
   ! These quantities used to compute dnormd(...)
   drmncdzdtheta = 0
@@ -156,11 +157,7 @@ subroutine init_sensitivity()
         dzdtheta = drdtheta_coil(3,itheta_coil,izetal_coil)
         dzdzeta = drdzeta_coil(3,itheta_coil,izetal_coil)
 
-        ! No seg faults to this point
-
         do imn = 1,mnmax_sensitivity
-
-          !print *,"imn: ",imn
 
           ! For Fourier decomposition of surface, need to index using izetal_coil
           angle = xm_sensitivity(imn)*theta_coil(itheta_coil) - xn_sensitivity(imn)*zetal_coil(izetal_coil)
@@ -301,9 +298,11 @@ subroutine init_sensitivity()
     end do
   end do
 
-
+  call system_clock(toc)
+  print *,"chi2_B sensitivity in init_sensitivity: ",real(toc-tic)/countrate," sec."
 
   print *,"Loop with matrix multiplications."
+  call system_clock(tic,countrate)
 
   ! Now need to multiply dinductanced(...) by basis_functions to compute sensitivity of g_j
   ! dincutanced(...)(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, ntheta_coil*nzeta_coil)
@@ -311,36 +310,40 @@ subroutine init_sensitivity()
   ! dgdrmnc(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, num_basis_functions)
 
   ! Now we need to compute dgd(...) = dinductanced(...)*basis_functions
-  ! M = ntheta_plasma*nzeta_plasma ! # rows of A
-  !N = num_basis_functions ! # cols of B
-  !K = ntheta_coil*nzeta_coil ! Common dimension of A and B
-  !LDA = M
-  !LDB = K
-  !LDC = M
-  !TRANSA = 'N' ! No transposes
-  !TRANSB = 'N'
-  !BLAS_ALPHA=dtheta_coil*dzeta_coil
-  !BLAS_BETA=0
+   M = ntheta_plasma*nzeta_plasma ! # rows of A
+  N = num_basis_functions ! # cols of B
+  K = ntheta_coil*nzeta_coil ! Common dimension of A and B
+  LDA = M
+  LDB = K
+  LDC = M
+  TRANSA = 'N' ! No transposes
+  TRANSB = 'N'
+  BLAS_ALPHA=dtheta_coil*dzeta_coil
+  BLAS_BETA=0
   dgdrmnc = 0
   dgdrmns = 0
   dgdzmnc = 0
   dgdzmns = 0
 
   do imn = 1, mnmax_sensitivity
-    dgdrmnc(imn,:,:) = matmul(dinductancedrmnc(imn,:,:),basis_functions)
-    dgdrmns(imn,:,:) = matmul(dinductancedrmns(imn,:,:),basis_functions)
-    dgdzmnc(imn,:,:) = matmul(dinductancedzmnc(imn,:,:),basis_functions)
-    dgdzmns(imn,:,:) = matmul(dinductancedzmns(imn,:,:),basis_functions)
-    !call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedrmnc(imn,:,:),LDA,basis_functions,LDB,BLAS_BETA,dgdrmnc(imn,:,:),LDC)
-    !call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedrmns(imn,:,:),LDA,basis_functions,LDB,BLAS_BETA,dgdrmns(imn,:,:),LDC)
-    !call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedzmnc(imn,:,:),LDA,basis_functions,LDB,BLAS_BETA,dgdzmnc(imn,:,:),LDC)
-    !call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedzmns(imn,:,:),LDA,basis_functions,LDB,BLAS_BETA,dgdzmns(imn,:,:),LDC)
+    !dgdrmnc(imn,:,:) = matmul(dinductancedrmnc(imn,:,:),basis_functions)
+    !dgdrmns(imn,:,:) = matmul(dinductancedrmns(imn,:,:),basis_functions)
+    !dgdzmnc(imn,:,:) = matmul(dinductancedzmnc(imn,:,:),basis_functions)
+    !dgdzmns(imn,:,:) = matmul(dinductancedzmns(imn,:,:),basis_functions)
+    call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedrmnc(imn,:,:),LDA,basis_functions,LDB,BLAS_BETA,dgdrmnc(imn,:,:),LDC)
+    call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedrmns(imn,:,:),LDA,basis_functions,LDB,BLAS_BETA,dgdrmns(imn,:,:),LDC)
+    call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedzmnc(imn,:,:),LDA,basis_functions,LDB,BLAS_BETA,dgdzmnc(imn,:,:),LDC)
+    call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedzmns(imn,:,:),LDA,basis_functions,LDB,BLAS_BETA,dgdzmns(imn,:,:),LDC)
   enddo
+
+  call system_clock(toc)
+  print *,"sensitivity MM in init_sensitivity: ",real(toc-tic)/countrate," sec."
 
   ! Computing quantities needed chi2_K sensitivity
   ! Partial derivatives of d, f, and N' computed
 
   print *,"Computing chi2_K sensitivity."
+  call system_clock(tic,countrate)
 
   ! Needed for computing sensitivity of f
   select case (symmetry_option)
@@ -507,6 +510,9 @@ subroutine init_sensitivity()
       enddo
     enddo
   enddo
+
+  call system_clock(toc)
+  print *,"chi2_K sensitivity in init_sensitivity: ",real(toc-tic)/countrate," sec."
 
   print *,"Deallocating."
   deallocate(dnormdrmnc)

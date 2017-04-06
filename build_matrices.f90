@@ -3,7 +3,7 @@ subroutine build_matrices()
   use global_variables
   use stel_constants
   use stel_kinds
-  !use omp_lib
+  use omp_lib
   use init_Fourier_modes_mod
   
   implicit none
@@ -138,16 +138,16 @@ subroutine build_matrices()
 
   call system_clock(tic,countrate)
   print *,"Building inductance matrix and h."
-  !!$OMP PARALLEL
+  !$OMP PARALLEL
 
-  !!$OMP MASTER
-  !print *,"  Number of OpenMP threads:",omp_get_num_threads()
-  !!$OMP END MASTER
+  !$OMP MASTER
+  print *,"  Number of OpenMP threads:",omp_get_num_threads()
+  !$OMP END MASTER
 
   ! Note: the outermost loop below must be over the plasma variables rather than over the coil variables.
   ! This ensures the multiple threads write to different indices in h() rather than to the same indices in h(),
   ! in which case the h(index+plasma)=h(index_plasma)+... update does not work properly.
-  !!$OMP DO PRIVATE(index_plasma,index_coil,x,y,z,izetal_coil,dx,dy,dz,dr2inv,dr32inv)
+  !$OMP DO PRIVATE(index_plasma,index_coil,x,y,z,izetal_coil,dx,dy,dz,dr2inv,dr32inv)
   do izeta_plasma = 1, nzeta_plasma
      do itheta_plasma = 1, ntheta_plasma
         index_plasma = (izeta_plasma-1)*ntheta_plasma + itheta_plasma
@@ -191,8 +191,8 @@ subroutine build_matrices()
         end do
      end do
   end do
-  !!$OMP END DO
-  !!$OMP END PARALLEL
+  !$OMP END DO
+  !$OMP END PARALLEL
 
   call system_clock(toc)
   print *,"Done. Took",real(toc-tic)/countrate,"sec."
