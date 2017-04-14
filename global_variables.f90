@@ -94,13 +94,18 @@ module global_variables
   integer :: mnmax_sensitivity
   integer, dimension(:), allocatable :: xm_sensitivity, xn_sensitivity
   real(dp), dimension(:,:,:), allocatable :: dddrmnc, dddrmns, dddzmnc, dddzmns
-  real(dp), dimension(:,:,:,:), allocatable :: dfdrmnc, dfdrmns, dfdzmnc, dfdzmns
+  real(dp), dimension(:,:,:), allocatable :: dfxdrmnc, dfxdrmns, dfxdzmnc, dfxdzmns
+  real(dp), dimension(:,:,:), allocatable :: dfydrmnc, dfydrmns, dfydzmnc, dfydzmns
+  real(dp), dimension(:,:,:), allocatable :: dfzdrmnc, dfzdrmns, dfzdzmnc, dfzdzmns
   real(dp), dimension(:,:,:), allocatable :: dnorm_normaldrmnc, dnorm_normaldrmns
   real(dp), dimension(:,:,:), allocatable :: dnorm_normaldzmnc, dnorm_normaldzmns
   real(dp), dimension(:,:), allocatable :: dchi2Kdrmnc, dchi2Kdrmns, dchi2Kdzmnc, dchi2Kdzmns
   real(dp), dimension(:,:), allocatable :: dchi2Bdrmnc, dchi2Bdrmns, dchi2Bdzmnc, dchi2Bdzmns
   real(dp), dimension(:,:,:), allocatable :: dgdrmnc,dgdrmns,dgdzmnc,dgdzmns
-
+  real(dp), dimension(:,:,:), allocatable :: dinductancedrmnc, dinductancedrmns, dinductancedzmnc, dinductancedzmns
+  real(dp), dimension(:,:,:), allocatable :: dnormxdrmnc,dnormxdrmns,dnormxdzmnc,dnormxdzmns
+  real(dp), dimension(:,:,:), allocatable :: dnormydrmnc,dnormydrmns,dnormydzmnc,dnormydzmns
+  real(dp), dimension(:,:,:),allocatable :: dnormzdrmnc, dnormzdrmns, dnormzdzmnc,dnormzdzmns
 
 end module global_variables
 

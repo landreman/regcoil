@@ -186,30 +186,30 @@ subroutine solve
        ! f_x(ntheta_coil*nzeta_coil, num_basis_functions)
        ! norm_normal_coil(ntheta_coil,nzeta_coil)
        do imn=1,mnmax_sensitivity
-         dKDifferencedrmnc(1,:) = dddrmnc(1,imn,:)-matmul(dfdrmnc(1,imn,:,:), solution)
-         dKDifferencedrmnc(2,:) = dddrmnc(2,imn,:)-matmul(dfdrmnc(2,imn,:,:), solution)
-         dKDifferencedrmnc(3,:) = dddrmnc(3,imn,:)-matmul(dfdrmnc(3,imn,:,:), solution)
-         dKDifferencedrmns(1,:) = dddrmns(1,imn,:)-matmul(dfdrmns(1,imn,:,:), solution)
-         dKDifferencedrmns(2,:) = dddrmns(2,imn,:)-matmul(dfdrmns(2,imn,:,:), solution)
-         dKDifferencedrmns(3,:) = dddrmns(3,imn,:)-matmul(dfdrmns(3,imn,:,:), solution)
-         dKDifferencedzmnc(1,:) = dddrmnc(1,imn,:)-matmul(dfdzmnc(1,imn,:,:), solution)
-         dKDifferencedzmnc(2,:) = dddrmnc(2,imn,:)-matmul(dfdzmnc(2,imn,:,:), solution)
-         dKDifferencedzmnc(3,:) = dddrmnc(3,imn,:)-matmul(dfdzmnc(3,imn,:,:), solution)
-         dKDifferencedzmns(1,:) = dddzmns(1,imn,:)-matmul(dfdzmns(1,imn,:,:), solution)
-         dKDifferencedzmns(2,:) = dddzmns(2,imn,:)-matmul(dfdzmns(2,imn,:,:), solution)
-         dKDifferencedzmns(3,:) = dddzmns(3,imn,:)-matmul(dfdzmns(3,imn,:,:), solution)
+         dKDifferencedrmnc(1,:) = dddrmnc(1,imn,:)-matmul(dfxdrmnc(imn,:,:), solution)
+         dKDifferencedrmnc(2,:) = dddrmnc(2,imn,:)-matmul(dfydrmnc(imn,:,:), solution)
+         dKDifferencedrmnc(3,:) = dddrmnc(3,imn,:)-matmul(dfzdrmnc(imn,:,:), solution)
+         dKDifferencedrmns(1,:) = dddrmns(1,imn,:)-matmul(dfxdrmns(imn,:,:), solution)
+         dKDifferencedrmns(2,:) = dddrmns(2,imn,:)-matmul(dfydrmns(imn,:,:), solution)
+         dKDifferencedrmns(3,:) = dddrmns(3,imn,:)-matmul(dfzdrmns(imn,:,:), solution)
+         dKDifferencedzmnc(1,:) = dddrmnc(1,imn,:)-matmul(dfxdzmnc(imn,:,:), solution)
+         dKDifferencedzmnc(2,:) = dddrmnc(2,imn,:)-matmul(dfydzmnc(imn,:,:), solution)
+         dKDifferencedzmnc(3,:) = dddrmnc(3,imn,:)-matmul(dfzdzmnc(imn,:,:), solution)
+         dKDifferencedzmns(1,:) = dddzmns(1,imn,:)-matmul(dfxdzmns(imn,:,:), solution)
+         dKDifferencedzmns(2,:) = dddzmns(2,imn,:)-matmul(dfydzmns(imn,:,:), solution)
+         dKDifferencedzmns(3,:) = dddzmns(3,imn,:)-matmul(dfzdzmns(imn,:,:), solution)
          rmncterm1(:,:) = -dnorm_normaldrmnc(imn,:,:)*this_K2_times_N/norm_normal_coil
          rmnsterm1(:,:) = -dnorm_normaldrmns(imn,:,:)*this_K2_times_N/norm_normal_coil
          zmncterm1(:,:) = -dnorm_normaldzmnc(imn,:,:)*this_K2_times_N/norm_normal_coil
          zmnsterm1(:,:) = -dnorm_normaldzmns(imn,:,:)*this_K2_times_N/norm_normal_coil
          rmncterm2(:,:) = reshape(KDifference_x*dKDifferencedrmnc(1,:) + KDifference_y*dKDifferencedrmnc(2,:) &
-           + KDifference_z*dKDifferencedrmnc(3,:),(/ ntheta_coil, nzeta_coil/))
+           + KDifference_z*dKDifferencedrmnc(3,:),(/ ntheta_coil, nzeta_coil/))*(2/norm_normal_coil)
          rmnsterm2(:,:) = reshape(KDifference_x*dKDifferencedrmns(1,:) + KDifference_y*dKDifferencedrmns(2,:) &
-           + KDifference_z*dKDifferencedrmns(3,:),(/ ntheta_coil, nzeta_coil/))
+           + KDifference_z*dKDifferencedrmns(3,:),(/ ntheta_coil, nzeta_coil/))*(2/norm_normal_coil)
          zmncterm2(:,:) = reshape(KDifference_x*dKDifferencedzmnc(1,:) + KDifference_y*dKDifferencedzmnc(2,:) &
-           + KDifference_z*dKDifferencedzmnc(3,:),(/ ntheta_coil, nzeta_coil/))
+           + KDifference_z*dKDifferencedzmnc(3,:),(/ ntheta_coil, nzeta_coil/))*(2/norm_normal_coil)
          zmnsterm2(:,:) = reshape(KDifference_x*dKDifferencedzmns(1,:) + KDifference_y*dKDifferencedzmns(2,:) &
-           + KDifference_z*dKDifferencedzmns(3,:),(/ ntheta_coil, nzeta_coil/))
+           + KDifference_z*dKDifferencedzmns(3,:),(/ ntheta_coil, nzeta_coil/))*(2/norm_normal_coil)
          dchi2Kdrmnc(imn,ilambda) = nfp*dtheta_coil*dzeta_coil*(sum(rmncterm1) + sum(rmncterm2))
          dchi2Kdrmns(imn,ilambda) = nfp*dtheta_coil*dzeta_coil*(sum(rmnsterm1) + sum(rmnsterm2))
          dchi2Kdzmnc(imn,ilambda) = nfp*dtheta_coil*dzeta_coil*(sum(zmncterm1) + sum(zmncterm2))

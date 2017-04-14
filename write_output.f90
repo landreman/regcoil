@@ -65,7 +65,10 @@ subroutine write_output
        vn_max_Bnormal = "max_Bnormal", &
        vn_max_K = "max_K", &
        vn_xn_sensitivity = "xn_sensitivity", &
-       vn_xm_sensitivity = "xm_sensitivity"
+       vn_xm_sensitivity = "xm_sensitivity", &
+       vn_d_x = "d_x", &
+       vn_d_y = "d_y", &
+       vn_d_z = "d_z"
 
   ! Arrays with dimension 2
   character(len=*), parameter :: &
@@ -79,33 +82,72 @@ subroutine write_output
        vn_matrix_K = "matrix_K", &
        vn_single_valued_current_potential_mn = "single_valued_current_potential_mn", &
 ! Sensitivity Output
-       vn_dchi2Bdrmnc = "rmnc chi2B sensitivity", &
-       vn_dchi2Bdrmns = "rmns chi2B sensitivity", &
-       vn_dchi2Bdzmnc = "zmnc chi2B sensitivity", &
-       vn_dchi2Bdzmns = "zmns chi2B sensitivity", &
-       vn_dchi2Kdrmnc = "rmnc chi2K sensitivity", &
-       vn_dchi2Kdrmns = "rmns chi2K sensitivity", &
-       vn_dchi2Kdzmnc = "zmnc chi2K sensitivity", &
-       vn_dchi2Kdzmns = "zmns chi2K sensitivity"
+       vn_dchi2Bdrmnc = "dchi2Bdrmnc", &
+       vn_dchi2Bdrmns = "dchi2Bdrmns", &
+       vn_dchi2Bdzmnc = "dchi2Bdzmnc", &
+       vn_dchi2Bdzmns = "dchi2Bdzmns", &
+       vn_dchi2Kdrmnc = "dchi2Kdrmnc", &
+       vn_dchi2Kdrmns = "dchi2Kdrmns", &
+       vn_dchi2Kdzmnc = "dchi2Kdzmnc", &
+       vn_dchi2Kdzmns = "dchi2Kdzmns", &
+       vn_f_x = "f_x", &
+       vn_f_y = "f_y", &
+       vn_f_z = "f_z"
 
   ! Arrays with dimension 3
   character(len=*), parameter :: &
-       vn_r_plasma  = "r_plasma", &
-       vn_r_coil  = "r_coil", &
-       vn_drdtheta_plasma  = "drdtheta_plasma", &
-       vn_drdtheta_coil  = "drdtheta_coil", &
-       vn_drdzeta_plasma  = "drdzeta_plasma", &
-       vn_drdzeta_coil  = "drdzeta_coil", &
-       vn_normal_plasma = "normal_plasma", &
-       vn_normal_coil = "normal_coil", &
-       vn_single_valued_current_potential_thetazeta = "single_valued_current_potential_thetazeta", &
-       vn_current_potential = "current_potential", &
-       vn_Bnormal_total = "Bnormal_total", &
-       vn_K2 = "K2", &
-       vn_dnorm_normaldrmnc = "dnorm_normaldrmnc", &
-       vn_dnorm_normaldrmns = "dnorm_normaldrmns", &
-       vn_dnorm_normaldzmnc = "dnorm_normaldzmnc", &
-       vn_dnorm_normaldzmns = "dnorm_normaldzmns"
+    vn_r_plasma  = "r_plasma", &
+    vn_r_coil  = "r_coil", &
+    vn_drdtheta_plasma  = "drdtheta_plasma", &
+    vn_drdtheta_coil  = "drdtheta_coil", &
+    vn_drdzeta_plasma  = "drdzeta_plasma", &
+    vn_drdzeta_coil  = "drdzeta_coil", &
+    vn_normal_plasma = "normal_plasma", &
+    vn_normal_coil = "normal_coil", &
+    vn_single_valued_current_potential_thetazeta = "single_valued_current_potential_thetazeta", &
+    vn_current_potential = "current_potential", &
+    vn_Bnormal_total = "Bnormal_total", &
+    vn_K2 = "K2", &
+    vn_dnorm_normaldrmnc = "dnorm_normaldrmnc", &
+    vn_dnorm_normaldrmns = "dnorm_normaldrmns", &
+    vn_dnorm_normaldzmnc = "dnorm_normaldzmnc", &
+    vn_dnorm_normaldzmns = "dnorm_normaldzmns", &
+    vn_dddrmnc = "dddrmnc", &
+    vn_dddrmns = "dddrmns", &
+    vn_dddzmnc = "dddzmnc", &
+    vn_dddzmns = "dddzmns", &
+    vn_dgdrmnc = "dgdrmnc", &
+    vn_dgdrmns = "dgdrmns", &
+    vn_dgdzmnc = "dgdzmnc", &
+    vn_dgdzmns = "dgdzmns", &
+    vn_dinductancedrmnc = "dinductancedrmnc", &
+    vn_dinductancedrmns = "dinductancedrmns", &
+    vn_dinductancedzmnc = "dinductancedzmnc", &
+    vn_dinductancedzmns = "dinductancedzmns", &
+    vn_dnormxdrmnc = "dnormxdrmnc", &
+    vn_dnormydrmnc = "dnormydrmnc", &
+    vn_dnormzdrmnc = "dnormzdrmnc", &
+    vn_dnormxdrmns = "dnormxdrmns", &
+    vn_dnormydrmns = "dnormydrmns", &
+    vn_dnormzdrmns = "dnormzdrmns", &
+    vn_dnormxdzmnc = "dnormxdzmnc", &
+    vn_dnormydzmnc = "dnormydzmnc", &
+    vn_dnormzdzmnc = "dnormzdzmnc", &
+    vn_dnormxdzmns = "dnormxdzmns", &
+    vn_dnormydzmns = "dnormydzmns", &
+    vn_dnormzdzmns = "dnormzdzmns", &
+    vn_dfxdrmnc = "dfxdrmnc", &
+    vn_dfxdrmns = "dfxdrmns", &
+    vn_dfxdzmnc = "dfxdzmnc", &
+    vn_dfxdzmns = "dfxdzmns", &
+    vn_dfydrmnc = "dfydrmnc", &
+    vn_dfydrmns = "dfydrmns", &
+    vn_dfydzmnc = "dfydzmnc", &
+    vn_dfydzmns = "dfydzmns", &
+    vn_dfzdrmnc = "dfzdrmnc", &
+    vn_dfzdrmns = "dfzdrmns", &
+    vn_dfzdzmnc = "dfzdzmnc", &
+    vn_dfzdzmns = "dfzdzmns"
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Now create variables that name the dimensions.
@@ -123,7 +165,8 @@ subroutine write_output
        nthetanzeta_plasma_dim = (/'ntheta_nzeta_plasma'/), &
        num_basis_functions_dim = (/'num_basis_functions'/), &
        nlambda_dim = (/'nlambda'/), &
-       mnmax_sensitivity_dim = (/'mnmax_sensitivity'/)
+       mnmax_sensitivity_dim = (/'mnmax_sensitivity'/), &
+       ntheta_times_nzeta_coil_dim = (/'ntheta_times_nzeta_coil'/)
 
   ! Arrays with dimension 2:
   ! The form of the array declarations here is inspired by
@@ -135,7 +178,8 @@ subroutine write_output
        nthetanzeta_plasma_basis_dim = (/ character(len=50) :: 'ntheta_nzeta_plasma','num_basis_functions'/), &
        basis_basis_dim = (/ character(len=50) :: 'num_basis_functions','num_basis_functions'/), &
        basis_nlambda_dim = (/ character(len=50) :: 'num_basis_functions','nlambda'/), &
-       mnmax_sensitivity_nlambda = (/ character(len=50) :: 'mnmax_sensitivity', 'nlambda'/)
+       mnmax_sensitivity_nlambda = (/ character(len=50) :: 'mnmax_sensitivity', 'nlambda'/), &
+       nthetanzeta_coil_basis_dim = (/ character(len=50) :: 'ntheta_nzeta_coil','num_basis_functions'/)
 
   ! Arrays with dimension 3:
   character(len=*), parameter, dimension(3) :: &
@@ -143,9 +187,16 @@ subroutine write_output
        xyz_ntheta_nzetal_coil_dim = (/ character(len=50) :: 'xyz','ntheta_coil','nzetal_coil'/), &
        ntheta_nzeta_coil_nlambda_dim = (/ character(len=50) :: 'ntheta_coil','nzeta_coil','nlambda'/), &
        ntheta_nzeta_plasma_nlambda_dim = (/ character(len=50) :: 'ntheta_plasma','nzeta_plasma','nlambda'/), &
-       mnmax_sensitivity_ntheta_nzeta_coil_dim = (/ character(len=50) :: 'mnmax_sensitivity', 'ntheta_coil', 'nzeta_coil'/)
+       mnmax_sensitivity_ntheta_nzeta_coil_dim = (/ character(len=50) :: 'mnmax_sensitivity', 'ntheta_coil', 'nzeta_coil'/), &
+       xyz_mnmax_sensitivity_ntheta_nzeta_coil_dim = (/character(len=50) :: 'xyz', 'mnmax_sensitivity', 'ntheta_times_nzeta_coil'/), &
+       mnmax_sensitivity_ntheta_times_nzeta_num_basis_functions_dim = (/character(len=50) :: 'mnmax_sensitivity', 'ntheta_times_nzeta_plasma', 'num_basis_functions' /), &
+       mnmax_sensitivity_ntheta_times_nzeta_plasma_coil_dim = (/character(len=50) :: 'mnmax_sensitivity', &
+         'ntheta_times_nzeta_plasma', 'ntheta_times_nzeta_coil'/), &
+       mnmax_sensitivity_ntheta_nzetal_coil_dim = (/character(len=50) :: 'mnmax_sensitivity', 'ntheta_coil', &
+         'nzetal_coil'/), &
+       mnmax_sensitivity_ntheta_times_nzeta_coil_basis_dim = (/character(len=50):: 'mnmax_sensitivity', 'ntheta_times_nzeta_coil','num_basis_functions' /)
 
-  print *,"Beginning write output."
+print *,"Beginning write output."
   call flush(6)
 
   call cdf_open(ncid,outputFilename,'w',ierr)
@@ -211,6 +262,10 @@ subroutine write_output
   if (sensitivity_option > 1) then
     call cdf_define(ncid, vn_xn_sensitivity, xn_sensitivity, dimname=mnmax_sensitivity_dim)
     call cdf_define(ncid, vn_xm_sensitivity, xm_sensitivity, dimname=mnmax_sensitivity_dim)
+    ! For debugging
+    call cdf_define(ncid, vn_d_x, d_x, dimname=ntheta_times_nzeta_coil_dim)
+    call cdf_define(ncid, vn_d_y, d_y, dimname=ntheta_times_nzeta_coil_dim)
+    call cdf_define(ncid, vn_d_z, d_z, dimname=ntheta_times_nzeta_coil_dim)
   endif
 
   ! Arrays with dimension 2
@@ -239,6 +294,10 @@ subroutine write_output
     call cdf_define(ncid, vn_dchi2Kdrmns, dchi2Kdrmns(:,1:Nlambda),dimname=mnmax_sensitivity_nlambda)
     call cdf_define(ncid, vn_dchi2Kdzmnc, dchi2Kdzmnc(:,1:Nlambda),dimname=mnmax_sensitivity_nlambda)
     call cdf_define(ncid, vn_dchi2Kdzmns, dchi2Kdzmns(:,1:Nlambda),dimname=mnmax_sensitivity_nlambda)
+  ! For debugging
+    call cdf_define(ncid, vn_f_x, f_x, dimname=nthetanzeta_coil_basis_dim)
+    call cdf_define(ncid, vn_f_y, f_y, dimname=nthetanzeta_coil_basis_dim)
+    call cdf_define(ncid, vn_f_z, f_z, dimname=nthetanzeta_coil_basis_dim)
   endif
 
   ! Arrays with dimension 3
@@ -268,7 +327,43 @@ subroutine write_output
     call cdf_define(ncid, vn_dnorm_normaldrmns, dnorm_normaldrmns, dimname=mnmax_sensitivity_ntheta_nzeta_coil_dim)
     call cdf_define(ncid, vn_dnorm_normaldzmnc, dnorm_normaldzmnc, dimname=mnmax_sensitivity_ntheta_nzeta_coil_dim)
     call cdf_define(ncid, vn_dnorm_normaldzmns, dnorm_normaldzmns, dimname=mnmax_sensitivity_ntheta_nzeta_coil_dim)
-  endif
+    call cdf_define(ncid, vn_dddrmnc, dddrmnc, dimname=xyz_mnmax_sensitivity_ntheta_nzeta_coil_dim)
+    call cdf_define(ncid, vn_dddrmns, dddrmns, dimname=xyz_mnmax_sensitivity_ntheta_nzeta_coil_dim)
+    call cdf_define(ncid, vn_dddzmnc, dddzmnc, dimname=xyz_mnmax_sensitivity_ntheta_nzeta_coil_dim)
+    call cdf_define(ncid, vn_dddzmns, dddzmns, dimname=xyz_mnmax_sensitivity_ntheta_nzeta_coil_dim)
+    call cdf_define(ncid, vn_dgdrmnc, dgdrmnc, dimname=mnmax_sensitivity_ntheta_times_nzeta_num_basis_functions_dim)
+    call cdf_define(ncid, vn_dgdrmns, dgdrmns, dimname=mnmax_sensitivity_ntheta_times_nzeta_num_basis_functions_dim)
+    call cdf_define(ncid, vn_dgdzmnc, dgdzmnc, dimname=mnmax_sensitivity_ntheta_times_nzeta_num_basis_functions_dim)
+    call cdf_define(ncid, vn_dgdzmns, dgdrmnc, dimname=mnmax_sensitivity_ntheta_times_nzeta_num_basis_functions_dim)
+    call cdf_define(ncid, vn_dinductancedrmnc, dinductancedrmnc, dimname = mnmax_sensitivity_ntheta_times_nzeta_plasma_coil_dim)
+    call cdf_define(ncid, vn_dinductancedrmns, dinductancedrmns, dimname =mnmax_sensitivity_ntheta_times_nzeta_plasma_coil_dim)
+    call cdf_define(ncid, vn_dinductancedzmnc, dinductancedzmnc, dimname =mnmax_sensitivity_ntheta_times_nzeta_plasma_coil_dim)
+    call cdf_define(ncid, vn_dinductancedzmns, dinductancedzmns, dimname =mnmax_sensitivity_ntheta_times_nzeta_plasma_coil_dim)
+    call cdf_define(ncid, vn_dnormxdrmnc, dnormxdrmnc, dimname=mnmax_sensitivity_ntheta_nzetal_coil_dim)
+    call cdf_define(ncid, vn_dnormydrmnc, dnormydrmnc, dimname=mnmax_sensitivity_ntheta_nzetal_coil_dim)
+    call cdf_define(ncid, vn_dnormzdrmnc, dnormzdrmnc, dimname=mnmax_sensitivity_ntheta_nzetal_coil_dim)
+    call cdf_define(ncid, vn_dnormxdrmns, dnormxdrmns, dimname=mnmax_sensitivity_ntheta_nzetal_coil_dim)
+    call cdf_define(ncid, vn_dnormydrmns, dnormydrmns, dimname=mnmax_sensitivity_ntheta_nzetal_coil_dim)
+    call cdf_define(ncid, vn_dnormzdrmns, dnormzdrmns, dimname=mnmax_sensitivity_ntheta_nzetal_coil_dim)
+    call cdf_define(ncid, vn_dnormxdzmnc, dnormxdzmnc, dimname=mnmax_sensitivity_ntheta_nzetal_coil_dim)
+    call cdf_define(ncid, vn_dnormydzmnc, dnormydzmnc, dimname=mnmax_sensitivity_ntheta_nzetal_coil_dim)
+    call cdf_define(ncid, vn_dnormzdzmnc, dnormzdzmnc, dimname=mnmax_sensitivity_ntheta_nzetal_coil_dim)
+    call cdf_define(ncid, vn_dnormxdzmns, dnormxdzmns, dimname=mnmax_sensitivity_ntheta_nzetal_coil_dim)
+    call cdf_define(ncid, vn_dnormydzmns, dnormydzmns, dimname=mnmax_sensitivity_ntheta_nzetal_coil_dim)
+    call cdf_define(ncid, vn_dnormzdzmns, dnormzdzmns, dimname=mnmax_sensitivity_ntheta_nzetal_coil_dim)
+    call cdf_define(ncid, vn_dfxdrmnc, dfxdrmnc, dimname=mnmax_sensitivity_ntheta_times_nzeta_coil_basis_dim)
+    call cdf_define(ncid, vn_dfydrmnc, dfydrmnc, dimname=mnmax_sensitivity_ntheta_times_nzeta_coil_basis_dim)
+    call cdf_define(ncid, vn_dfzdrmnc, dfzdrmnc, dimname=mnmax_sensitivity_ntheta_times_nzeta_coil_basis_dim)
+    call cdf_define(ncid, vn_dfxdrmns, dfxdrmns, dimname=mnmax_sensitivity_ntheta_times_nzeta_coil_basis_dim)
+    call cdf_define(ncid, vn_dfydrmns, dfydrmns, dimname=mnmax_sensitivity_ntheta_times_nzeta_coil_basis_dim)
+    call cdf_define(ncid, vn_dfzdrmns, dfzdrmns, dimname=mnmax_sensitivity_ntheta_times_nzeta_coil_basis_dim)
+    call cdf_define(ncid, vn_dfxdzmnc, dfxdzmnc, dimname=mnmax_sensitivity_ntheta_times_nzeta_coil_basis_dim)
+    call cdf_define(ncid, vn_dfydzmnc, dfydzmnc, dimname=mnmax_sensitivity_ntheta_times_nzeta_coil_basis_dim)
+    call cdf_define(ncid, vn_dfzdzmnc, dfzdzmnc, dimname=mnmax_sensitivity_ntheta_times_nzeta_coil_basis_dim)
+    call cdf_define(ncid, vn_dfxdzmns, dfxdzmns, dimname=mnmax_sensitivity_ntheta_times_nzeta_coil_basis_dim)
+    call cdf_define(ncid, vn_dfydzmns, dfydzmns, dimname=mnmax_sensitivity_ntheta_times_nzeta_coil_basis_dim)
+    call cdf_define(ncid, vn_dfzdzmns, dfzdzmns, dimname=mnmax_sensitivity_ntheta_times_nzeta_coil_basis_dim)
+endif
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
   ! Done with cdf_define calls. Now write the data.
@@ -331,6 +426,9 @@ subroutine write_output
   if (sensitivity_option > 1) then
     call cdf_write(ncid, vn_xn_sensitivity, xn_sensitivity)
     call cdf_write(ncid, vn_xm_sensitivity, xm_sensitivity)
+    call cdf_write(ncid, vn_d_x, d_x)
+    call cdf_write(ncid, vn_d_y, d_y)
+    call cdf_write(ncid, vn_d_z, d_z)
   endif
 
   ! Arrays with dimension 2
@@ -358,6 +456,9 @@ subroutine write_output
     call cdf_write(ncid, vn_dchi2Kdrmns, dchi2Kdrmns(:,1:Nlambda))
     call cdf_write(ncid, vn_dchi2Kdzmnc, dchi2Kdzmnc(:,1:Nlambda))
     call cdf_write(ncid, vn_dchi2Kdzmns, dchi2Kdzmns(:,1:Nlambda))
+    call cdf_write(ncid, vn_f_x, f_x)
+    call cdf_write(ncid, vn_f_y, f_y)
+    call cdf_write(ncid, vn_f_z, f_z)
   endif
 
   ! Arrays with dimension 3
@@ -386,6 +487,42 @@ subroutine write_output
     call cdf_write(ncid, vn_dnorm_normaldrmns, dnorm_normaldrmns)
     call cdf_write(ncid, vn_dnorm_normaldzmnc, dnorm_normaldzmnc)
     call cdf_write(ncid, vn_dnorm_normaldzmns, dnorm_normaldzmns)
+    call cdf_write(ncid, vn_dddrmnc, dddrmnc)
+    call cdf_write(ncid, vn_dddrmns, dddrmns)
+    call cdf_write(ncid, vn_dddzmnc, dddzmnc)
+    call cdf_write(ncid, vn_dddzmns, dddzmns)
+    call cdf_write(ncid, vn_dgdrmnc, dgdrmnc)
+    call cdf_write(ncid, vn_dgdrmns, dgdrmns)
+    call cdf_write(ncid, vn_dgdzmnc, dgdzmnc)
+    call cdf_write(ncid, vn_dgdzmns, dgdzmns)
+    call cdf_write(ncid, vn_dinductancedrmnc, dinductancedrmnc)
+    call cdf_write(ncid, vn_dinductancedrmns, dinductancedrmns)
+    call cdf_write(ncid, vn_dinductancedzmnc, dinductancedzmnc)
+    call cdf_write(ncid, vn_dinductancedzmns, dinductancedzmns)
+    call cdf_write(ncid, vn_dnormxdrmnc, dnormxdrmnc)
+    call cdf_write(ncid, vn_dnormydrmnc, dnormydrmnc)
+    call cdf_write(ncid, vn_dnormzdrmnc, dnormzdrmnc)
+    call cdf_write(ncid, vn_dnormxdrmns, dnormxdrmns)
+    call cdf_write(ncid, vn_dnormydrmns, dnormydrmns)
+    call cdf_write(ncid, vn_dnormzdrmns, dnormzdrmns)
+    call cdf_write(ncid, vn_dnormxdzmnc, dnormxdzmnc)
+    call cdf_write(ncid, vn_dnormydzmnc, dnormydzmnc)
+    call cdf_write(ncid, vn_dnormzdzmnc, dnormzdzmnc)
+    call cdf_write(ncid, vn_dnormxdzmns, dnormxdzmns)
+    call cdf_write(ncid, vn_dnormydzmns, dnormydzmns)
+    call cdf_write(ncid, vn_dnormzdzmns, dnormzdzmns)
+    call cdf_write(ncid, vn_dfxdrmnc, dfxdrmnc)
+    call cdf_write(ncid, vn_dfydrmnc, dfydrmnc)
+    call cdf_write(ncid, vn_dfzdrmnc, dfzdrmnc)
+    call cdf_write(ncid, vn_dfxdrmns, dfxdrmns)
+    call cdf_write(ncid, vn_dfydrmns, dfydrmns)
+    call cdf_write(ncid, vn_dfzdrmns, dfzdrmns)
+    call cdf_write(ncid, vn_dfxdzmnc, dfxdzmnc)
+    call cdf_write(ncid, vn_dfydzmnc, dfydzmnc)
+    call cdf_write(ncid, vn_dfzdzmnc, dfzdzmnc)
+    call cdf_write(ncid, vn_dfxdzmns, dfxdzmns)
+    call cdf_write(ncid, vn_dfydzmns, dfydzmns)
+    call cdf_write(ncid, vn_dfzdzmns, dfzdzmns)
   endif
 
   ! Finish up:
