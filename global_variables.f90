@@ -92,20 +92,14 @@ module global_variables
   integer :: nmax_sensitivity = 0
   integer :: mmax_sensitivity = 0
   integer :: mnmax_sensitivity
+  integer :: nomega_coil
+  integer, dimension(:), allocatable :: omega_coil
   integer, dimension(:), allocatable :: xm_sensitivity, xn_sensitivity
-  real(dp), dimension(:,:,:), allocatable :: dddrmnc, dddrmns, dddzmnc, dddzmns
-  real(dp), dimension(:,:,:), allocatable :: dfxdrmnc, dfxdrmns, dfxdzmnc, dfxdzmns
-  real(dp), dimension(:,:,:), allocatable :: dfydrmnc, dfydrmns, dfydzmnc, dfydzmns
-  real(dp), dimension(:,:,:), allocatable :: dfzdrmnc, dfzdrmns, dfzdzmnc, dfzdzmns
-  real(dp), dimension(:,:,:), allocatable :: dnorm_normaldrmnc, dnorm_normaldrmns
-  real(dp), dimension(:,:,:), allocatable :: dnorm_normaldzmnc, dnorm_normaldzmns
-  real(dp), dimension(:,:), allocatable :: dchi2Kdrmnc, dchi2Kdrmns, dchi2Kdzmnc, dchi2Kdzmns
-  real(dp), dimension(:,:), allocatable :: dchi2Bdrmnc, dchi2Bdrmns, dchi2Bdzmnc, dchi2Bdzmns
-  real(dp), dimension(:,:,:), allocatable :: dgdrmnc,dgdrmns,dgdzmnc,dgdzmns
-  real(dp), dimension(:,:,:), allocatable :: dinductancedrmnc, dinductancedrmns, dinductancedzmnc, dinductancedzmns
-  real(dp), dimension(:,:,:), allocatable :: dnormxdrmnc,dnormxdrmns,dnormxdzmnc,dnormxdzmns
-  real(dp), dimension(:,:,:), allocatable :: dnormydrmnc,dnormydrmns,dnormydzmnc,dnormydzmns
-  real(dp), dimension(:,:,:),allocatable :: dnormzdrmnc, dnormzdrmns, dnormzdzmnc,dnormzdzmns
+  real(dp), dimension(:,:,:), allocatable :: dddomega, dfxdomega, dfydomega, dfzdomega
+  real(dp), dimension(:,:,:), allocatable :: dnorm_normaldomega, dgdomega, dinductancedomega
+  real(dp), dimension(:,:,:), allocatable :: dnormxdomega, dnormydomega, dnormzdomega
+  real(dp), dimension(:,:,:), allocatable :: dAKdomega, dABdomega
+  real(dp), dimension(:,:), allocatable :: dchi2Kdomega, dchi2Bdomega, dbKdomega, dbBdomega
 
 end module global_variables
 

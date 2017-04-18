@@ -6,25 +6,25 @@ subroutine init_sensitivity()
 
   implicit none
 
-  integer :: imn, iflag, minSymmetry, maxSymmetry, offset, whichSymmetry, tic, toc, countrate
+  integer :: iomega, iflag, minSymmetry, maxSymmetry, offset, whichSymmetry, tic, toc, countrate, j_basis
   !real(dp), dimension(:,:,:,:), allocatable :: dnormdrmnc, dnormdrmns, dnormdzmnc, dnormdzmns
-  real(dp), dimension(:), allocatable :: drdrmnc, drdrmns, drdzmnc, drdzmns
-  real(dp), dimension(:), allocatable :: dinductancednorm, dinductancedr
+  real(dp), dimension(:), allocatable :: drdomega, dinductancednorm, dinductancedr
   !real(dp), dimension(:,:,:), allocatable :: dinductancedrmnc, dinductancedrmns, dinductancedzmnc, dinductancedzmns
 
   real(dp) :: angle, angle2, sinangle, cosangle
   real(dp) :: sinangle2, cosangle2, dr_dot_norm_coil, dr_dot_norm_plasma, norm_plasma_dot_norm_coil
-  real(dp) :: drmncdxdtheta, drmncdxdzeta, drmncdydtheta, drmncdydzeta
-  real(dp) :: drmncdzdtheta, drmncdzdzeta, drmnsdxdtheta, drmnsdxdzeta
-  real(dp) :: drmnsdydtheta, drmnsdydzeta, drmnsdzdtheta, drmnsdzdzeta
-  real(dp) :: dzmncdxdtheta, dzmncdxdzeta, dzmncdydtheta, dzmncdydzeta
-  real(dp) :: dzmncdzdtheta, dzmncdzdzeta, dzmnsdydzeta, dzmnsdzdtheta
-  real(dp) :: dzmnsdzdzeta, dzmnsdxdtheta, dzmnsdxdzeta, dzmnsdydtheta
+  real(dp) :: domegadxdtheta, domegadxdzeta, domegadydtheta, domegadydzeta
+  real(dp) :: domegadzdtheta, domegadzdzeta
   real(dp) :: dxdtheta, dxdzeta, dydtheta, dydzeta, dzdtheta, dzdzeta
   integer :: izeta_plasma, itheta_plasma, izeta_coil, itheta_coil
   integer :: index_coil, l_coil, izetal_coil, index_plasma, imn_coil
   real(dp) :: x, y, z, dx, dy, dz, dr2inv, dr32inv, dr52inv
   real(dp) :: angle_coil, sinangle_coil, cosangle_coil
+  real(dp), dimension(:,:), allocatable :: Afactorx, Afactory, Afactorz, Afactor
+  real(dp), dimension(:,:), allocatable :: bfactorx, bfactory, bfactorz
+  real(dp), dimension(:), allocatable :: norm_normal_coil_inv1D
+  real(dp), dimension(:), allocatable :: norm_normal_plasma_inv1D
+  real(dp), dimension(:,:), allocatable :: dnorm_normaldomega2D
 
   ! Variables needed by BLAS DGEMM:
   character :: TRANSA, TRANSB
@@ -32,117 +32,63 @@ subroutine init_sensitivity()
   real(dp) :: BLAS_ALPHA=1, BLAS_BETA=0
 
   ! Initialize Fourier arrays - need to include m = 0, n = 0 mode
-  call init_Fourier_modes_sensitivity(mmax_sensitivity, nmax_sensitivity, mnmax_sensitivity, &
-xm_sensitivity, xn_sensitivity)
+  call init_Fourier_modes_sensitivity(mmax_sensitivity, nmax_sensitivity, mnmax_sensitivity, nomega_coil, &
+    xm_sensitivity, xn_sensitivity, omega_coil)
 
-  print *, "mnmax_sensitivity: ", mnmax_sensitivity
+  print *, "nomega_coil: ", nomega_coil
 
-  allocate(drdrmnc(3),stat=iflag)
+  allocate(drdomega(3),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(drdrmns(3),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(drdzmnc(3),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(drdzmns(3),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
   allocate(dinductancednorm(3),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dinductancedr(3),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-
-  allocate(dinductancedrmnc(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, &
+  allocate(dinductancedomega(nomega_coil, ntheta_plasma*nzeta_plasma, &
   ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dinductancedrmns(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, &
-  ntheta_coil*nzeta_coil),stat=iflag)
+  allocate(dnorm_normaldomega(nomega_coil,ntheta_coil,nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dinductancedzmnc(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, &
-  ntheta_coil*nzeta_coil),stat=iflag)
+  allocate(dddomega(3, nomega_coil,ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dinductancedzmns(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, &
-  ntheta_coil*nzeta_coil),stat=iflag)
+  allocate(dgdomega(nomega_coil, ntheta_plasma*nzeta_plasma, num_basis_functions),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-
-  allocate(dnorm_normaldrmnc(mnmax_sensitivity,ntheta_coil,nzeta_coil),stat=iflag)
+  allocate(dnormxdomega(nomega_coil,ntheta_coil,nzetal_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dnorm_normaldrmns(mnmax_sensitivity,ntheta_coil,nzeta_coil),stat=iflag)
+  allocate(dnormydomega(nomega_coil,ntheta_coil,nzetal_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dnorm_normaldzmnc(mnmax_sensitivity,ntheta_coil,nzeta_coil),stat=iflag)
+  allocate(dnormzdomega(nomega_coil,ntheta_coil,nzetal_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dnorm_normaldzmns(mnmax_sensitivity,ntheta_coil,nzeta_coil),stat=iflag)
+  allocate(dfxdomega(nomega_coil, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-
-  allocate(dddrmnc(3, mnmax_sensitivity,ntheta_coil*nzeta_coil),stat=iflag)
+  allocate(dfydomega(nomega_coil, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dddrmns(3, mnmax_sensitivity,ntheta_coil*nzeta_coil),stat=iflag)
+  allocate(dfzdomega(nomega_coil, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dddzmnc(3, mnmax_sensitivity,ntheta_coil*nzeta_coil),stat=iflag)
+  allocate(dAKdomega(num_basis_functions,num_basis_functions,nomega_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dddzmns(3, mnmax_sensitivity,ntheta_coil*nzeta_coil),stat=iflag)
+  allocate(dABdomega(num_basis_functions,num_basis_functions,nomega_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-
-  allocate(dgdrmnc(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, num_basis_functions),stat=iflag)
+  allocate(dbKdomega(num_basis_functions,nomega_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dgdrmns(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, num_basis_functions),stat=iflag)
+  allocate(dbBdomega(num_basis_functions,nomega_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dgdzmnc(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, num_basis_functions),stat=iflag)
+  allocate(Afactorx(ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dgdzmns(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, num_basis_functions),stat=iflag)
+  allocate(Afactory(ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-
-  allocate(dnormxdrmnc(mnmax_sensitivity,ntheta_coil,nzetal_coil),stat=iflag)
+  allocate(Afactorz(ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dnormxdrmns(mnmax_sensitivity,ntheta_coil,nzetal_coil),stat=iflag)
+  allocate(Afactor(ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dnormxdzmnc(mnmax_sensitivity,ntheta_coil,nzetal_coil),stat=iflag)
+  allocate(bfactorx(ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dnormxdzmns(mnmax_sensitivity,ntheta_coil,nzetal_coil),stat=iflag)
+  allocate(bfactory(ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-
-  allocate(dnormydrmnc(mnmax_sensitivity,ntheta_coil,nzetal_coil),stat=iflag)
+  allocate(bfactorz(ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dnormydrmns(mnmax_sensitivity,ntheta_coil,nzetal_coil),stat=iflag)
+  allocate(norm_normal_coil_inv1D(ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dnormydzmnc(mnmax_sensitivity,ntheta_coil,nzetal_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dnormydzmns(mnmax_sensitivity,ntheta_coil,nzetal_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  allocate(dnormzdrmnc(mnmax_sensitivity,ntheta_coil,nzetal_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dnormzdrmns(mnmax_sensitivity,ntheta_coil,nzetal_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dnormzdzmnc(mnmax_sensitivity,ntheta_coil,nzetal_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dnormzdzmns(mnmax_sensitivity,ntheta_coil,nzetal_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  allocate(dfxdrmnc(mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dfxdrmns(mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dfxdzmnc(mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dfxdzmns(mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  allocate(dfydrmnc(mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dfydrmns(mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dfydzmnc(mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dfydzmns(mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  allocate(dfzdrmnc(mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dfzdrmns(mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dfzdzmnc(mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dfzdzmns(mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
+  allocate(dnorm_normaldomega2D(nomega_coil,ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
   print *,"Allocation complete."
@@ -151,21 +97,7 @@ xm_sensitivity, xn_sensitivity)
   print *,"Computing chi2_B sensitivity."
   call system_clock(tic,countrate)
 
-  ! These quantities used to compute dnormd(...)
-  drmncdzdtheta = 0
-  drmncdzdzeta = 0
-  drmnsdzdtheta = 0
-  drmnsdzdzeta = 0
-
-  dzmncdxdtheta = 0
-  dzmncdxdzeta = 0
-  dzmncdydtheta = 0
-  dzmncdydzeta = 0
-
-  dzmnsdxdtheta = 0
-  dzmnsdxdzeta = 0
-  dzmnsdydtheta = 0
-  dzmnsdydzeta = 0
+  ! These quantities used to compute dnormdomega
 
   do izeta_coil = 1,nzeta_coil
 
@@ -188,73 +120,70 @@ xm_sensitivity, xn_sensitivity)
         dzdtheta = drdtheta_coil(3,itheta_coil,izetal_coil)
         dzdzeta = drdzeta_coil(3,itheta_coil,izetal_coil)
 
-        do imn = 1,mnmax_sensitivity
+        do iomega = 1,nomega_coil
 
           ! For Fourier decomposition of surface, need to index using izetal_coil
-          angle = xm_sensitivity(imn)*theta_coil(itheta_coil) - xn_sensitivity(imn)*zetal_coil(izetal_coil)
+          angle = xm_sensitivity(iomega)*theta_coil(itheta_coil) - xn_sensitivity(iomega)*zetal_coil(izetal_coil)
           sinangle = sin(angle)
           cosangle = cos(angle)
 
-          drmncdxdtheta = -xm_sensitivity(imn)*sinangle*cosangle2
-          drmncdxdzeta = xn_sensitivity(imn)*sinangle*cosangle2 - cosangle*sinangle2
-          drmncdydtheta = -xm_sensitivity(imn)*sinangle*sinangle2
-          drmncdydzeta = xn_sensitivity(imn)*sinangle*sinangle2 + cosangle*cosangle2
+          ! omega = rmnc
+          if (omega_coil(iomega) == 1) then
+            domegadxdtheta = -xm_sensitivity(iomega)*sinangle*cosangle2
+            domegadxdzeta = xn_sensitivity(iomega)*sinangle*cosangle2 - cosangle*sinangle2
+            domegadydtheta = -xm_sensitivity(iomega)*sinangle*sinangle2
+            domegadydzeta = xn_sensitivity(iomega)*sinangle*sinangle2 + cosangle*cosangle2
+            domegadzdtheta = 0
+            domegadzdzeta = 0
+            drdomega(1) = cosangle*cosangle2
+            drdomega(2) = cosangle*sinangle2
+            drdomega(3) = 0
+          endif
+          ! omega = zmns
+          if (omega_coil(iomega) == 2) then
+            domegadxdtheta = 0
+            domegadxdzeta = 0
+            domegadydtheta = 0
+            domegadydzeta = 0
+            domegadzdtheta = xm_sensitivity(iomega)*cosangle
+            domegadzdzeta = -xn_sensitivity(iomega)*cosangle
+            drdomega(1) = 0
+            drdomega(2) = 0
+            drdomega(3) = sinangle2
+          endif
+          ! omega = rmns
+          if (omega_coil(iomega) == 3) then
+            domegadxdtheta = xm_sensitivity(iomega)*cosangle*cosangle2
+            domegadxdzeta = -xn_sensitivity(iomega)*cosangle*cosangle2 - sinangle*sinangle2!
+            domegadydtheta = xm_sensitivity(iomega)*cosangle*sinangle2
+            domegadydzeta = -xn_sensitivity(iomega)*cosangle*sinangle2 + sinangle*cosangle2
+            domegadzdtheta = 0
+            domegadzdzeta = 0
+            drdomega(1) = sinangle*cosangle2
+            drdomega(2) = sinangle*sinangle2
+            drdomega(3) = 0
+          endif
+          ! omega = zmnc
+          if (omega_coil(iomega) == 4) then
+            domegadxdtheta = 0
+            domegadxdzeta = 0
+            domegadydtheta = 0
+            domegadydzeta = 0
+            domegadzdtheta = -xm_sensitivity(iomega)*sinangle
+            domegadzdzeta = xn_sensitivity(iomega)*sinangle
+            drdomega(1) = 0
+            drdomega(2) = 0
+            drdomega(3) = cosangle2
+          endif
 
-          drmnsdxdtheta = xm_sensitivity(imn)*cosangle*cosangle2
-          drmnsdxdzeta = -xn_sensitivity(imn)*cosangle*cosangle2 - sinangle*sinangle2!
-          drmnsdydtheta = xm_sensitivity(imn)*cosangle*sinangle2
-          drmnsdydzeta = -xn_sensitivity(imn)*cosangle*sinangle2 + sinangle*cosangle2
-
-          dzmncdzdtheta = -xm_sensitivity(imn)*sinangle
-          dzmncdzdzeta = xn_sensitivity(imn)*sinangle
-          dzmnsdzdtheta = xm_sensitivity(imn)*cosangle
-          dzmnsdzdzeta = -xn_sensitivity(imn)*cosangle
-
-          ! dnormd(...) stored for use in chi_k^2 sensitivity
-          ! dnormd(...)(3, mnmax_sensitivity,ntheta_coil,nzetal_coil)
-          dnormxdrmnc(imn, itheta_coil, izetal_coil) = drmncdydzeta*dzdtheta + drmncdzdtheta*dydzeta &
-            - drmncdydtheta*dzdzeta - drmncdzdzeta*dydtheta
-          dnormydrmnc(imn, itheta_coil, izetal_coil) = drmncdzdzeta*dxdtheta + drmncdxdtheta*dzdzeta &
-            - drmncdzdtheta*dxdzeta - drmncdxdzeta*dzdtheta
-          dnormzdrmnc(imn, itheta_coil, izetal_coil) = drmncdxdzeta*dydtheta + drmncdydtheta*dxdzeta &
-            - drmncdxdtheta*dydzeta - drmncdydzeta*dxdtheta
-
-          dnormxdrmns(imn, itheta_coil, izetal_coil) = drmnsdydzeta*dzdtheta + drmnsdzdtheta*dydzeta &
-            - drmnsdydtheta*dzdzeta - drmnsdzdzeta*dydtheta
-          dnormydrmns(imn, itheta_coil, izetal_coil) = drmnsdzdzeta*dxdtheta + drmnsdxdtheta*dzdzeta &
-            - drmnsdzdtheta*dxdzeta - drmnsdxdzeta*dzdtheta
-          dnormzdrmns(imn, itheta_coil, izetal_coil) = drmnsdxdzeta*dydtheta + drmnsdydtheta*dxdzeta &
-            - drmnsdxdtheta*dydzeta - drmnsdydzeta*dxdtheta
-          
-          dnormxdzmnc(imn, itheta_coil, izetal_coil) = dzmncdydzeta*dzdtheta + dzmncdzdtheta*dydzeta &
-            - dzmncdydtheta*dzdzeta - dzmncdzdzeta*dydtheta
-          dnormydzmnc(imn, itheta_coil, izetal_coil) = dzmncdzdzeta*dxdtheta + dzmncdxdtheta*dzdzeta &
-            - dzmncdzdtheta*dxdzeta - dzmncdxdzeta*dzdtheta
-          dnormzdzmnc(imn, itheta_coil, izetal_coil) = dzmncdxdzeta*dydtheta + dzmncdydtheta*dxdzeta &
-            - dzmncdxdtheta*dydzeta - dzmncdydzeta*dxdtheta
-
-          dnormxdzmns(imn, itheta_coil, izetal_coil) = dzmnsdydzeta*dzdtheta + dzmnsdzdtheta*dydzeta &
-            - dzmnsdydtheta*dzdzeta - dzmnsdzdzeta*dydtheta
-          dnormydzmns(imn, itheta_coil, izetal_coil) = dzmnsdzdzeta*dxdtheta + dzmnsdxdtheta*dzdzeta &
-            - dzmnsdzdtheta*dxdzeta - dzmnsdxdzeta*dzdtheta
-          dnormzdzmns(imn, itheta_coil, izetal_coil) = dzmnsdxdzeta*dydtheta + dzmnsdydtheta*dxdzeta &
-            - dzmnsdxdtheta*dydzeta - dzmnsdydzeta*dxdtheta
-
-          ! dxdOmega
-          drdrmnc(1) = cosangle*cosangle2
-          drdrmns(1) = sinangle*cosangle2
-          drdzmnc(1) = 0
-          drdzmns(1) = 0
-          ! dydOmega
-          drdrmnc(2) = cosangle*sinangle2
-          drdrmns(2) = sinangle*sinangle2
-          drdzmnc(2) = 0
-          drdzmns(2) = 0
-          ! dzdOmega
-          drdrmnc(3) = 0
-          drdrmns(3) = 0
-          drdzmnc(3) = cosangle2
-          drdzmns(3) = sinangle2
+          ! dnormdomega stored for use in chi_k^2 sensitivity
+          ! dnormdomega(3, nomega_coil,ntheta_coil,nzetal_coil)
+          dnormxdomega(iomega, itheta_coil, izetal_coil) = domegadydzeta*dzdtheta + domegadzdtheta*dydzeta &
+            - domegadydtheta*dzdzeta - domegadzdzeta*dydtheta
+          dnormydomega(iomega, itheta_coil, izetal_coil) = domegadzdzeta*dxdtheta + domegadxdtheta*dzdzeta &
+            - domegadzdtheta*dxdzeta - domegadxdzeta*dzdtheta
+          dnormzdomega(iomega, itheta_coil, izetal_coil) = domegadxdzeta*dydtheta + domegadydtheta*dxdzeta &
+            - domegadxdtheta*dydzeta - domegadydzeta*dxdtheta
 
           do izeta_plasma = 1, nzeta_plasma
             do itheta_plasma = 1, ntheta_plasma
@@ -302,31 +231,13 @@ xm_sensitivity, xn_sensitivity)
               dinductancednorm(3) = (normal_plasma(3,itheta_plasma,izeta_plasma) &
                 - 3*dr2inv*dr_dot_norm_plasma*dz)*(dr32inv*mu0/(4*pi))
 
-              ! These quantity are summed over l_coil
-              dinductancedrmnc(imn, index_plasma,index_coil) = dinductancedrmnc(imn, index_plasma, index_coil) &
-                + dinductancednorm(1)*dnormxdrmnc(imn,itheta_coil,izetal_coil) &
-                + dinductancednorm(2)*dnormydrmnc(imn,itheta_coil,izetal_coil) &
-                + dinductancednorm(3)*dnormzdrmnc(imn,itheta_coil,izetal_coil) &
-                + dinductancedr(1)*drdrmnc(1) + dinductancedr(2)*drdrmnc(2) &
-                + dinductancedr(3)*drdrmnc(3)
-              dinductancedrmns(imn, index_plasma,index_coil) = dinductancedrmns(imn, index_plasma,index_coil) &
-                + dinductancednorm(1)*dnormxdrmns(imn,itheta_coil,izetal_coil) &
-                + dinductancednorm(2)*dnormydrmns(imn,itheta_coil,izetal_coil) &
-                + dinductancednorm(3)*dnormzdrmns(imn,itheta_coil,izetal_coil) &
-                + dinductancedr(1)*drdrmns(1) + dinductancedr(2)*drdrmns(2) &
-                + dinductancedr(3)*drdrmns(3)
-              dinductancedzmnc(imn, index_plasma,index_coil) = dinductancedzmnc(imn, index_plasma,index_coil) &
-                + dinductancednorm(1)*dnormxdzmnc(imn,itheta_coil,izetal_coil) &
-                + dinductancednorm(2)*dnormydzmnc(imn,itheta_coil,izetal_coil) &
-                + dinductancednorm(3)*dnormzdzmnc(imn,itheta_coil,izetal_coil) &
-                + dinductancedr(1)*drdzmnc(1) + dinductancedr(2)*drdzmnc(2) &
-                + dinductancedr(3)*drdzmnc(3)
-              dinductancedzmns(imn, index_plasma,index_coil) = dinductancedzmns(imn, index_plasma,index_coil) &
-                + dinductancednorm(1)*dnormxdzmns(imn,itheta_coil,izetal_coil) &
-                + dinductancednorm(2)*dnormydzmns(imn,itheta_coil,izetal_coil) &
-                + dinductancednorm(3)*dnormzdzmns(imn,itheta_coil,izetal_coil) &
-                + dinductancedr(1)*drdzmns(1) + dinductancedr(2)*drdzmns(2) &
-                + dinductancedr(3)*drdzmns(3)
+              ! This quantity is summed over l_coil
+              dinductancedomega(iomega, index_plasma,index_coil) = dinductancedomega(iomega, index_plasma, index_coil) &
+                + dinductancednorm(1)*dnormxdomega(iomega,itheta_coil,izetal_coil) &
+                + dinductancednorm(2)*dnormydomega(iomega,itheta_coil,izetal_coil) &
+                + dinductancednorm(3)*dnormzdomega(iomega,itheta_coil,izetal_coil) &
+                + dinductancedr(1)*drdomega(1) + dinductancedr(2)*drdomega(2) &
+                + dinductancedr(3)*drdomega(3)
             end do
           end do
         end do
@@ -340,13 +251,13 @@ xm_sensitivity, xn_sensitivity)
   print *,"Loop with matrix multiplications."
   call system_clock(tic,countrate)
 
-  ! Now need to multiply dinductanced(...) by basis_functions to compute sensitivity of g_j
-  ! dincutanced(...)(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, ntheta_coil*nzeta_coil)
+  ! Now need to multiply dinductancedomega by basis_functions to compute sensitivity of g_j
+  ! dincutancedomega(nomega_coil, ntheta_plasma*nzeta_plasma, ntheta_coil*nzeta_coil)
   ! basis_functions(ntheta_coil*nzeta_coil, num_basis_functions)
-  ! dgdrmnc(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, num_basis_functions)
+  ! dgdomega(nomega_coil, ntheta_plasma*nzeta_plasma, num_basis_functions)
 
   ! Now we need to compute dgd(...) = dinductanced(...)*basis_functions
-   M = ntheta_plasma*nzeta_plasma ! # rows of A
+  M = ntheta_plasma*nzeta_plasma ! # rows of A
   N = num_basis_functions ! # cols of B
   K = ntheta_coil*nzeta_coil ! Common dimension of A and B
   LDA = M
@@ -356,20 +267,10 @@ xm_sensitivity, xn_sensitivity)
   TRANSB = 'N'
   BLAS_ALPHA=dtheta_coil*dzeta_coil
   BLAS_BETA=0
-  dgdrmnc = 0
-  dgdrmns = 0
-  dgdzmnc = 0
-  dgdzmns = 0
+  dgdomega = 0
 
-  do imn = 1, mnmax_sensitivity
-    !dgdrmnc(imn,:,:) = matmul(dinductancedrmnc(imn,:,:),basis_functions)
-    !dgdrmns(imn,:,:) = matmul(dinductancedrmns(imn,:,:),basis_functions)
-    !dgdzmnc(imn,:,:) = matmul(dinductancedzmnc(imn,:,:),basis_functions)
-    !dgdzmns(imn,:,:) = matmul(dinductancedzmns(imn,:,:),basis_functions)
-    call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedrmnc(imn,:,:),LDA,basis_functions,LDB,BLAS_BETA,dgdrmnc(imn,:,:),LDC)
-    call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedrmns(imn,:,:),LDA,basis_functions,LDB,BLAS_BETA,dgdrmns(imn,:,:),LDC)
-    call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedzmnc(imn,:,:),LDA,basis_functions,LDB,BLAS_BETA,dgdzmnc(imn,:,:),LDC)
-    call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedzmns(imn,:,:),LDA,basis_functions,LDB,BLAS_BETA,dgdzmns(imn,:,:),LDC)
+  do iomega = 1, nomega_coil
+    call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedomega(iomega,:,:),LDA,basis_functions,LDB,BLAS_BETA,dgdomega(iomega,:,:),LDC)
   enddo
 
   call system_clock(toc)
@@ -403,74 +304,63 @@ xm_sensitivity, xn_sensitivity)
 
     do itheta_coil = 1, ntheta_coil
       index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
-      do imn = 1, mnmax_sensitivity
+      do iomega = 1,nomega_coil
 
         ! For geometric components (drdtheta, etc.) need to use izetal_coil
-        angle = xm_sensitivity(imn)*theta_coil(itheta_coil) - xn_sensitivity(imn)*zetal_coil(izeta_coil)
+        angle = xm_sensitivity(iomega)*theta_coil(itheta_coil) - xn_sensitivity(iomega)*zetal_coil(izeta_coil)
         sinangle = sin(angle)
         cosangle = cos(angle)
 
-        drmncdxdtheta = -xm_sensitivity(imn)*sinangle*cosangle2
-        drmncdxdzeta = xn_sensitivity(imn)*sinangle*cosangle2 - cosangle*sinangle2
-        drmncdydtheta = -xm_sensitivity(imn)*sinangle*sinangle2
-        drmncdydzeta = xn_sensitivity(imn)*sinangle*sinangle2 + cosangle*cosangle2
-
-        drmnsdxdtheta = xm_sensitivity(imn)*cosangle*cosangle2
-        drmnsdxdzeta = -xn_sensitivity(imn)*cosangle*cosangle2 - sinangle*sinangle2
-        drmnsdydtheta = xm_sensitivity(imn)*cosangle*sinangle2
-        drmnsdydzeta = -xn_sensitivity(imn)*cosangle*sinangle2 + sinangle*cosangle2
-
-        dzmncdzdtheta = -xm_sensitivity(imn)*sinangle
-        dzmncdzdzeta = xn_sensitivity(imn)*sinangle
-        dzmnsdzdtheta = xm_sensitivity(imn)*cosangle
-        dzmnsdzdzeta = -xn_sensitivity(imn)*cosangle
+        ! omega = rmnc
+        if (omega_coil(iomega) == 1) then
+          domegadxdtheta = -xm_sensitivity(iomega)*sinangle*cosangle2
+          domegadxdzeta = xn_sensitivity(iomega)*sinangle*cosangle2 - cosangle*sinangle2
+          domegadydtheta = -xm_sensitivity(iomega)*sinangle*sinangle2
+          domegadydzeta = xn_sensitivity(iomega)*sinangle*sinangle2 + cosangle*cosangle2
+          domegadzdtheta = 0
+          domegadzdzeta = 0
+        endif
+        ! omega = zmns
+        if (omega_coil(iomega) == 2) then
+          domegadxdtheta = 0
+          domegadxdzeta = 0
+          domegadydtheta = 0
+          domegadydzeta = 0
+          domegadzdtheta = xm_sensitivity(iomega)*cosangle
+          domegadzdzeta = -xn_sensitivity(iomega)*cosangle
+        endif
+        ! omega = rmns
+        if (omega_coil(iomega) == 3) then
+          domegadxdtheta = xm_sensitivity(iomega)*cosangle*cosangle2
+          domegadxdzeta = -xn_sensitivity(iomega)*cosangle*cosangle2 - sinangle*sinangle2!
+          domegadydtheta = xm_sensitivity(iomega)*cosangle*sinangle2
+          domegadydzeta = -xn_sensitivity(iomega)*cosangle*sinangle2 + sinangle*cosangle2
+          domegadzdtheta = 0
+          domegadzdzeta = 0
+        endif
+        ! omega = zmnc
+        if (omega_coil(iomega) == 4) then
+          domegadxdtheta = 0
+          domegadxdzeta = 0
+          domegadydtheta = 0
+          domegadydzeta = 0
+          domegadzdtheta = -xm_sensitivity(iomega)*sinangle
+          domegadzdzeta = xn_sensitivity(iomega)*sinangle
+        endif
 
         ! Here the sensitivity is l_coil periodic - indexed by izeta_coil
-        dnorm_normaldrmnc(imn,itheta_coil,izeta_coil) = &
-           (normal_coil(1, itheta_coil, izeta_coil)*dnormxdrmnc(imn, itheta_coil, izeta_coil) &
-          + normal_coil(2, itheta_coil, izeta_coil)*dnormydrmnc(imn, itheta_coil, izeta_coil) &
-          + normal_coil(3, itheta_coil, izeta_coil)*dnormzdrmnc(imn, itheta_coil, izeta_coil)) &
+        dnorm_normaldomega(iomega,itheta_coil,izeta_coil) = &
+           (normal_coil(1, itheta_coil, izeta_coil)*dnormxdomega(iomega, itheta_coil, izeta_coil) &
+          + normal_coil(2, itheta_coil, izeta_coil)*dnormydomega(iomega, itheta_coil, izeta_coil) &
+          + normal_coil(3, itheta_coil, izeta_coil)*dnormzdomega(iomega, itheta_coil, izeta_coil)) &
             /norm_normal_coil(itheta_coil,izeta_coil)
-        dnorm_normaldrmns(imn, itheta_coil,izeta_coil) = &
-           (normal_coil(1, itheta_coil, izeta_coil)*dnormxdrmns(imn, itheta_coil, izeta_coil) &
-          + normal_coil(2, itheta_coil, izeta_coil)*dnormydrmns(imn, itheta_coil, izeta_coil) &
-          + normal_coil(3, itheta_coil, izeta_coil)*dnormzdrmns(imn, itheta_coil, izeta_coil)) &
-            /norm_normal_coil(itheta_coil,izeta_coil)
-        dnorm_normaldzmnc(imn, itheta_coil,izeta_coil) = &
-           (normal_coil(1, itheta_coil, izeta_coil)*dnormxdzmnc(imn, itheta_coil, izeta_coil) &
-          + normal_coil(2, itheta_coil, izeta_coil)*dnormydzmnc(imn, itheta_coil, izeta_coil) &
-          + normal_coil(3, itheta_coil, izeta_coil)*dnormzdzmnc(imn, itheta_coil, izeta_coil)) &
-           /norm_normal_coil(itheta_coil,izeta_coil)
-        dnorm_normaldzmns(imn, itheta_coil,izeta_coil) = &
-           (normal_coil(1, itheta_coil, izeta_coil)*dnormxdzmns(imn, itheta_coil, izeta_coil) &
-          + normal_coil(2, itheta_coil, izeta_coil)*dnormydzmns(imn, itheta_coil, izeta_coil) &
-          + normal_coil(3, itheta_coil, izeta_coil)*dnormzdzmns(imn, itheta_coil, izeta_coil)) &
-           /norm_normal_coil(itheta_coil,izeta_coil)
 
-        dddrmnc(1, imn, index_coil) = (net_poloidal_current_Amperes*drmncdxdtheta &
-          - net_toroidal_current_Amperes*drmncdxdzeta)/twopi
-        dddrmnc(2, imn, index_coil) = (net_poloidal_current_Amperes*drmncdydtheta &
-          - net_toroidal_current_Amperes*drmncdydzeta)/twopi
-        dddrmnc(3, imn, index_coil) = (net_poloidal_current_Amperes*drmncdzdtheta &
-          - net_toroidal_current_Amperes*drmncdzdzeta)/twopi
-        dddrmns(1, imn, index_coil) = (net_poloidal_current_Amperes*drmnsdxdtheta &
-          - net_toroidal_current_Amperes*drmnsdxdzeta)/twopi
-        dddrmns(2, imn, index_coil) = (net_poloidal_current_Amperes*drmnsdydtheta &
-          - net_toroidal_current_Amperes*drmnsdydzeta)/twopi
-        dddrmns(3, imn, index_coil) = (net_poloidal_current_Amperes*drmnsdzdtheta &
-          - net_toroidal_current_Amperes*drmnsdzdzeta)/twopi
-        dddzmnc(1, imn, index_coil) = (net_poloidal_current_Amperes*dzmncdxdtheta &
-          - net_toroidal_current_Amperes*dzmncdxdzeta)/twopi
-        dddzmnc(2, imn, index_coil) = (net_poloidal_current_Amperes*dzmncdydtheta &
-          - net_toroidal_current_Amperes*dzmncdydzeta)/twopi
-        dddzmnc(3, imn, index_coil) = (net_poloidal_current_Amperes*dzmncdzdtheta &
-          - net_toroidal_current_Amperes*dzmncdzdzeta)/twopi
-        dddzmns(1, imn, index_coil) = (net_poloidal_current_Amperes*dzmnsdxdtheta &
-          - net_toroidal_current_Amperes*dzmnsdxdzeta)/twopi
-        dddzmns(2, imn, index_coil) = (net_poloidal_current_Amperes*dzmnsdydtheta &
-          - net_toroidal_current_Amperes*dzmnsdydzeta)/twopi
-        dddzmns(3, imn, index_coil) = (net_poloidal_current_Amperes*dzmnsdzdtheta &
-          - net_toroidal_current_Amperes*dzmnsdzdzeta)/twopi
+        dddomega(1, iomega, index_coil) = (net_poloidal_current_Amperes*domegadxdtheta &
+          - net_toroidal_current_Amperes*domegadxdzeta)/twopi
+        dddomega(2, iomega, index_coil) = (net_poloidal_current_Amperes*domegadydtheta &
+          - net_toroidal_current_Amperes*domegadydzeta)/twopi
+        dddomega(3, iomega, index_coil) = (net_poloidal_current_Amperes*domegadzdtheta &
+          - net_toroidal_current_Amperes*domegadzdzeta)/twopi
 
         do whichSymmetry = minSymmetry, maxSymmetry
 
@@ -486,60 +376,19 @@ xm_sensitivity, xn_sensitivity)
             cosangle_coil = cos(angle_coil)
             sinangle_coil = sin(angle_coil)
             if (whichSymmetry==1) then
-              dfxdrmnc(imn, index_coil,imn_coil) = cosangle_coil*(xn_coil(imn_coil)*drmncdxdtheta &
-                + xm_coil(imn_coil)*drmncdxdzeta)
-              dfxdrmns(imn, index_coil,imn_coil) = cosangle_coil*(xn_coil(imn_coil)*drmnsdxdtheta &
-                + xm_coil(imn_coil)*drmnsdxdzeta)
-              dfxdzmnc(imn, index_coil,imn_coil) = cosangle_coil*(xn_coil(imn_coil)*dzmncdxdtheta &
-                + xm_coil(imn_coil)*dzmncdxdzeta)
-              dfxdzmns(imn, index_coil,imn_coil) = cosangle_coil*(xn_coil(imn_coil)*dzmnsdxdtheta &
-                + xm_coil(imn_coil)*dzmnsdxdzeta)
-
-              dfydrmnc(imn, index_coil,imn_coil) = cosangle_coil*(xn_coil(imn_coil)*drmncdydtheta &
-                + xm_coil(imn_coil)*drmncdydzeta)
-              dfydrmns(imn, index_coil,imn_coil) = cosangle_coil*(xn_coil(imn_coil)*drmnsdydtheta &
-                + xm_coil(imn_coil)*drmnsdydzeta)
-              dfydzmnc(imn, index_coil,imn_coil) = cosangle_coil*(xn_coil(imn_coil)*dzmncdydtheta &
-                + xm_coil(imn_coil)*dzmncdydzeta)
-              dfydzmns(imn, index_coil,imn_coil) = cosangle_coil*(xn_coil(imn_coil)*dzmnsdydtheta &
-                + xm_coil(imn_coil)*dzmnsdydzeta)
-
-              dfzdrmnc(imn, index_coil,imn_coil) = cosangle_coil*(xn_coil(imn_coil)*drmncdzdtheta &
-                + xm_coil(imn_coil)*drmncdzdzeta)
-              dfzdrmns(imn, index_coil,imn_coil) = cosangle_coil*(xn_coil(imn_coil)*drmnsdzdtheta &
-                + xm_coil(imn_coil)*drmnsdzdzeta)
-              dfzdzmnc(imn, index_coil,imn_coil) = cosangle_coil*(xn_coil(imn_coil)*dzmncdzdtheta &
-                + xm_coil(imn_coil)*dzmncdzdzeta)
-              dfzdzmns(imn, index_coil,imn_coil) = cosangle_coil*(xn_coil(imn_coil)*dzmnsdzdtheta &
-                + xm_coil(imn_coil)*dzmnsdzdzeta)
-
+              dfxdomega(iomega, index_coil,imn_coil) = cosangle_coil*(xn_coil(imn_coil)*domegadxdtheta &
+                + xm_coil(imn_coil)*domegadxdzeta)
+              dfydomega(iomega, index_coil,imn_coil) = cosangle_coil*(xn_coil(imn_coil)*domegadydtheta &
+                + xm_coil(imn_coil)*domegadydzeta)
+              dfzdomega(iomega, index_coil,imn_coil) = cosangle_coil*(xn_coil(imn_coil)*domegadzdtheta &
+                + xm_coil(imn_coil)*domegadzdzeta)
             else
-              dfxdrmnc(imn, index_coil,imn_coil+offset) = -sinangle_coil*(xn_coil(imn_coil)*drmncdxdtheta &
-                + xm_coil(imn_coil)*drmncdxdzeta)
-              dfxdrmns(imn, index_coil,imn_coil+offset) = -sinangle_coil*(xn_coil(imn_coil)*drmnsdxdtheta &
-                + xm_coil(imn_coil)*drmnsdxdzeta)
-              dfxdzmnc(imn, index_coil,imn_coil+offset) = -sinangle_coil*(xn_coil(imn_coil)*dzmncdxdtheta &
-                + xm_coil(imn_coil)*dzmncdxdzeta)
-              dfxdzmns(imn, index_coil,imn_coil+offset) = -sinangle_coil*(xn_coil(imn_coil)*dzmnsdxdtheta &
-                + xm_coil(imn_coil)*dzmnsdxdzeta)
-
-              dfydrmnc(imn, index_coil,imn_coil+offset) = -sinangle_coil*(xn_coil(imn_coil)*drmncdydtheta &
-                + xm_coil(imn_coil)*drmncdydzeta)
-              dfydrmns(imn, index_coil,imn_coil+offset) = -sinangle_coil*(xn_coil(imn_coil)*drmnsdydtheta &
-                + xm_coil(imn_coil)*drmnsdydzeta)
-              dfydzmnc(imn, index_coil,imn_coil+offset) = -sinangle_coil*(xn_coil(imn_coil)*dzmncdydtheta &
-                + xm_coil(imn_coil)*dzmncdydzeta)
-              dfydzmns(imn, index_coil,imn_coil+offset) = -sinangle_coil*(xn_coil(imn_coil)*dzmnsdydtheta &
-                + xm_coil(imn_coil)*dzmnsdydzeta)
-
-              dfzdrmnc(imn, index_coil,imn_coil+offset) = -sinangle_coil*(xn_coil(imn_coil)*drmncdzdtheta &
-                + xm_coil(imn_coil)*drmncdzdzeta)
-              dfzdrmns(imn, index_coil,imn_coil+offset) = -sinangle_coil*(xn_coil(imn_coil)*drmnsdzdtheta &
-                + xm_coil(imn_coil)*drmnsdzdzeta)
-              dfzdzmnc(imn, index_coil,imn_coil+offset) = -sinangle_coil*(xn_coil(imn_coil)*dzmncdzdtheta &
-                + xm_coil(imn_coil)*dzmncdzdzeta)
-              dfzdzmns(imn, index_coil,imn_coil+offset) = -sinangle_coil*(xn_coil(imn_coil)*dzmnsdzdtheta &
-                + xm_coil(imn_coil)*dzmnsdzdzeta)
+              dfxdomega(iomega, index_coil,imn_coil+offset) = -sinangle_coil*(xn_coil(imn_coil)*domegadxdtheta &
+                + xm_coil(imn_coil)*domegadxdzeta)
+              dfydomega(iomega, index_coil,imn_coil+offset) = -sinangle_coil*(xn_coil(imn_coil)*domegadydtheta &
+                + xm_coil(imn_coil)*domegadydzeta)
+              dfzdomega(iomega, index_coil,imn_coil+offset) = -sinangle_coil*(xn_coil(imn_coil)*domegadzdtheta &
+                + xm_coil(imn_coil)*domegadzdzeta)
             end if
           enddo
         enddo
@@ -547,25 +396,67 @@ xm_sensitivity, xn_sensitivity)
     enddo
   enddo
 
+  ! Compute matrices needed for dFKdomega
+  ! dfxdomega(nomega_coil, ntheta_coil*nzeta_coil, num_basis_functions)
+  ! dnorm_normaldrmnc(nomega_coil,ntheta_coil,nzeta_coil)
+  ! f_x(ntheta_coil*nzeta_coil, num_basis_functions)
+  ! norm_normal(ntheta_coil, nzeta_coil)
+  ! dAKdrmnc(num_basis_functions,num_basis_functions,nomega_coil)
+  ! Afactorx(ntheta*nzeta, num_basis_functions)
+  ! dddrmnc(3, nomega_coil,ntheta_coil*nzeta_coil)
+  ! d_x(ntheta_coil*nzeta_coil)
+  ! bfactorx(ntheta_coil*nzeta_coil, num_basis_functions)
+  norm_normal_coil_inv1D   = reshape(1/norm_normal_coil,   (/ ntheta_coil*nzeta_coil /))
+  do iomega = 1, nomega_coil
+    dAKdomega(:,:,iomega) = dtheta_coil*dzeta_coil*(2*(matmul(transpose(f_x), dfxdomega(iomega,:,:)) &
+      + matmul(transpose(f_y), dfydomega(iomega,:,:)) + matmul(transpose(f_z),dfzdomega(iomega,:,:))))
+    dnorm_normaldomega2D(iomega,:) = reshape(dnorm_normaldomega(iomega,:,:),(/ ntheta_coil * nzeta_coil /))
+    do j_basis = 1, num_basis_functions
+      Afactorx(:, j_basis) = f_x(:,j_basis)*dnorm_normaldomega2D(iomega,:)*norm_normal_coil_inv1D
+      Afactory(:, j_basis) = f_y(:,j_basis)*dnorm_normaldomega2D(iomega,:)*norm_normal_coil_inv1D
+      Afactorz(:, j_basis) = f_z(:,j_basis)*dnorm_normaldomega2D(iomega,:)*norm_normal_coil_inv1D
+      bfactorx(:,j_basis) = f_x(:,j_basis)*norm_normal_coil_inv1D
+      bfactory(:,j_basis) = f_y(:,j_basis)*norm_normal_coil_inv1D
+      bfactorz(:,j_basis) = f_z(:,j_basis)*norm_normal_coil_inv1D
+    enddo
+    dAKdomega(:,:,iomega) = dAKdomega(:,:,iomega) - dtheta_coil*dzeta_coil*(matmul(transpose(f_x),Afactorx) &
+     + matmul(transpose(f_y),Afactory) + matmul(transpose(f_z), Afactorz))
+    dbKdomega(:,iomega) = dtheta_coil*dzeta_coil*(matmul(transpose(bfactorx),dddomega(1,iomega,:)) + &
+      matmul(transpose(bfactory),dddomega(2,iomega,:)) + matmul(transpose(bfactorz),dddomega(3,iomega,:)))
+    dbKdomega(:,iomega) = dbKdomega(:,iomega) + dtheta_coil*dzeta_coil*(matmul(transpose(dfxdomega(iomega,:,:)), &
+      d_x*norm_normal_coil_inv1D) + matmul(transpose(dfydomega(iomega,:,:)),d_y*norm_normal_coil_inv1D) &
+      + matmul(transpose(dfzdomega(iomega,:,:)),d_z*norm_normal_coil_inv1D))
+    dbKdomega(:,iomega) = dbKdomega(:,iomega) - dtheta_coil*dzeta_coil*(matmul(transpose(f_x), &
+      d_x*dnorm_normaldomega2D(iomega,:)*norm_normal_coil_inv1D*norm_normal_coil_inv1D) + &
+    matmul(transpose(f_y),d_y*dnorm_normaldomega2D(iomega,:)*norm_normal_coil_inv1D*norm_normal_coil_inv1D) &
+      + matmul(transpose(f_z),d_z*dnorm_normaldomega2D(iomega,:)*norm_normal_coil_inv1D*norm_normal_coil_inv1D))
+  enddo
+
+  ! Compute matrices needed for dFBdomega
+  ! g(ntheta_plasma*nzeta_plasma, num_basis_functions)
+  ! dgdrmnc(nomega_coil, ntheta_plasma*nzeta_plasma, num_basis_functions)
+  norm_normal_plasma_inv1D   = reshape(1/norm_normal_plasma,   (/ ntheta_plasma*nzeta_plasma /))
+  do iomega = 1, nomega_coil
+    do j_basis = 1, num_basis_functions
+      Afactor(:,j_basis) = dgdomega(iomega,:,j_basis)*norm_normal_plasma_inv1D
+    enddo
+    dABdomega(:,:,iomega) = 2*dtheta_plasma*dzeta_plasma*(matmul(transpose(g),Afactor))
+    dbBdomega(:,iomega) = -dtheta_plasma*dzeta_plasma*matmul(transpose(dgdomega(iomega,:,:)), &
+      reshape(Bnormal_from_plasma_current+Bnormal_from_net_coil_currents, (/ ntheta_plasma*nzeta_plasma /)))
+  enddo
+
   call system_clock(toc)
   print *,"chi2_K sensitivity in init_sensitivity: ",real(toc-tic)/countrate," sec."
-  print *,"max(dddzmns): ", real(maxval(dddzmns))
   print *,"Deallocating."
-  !deallocate(dnormdrmnc)
-  !deallocate(dnormdrmns)
-  !deallocate(dnormdzmnc)
-  !deallocate(dnormdzmns)
-  ! in global variables for testing
-  !deallocate(dinductancednorm)
-  !deallocate(dinductancedr)
-  !deallocate(dinductancedrmnc)
-  !deallocate(dinductancedrmns)
-  !deallocate(dinductancedzmnc)
-  !deallocate(dinductancedzmns)
-  deallocate(drdrmnc)
-  deallocate(drdrmns)
-  deallocate(drdzmnc)
-  deallocate(drdzmns)
+
+  deallocate(drdomega)
+  deallocate(Afactorx)
+  deallocate(Afactory)
+  deallocate(Afactorz)
+  deallocate(bfactorx)
+  deallocate(bfactory)
+  deallocate(bfactorz)
+  deallocate(Afactor)
 
   print *,"Init sensitivity complete."
 

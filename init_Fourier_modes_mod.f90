@@ -12,8 +12,7 @@ contains
     integer, dimension(:), allocatable :: xm, xn
     
     integer :: jn, jm, index, iflag
-    integer, dimension(:), allocatable :: xm_temp, xn_temp
-    
+
     ! xm is nonnegative.
     ! xn can be negative, zero, or positive.
     ! When xm is 0, xn must be positive.
@@ -47,44 +46,55 @@ contains
 
   end subroutine init_Fourier_modes
 
-  subroutine init_Fourier_modes_sensitivity(mpol,ntor, mnmax,xm,xn)
+  subroutine init_Fourier_modes_sensitivity(mpol,ntor,mnmax,nomega,xm,xn,omega)
 
     implicit none
 
-    integer :: mpol, ntor, mnmax
-    integer, dimension(:), allocatable :: xm, xn
+    integer :: mpol, ntor, mnmax, iomega, i, nomega
+    integer, dimension(:), allocatable :: xm, xn, omega
 
-    integer :: jn, jm, index, iflag
-    integer, dimension(:), allocatable :: xm_temp, xn_temp
+    integer :: jn, jm, iflag
 
     ! xm is nonnegative.
     ! xn can be negative, zero, or positive.
     ! When xm is 0, xn must be non-negative
     mnmax = mpol*(ntor*2+1) + ntor+1
 
-    allocate(xm(mnmax),stat=iflag)
+    ! nomega is the length of the number of fourier coefficients
+    nomega = mnmax*4
+
+    allocate(xm(nomega),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
-    allocate(xn(mnmax),stat=iflag)
+    allocate(xn(nomega),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(omega(nomega),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
 
     ! Handle the xm=0 modes:
     xm=0
+    iomega = 0
     do jn=1,ntor+1
-      xn(jn)=jn-1
+      do i=1,4
+        iomega = iomega + 1
+        omega(iomega) = i
+        xn(iomega)=jn-1
+      enddo
     end do
 
     ! Handle the xm>0 modes:
-    index = ntor+1
     do jm = 1,mpol
       do jn = -ntor, ntor
-        index = index + 1
-        xn(index) = jn
-        xm(index) = jm
+        do i=1,4
+          iomega = iomega + 1
+          xn(iomega) = jn
+          xm(iomega) = jm
+          omega(iomega) = i
+        enddo
       end do
     end do
 
-    if (index .ne. mnmax) then
-      print *,"Error!  index=",index," but mnmax=",mnmax
+    if (iomega .ne. nomega) then
+      print *,"Error!  iomega=",iomega," but nomega=",nomega
       stop
     end if
 
