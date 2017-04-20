@@ -33,12 +33,9 @@ else ifeq ($(HOSTNAME),cori)
 	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -n 1 -c 32
 else
 	FC = mpif90
-	FC = gfortran
 	#EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none -cpp
-	#EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none
-	EXTRA_COMPILE_FLAGS =  -fopenmp -I/opt/local/include -ffree-line-length-none -traditional-cpp -g -O0 -fbounds-check
-	#EXTRA_LINK_FLAGS =  -fopenmp -L/opt/local/lib -lnetcdff  -lnetcdf -framework Accelerate
-	EXTRA_LINK_FLAGS = -fopenmp -L/opt/local/lib -lnetcdff  -lnetcdf -cpp -framework Accelerate  
+	EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none
+	EXTRA_LINK_FLAGS =  -fopenmp -L/opt/local/lib -lnetcdff  -lnetcdf -framework Accelerate
 
 	# For batch systems, set the following variable to the command used to run jobs. This variable is used by 'make test'.
 	REGCOIL_COMMAND_TO_SUBMIT_JOB =
@@ -46,8 +43,8 @@ endif
 
 
 # End of system-dependent variable assignments
-LIBSTELL_DIR = /Users/elizabethpaul/Documents/Research/STELLINSTALL/LIBSTELL/Release
-#LIBSTELL_DIR = mini_libstell
+
+LIBSTELL_DIR = mini_libstell
 TARGET = regcoil
 
 export
@@ -58,22 +55,22 @@ all: $(TARGET)
 
 include makefile.depend
 
-%.o: %.f90 $(LIBSTELL_DIR)/libstell.a
+%.o: %.f90 $(LIBSTELL_DIR)/mini_libstell.a
 	$(FC) $(EXTRA_COMPILE_FLAGS) -I $(LIBSTELL_DIR) -c $<
 
-%.o: %.f $(LIBSTELL_DIR)/libstell.a
+%.o: %.f $(LIBSTELL_DIR)/mini_libstell.a
 	$(FC) $(EXTRA_COMPILE_FLAGS) -I $(LIBSTELL_DIR) -c $<
 
-$(TARGET): $(OBJ_FILES) $(LIBSTELL_DIR)/libstell.a
-#	$(FC) -o $(TARGET) $(OBJ_FILES) $(LIBSTELL_DIR)/mini_libstell.a $(EXTRA_LINK_FLAGS)
-	$(FC) -o $(TARGET) $(OBJ_FILES) $(LIBSTELL_DIR)/libstell.a $(EXTRA_LINK_FLAGS)
+$(TARGET): $(OBJ_FILES) $(LIBSTELL_DIR)/mini_libstell.a
+	$(FC) -o $(TARGET) $(OBJ_FILES) $(LIBSTELL_DIR)/mini_libstell.a $(EXTRA_LINK_FLAGS)
+#	$(FC) -o $(TARGET) $(OBJ_FILES) $(LIBSTELL_DIR)/libstell.a $(EXTRA_LINK_FLAGS)
 
-#$(LIBSTELL_DIR)/mini_libstell.a:
-	#$(MAKE) -C mini_libstell
+$(LIBSTELL_DIR)/mini_libstell.a:
+	$(MAKE) -C mini_libstell
 
 clean:
 	rm -f *.o *.mod *.MOD *~ $(TARGET)
-	#cd $(LIBSTELL_DIR); rm -f *.o *.mod *.MOD *.a
+	cd $(LIBSTELL_DIR); rm -f *.o *.mod *.MOD *.a
 
 test: $(TARGET)
 	@echo "Beginning functional tests." && cd examples && export REGCOIL_RETEST=no && ./runExamples.py
