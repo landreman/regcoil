@@ -14,5 +14,13 @@ subroutine free_sensitivity()
   deallocate(dchi2Kdomega)
   deallocate(dchi2Bdomega)
   deallocate(dgdomega)
+  deallocate(dinductancedomega)
+  deallocate(dnormxdomega)
+  deallocate(dnormydomega)
+  deallocate(dnormzdomega)
+  deallocate(dAKdomega)
+  deallocate(dABdomega)
+  deallocate(dbKdomega)
+  deallocate(dbBdomega)
 
 end subroutine free_sensitivity

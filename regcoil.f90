@@ -1,3 +1,8 @@
+
+
+
+
+
 ! Main program
 
 program regcoil
@@ -57,6 +62,8 @@ program regcoil
   print *,"REGCOIL complete. Total time=",totalTime,"sec."
   print *,"You can run regcoilPlot ",trim(outputFilename)," to plot results."
 
-  call free_sensitivity()
+  if (sensitivity_option > 1) then
+    call free_sensitivity()
+  endif
 
 end program regcoil

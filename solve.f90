@@ -25,7 +25,9 @@ subroutine solve
   real(dp), dimension(:,:), allocatable :: dchi2Kdphi, dchi2Bdphi
   real(dp), dimension(:,:), allocatable :: adjoint_bx, adjoint_by, adjoint_bz
   real(dp), dimension(:,:), allocatable :: adjoint_Ax, adjoint_Ay, adjoint_Az
+  real(dp), dimension(:,:), allocatable :: adjoint_c
   real(dp), dimension(:,:), allocatable :: q_K, q_B
+  real(dp), dimension(:,:), allocatable :: dFKdomega, dFBdomega
 
   allocate(matrix(num_basis_functions, num_basis_functions), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
@@ -68,7 +70,8 @@ subroutine solve
   if (iflag .ne. 0) stop 'Allocation error!'
 ! Sensitivity matrices
   if (sensitivity_option > 1) then
-    print *,"Allocating sensitivity matrices."
+    allocate(dchi2domega(nomega_coil,nlambda),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
     allocate(dchi2Kdomega(nomega_coil, nlambda),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(dchi2Bdomega(nomega_coil, nlambda),stat=iflag)
@@ -91,6 +94,8 @@ subroutine solve
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(adjoint_bz(ntheta_coil*nzeta_coil,1),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(adjoint_c(ntheta_coil*nzeta_coil,1),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
     allocate(adjoint_Ax(num_basis_functions,ntheta_coil*nzeta_coil),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(adjoint_Ay(num_basis_functions,ntheta_coil*nzeta_coil),stat=iflag)
@@ -100,6 +105,10 @@ subroutine solve
     allocate(q_K(num_basis_functions, nlambda),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(q_B(num_basis_functions, nlambda),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dFKdomega(num_basis_functions, nomega_coil),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dFBdomega(num_basis_functions, nomega_coil),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
   endif
 
@@ -163,8 +172,7 @@ subroutine solve
      K2(:,:,ilambda) = this_K2_times_N / norm_normal_coil
 
      if (sensitivity_option > 1) then
-
-       print *,"Computing chi2_K sensitivity."
+       call system_clock(tic,countrate)
        ! sensitivity computation
        ! dddrmnc(3, mnmax_sensitivity, ntheta_coil*nzeta_coil)
        ! dfdrmnc(3, mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions)
@@ -179,7 +187,11 @@ subroutine solve
            + KDifference_z*dKDifferencedomega(3,:),(/ ntheta_coil, nzeta_coil/))*(2/norm_normal_coil)
          dchi2Kdomega(iomega,ilambda) = nfp*dtheta_coil*dzeta_coil*(sum(term1) + sum(term2))
        enddo
-      ! Adjoint chi2_K calculation  
+       call system_clock(toc)
+       print *,"chi2_K sensitivity in solve:",real(toc-tic)/countrate," sec."
+
+       call system_clock(tic,countrate)
+      ! Adjoint chi2_K calculation
       ! Kdifference_x(ntheta_coil*nzeta_coil)
       ! f_x(ntheta_coil*nzeta_coil, num_basis_functions)
       ! adjoint_b(ntheta*nzeta,3)
@@ -204,7 +216,14 @@ subroutine solve
         print *, "!!!!!! Error in LAPACK DSYSV: INFO = ", INFO
       !stop
       end if
+      ! dAKdomega(num_basis_functions,num_basis_functions,nomega_coil)
+      ! dbKdomega(num_basis_functions,nomega_coil)
       q_K(:,ilambda) = dchi2Kdphi(:,1)
+      do iomega = 1, nomega_coil
+        dFKdomega(:,iomega) = matmul(dAKdomega(:,:,iomega),solution) + dbKdomega(:,iomega)
+      enddo
+      call system_clock(toc)
+      print *,"Adjoint chi2_K calculation in solve:",real(toc-tic)/countrate," sec."
      endif
 
      Bnormal_total(:,:,ilambda) = (reshape(matmul(g,solution),(/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma) &
@@ -217,16 +236,47 @@ subroutine solve
           * sum(Bnormal_total(:,:,ilambda) * Bnormal_total(:,:,ilambda) * norm_normal_plasma)
 
      if (sensitivity_option > 1) then
-       print *,"Computing chi2_B sensitivity."
+       call system_clock(tic,countrate)
        ! Compute chi2_B sensitivity
        ! dgdrmnc(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, num_basis_functions)
        ! solution(num_basis_functions)
        ! dBnormaldrmnc(ntheta_plasma,nzeta_plasma)
+       ! g(ntheta_plasma*nzeta_plasma, num_basis_functions)
        do iomega = 1, nomega_coil
-         dBnormaldomega(:,:) = reshape(matmul(dgdomega(iomega,:,:),solution),(/ ntheta_plasma, nzeta_plasma /))*norm_normal_plasma
+         dBnormaldomega(:,:) = reshape(matmul(dgdomega(iomega,:,:),solution),(/ ntheta_plasma, nzeta_plasma /))/norm_normal_plasma
          dchi2Bdomega(iomega,ilambda) = 2*nfp*dtheta_plasma*dzeta_plasma*sum(Bnormal_total(:,:,ilambda)*dBnormaldomega*norm_normal_plasma)
        enddo
-       print *,"Sensitivity computation complete."
+       call system_clock(toc)
+       print *,"chi2_B sensitivity in solve:",real(toc-tic)/countrate," sec."
+
+       call system_clock(tic,countrate)
+       adjoint_c(:,1) = reshape(norm_normal_plasma*Bnormal_total(:,:,ilambda), (/ ntheta_plasma * nzeta_plasma /))
+       dchi2Bdphi = 2*nfp*dtheta_plasma*dzeta_plasma*matmul(transpose(g), adjoint_c)
+        ! Solve Adjoint Equation
+        ! Call LAPACK's DSYSV in query mode to determine the optimal size of the work array
+        call DSYSV('U',num_basis_functions, 1, transpose(matrix), num_basis_functions, IPIV, dchi2Bdphi(:,1), num_basis_functions, WORK, -1, INFO)
+        LWORK = WORK(1)
+        print *,"Optimal LWORK:",LWORK
+        deallocate(WORK)
+        allocate(WORK(LWORK), stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        call DSYSV('U',num_basis_functions, 1, transpose(matrix), num_basis_functions, IPIV, dchi2Bdphi(:,1), num_basis_functions, WORK, LWORK, INFO)
+        if (INFO /= 0) then
+        print *, "!!!!!! Error in LAPACK DSYSV: INFO = ", INFO
+        !stop
+        end if
+        ! dABdomega(num_basis_functions,num_basis_functions,nomega_coil)
+        ! dbBdomega(num_basis_functions,nomega_coil)
+        q_B(:,ilambda) = dchi2Bdphi(:,1)
+        !dchi2Bdomega = dchi2Bdomega - matmul(dFBdOmega, q_B)
+        do iomega = 1, nomega_coil
+        dFBdomega(:,iomega) = matmul(dABdomega(:,:,iomega),solution) + dbBdomega(:,iomega)
+        enddo
+        dchi2domega(:,ilambda) = dchi2Bdomega(:,ilambda) + lambda(ilambda)*dchi2Kdomega(:,ilambda)
+        dchi2Kdomega(:,ilambda) = dchi2Kdomega(:,ilambda) - matmul(transpose(dFKdomega), q_K(:,ilambda))
+        dchi2Bdomega(:,ilambda) = dchi2Bdomega(:,ilambda) - matmul(transpose(dFBdomega), q_B(:,ilambda))
+        call system_clock(toc)
+        print *,"Adjoint chi2_B calculation in solve:",real(toc-tic)/countrate," sec."
      endif
 
      call system_clock(toc)
@@ -235,7 +285,6 @@ subroutine solve
      print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda),",  rms K:",sqrt(chi2_K(ilambda)/area_coil)
   end do
 
-  print *,"Deallocating dynamic memory in solve."
   if (sensitivity_option > 1) then
     deallocate(term1)
     deallocate(term2)
@@ -247,6 +296,9 @@ subroutine solve
     deallocate(adjoint_by)
     deallocate(adjoint_Az)
     deallocate(adjoint_bz)
+    deallocate(dchi2Kdphi)
+    deallocate(dchi2Bdphi)
+    deallocate(adjoint_c)
   endif
 
   deallocate(matrix)

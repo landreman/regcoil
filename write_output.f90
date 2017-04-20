@@ -86,6 +86,7 @@ subroutine write_output
 ! Sensitivity Output
        vn_dchi2Bdomega = "dchi2Bdomega", &
        vn_dchi2Kdomega = "dchi2Kdomega", &
+       vn_dchi2domega = "dchi2domega", &
        vn_f_x = "f_x", &
        vn_f_y = "f_y", &
        vn_f_z = "f_z"
@@ -258,6 +259,7 @@ print *,"Beginning write output."
   if (sensitivity_option > 1) then
     call cdf_define(ncid, vn_dchi2Bdomega, dchi2Bdomega(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
     call cdf_define(ncid, vn_dchi2Kdomega, dchi2Kdomega(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
+    call cdf_define(ncid, vn_dchi2domega, dchi2domega(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
   ! For debugging
     call cdf_define(ncid, vn_f_x, f_x, dimname=nthetanzeta_coil_basis_dim)
     call cdf_define(ncid, vn_f_y, f_y, dimname=nthetanzeta_coil_basis_dim)
@@ -389,6 +391,7 @@ endif
   if (sensitivity_option > 1) then
     call cdf_write(ncid, vn_dchi2Bdomega, dchi2Bdomega(:,1:Nlambda))
     call cdf_write(ncid, vn_dchi2Kdomega, dchi2Kdomega(:,1:Nlambda))
+    call cdf_write(ncid, vn_dchi2domega, dchi2domega(:,1:Nlambda))
     call cdf_write(ncid, vn_f_x, f_x)
     call cdf_write(ncid, vn_f_y, f_y)
     call cdf_write(ncid, vn_f_z, f_z)
