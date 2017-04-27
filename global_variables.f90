@@ -100,6 +100,8 @@ module global_variables
   real(dp), dimension(:,:,:), allocatable :: dnormxdomega, dnormydomega, dnormzdomega
   real(dp), dimension(:,:,:), allocatable :: dAKdomega, dABdomega
   real(dp), dimension(:,:), allocatable :: dchi2domega, dchi2Kdomega, dchi2Bdomega, dbKdomega, dbBdomega
+  real(dp), dimension(:,:,:,:), allocatable :: drdomega
+  real(dp), dimension(:,:,:), allocatable :: dchi2dr_normal
 
 end module global_variables
 

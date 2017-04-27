@@ -114,7 +114,8 @@ subroutine write_output
     vn_dnormzdomega = "dnormzdomega", &
     vn_dfxdomega = "dfxdomega", &
     vn_dfydomega = "dfydomega", &
-    vn_dfzdomega = "dfzdomega"
+    vn_dfzdomega = "dfzdomega", &
+    vn_dchi2dr_normal = "dchi2dr_normal"
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Now create variables that name the dimensions.
@@ -163,8 +164,7 @@ subroutine write_output
          'nzetal_coil'/), &
        nomega_coil_ntheta_times_nzeta_coil_basis_dim = (/character(len=50):: 'nomega_coil', 'ntheta_times_nzeta_coil','num_basis_functions' /)
 
-print *,"Beginning write output."
-  call flush(6)
+  print *,"Beginning write output."
 
   call cdf_open(ncid,outputFilename,'w',ierr)
   IF (ierr .ne. 0) then
@@ -300,6 +300,7 @@ print *,"Beginning write output."
     call cdf_define(ncid, vn_dfxdomega, dfxdomega, dimname=nomega_coil_ntheta_times_nzeta_coil_basis_dim)
     call cdf_define(ncid, vn_dfydomega, dfydomega, dimname=nomega_coil_ntheta_times_nzeta_coil_basis_dim)
     call cdf_define(ncid, vn_dfzdomega, dfzdomega, dimname=nomega_coil_ntheta_times_nzeta_coil_basis_dim)
+    call cdf_define(ncid, vn_dchi2dr_normal, dchi2dr_normal, dimname=ntheta_nzeta_coil_nlambda_dim)
 endif
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
@@ -429,6 +430,7 @@ endif
     call cdf_write(ncid, vn_dfxdomega, dfxdomega)
     call cdf_write(ncid, vn_dfydomega, dfydomega)
     call cdf_write(ncid, vn_dfzdomega, dfzdomega)
+    call cdf_write(ncid, vn_dchi2dr_normal, dchi2dr_normal)
   endif
 
   ! Finish up:

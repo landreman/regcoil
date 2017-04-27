@@ -18,9 +18,11 @@ subroutine free_sensitivity()
   deallocate(dnormxdomega)
   deallocate(dnormydomega)
   deallocate(dnormzdomega)
-  deallocate(dAKdomega)
-  deallocate(dABdomega)
-  deallocate(dbKdomega)
-  deallocate(dbBdomega)
+  if (sensitivity_option == 3) then
+    deallocate(dAKdomega)
+    deallocate(dABdomega)
+    deallocate(dbKdomega)
+    deallocate(dbBdomega)
+  endif
 
 end subroutine free_sensitivity

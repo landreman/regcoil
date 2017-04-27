@@ -41,7 +41,6 @@ program regcoil
   select case (general_option)
   case (1)
      print *,"Case 1."
-     call flush(6)
      call solve()
   case (2)
      call compute_diagnostics_for_nescout_potential()
@@ -57,13 +56,17 @@ program regcoil
   call system_clock(toc)
   totalTime = real(toc-tic)/countrate
 
-  call write_output()
+  if (sensitivity_option > 1) then
+    call normal_displacement()
+  endif
 
-  print *,"REGCOIL complete. Total time=",totalTime,"sec."
-  print *,"You can run regcoilPlot ",trim(outputFilename)," to plot results."
+  call write_output()
 
   if (sensitivity_option > 1) then
     call free_sensitivity()
   endif
+
+  print *,"REGCOIL complete. Total time=",totalTime,"sec."
+  print *,"You can run regcoilPlot ",trim(outputFilename)," to plot results."
 
 end program regcoil
