@@ -300,7 +300,7 @@ subroutine write_output
     call cdf_define(ncid, vn_dfxdomega, dfxdomega, dimname=nomega_coil_ntheta_times_nzeta_coil_basis_dim)
     call cdf_define(ncid, vn_dfydomega, dfydomega, dimname=nomega_coil_ntheta_times_nzeta_coil_basis_dim)
     call cdf_define(ncid, vn_dfzdomega, dfzdomega, dimname=nomega_coil_ntheta_times_nzeta_coil_basis_dim)
-    call cdf_define(ncid, vn_dchi2dr_normal, dchi2dr_normal, dimname=ntheta_nzeta_coil_nlambda_dim)
+    !call cdf_define(ncid, vn_dchi2dr_normal, dchi2dr_normal, dimname=ntheta_nzeta_coil_nlambda_dim)
 endif
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
@@ -430,13 +430,12 @@ endif
     call cdf_write(ncid, vn_dfxdomega, dfxdomega)
     call cdf_write(ncid, vn_dfydomega, dfydomega)
     call cdf_write(ncid, vn_dfzdomega, dfzdomega)
-    call cdf_write(ncid, vn_dchi2dr_normal, dchi2dr_normal)
+    !call cdf_write(ncid, vn_dchi2dr_normal, dchi2dr_normal)
   endif
 
   ! Finish up:
   call cdf_close(ncid)
 
   print *,"Write output complete."
-  call flush(6)
 
 end subroutine write_output

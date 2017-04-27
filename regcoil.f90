@@ -56,10 +56,6 @@ program regcoil
   call system_clock(toc)
   totalTime = real(toc-tic)/countrate
 
-  if (sensitivity_option > 1) then
-    call normal_displacement()
-  endif
-
   call write_output()
 
   if (sensitivity_option > 1) then
