@@ -85,7 +85,7 @@ subroutine solve
     allocate(dBnormaldomega(ntheta_plasma,nzeta_plasma),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
   endif
-  if (sensitivity_option == 3) then 
+  if (sensitivity_option == 3) then
     allocate(dchi2Kdphi(num_basis_functions,1),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(dchi2Bdphi(num_basis_functions,1),stat=iflag)
@@ -181,9 +181,9 @@ subroutine solve
        ! f_x(ntheta_coil*nzeta_coil, num_basis_functions)
        ! norm_normal_coil(ntheta_coil,nzeta_coil)
        do iomega = 1, nomega_coil
-         dKDifferencedomega(1,:) = dddomega(1,iomega,:)-matmul(dfxdomega(iomega,:,:), solution)
-         dKDifferencedomega(2,:) = dddomega(2,iomega,:)-matmul(dfydomega(iomega,:,:), solution)
-         dKDifferencedomega(3,:) = dddomega(3,iomega,:)-matmul(dfzdomega(iomega,:,:), solution)
+         dKDifferencedomega(1,:) = dddomega(1,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfxdomega(iomega,:,:), solution)
+         dKDifferencedomega(2,:) = dddomega(2,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfydomega(iomega,:,:), solution)
+         dKDifferencedomega(3,:) = dddomega(3,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfzdomega(iomega,:,:), solution)
          term1(:,:) = -dnorm_normaldomega(iomega,:,:)*this_K2_times_N/norm_normal_coil
          term2(:,:) = reshape(KDifference_x*dKDifferencedomega(1,:) + KDifference_y*dKDifferencedomega(2,:) &
            + KDifference_z*dKDifferencedomega(3,:),(/ ntheta_coil, nzeta_coil/))*(2/norm_normal_coil)

@@ -3,30 +3,23 @@ subroutine init_sensitivity()
   use global_variables
   use stel_constants
   use init_Fourier_modes_mod
-  use omp_lib
+  !use omp_lib
 
   implicit none
 
-  integer :: iomega, iflag, minSymmetry, maxSymmetry, offset, whichSymmetry, tic, toc, countrate, j_basis
-  real(dp), dimension(:,:), allocatable :: dinductancednorm, dinductancedr
+  integer :: iomega, iflag, minSymmetry, maxSymmetry, offset, whichSymmetry, tic, toc, countrate, j_basis, indexl_coil
 
-  real(dp) :: angle, angle2, sinangle, cosangle, sinangle_xn, sinangle_xm, cosangle_xn, cosangle_xm
-  real(dp) :: sinangle2, cosangle2, dr_dot_norm_coil, dr_dot_norm_plasma, norm_plasma_dot_norm_coil
+  real(dp) :: angle, angle2, sinangle, cosangle
+  real(dp) :: sinangle2, cosangle2
   real(dp) :: dxdtheta, dxdzeta, dydtheta, dydzeta, dzdtheta, dzdzeta
   integer :: izeta_plasma, itheta_plasma, izeta_coil, itheta_coil
-  integer :: index_coil, l_coil, izetal_coil, index_plasma, imn_coil
-  real(dp) :: x, y, z, dx, dy, dz, dr2inv, dr32inv, dr52inv
-  real(dp) :: angle_coil, sinangle_coil, cosangle_coil
+  integer :: index_coil, l_coil, izetal_coil, index_plasma
+
   real(dp), dimension(:,:), allocatable :: Afactorx, Afactory, Afactorz, Afactor
   real(dp), dimension(:,:), allocatable :: bfactorx, bfactory, bfactorz
   real(dp), dimension(:), allocatable :: norm_normal_coil_inv1D
   real(dp), dimension(:), allocatable :: norm_normal_plasma_inv1D
   real(dp), dimension(:,:), allocatable :: dnorm_normaldomega2D
-
-  ! Variables needed by BLAS DGEMM:
-  character :: TRANSA, TRANSB
-  integer :: M, N, K, LDA, LDB, LDC
-  real(dp) :: BLAS_ALPHA=1, BLAS_BETA=0
 
   ! Initialize Fourier arrays - need to include m = 0, n = 0 mode
   call init_Fourier_modes_sensitivity(mmax_sensitivity, nmax_sensitivity, mnmax_sensitivity, nomega_coil, &
@@ -34,16 +27,9 @@ subroutine init_sensitivity()
 
   allocate(drdomega(3,ntheta_coil*nzeta_coil,nfp,nomega_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dinductancednorm(3,nfp),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dinductancedr(3,nfp),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dinductancedomega(nomega_coil, ntheta_plasma*nzeta_plasma, &
-  ntheta_coil*nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dnorm_normaldomega(nomega_coil,ntheta_coil,nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dddomega(3, nomega_coil,ntheta_coil*nzeta_coil),stat=iflag)
+  allocate(dddomega(3, nomega_coil,ntheta_coil*nzetal_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dnormxdomega(nomega_coil,ntheta_coil*nzeta_coil,nfp),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
@@ -105,10 +91,6 @@ subroutine init_sensitivity()
         cosangle2 = cos(angle2)
 
         do iomega = 1,nomega_coil
-
-          ! For Fourier decomposition of surface, need to index using izetal_coil
-          ! We are differentiating something that is not n_p periodic and summing over nfp,
-          ! so need to index by izetal_coil
           ! Same convention for angle as used by nescin input file
           angle = xm_sensitivity(iomega)*theta_coil(itheta_coil) + nfp*xn_sensitivity(iomega)*zetal_coil(izetal_coil)
           sinangle = sin(angle)
@@ -191,94 +173,94 @@ subroutine init_sensitivity()
   call system_clock(toc)
   print *,"Loop over coil geom in init_sensitivity:",real(toc-tic)/countrate," sec."
 
-  call system_clock(tic,countrate)
+!  call system_clock(tic,countrate)
+!
+!  !$OMP PARALLEL
+!  !$OMP MASTER
+!  print *,"  Number of OpenMP threads:",omp_get_num_threads()
+!  !$OMP END MASTER
+!  !$OMP DO PRIVATE(itheta_plasma,index_plasma,x,y,z,izeta_coil,itheta_coil,index_coil,l_coil,izetal_coil,angle2,sinangle2,cosangle2,dx,dy,dz,dr2inv,dr32inv,dr52inv,dr_dot_norm_coil,dr_dot_norm_plasma,norm_plasma_dot_norm_coil,dinductancedr,dinductancednorm)
+!  do izeta_plasma = 1, nzeta_plasma
+!    do itheta_plasma = 1, ntheta_plasma
+!      index_plasma = (izeta_plasma-1)*ntheta_plasma + itheta_plasma
+!      x = r_plasma(1,itheta_plasma,izeta_plasma)
+!      y = r_plasma(2,itheta_plasma,izeta_plasma)
+!      z = r_plasma(3,itheta_plasma,izeta_plasma)
+!      do izeta_coil = 1,nzeta_coil
+!        do itheta_coil = 1,ntheta_coil
+!          index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
+!          do l_coil = 0, (nfp-1)
+!            izetal_coil = izeta_coil + l_coil*nzeta_coil
+!
+!            angle2 = zetal_coil(izetal_coil)
+!            sinangle2 = sin(angle2)
+!            cosangle2 = cos(angle2)
+!
+!            dx = x - r_coil(1,itheta_coil,izetal_coil)
+!            dy = y - r_coil(2,itheta_coil,izetal_coil)
+!            dz = z - r_coil(3,itheta_coil,izetal_coil)
+!
+!            dr2inv = 1/(dx*dx + dy*dy + dz*dz)
+!            dr32inv = dr2inv*sqrt(dr2inv)
+!            dr52inv = dr2inv*dr32inv
+!
+!            dr_dot_norm_coil = dx*normal_coil(1,itheta_coil,izetal_coil) &
+!              + dy*normal_coil(2,itheta_coil,izetal_coil) + dz*normal_coil(3,itheta_coil,izetal_coil)
+!            dr_dot_norm_plasma = dx*normal_plasma(1,itheta_plasma,izeta_plasma) &
+!              + dy*normal_plasma(2,itheta_plasma,izeta_plasma) + dz*normal_plasma(3, itheta_plasma,izeta_plasma)
+!            norm_plasma_dot_norm_coil = normal_plasma(1,itheta_plasma,izeta_plasma) &
+!              *normal_coil(1,itheta_coil,izetal_coil) + normal_plasma(2,itheta_plasma,izeta_plasma) &
+!              *normal_coil(2,itheta_coil,izetal_coil) + normal_plasma(3,itheta_plasma,izeta_plasma) &
+!              *normal_coil(3,itheta_coil,izetal_coil)
+!
+!            dinductancedr(1,l_coil+1) = (3*dx*norm_plasma_dot_norm_coil &
+!              - 15*dx*dr2inv*dr_dot_norm_coil*dr_dot_norm_plasma &
+!              + 3*(normal_plasma(1,itheta_plasma,izeta_plasma)*dr_dot_norm_coil &
+!              + normal_coil(1,itheta_coil,izetal_coil)*dr_dot_norm_plasma))*(dr52inv*mu0/(4*pi))
+!            dinductancedr(2,l_coil+1) = (3*dy*norm_plasma_dot_norm_coil &
+!              - 15*dy*dr2inv*dr_dot_norm_coil*dr_dot_norm_plasma &
+!              + 3*(normal_plasma(2,itheta_plasma,izeta_plasma)*dr_dot_norm_coil &
+!              + normal_coil(2,itheta_coil,izetal_coil)*dr_dot_norm_plasma))*(dr52inv*mu0/(4*pi))
+!            dinductancedr(3,l_coil+1) = (3*dz*norm_plasma_dot_norm_coil &
+!              - 15*dz*dr2inv*dr_dot_norm_coil*dr_dot_norm_plasma &
+!              + 3*(normal_plasma(3,itheta_plasma,izeta_plasma)*dr_dot_norm_coil &
+!              + normal_coil(3,itheta_coil,izetal_coil)*dr_dot_norm_plasma))*(dr52inv*mu0/(4*pi))
+!
+!            dinductancednorm(1,l_coil+1) = (normal_plasma(1,itheta_plasma,izeta_plasma) &
+!              - 3*dr2inv*dr_dot_norm_plasma*dx)*(dr32inv*mu0/(4*pi))
+!            dinductancednorm(2,l_coil+1) = (normal_plasma(2,itheta_plasma,izeta_plasma) &
+!              - 3*dr2inv*dr_dot_norm_plasma*dy)*(dr32inv*mu0/(4*pi))
+!            dinductancednorm(3,l_coil+1) = (normal_plasma(3,itheta_plasma,izeta_plasma) &
+!              - 3*dr2inv*dr_dot_norm_plasma*dz)*(dr32inv*mu0/(4*pi))
+!
+!            dinductancedomega(:,index_plasma,index_coil) = &
+!                dinductancedomega(:,index_plasma,index_coil) &
+!              + dinductancednorm(1,l_coil+1)*dnormxdomega(:,index_coil,l_coil+1) &
+!              + dinductancednorm(2,l_coil+1)*dnormydomega(:,index_coil,l_coil+1) &
+!              + dinductancednorm(3,l_coil+1)*dnormzdomega(:,index_coil,l_coil+1) &
+!              + dinductancedr(1,l_coil+1)*drdomega(1,index_coil,l_coil+1,:) &
+!              + dinductancedr(2,l_coil+1)*drdomega(2,index_coil,l_coil+1,:) &
+!              + dinductancedr(3,l_coil+1)*drdomega(3,index_coil,l_coil+1,:)
+!          end do
+!          ! Using matmuls seems to be about twice as slow
+!          !dinductancedomega(:,index_plasma,index_coil) = &
+!           !   matmul(dnormxdomega(:, index_coil,:),dinductancednorm(1,:)) &
+!           ! + matmul(dnormydomega(:, index_coil,:),dinductancednorm(2,:)) &
+!           ! + matmul(dnormzdomega(:, index_coil,:),dinductancednorm(3,:)) &
+!           ! + matmul(dinductancedr(1,:),drdomega(1,index_coil,:,:)) &
+!           ! + matmul(dinductancedr(2,:),drdomega(2,index_coil,:,:)) &
+!           ! + matmul(dinductancedr(3,:),drdomega(3,index_coil,:,:))
+!        end do
+!      end do
+!    end do
+!  end do
+!  !$OMP END DO
+!  !$OMP END PARALLEL
 
-  !$OMP PARALLEL
-  !$OMP MASTER
-  print *,"  Number of OpenMP threads:",omp_get_num_threads()
-  !$OMP END MASTER
-  !$OMP DO PRIVATE(itheta_plasma,index_plasma,x,y,z,izeta_coil,itheta_coil,index_coil,l_coil,izetal_coil,angle2,sinangle2,cosangle2,dx,dy,dz,dr2inv,dr32inv,dr52inv,dr_dot_norm_coil,dr_dot_norm_plasma,norm_plasma_dot_norm_coil,dinductancedr,dinductancednorm)
-  do izeta_plasma = 1, nzeta_plasma
-    do itheta_plasma = 1, ntheta_plasma
-      index_plasma = (izeta_plasma-1)*ntheta_plasma + itheta_plasma
-      x = r_plasma(1,itheta_plasma,izeta_plasma)
-      y = r_plasma(2,itheta_plasma,izeta_plasma)
-      z = r_plasma(3,itheta_plasma,izeta_plasma)
-      do izeta_coil = 1,nzeta_coil
-        do itheta_coil = 1,ntheta_coil
-          index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
-          do l_coil = 0, (nfp-1)
-            izetal_coil = izeta_coil + l_coil*nzeta_coil
-
-            angle2 = zetal_coil(izetal_coil)
-            sinangle2 = sin(angle2)
-            cosangle2 = cos(angle2)
-
-            dx = x - r_coil(1,itheta_coil,izetal_coil)
-            dy = y - r_coil(2,itheta_coil,izetal_coil)
-            dz = z - r_coil(3,itheta_coil,izetal_coil)
-
-            dr2inv = 1/(dx*dx + dy*dy + dz*dz)
-            dr32inv = dr2inv*sqrt(dr2inv)
-            dr52inv = dr2inv*dr32inv
-
-            dr_dot_norm_coil = dx*normal_coil(1,itheta_coil,izetal_coil) &
-              + dy*normal_coil(2,itheta_coil,izetal_coil) + dz*normal_coil(3,itheta_coil,izetal_coil)
-            dr_dot_norm_plasma = dx*normal_plasma(1,itheta_plasma,izeta_plasma) &
-              + dy*normal_plasma(2,itheta_plasma,izeta_plasma) + dz*normal_plasma(3, itheta_plasma,izeta_plasma)
-            norm_plasma_dot_norm_coil = normal_plasma(1,itheta_plasma,izeta_plasma) &
-              *normal_coil(1,itheta_coil,izetal_coil) + normal_plasma(2,itheta_plasma,izeta_plasma) &
-              *normal_coil(2,itheta_coil,izetal_coil) + normal_plasma(3,itheta_plasma,izeta_plasma) &
-              *normal_coil(3,itheta_coil,izetal_coil)
-
-            dinductancedr(1,l_coil+1) = (3*dx*norm_plasma_dot_norm_coil &
-              - 15*dx*dr2inv*dr_dot_norm_coil*dr_dot_norm_plasma &
-              + 3*(normal_plasma(1,itheta_plasma,izeta_plasma)*dr_dot_norm_coil &
-              + normal_coil(1,itheta_coil,izetal_coil)*dr_dot_norm_plasma))*(dr52inv*mu0/(4*pi))
-            dinductancedr(2,l_coil+1) = (3*dy*norm_plasma_dot_norm_coil &
-              - 15*dy*dr2inv*dr_dot_norm_coil*dr_dot_norm_plasma &
-              + 3*(normal_plasma(2,itheta_plasma,izeta_plasma)*dr_dot_norm_coil &
-              + normal_coil(2,itheta_coil,izetal_coil)*dr_dot_norm_plasma))*(dr52inv*mu0/(4*pi))
-            dinductancedr(3,l_coil+1) = (3*dz*norm_plasma_dot_norm_coil &
-              - 15*dz*dr2inv*dr_dot_norm_coil*dr_dot_norm_plasma &
-              + 3*(normal_plasma(3,itheta_plasma,izeta_plasma)*dr_dot_norm_coil &
-              + normal_coil(3,itheta_coil,izetal_coil)*dr_dot_norm_plasma))*(dr52inv*mu0/(4*pi))
-
-            dinductancednorm(1,l_coil+1) = (normal_plasma(1,itheta_plasma,izeta_plasma) &
-              - 3*dr2inv*dr_dot_norm_plasma*dx)*(dr32inv*mu0/(4*pi))
-            dinductancednorm(2,l_coil+1) = (normal_plasma(2,itheta_plasma,izeta_plasma) &
-              - 3*dr2inv*dr_dot_norm_plasma*dy)*(dr32inv*mu0/(4*pi))
-            dinductancednorm(3,l_coil+1) = (normal_plasma(3,itheta_plasma,izeta_plasma) &
-              - 3*dr2inv*dr_dot_norm_plasma*dz)*(dr32inv*mu0/(4*pi))
-
-            dinductancedomega(:,index_plasma,index_coil) = &
-                dinductancedomega(:,index_plasma,index_coil) &
-              + dinductancednorm(1,l_coil+1)*dnormxdomega(:,index_coil,l_coil+1) &
-              + dinductancednorm(2,l_coil+1)*dnormydomega(:,index_coil,l_coil+1) &
-              + dinductancednorm(3,l_coil+1)*dnormzdomega(:,index_coil,l_coil+1) &
-              + dinductancedr(1,l_coil+1)*drdomega(1,index_coil,l_coil+1,:) &
-              + dinductancedr(2,l_coil+1)*drdomega(2,index_coil,l_coil+1,:) &
-              + dinductancedr(3,l_coil+1)*drdomega(3,index_coil,l_coil+1,:)
-          end do
-          ! Using matmuls seems to be about twice as slow
-          !dinductancedomega(:,index_plasma,index_coil) = &
-           !   matmul(dnormxdomega(:, index_coil,:),dinductancednorm(1,:)) &
-           ! + matmul(dnormydomega(:, index_coil,:),dinductancednorm(2,:)) &
-           ! + matmul(dnormzdomega(:, index_coil,:),dinductancednorm(3,:)) &
-           ! + matmul(dinductancedr(1,:),drdomega(1,index_coil,:,:)) &
-           ! + matmul(dinductancedr(2,:),drdomega(2,index_coil,:,:)) &
-           ! + matmul(dinductancedr(3,:),drdomega(3,index_coil,:,:))
-        end do
-      end do
-    end do
-  end do
-  !$OMP END DO
-  !$OMP END PARALLEL
-
-  call system_clock(toc)
-  print *,"Inductance sensitivity loop in init_sensitivity:",real(toc-tic)/countrate," sec."
-
-  call system_clock(tic,countrate)
+!  call system_clock(toc)
+!  print *,"Inductance sensitivity loop in init_sensitivity:",real(toc-tic)/countrate," sec."
+!
+!  call system_clock(tic,countrate)
 
   ! Now need to multiply dinductancedomega by basis_functions to compute sensitivity of g_j
   ! dincutancedomega(nomega_coil, ntheta_plasma*nzeta_plasma, ntheta_coil*nzeta_coil)
@@ -319,18 +301,20 @@ subroutine init_sensitivity()
   do izeta_coil = 1, nzeta_coil
     do itheta_coil = 1, ntheta_coil
       index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
-      do iomega = 1,nomega_coil
-        dnorm_normaldomega(iomega,itheta_coil,izeta_coil) = &
-           (normal_coil(1, itheta_coil, izeta_coil)*dnormxdomega(iomega,index_coil,1) &
-          + normal_coil(2, itheta_coil, izeta_coil)*dnormydomega(iomega,index_coil,1) &
-          + normal_coil(3, itheta_coil, izeta_coil)*dnormzdomega(iomega,index_coil,1)) &
-            /norm_normal_coil(itheta_coil,izeta_coil)
-        dddomega(1, iomega, index_coil) = (net_poloidal_current_Amperes*domegadxdtheta(iomega,itheta_coil,izeta_coil) &
-          - net_toroidal_current_Amperes*domegadxdzeta(iomega,itheta_coil,izeta_coil))/twopi
-        dddomega(2, iomega, index_coil) = (net_poloidal_current_Amperes*domegadydtheta(iomega,itheta_coil,izeta_coil) &
-          - net_toroidal_current_Amperes*domegadydzeta(iomega,itheta_coil,izeta_coil))/twopi
-        dddomega(3, iomega, index_coil) = (net_poloidal_current_Amperes*domegadzdtheta(iomega,itheta_coil,izeta_coil) &
-          - net_toroidal_current_Amperes*domegadzdzeta(iomega,itheta_coil,izeta_coil))/twopi
+        do l_coil = 0, (nfp-1)
+          izetal_coil = izeta_coil + l_coil*nzeta_coil
+          indexl_coil = (izetal_coil-1)*ntheta_coil + itheta_coil
+          dnorm_normaldomega(:,itheta_coil,izeta_coil) = &
+             (normal_coil(1, itheta_coil, izeta_coil)*dnormxdomega(:,index_coil,1) &
+            + normal_coil(2, itheta_coil, izeta_coil)*dnormydomega(:,index_coil,1) &
+            + normal_coil(3, itheta_coil, izeta_coil)*dnormzdomega(:,index_coil,1)) &
+              /norm_normal_coil(itheta_coil,izeta_coil)
+          dddomega(1, :, indexl_coil) = (net_poloidal_current_Amperes*domegadxdtheta(:,itheta_coil,izetal_coil) &
+            - net_toroidal_current_Amperes*domegadxdzeta(:,itheta_coil,izetal_coil))/twopi
+          dddomega(2, :, indexl_coil) = (net_poloidal_current_Amperes*domegadydtheta(:,itheta_coil,izetal_coil) &
+            - net_toroidal_current_Amperes*domegadydzeta(:,itheta_coil,izetal_coil))/twopi
+          dddomega(3, :, indexl_coil) = (net_poloidal_current_Amperes*domegadzdtheta(:,itheta_coil,izetal_coil) &
+            - net_toroidal_current_Amperes*domegadzdzeta(:,itheta_coil,izetal_coil))/twopi
       enddo
     enddo
   enddo
@@ -406,17 +390,6 @@ subroutine init_sensitivity()
 
   if (sensitivity_option == 3) then
     call system_clock(tic,countrate)
-
-    ! Compute matrices needed for dFKdomega
-    ! dfxdomega(nomega_coil, ntheta_coil*nzeta_coil, num_basis_functions)
-    ! dnorm_normaldrmnc(nomega_coil,ntheta_coil,nzeta_coil)
-    ! f_x(ntheta_coil*nzeta_coil, num_basis_functions)
-    ! norm_normal(ntheta_coil, nzeta_coil)
-    ! dAKdrmnc(num_basis_functions,num_basis_functions,nomega_coil)
-    ! Afactorx(ntheta*nzeta, num_basis_functions)
-    ! dddrmnc(3, nomega_coil,ntheta_coil*nzeta_coil)
-    ! d_x(ntheta_coil*nzeta_coil)
-    ! bfactorx(ntheta_coil*nzeta_coil, num_basis_functions)
     norm_normal_coil_inv1D   = reshape(1/norm_normal_coil,   (/ ntheta_coil*nzeta_coil /))
     do iomega = 1, nomega_coil
       dAKdomega(:,:,iomega) = dtheta_coil*dzeta_coil*(2*(matmul(transpose(f_x), dfxdomega(iomega,:,:)) &
@@ -448,9 +421,6 @@ subroutine init_sensitivity()
 
     call system_clock(tic,countrate)
 
-    ! Compute matrices needed for dFBdomega
-    ! g(ntheta_plasma*nzeta_plasma, num_basis_functions)
-    ! dgdrmnc(nomega_coil, ntheta_plasma*nzeta_plasma, num_basis_functions)
     norm_normal_plasma_inv1D   = reshape(1/norm_normal_plasma,   (/ ntheta_plasma*nzeta_plasma /))
     do iomega = 1, nomega_coil
       do j_basis = 1, num_basis_functions
@@ -465,8 +435,6 @@ subroutine init_sensitivity()
     print *,"Computing matrices for dFBdomega: ",real(toc-tic)/countrate," sec."
   endif
 
-  deallocate(dinductancednorm)
-  deallocate(dinductancedr)
   if (sensitivity_option == 3) then
     deallocate(Afactorx)
     deallocate(Afactory)

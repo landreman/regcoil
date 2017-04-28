@@ -103,6 +103,7 @@ module global_variables
   real(dp), dimension(:,:,:,:), allocatable :: drdomega
   real(dp), dimension(:,:,:), allocatable :: domegadxdtheta, domegadxdzeta, domegadydtheta, domegadydzeta
   real(dp), dimension(:,:,:), allocatable :: domegadzdtheta, domegadzdzeta
+  real(dp), dimension(:,:), allocatable :: dhdomega
 
 end module global_variables
 
