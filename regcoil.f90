@@ -27,7 +27,6 @@ program regcoil
 
   ! Initialize some of the vectors and matrices needed:
   call read_bnorm()
-  call build_matrices()
 
   !Initialize sensitivity arrays
   if (sensitivity_option > 1) then
@@ -37,6 +36,8 @@ program regcoil
       call init_sensitivity()
     end select
   endif
+
+  call build_matrices()
 
   select case (general_option)
   case (1)

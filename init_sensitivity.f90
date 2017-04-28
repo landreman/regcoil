@@ -10,7 +10,7 @@ subroutine init_sensitivity()
   integer :: iomega, iflag, minSymmetry, maxSymmetry, offset, whichSymmetry, tic, toc, countrate, j_basis
   real(dp), dimension(:,:), allocatable :: dinductancednorm, dinductancedr
 
-  real(dp) :: angle, angle2, sinangle, cosangle
+  real(dp) :: angle, angle2, sinangle, cosangle, sinangle_xn, sinangle_xm, cosangle_xn, cosangle_xm
   real(dp) :: sinangle2, cosangle2, dr_dot_norm_coil, dr_dot_norm_plasma, norm_plasma_dot_norm_coil
   real(dp) :: dxdtheta, dxdzeta, dydtheta, dydzeta, dzdtheta, dzdzeta
   integer :: izeta_plasma, itheta_plasma, izeta_coil, itheta_coil
@@ -45,19 +45,11 @@ subroutine init_sensitivity()
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dddomega(3, nomega_coil,ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dgdomega(nomega_coil, ntheta_plasma*nzeta_plasma, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dnormxdomega(nomega_coil,ntheta_coil*nzeta_coil,nfp),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dnormydomega(nomega_coil,ntheta_coil*nzeta_coil,nfp),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dnormzdomega(nomega_coil,ntheta_coil*nzeta_coil,nfp),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dfxdomega(nomega_coil, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dfydomega(nomega_coil, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dfzdomega(nomega_coil, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(domegadxdtheta(nomega_coil,ntheta_coil,nzetal_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
@@ -293,100 +285,124 @@ subroutine init_sensitivity()
   ! basis_functions(ntheta_coil*nzeta_coil, num_basis_functions)
   ! dgdomega(nomega_coil, ntheta_plasma*nzeta_plasma, num_basis_functions)
 
-  ! Now we need to compute dgd(...) = dinductanced(...)*basis_functions
-  M = ntheta_plasma*nzeta_plasma ! # rows of A
-  N = num_basis_functions ! # cols of B
-  K = ntheta_coil*nzeta_coil ! Common dimension of A and B
-  LDA = M
-  LDB = K
-  LDC = M
-  TRANSA = 'N' ! No transposes
-  TRANSB = 'N'
-  BLAS_ALPHA=dtheta_coil*dzeta_coil
-  BLAS_BETA=0
-  dgdomega = 0
-
-  do iomega = 1, nomega_coil
-    !dgdomega(iomega,:,:) = dtheta_coil*dzeta_coil*matmul(dinductancedomega(iomega,:,:), basis_functions)
-    call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedomega(iomega,:,:),LDA,basis_functions,LDB,BLAS_BETA,dgdomega(iomega,:,:),LDC)
-  enddo
-
-  call system_clock(toc)
-  print *,"loop with DGEMM for g sensitivity: ",real(toc-tic)/countrate," sec."
-
-  ! Computing quantities needed chi2_K sensitivity
-  ! Partial derivatives of d, f, and N' computed
+!  ! Now we need to compute dgd(...) = dinductanced(...)*basis_functions
+!  M = ntheta_plasma*nzeta_plasma ! # rows of A
+!  N = num_basis_functions ! # cols of B
+!  K = ntheta_coil*nzeta_coil ! Common dimension of A and B
+!  LDA = M
+!  LDB = K
+!  LDC = M
+!  TRANSA = 'N' ! No transposes
+!  TRANSB = 'N'
+!  BLAS_ALPHA=dtheta_coil*dzeta_coil
+!  BLAS_BETA=0
+!  dgdomega = 0
+!
+!  !$OMP PARALLEL
+!  !$OMP MASTER
+!  print *,"  Number of OpenMP threads:",omp_get_num_threads()
+!  !$OMP END MASTER
+!  !$OMP DO
+!  do iomega = 1, nomega_coil
+!    ! With matmuls is about 10x slower so commenting out
+!    !dgdomega(iomega,:,:) = dtheta_coil*dzeta_coil*matmul(dinductancedomega(iomega,:,:), basis_functions)
+!    call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedomega(iomega,:,:),LDA,basis_functions,LDB,BLAS_BETA,dgdomega(iomega,:,:),LDC)
+!  enddo
+!  !$OMP END DO
+!  !$OMP END PARALLEL
+!
+!  call system_clock(toc)
+!  print *,"loop with DGEMM for g sensitivity: ",real(toc-tic)/countrate," sec."
 
   call system_clock(tic,countrate)
-
-  ! Needed for computing sensitivity of f
-  select case (symmetry_option)
-  case (1)
-    minSymmetry = 1
-    maxSymmetry = 1
-  case (2)
-    minSymmetry = 2
-    maxSymmetry = 2
-  case (3)
-    minSymmetry = 1
-    maxSymmetry = 2
-  end select
 
   do izeta_coil = 1, nzeta_coil
     do itheta_coil = 1, ntheta_coil
       index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
       do iomega = 1,nomega_coil
-
-        ! Here the sensitivity is l_coil periodic - indexed by izeta_coil
         dnorm_normaldomega(iomega,itheta_coil,izeta_coil) = &
            (normal_coil(1, itheta_coil, izeta_coil)*dnormxdomega(iomega,index_coil,1) &
           + normal_coil(2, itheta_coil, izeta_coil)*dnormydomega(iomega,index_coil,1) &
           + normal_coil(3, itheta_coil, izeta_coil)*dnormzdomega(iomega,index_coil,1)) &
             /norm_normal_coil(itheta_coil,izeta_coil)
-
         dddomega(1, iomega, index_coil) = (net_poloidal_current_Amperes*domegadxdtheta(iomega,itheta_coil,izeta_coil) &
           - net_toroidal_current_Amperes*domegadxdzeta(iomega,itheta_coil,izeta_coil))/twopi
         dddomega(2, iomega, index_coil) = (net_poloidal_current_Amperes*domegadydtheta(iomega,itheta_coil,izeta_coil) &
           - net_toroidal_current_Amperes*domegadydzeta(iomega,itheta_coil,izeta_coil))/twopi
         dddomega(3, iomega, index_coil) = (net_poloidal_current_Amperes*domegadzdtheta(iomega,itheta_coil,izeta_coil) &
           - net_toroidal_current_Amperes*domegadzdzeta(iomega,itheta_coil,izeta_coil))/twopi
-
-        do whichSymmetry = minSymmetry, maxSymmetry
-
-          if (whichSymmetry==2 .and. symmetry_option==3) then
-            offset = mnmax_coil
-          else
-            offset = 0
-          end if
-
-          do imn_coil = 1, mnmax_coil
-
-            angle_coil = xm_coil(imn_coil)*theta_coil(itheta_coil) - xn_coil(imn_coil)*zeta_coil(izeta_coil)
-            cosangle_coil = cos(angle_coil)
-            sinangle_coil = sin(angle_coil)
-            if (whichSymmetry==1) then
-              dfxdomega(iomega, index_coil,imn_coil) = cosangle_coil*(xn_coil(imn_coil)*domegadxdtheta(iomega,itheta_coil,izeta_coil) &
-                + xm_coil(imn_coil)*domegadxdzeta(iomega,itheta_coil,izeta_coil))
-              dfydomega(iomega, index_coil,imn_coil) = cosangle_coil*(xn_coil(imn_coil)*domegadydtheta(iomega,itheta_coil,izeta_coil) &
-                + xm_coil(imn_coil)*domegadydzeta(iomega,itheta_coil,izeta_coil))
-              dfzdomega(iomega, index_coil,imn_coil) = cosangle_coil*(xn_coil(imn_coil)*domegadzdtheta(iomega,itheta_coil,izeta_coil) &
-                + xm_coil(imn_coil)*domegadzdzeta(iomega,itheta_coil,izeta_coil))
-            else
-              dfxdomega(iomega, index_coil,imn_coil+offset) = -sinangle_coil*(xn_coil(imn_coil)*domegadxdtheta(iomega,itheta_coil,izeta_coil) &
-                + xm_coil(imn_coil)*domegadxdzeta(iomega,itheta_coil,izeta_coil))
-              dfydomega(iomega, index_coil,imn_coil+offset) = -sinangle_coil*(xn_coil(imn_coil)*domegadydtheta(iomega,itheta_coil,izeta_coil) &
-                + xm_coil(imn_coil)*domegadydzeta(iomega,itheta_coil,izeta_coil))
-              dfzdomega(iomega, index_coil,imn_coil+offset) = -sinangle_coil*(xn_coil(imn_coil)*domegadzdtheta(iomega,itheta_coil,izeta_coil) &
-                + xm_coil(imn_coil)*domegadzdzeta(iomega,itheta_coil,izeta_coil))
-            end if
-          enddo
-        enddo
       enddo
     enddo
   enddo
-
   call system_clock(toc)
-  print *,"Main chi2_K sensitivity loop in init_sensitivity: ",real(toc-tic)/countrate," sec."
+  print *,"d sensitivity loop: ",real(toc-tic)/countrate," sec."
+
+!  call system_clock(tic,countrate)
+
+  ! Needed for computing sensitivity of f
+!  select case (symmetry_option)
+!  case (1)
+!    minSymmetry = 1
+!    maxSymmetry = 1
+!  case (2)
+!    minSymmetry = 2
+!    maxSymmetry = 2
+!  case (3)
+!    minSymmetry = 1
+!    maxSymmetry = 2
+!  end select
+!
+!  do izeta_coil = 1, nzeta_coil
+!    do itheta_coil = 1, ntheta_coil
+!      index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
+!      do iomega = 1,nomega_coil
+!
+!        do whichSymmetry = minSymmetry, maxSymmetry
+!
+!          if (whichSymmetry==2 .and. symmetry_option==3) then
+!            offset = mnmax_coil
+!          else
+!            offset = 0
+!          end if
+!
+!          do imn_coil = 1, mnmax_coil
+!
+!            angle_coil = xm_coil(imn_coil)*theta_coil(itheta_coil) - xn_coil(imn_coil)*zeta_coil(izeta_coil)
+!            cosangle_coil = cos(angle_coil)
+!            sinangle_coil = sin(angle_coil)
+!            cosangle_xn = cosangle_coil*xn_coil(imn_coil)
+!            sinangle_xn = sinangle_coil*xn_coil(imn_coil)
+!            cosangle_xm = cosangle_coil*xm_coil(imn_coil)
+!            sinangle_xm = sinangle_coil*xm_coil(imn_coil)
+!            if (whichSymmetry==1) then
+!              dfxdomega(iomega, index_coil,imn_coil) = &
+!                cosangle_xn*domegadxdtheta(iomega,itheta_coil,izeta_coil) &
+!                + cosangle_xm*domegadxdzeta(iomega,itheta_coil,izeta_coil)
+!              dfydomega(iomega, index_coil,imn_coil) = &
+!                cosangle_xn*domegadydtheta(iomega,itheta_coil,izeta_coil) &
+!                + cosangle_xm*domegadydzeta(iomega,itheta_coil,izeta_coil)
+!              dfzdomega(iomega, index_coil,imn_coil) = &
+!                cosangle_xn*domegadzdtheta(iomega,itheta_coil,izeta_coil) &
+!                + cosangle_xm*domegadzdzeta(iomega,itheta_coil,izeta_coil)
+!            else
+!              dfxdomega(iomega, index_coil,imn_coil+offset) = &
+!                -sinangle_xn*domegadxdtheta(iomega,itheta_coil,izeta_coil) &
+!                -sinangle_xm*domegadxdzeta(iomega,itheta_coil,izeta_coil)
+!              dfydomega(iomega, index_coil,imn_coil+offset) = &
+!                -sinangle_xn*domegadydtheta(iomega,itheta_coil,izeta_coil) &
+!                -sinangle_xm*domegadydzeta(iomega,itheta_coil,izeta_coil)
+!              dfzdomega(iomega, index_coil,imn_coil+offset) = &
+!                -sinangle_xn*domegadzdtheta(iomega,itheta_coil,izeta_coil) &
+!                -sinangle_xm*domegadzdzeta(iomega,itheta_coil,izeta_coil)
+!            end if
+!          enddo
+!        enddo
+!      enddo
+!    enddo
+!  enddo
+
+!  call system_clock(toc)
+!  print *,"f sensitivity loop: ",real(toc-tic)/countrate," sec."
 
   if (sensitivity_option == 3) then
     call system_clock(tic,countrate)

@@ -8,8 +8,9 @@ subroutine build_matrices()
   
   implicit none
 
-  integer :: l_coil, itheta_plasma, izeta_plasma, itheta_coil, izeta_coil, izetal_coil
+  integer :: l_coil, itheta_plasma, izeta_plasma, itheta_coil, izeta_coil, izetal_coil,iomega
   real(dp) :: x, y, z, dx, dy, dz, dr2inv, dr32inv
+  real(dp) :: cosangle_xn, cosangle_xm, sinangle_xn, sinangle_xm
   integer :: index_plasma, index_coil, j, imn
   integer :: tic, toc, countrate, iflag
   integer :: minSymmetry, maxSymmetry, whichSymmetry, offset
@@ -58,6 +59,16 @@ subroutine build_matrices()
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(d_z(ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
+  if (sensitivity_option > 1) then
+    allocate(dfxdomega(nomega_coil, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dfydomega(nomega_coil, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dfzdomega(nomega_coil, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dgdomega(nomega_coil, ntheta_plasma*nzeta_plasma, num_basis_functions),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+  endif
 
   d_x = reshape((net_poloidal_current_Amperes * drdtheta_coil(1,:,1:nzeta_coil) - net_toroidal_current_Amperes * drdzeta_coil(1,:,1:nzeta_coil)) / twopi, &
        (/ ntheta_coil*nzeta_coil /))
@@ -97,17 +108,43 @@ subroutine build_matrices()
               angle = xm_coil(imn)*theta_coil(itheta_coil)-xn_coil(imn)*zeta_coil(izeta_coil)
               sinangle = sin(angle)
               cosangle = cos(angle)
+              cosangle_xn = cosangle*xn_coil(imn)
+              sinangle_xn = sinangle*xn_coil(imn)
+              cosangle_xm = cosangle*xm_coil(imn)
+              sinangle_xm = sinangle*xm_coil(imn)
               if (whichSymmetry==1) then
                  basis_functions(index_coil, imn) = sinangle
                  f_x(index_coil, imn) = cosangle*(xn_coil(imn)*drdtheta_coil(1,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(1,itheta_coil,izeta_coil))
                  f_y(index_coil, imn) = cosangle*(xn_coil(imn)*drdtheta_coil(2,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(2,itheta_coil,izeta_coil))
                  f_z(index_coil, imn) = cosangle*(xn_coil(imn)*drdtheta_coil(3,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(3,itheta_coil,izeta_coil))
+                 if (sensitivity_option > 1) then
+                    dfxdomega(:, index_coil,imn) = &
+                      cosangle_xn*domegadxdtheta(:,itheta_coil,izeta_coil) &
+                      + cosangle_xm*domegadxdzeta(:,itheta_coil,izeta_coil)
+                    dfydomega(:, index_coil,imn) = &
+                      cosangle_xn*domegadydtheta(:,itheta_coil,izeta_coil) &
+                      + cosangle_xm*domegadydzeta(:,itheta_coil,izeta_coil)
+                    dfzdomega(:, index_coil,imn) = &
+                      cosangle_xn*domegadzdtheta(:,itheta_coil,izeta_coil) &
+                      + cosangle_xm*domegadzdzeta(:,itheta_coil,izeta_coil)
+                 endif
               else
                  basis_functions(index_coil, imn+offset) = cosangle
                  f_x(index_coil, imn+offset) = -sinangle*(xn_coil(imn)*drdtheta_coil(1,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(1,itheta_coil,izeta_coil))
                  f_y(index_coil, imn+offset) = -sinangle*(xn_coil(imn)*drdtheta_coil(2,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(2,itheta_coil,izeta_coil))
                  f_z(index_coil, imn+offset) = -sinangle*(xn_coil(imn)*drdtheta_coil(3,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(3,itheta_coil,izeta_coil))
               end if
+                if (sensitivity_option > 1) then
+                  dfxdomega(:, index_coil,imn+offset) = &
+                    -sinangle_xn*domegadxdtheta(:,itheta_coil,izeta_coil) &
+                    -sinangle_xm*domegadxdzeta(:,itheta_coil,izeta_coil)
+                  dfydomega(:, index_coil,imn+offset) = &
+                    -sinangle_xn*domegadydtheta(:,itheta_coil,izeta_coil) &
+                    -sinangle_xm*domegadydzeta(:,itheta_coil,izeta_coil)
+                  dfzdomega(:, index_coil,imn+offset) = &
+                    -sinangle_xn*domegadzdtheta(:,itheta_coil,izeta_coil) &
+                    -sinangle_xm*domegadzdzeta(:,itheta_coil,izeta_coil)
+                endif
            end do
         end do
      end do
@@ -230,6 +267,19 @@ subroutine build_matrices()
   BLAS_ALPHA=dtheta_coil*dzeta_coil
   BLAS_BETA=0
   call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,inductance,LDA,basis_functions,LDB,BLAS_BETA,g,LDC)
+
+!  !$OMP PARALLEL
+!  !$OMP MASTER
+!  print *,"  Number of OpenMP threads:",omp_get_num_threads()
+!  !$OMP END MASTER
+!  !$OMP DO
+  do iomega = 1, nomega_coil
+    ! With matmuls is about 10x slower so commenting out
+    !dgdomega(iomega,:,:) = dtheta_coil*dzeta_coil*matmul(dinductancedomega(iomega,:,:), basis_functions)
+    call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedomega(iomega,:,:),LDA,basis_functions,LDB,BLAS_BETA,dgdomega(iomega,:,:),LDC)
+  enddo
+! ! $OMP END DO
+!  !$OMP END PARALLEL
 
   call system_clock(toc)
   print *,"inductance*basis_functions:",real(toc-tic)/countrate,"sec."
