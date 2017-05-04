@@ -198,15 +198,15 @@ subroutine build_matrices()
 
   call system_clock(tic,countrate)
   print *,"Building inductance matrix and h."
-!  !$OMP PARALLEL
-!  !$OMP MASTER
+  !$OMP PARALLEL
+  !$OMP MASTER
   print *,"  Number of OpenMP threads:",omp_get_num_threads()
-!  !$OMP END MASTER
+  !$OMP END MASTER
 
   ! Note: the outermost loop below must be over the plasma variables rather than over the coil variables.
   ! This ensures the multiple threads write to different indices in h() rather than to the same indices in h(),
   ! in which case the h(index+plasma)=h(index_plasma)+... update does not work properly.
-!  !$OMP DO PRIVATE(index_plasma,index_coil,x,y,z,izetal_coil,dx,dy,dz,dr2inv,dr32inv,dr52inv,dr_dot_norm_coil,dr_dot_norm_plasma,norm_plasma_dot_norm_coil,dinductancedr,dinductancednorm)
+  !$OMP DO PRIVATE(index_plasma,index_coil,x,y,z,izetal_coil,dx,dy,dz,dr2inv,dr32inv,indexl_coil,dr52inv,dr_dot_norm_coil,dr_dot_norm_plasma,norm_plasma_dot_norm_coil,dinductancedr,dinductancednorm)
   do izeta_plasma = 1, nzeta_plasma
      do itheta_plasma = 1, ntheta_plasma
         index_plasma = (izeta_plasma-1)*ntheta_plasma + itheta_plasma
@@ -286,32 +286,34 @@ subroutine build_matrices()
                     + dinductancedr(1,l_coil+1)*drdomega(1,index_coil,l_coil+1,:) &
                     + dinductancedr(2,l_coil+1)*drdomega(2,index_coil,l_coil+1,:) &
                     + dinductancedr(3,l_coil+1)*drdomega(3,index_coil,l_coil+1,:)
-
                  dhdomega(:,index_plasma) = dhdomega(:,index_plasma) &
-                    + (dddomega(1,:,indexl_coil)*(dy*normal_plasma(3,itheta_plasma,izeta_plasma) &
-                    - dz*normal_plasma(2,itheta_plasma,izeta_plasma)) &
-                    + dddomega(2,:,indexl_coil)*(dz*normal_plasma(1,itheta_plasma,izeta_plasma) &
-                    - dx*normal_plasma(3,itheta_plasma,izeta_plasma)) &
-                    + dddomega(3,:,indexl_coil)*(dx*normal_plasma(2,itheta_plasma,izeta_plasma) &
-                    - dy*normal_plasma(1,itheta_plasma,izeta_plasma)))*twopi*dr32inv
+                    + (dddomega(1,:,indexl_coil)*dy*normal_plasma(3,itheta_plasma,izeta_plasma) &
+                    +  dddomega(2,:,indexl_coil)*dz*normal_plasma(1,itheta_plasma,izeta_plasma) &
+                    +  dddomega(3,:,indexl_coil)*dx*normal_plasma(2,itheta_plasma,izeta_plasma) &
+                    -  dddomega(3,:,indexl_coil)*dy*normal_plasma(1,itheta_plasma,izeta_plasma) &
+                    -  dddomega(1,:,indexl_coil)*dz*normal_plasma(2,itheta_plasma,izeta_plasma) &
+                    -  dddomega(2,:,indexl_coil)*dx*normal_plasma(3,itheta_plasma,izeta_plasma))*2*pi*dr32inv
                  dhdomega(:,index_plasma) = dhdomega(:,index_plasma) &
-                    - (factor_for_h(1,itheta_coil,izetal_coil)*(drdomega(2,:,itheta_coil,izetal_coil) &
+                    - (factor_for_h(1,itheta_coil,izetal_coil)*drdomega(2,index_coil,l_coil+1,:) &
                     *normal_plasma(3,itheta_plasma,izeta_plasma) &
-                    - drdomega(3,:,itheta_coil,izetal_coil)*normal_plasma(2,itheta_plasma,izeta_plasma)) &
-                    + factor_for_h(2,itheta_coil,izetal_coil)*(drdomega(3,:,itheta_coil,izetal_coil) &
+                    +  factor_for_h(2,itheta_coil,izetal_coil)*drdomega(3,index_coil,l_coil+1,:) &
                     *normal_plasma(1,itheta_plasma,izeta_plasma) &
-                    - drdomega(1,:,itheta_coil,izetal_coil)*normal_plasma(3,itheta_plasma,izeta_plasma)) &
-                    + factor_for_h(3,itheta_coil,izetal_coil)*(drdomega(1,:,itheta_coil,izetal_coil) &
+                    +  factor_for_h(3,itheta_coil,izetal_coil)*drdomega(1,index_coil,l_coil+1,:) &
                     *normal_plasma(2,itheta_plasma,izeta_plasma) &
-                    - drdomega(2,:,itheta_coil,izetal_coil)*normal_plasma(1,itheta_plasma,izeta_plasma)))*dr32inv
+                    -  factor_for_h(3,itheta_coil,izetal_coil)*drdomega(2,index_coil,l_coil+1,:) &
+                    *normal_plasma(1,itheta_plasma,izeta_plasma) &
+                    -  factor_for_h(1,itheta_coil,izetal_coil)*drdomega(3,index_coil,l_coil+1,:) &
+                    *normal_plasma(2,itheta_plasma,izeta_plasma) &
+                    -  factor_for_h(2,itheta_coil,izetal_coil)*drdomega(1,index_coil,l_coil+1,:) &
+                    *normal_plasma(3,itheta_plasma,izeta_plasma))*dr32inv
                  dhdomega(:,index_plasma) = dhdomega(:,index_plasma) &
-                    + (drdomega(1,:,itheta_coil,izetal_coil)*dx + drdomega(2,:,itheta_coil,izetal_coil)*dy &
-                    + drdomega(3,:,itheta_coil,izetal_coil)*dz)* &
-                    (factor_for_h(1,itheta_coil,izetal_coil) * dy * normal_plasma(3,itheta_plasma,izeta_plasma) + &
-                    factor_for_h(2,itheta_coil,izetal_coil) * dz * normal_plasma(1,itheta_plasma,izeta_plasma) + &
-                    factor_for_h(3,itheta_coil,izetal_coil) * dx * normal_plasma(2,itheta_plasma,izeta_plasma)  &
-                    - factor_for_h(3,itheta_coil,izetal_coil) * dy * normal_plasma(1,itheta_plasma,izeta_plasma) &
-                    - factor_for_h(1,itheta_coil,izetal_coil) * dz * normal_plasma(2,itheta_plasma,izeta_plasma) &
+                    + (drdomega(1,index_coil,l_coil+1,:)*dx + drdomega(2,index_coil,l_coil+1,:)*dy &
+                    + drdomega(3,index_coil,l_coil+1,:)*dz)* &
+                     (factor_for_h(1,itheta_coil,izetal_coil) * dy * normal_plasma(3,itheta_plasma,izeta_plasma) + &
+                      factor_for_h(2,itheta_coil,izetal_coil) * dz * normal_plasma(1,itheta_plasma,izeta_plasma) + &
+                      factor_for_h(3,itheta_coil,izetal_coil) * dx * normal_plasma(2,itheta_plasma,izeta_plasma)   &
+                    - factor_for_h(3,itheta_coil,izetal_coil) * dy * normal_plasma(1,itheta_plasma,izeta_plasma)   &
+                    - factor_for_h(1,itheta_coil,izetal_coil) * dz * normal_plasma(2,itheta_plasma,izeta_plasma)   &
                     - factor_for_h(2,itheta_coil,izetal_coil) * dx * normal_plasma(3,itheta_plasma,izeta_plasma) )*3*dr52inv
                 endif
               end do
@@ -319,8 +321,8 @@ subroutine build_matrices()
         end do
      end do
   end do
-!!  $OMP END DO
-!!  $OMP END PARALLEL
+!$OMP END DO
+!$OMP END PARALLEL
 
   call system_clock(toc)
   print *,"Done. Took",real(toc-tic)/countrate,"sec."
