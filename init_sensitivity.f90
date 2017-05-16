@@ -444,6 +444,7 @@ subroutine init_sensitivity()
     deallocate(bfactorz)
     deallocate(Afactor)
     deallocate(norm_normal_coil_inv1D)
+    deallocate(norm_normal_plasma_inv1D)
     deallocate(dnorm_normaldomega2D)
   endif
   print *,"Init sensitivity complete."

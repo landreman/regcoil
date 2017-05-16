@@ -3,6 +3,7 @@ subroutine solve
   use global_variables
   use stel_constants
   use stel_kinds
+  use omp_lib
 
   implicit none
 
@@ -175,20 +176,22 @@ subroutine solve
 
      if (sensitivity_option > 1) then
        call system_clock(tic,countrate)
-       ! sensitivity computation
-       ! dddrmnc(3, mnmax_sensitivity, ntheta_coil*nzeta_coil)
-       ! dfdrmnc(3, mnmax_sensitivity, ntheta_coil*nzeta_coil, num_basis_functions)
-       ! f_x(ntheta_coil*nzeta_coil, num_basis_functions)
-       ! norm_normal_coil(ntheta_coil,nzeta_coil)
+      !$OMP PARALLEL
+      !$OMP MASTER
+      print *,"  Number of OpenMP threads:",omp_get_num_threads()
+      !$OMP END MASTER
+      !$OMP DO PRIVATE(dKDifferencedomega,term1,term2)
        do iomega = 1, nomega_coil
          dKDifferencedomega(1,:) = dddomega(1,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfxdomega(iomega,:,:), solution)
          dKDifferencedomega(2,:) = dddomega(2,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfydomega(iomega,:,:), solution)
          dKDifferencedomega(3,:) = dddomega(3,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfzdomega(iomega,:,:), solution)
-         term1(:,:) = -dnorm_normaldomega(iomega,:,:)*this_K2_times_N/norm_normal_coil
-         term2(:,:) = reshape(KDifference_x*dKDifferencedomega(1,:) + KDifference_y*dKDifferencedomega(2,:) &
+         term1 = -dnorm_normaldomega(iomega,:,:)*this_K2_times_N/norm_normal_coil
+         term2 = reshape(KDifference_x*dKDifferencedomega(1,:) + KDifference_y*dKDifferencedomega(2,:) &
            + KDifference_z*dKDifferencedomega(3,:),(/ ntheta_coil, nzeta_coil/))*(2/norm_normal_coil)
          dchi2Kdomega(iomega,ilambda) = nfp*dtheta_coil*dzeta_coil*(sum(term1) + sum(term2))
        enddo
+       !$OMP END DO
+       !$OMP END PARALLEL
        call system_clock(toc)
        print *,"chi2_K sensitivity in solve:",real(toc-tic)/countrate," sec."
      endif
@@ -240,15 +243,17 @@ subroutine solve
 
      if (sensitivity_option > 1) then
        call system_clock(tic,countrate)
-       ! Compute chi2_B sensitivity
-       ! dgdrmnc(mnmax_sensitivity, ntheta_plasma*nzeta_plasma, num_basis_functions)
-       ! solution(num_basis_functions)
-       ! dBnormaldrmnc(ntheta_plasma,nzeta_plasma)
-       ! g(ntheta_plasma*nzeta_plasma, num_basis_functions)
+       !$OMP PARALLEL
+       !$OMP MASTER
+       print *,"  Number of OpenMP threads:",omp_get_num_threads()
+       !$OMP END MASTER
+       !$OMP DO PRIVATE(dBnormaldomega)
        do iomega = 1, nomega_coil
-         dBnormaldomega(:,:) = reshape(matmul(dgdomega(iomega,:,:),solution),(/ ntheta_plasma, nzeta_plasma /))/norm_normal_plasma
+         dBnormaldomega = reshape(matmul(dgdomega(iomega,:,:),solution),(/ ntheta_plasma, nzeta_plasma /))/norm_normal_plasma + reshape(dhdomega(iomega,:),(/ ntheta_plasma, nzeta_plasma /))/norm_normal_plasma
          dchi2Bdomega(iomega,ilambda) = 2*nfp*dtheta_plasma*dzeta_plasma*sum(Bnormal_total(:,:,ilambda)*dBnormaldomega*norm_normal_plasma)
        enddo
+       !$OMP END DO
+       !$OMP END PARALLEL
        call system_clock(toc)
        print *,"chi2_B sensitivity in solve:",real(toc-tic)/countrate," sec."
        dchi2domega(:,ilambda) = dchi2Bdomega(:,ilambda) + lambda(ilambda)*dchi2Kdomega(:,ilambda)
