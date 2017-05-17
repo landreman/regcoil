@@ -56,6 +56,7 @@ program regcoil
 
   if (sensitivity_option > 1) then
     call normal_displacement()
+	 print *,"Normal displacement calculations complete."
   endif
 
   call system_clock(toc)

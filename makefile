@@ -16,7 +16,7 @@ ifeq ($(HOSTNAME),edison)
 	FC = ftn
 	## NERSC documentation recommends against specifying -O3
 	## -mkl MUST APPEAR AT THE END!!
-	EXTRA_COMPILE_FLAGS = -openmp -mkl
+	EXTRA_COMPILE_FLAGS = -openmp -mkl -g
 	EXTRA_LINK_FLAGS =  -openmp -mkl -Wl,-ydgemm_
 	# Above, the link flag "-Wl,-ydgemm_" causes the linker to report which version of DGEMM (the BLAS3 matrix-matrix-multiplication subroutine) is used.
 	# For batch systems, set the following variable to the command used to run jobs. This variable is used by 'make test'.

@@ -13,31 +13,27 @@ subroutine normal_displacement()
   real(dp), dimension(:,:), allocatable :: dxdomega, dydomega, dzdomega
   real(dp), dimension(:,:), allocatable :: domegadx, domegady, domegadz, sigma_UT
   real(dp), dimension(:,:), allocatable :: dchi2dx, dchi2dy,dchi2dz
-  integer :: izeta_coil, itheta_coil, index_coil, izetal_coil, indexl_coil
+  integer :: izeta_coil, itheta_coil, index_coil, izetal_coil, indexl_coil, l_coil
 
-  allocate(dxdomega(ntheta_coil*nzetal_coil,nomega_coil),stat=iflag)
+  allocate(dxdomega(ntheta_coil*nzeta_coil,nomega_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dydomega(ntheta_coil*nzetal_coil,nomega_coil),stat=iflag)
+  allocate(dydomega(ntheta_coil*nzeta_coil,nomega_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dzdomega(ntheta_coil*nzetal_coil,nomega_coil),stat=iflag)
+  allocate(dzdomega(ntheta_coil*nzeta_coil,nomega_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(domegadx(nomega_coil,ntheta_coil*nzetal_coil),stat=iflag)
+  allocate(domegadx(nomega_coil,ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(domegady(nomega_coil,ntheta_coil*nzetal_coil),stat=iflag)
+  allocate(domegady(nomega_coil,ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(domegadz(nomega_coil,ntheta_coil*nzetal_coil),stat=iflag)
+  allocate(domegadz(nomega_coil,ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
   do izeta_coil = 1,nzeta_coil
     do itheta_coil = 1,ntheta_coil
       index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
-      do l_coil = 0, (nfp-1)
-        izetal_coil = izeta_coil + l_coil*nzeta_coil
-        indexl_coil = (izetal_coil-1)*ntheta_coil + itheta_coil
-        dxdomega(indexl_coil,:) = drdomega(1,index_coil,l_coil+1,:)
-        dydomega(indexl_coil,:) = drdomega(2,index_coil,l_coil+1,:)
-        dzdomega(indexl_coil,:) = drdomega(3,index_coil,l_coil+1,:)
-      enddo
+      dxdomega(index_coil,:) = drdomega(1,index_coil,1,:)
+      dydomega(index_coil,:) = drdomega(2,index_coil,1,:)
+      dzdomega(index_coil,:) = drdomega(3,index_coil,1,:)
     enddo
   enddo
 
@@ -48,7 +44,7 @@ subroutine normal_displacement()
   ! U must have dimension M x N
   ! Define variables needed for LAPACK SVD decomposition
   JOBZ='S'
-  M = ntheta_coil*nzetal_coil ! number of rows of A
+  M = ntheta_coil*nzeta_coil ! number of rows of A
   N = nomega_coil ! number of columns of A
   LDA = M ! leading dimension of A
   LDU = M ! leading dimension of U
@@ -134,26 +130,26 @@ subroutine normal_displacement()
   enddo
   domegadz = matmul(transpose(VT),sigma_UT)
 
-  allocate(dchi2dx(nlambda,ntheta_coil*nzetal_coil),stat=iflag)
+  allocate(dchi2dx(ntheta_coil*nzeta_coil,nlambda),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dchi2dy(nlambda,ntheta_coil*nzetal_coil),stat=iflag)
+  allocate(dchi2dy(ntheta_coil*nzeta_coil,nlambda),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dchi2dz(nlambda,ntheta_coil*nzetal_coil),stat=iflag)
+  allocate(dchi2dz(ntheta_coil*nzeta_coil,nlambda),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dchi2dr_normal(nlambda,ntheta_coil*nzetal_coil),stat=iflag)
+  allocate(dchi2dr_normal(nlambda,ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   dchi2dx = matmul(transpose(domegadx),dchi2domega)
   dchi2dy = matmul(transpose(domegady),dchi2domega)
   dchi2dz = matmul(transpose(domegadz),dchi2domega)
 
-  do itheta = 1, ntheta_coil
-      do izeta = 1, nzeta_coil
-        indexl_coil = (izetal_coil-1)*ntheta_coil + itheta_coil
-        dchi2dr_normal(:,indexl_coil) = &
-            (normal_coil(1,itheta_coil,izetal_coil)*dchi2dx(:,indexl_coil) &
-          + normal_coil(2,itheta_coil,izetal_coil)*dchi2dy(:,indexl_coil) &
-          + normal_coil(3,itheta_coil,izetal_coil)*dchi2dz(:,indexl_coil)) &
-          /norm_normal_coil(itheta_coil,izetal_coil)
+  do itheta_coil = 1, ntheta_coil
+		do izeta_coil = 1, nzeta_coil
+			index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
+			dchi2dr_normal(:,index_coil) = &
+				(normal_coil(1,itheta_coil,izeta_coil)*dchi2dx(index_coil,:) &
+				+ normal_coil(2,itheta_coil,izeta_coil)*dchi2dy(index_coil,:) &
+				+ normal_coil(3,itheta_coil,izeta_coil)*dchi2dz(index_coil,:)) &
+				/norm_normal_coil(itheta_coil,izeta_coil)
       enddo
   enddo
 

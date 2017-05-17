@@ -155,8 +155,8 @@ subroutine write_output
          'ntheta_nzeta_coil','num_basis_functions'/), &
        nomega_coil_nthetanzeta_plasma_dim = (/character(len=50) :: &
          'nomega_coil','ntheta_nzeta_plasma'/), &
-       nlambda_nthetanzetal_coil_dim = (/character(len=50) :: &
-          'nlambda', 'ntheta_nzetal_coil'/)
+       nlambda_nthetanzeta_coil_dim = (/character(len=50) :: &
+          'nlambda', 'ntheta_nzeta_coil'/)
 
   ! Arrays with dimension 3:
   character(len=*), parameter, dimension(3) :: &
@@ -277,7 +277,7 @@ subroutine write_output
       call cdf_define(ncid, vn_f_z, f_z, dimname=nthetanzeta_coil_basis_dim)
     endif
     call cdf_define(ncid, vn_dchi2dr_normal, dchi2dr_normal, dimname=&
-      nlambda_nthetanzetal_coil_dim)
+      nlambda_nthetanzeta_coil_dim)
   endif
 
   ! Arrays with dimension 3
