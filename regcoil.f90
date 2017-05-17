@@ -54,6 +54,10 @@ program regcoil
      stop
   end select
 
+  if (sensitivity_option > 1) then
+    call normal_displacement()
+  endif
+
   call system_clock(toc)
   totalTime = real(toc-tic)/countrate
 
