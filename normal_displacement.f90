@@ -10,8 +10,7 @@ subroutine normal_displacement()
   integer, dimension(:), allocatable :: IWORK
   character :: JOBZ
 
-  real(dp), dimension(:,:), allocatable :: dxdomega, dydomega, dzdomega
-  real(dp), dimension(:,:), allocatable :: domegadx, domegady, domegadz, sigma_UT
+  real(dp), dimension(:,:), allocatable :: dxdomega, dydomega, dzdomega, sigma_UT
   real(dp), dimension(:,:), allocatable :: dchi2dx, dchi2dy,dchi2dz
   integer :: izeta_coil, itheta_coil, index_coil, izetal_coil, indexl_coil, l_coil
 
@@ -43,25 +42,26 @@ subroutine normal_displacement()
   ! VT must have dimension N x N
   ! U must have dimension M x N
   ! Define variables needed for LAPACK SVD decomposition
-  JOBZ='S'
+  JOBZ='A'
   M = ntheta_coil*nzeta_coil ! number of rows of A
   N = nomega_coil ! number of columns of A
   LDA = M ! leading dimension of A
   LDU = M ! leading dimension of U
   LDVT = N ! leading dimension of VT
   ! This next formula comes from the LAPACK documentation at the end of the file.
-  LWORK = max( 3*N + max(M,7*N), 3*N + max(M,5*N*N + 4*N),N*(6 + 4*N)+M)
+  LWORK = max( 3*min(M,N) + max(max(M,N),7*min(M,N)), &
+  3*min(M,N) + max(max(M,N),5*min(M,N)*min(M,N)+4*min(M,N)), &
+  min(M,N)*(6+4*min(M,N))+max(M,N))
 
   allocate(WORK(LWORK),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(IWORK(8*N),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
-  n_singular_values = N
+  n_singular_values = min(N,M)
   allocate(singular_values(n_singular_values),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(U(M,N),stat=iflag) ! If all singular vectors were computed, U would be M*M. But here we only compute the first N singular vectors,
-  ! so U is M*N.
+  allocate(U(M,M),stat=iflag)
   allocate(VT(N,N),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
@@ -83,8 +83,11 @@ subroutine normal_displacement()
  !UT(N,M)
   allocate(sigma_UT(N,M),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  do i = 1,M
-    sigma_UT(:,i) = singular_values(i)*U(i,:)
+  sigma_UT = 0
+  do i = 1,n_singular_values
+    if (singular_values(i) /= 0) then
+      sigma_UT(i,:) = (1/singular_values(i))*U(:,i)
+    endif
   enddo
   domegadx = matmul(transpose(VT),sigma_UT)
 
@@ -102,10 +105,14 @@ subroutine normal_displacement()
   end if
 
   !Compute pseudoinverse
-  !PA = V*Sigma^{-1}*UT
+  !PA = V*sigma^{-1}*UT
   !UT(N,M)
-  do i = 1,M
-    sigma_UT(:,i) = singular_values(i)*U(i,:)
+  ! Below we are multiplying the rows of UT by diagonal elements of sigma^{-1}
+  sigma_UT = 0
+  do i = 1,n_singular_values
+    if (singular_values(i) /= 0) then
+      sigma_UT(i,:) = (1/singular_values(i))*U(:,i)
+    endif
   enddo
   domegady = matmul(transpose(VT),sigma_UT)
 
@@ -125,8 +132,11 @@ subroutine normal_displacement()
   !Compute pseudoinverse
   !PA = V*Sigma^{-1}*UT
   !UT(N,M)
-  do i = 1,M
-    sigma_UT(:,i) = singular_values(i)*U(i,:)
+  sigma_UT = 0
+  do i = 1,n_singular_values
+    if (singular_values(i) /= 0) then
+      sigma_UT(i,:) = (1/singular_values(i))*U(:,i)
+    endif
   enddo
   domegadz = matmul(transpose(VT),sigma_UT)
 

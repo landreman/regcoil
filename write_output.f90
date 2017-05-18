@@ -91,7 +91,10 @@ subroutine write_output
        vn_f_y = "f_y", &
        vn_f_z = "f_z", &
        vn_dhdomega = "dhdomega", &
-       vn_dchi2dr_normal = "dchi2dr_normal"
+       vn_dchi2dr_normal = "dchi2dr_normal", &
+       vn_domegadx = "domegadx", &
+       vn_domegady = "domegady", &
+       vn_domegadz = "domegadz"
 
   ! Arrays with dimension 3
   character(len=*), parameter :: &
@@ -156,7 +159,9 @@ subroutine write_output
        nomega_coil_nthetanzeta_plasma_dim = (/character(len=50) :: &
          'nomega_coil','ntheta_nzeta_plasma'/), &
        nlambda_nthetanzeta_coil_dim = (/character(len=50) :: &
-          'nlambda', 'ntheta_nzeta_coil'/)
+          'nlambda', 'ntheta_nzeta_coil'/), &
+       nthetanzeta_coil_nomega_coil_dim = (/character(len=50) :: &
+          'ntheta_nzeta_coil', 'nomega_coil'/)
 
   ! Arrays with dimension 3:
   character(len=*), parameter, dimension(3) :: &
@@ -261,8 +266,6 @@ subroutine write_output
   if (save_level<2) then
      call cdf_define(ncid, vn_g, g, dimname=nthetanzeta_plasma_basis_dim)
   end if
-  !call cdf_define(ncid, vn_matrix_B, matrix_B, dimname=basis_basis_dim)
-  !call cdf_define(ncid, vn_matrix_K, matrix_K, dimname=basis_basis_dim)
   call cdf_define(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda), &
        dimname=basis_nlambda_dim)
   ! Sensitivity output
@@ -271,6 +274,10 @@ subroutine write_output
     call cdf_define(ncid, vn_dchi2Kdomega, dchi2Kdomega(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
     call cdf_define(ncid, vn_dchi2domega, dchi2domega(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
     call cdf_define(ncid, vn_dhdomega, dhdomega, dimname=nomega_coil_nthetanzeta_plasma_dim)
+    call cdf_define(ncid, vn_domegadx, domegadx, dimname=nthetanzeta_coil_nomega_coil_dim)
+    call cdf_define(ncid, vn_domegady, domegady, dimname=nthetanzeta_coil_nomega_coil_dim)
+    call cdf_define(ncid, vn_domegadz, domegadz, dimname=nthetanzeta_coil_nomega_coil_dim)
+
     if (save_level < 1) then
       call cdf_define(ncid, vn_f_x, f_x, dimname=nthetanzeta_coil_basis_dim)
       call cdf_define(ncid, vn_f_y, f_y, dimname=nthetanzeta_coil_basis_dim)
@@ -402,14 +409,15 @@ endif
   if (save_level<2) then
      call cdf_write(ncid, vn_g, g)
   end if
-  !call cdf_write(ncid, vn_matrix_B, matrix_B)
-  !call cdf_write(ncid, vn_matrix_K, matrix_K)
+
   call cdf_write(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda))
-  ! Write sensitivity output
   if (sensitivity_option > 1) then
     call cdf_write(ncid, vn_dchi2Bdomega, dchi2Bdomega(:,1:Nlambda))
     call cdf_write(ncid, vn_dchi2Kdomega, dchi2Kdomega(:,1:Nlambda))
     call cdf_write(ncid, vn_dchi2domega, dchi2domega(:,1:Nlambda))
+    call cdf_write(ncid, vn_domegadx, domegadx)
+    call cdf_write(ncid, vn_domegady, domegady)
+    call cdf_write(ncid, vn_domegadz, domegadz)
     if (save_level < 1) then
       call cdf_write(ncid, vn_f_x, f_x)
       call cdf_write(ncid, vn_f_y, f_y)
