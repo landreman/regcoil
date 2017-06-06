@@ -149,10 +149,6 @@ subroutine normal_displacement()
   allocate(dchi2dr_normal(nlambda,ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
-  print *,"ntheta_coil: ",ntheta_coil
-  print *,"nzeta_coil: ",nzeta_coil
-  print *,"dchi2dr_normal.shape: ",shape(dchi2dr_normal)
-
   dchi2dx = matmul(transpose(domegadx),dchi2domega)
   dchi2dy = matmul(transpose(domegady),dchi2domega)
   dchi2dz = matmul(transpose(domegadz),dchi2domega)

@@ -246,11 +246,11 @@ subroutine write_output
   if (sensitivity_option > 1) then
     call cdf_define(ncid, vn_xn_sensitivity, xn_sensitivity, dimname=nomega_coil_dim)
     call cdf_define(ncid, vn_xm_sensitivity, xm_sensitivity, dimname=nomega_coil_dim)
+    call cdf_define(ncid, vn_omega_coil, omega_coil, dimname=nomega_coil_dim)
     if (save_level<1) then
       call cdf_define(ncid, vn_d_x, d_x, dimname=ntheta_times_nzeta_coil_dim)
       call cdf_define(ncid, vn_d_y, d_y, dimname=ntheta_times_nzeta_coil_dim)
       call cdf_define(ncid, vn_d_z, d_z, dimname=ntheta_times_nzeta_coil_dim)
-      call cdf_define(ncid, vn_omega_coil, omega_coil, dimname=nomega_coil_dim)
     endif
   endif
 
