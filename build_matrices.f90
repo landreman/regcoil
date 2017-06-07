@@ -392,7 +392,7 @@ subroutine build_matrices()
   !$OMP MASTER
   print *,"  Number of OpenMP threads:",omp_get_num_threads()
   !$OMP END MASTER
-  !$OMP DO PRIVATE(dgdomega)
+  !$OMP DO 
   do iomega = 1, nomega_coil
     ! With matmuls is about 10x slower so commenting out
     !dgdomega(iomega,:,:) = dtheta_coil*dzeta_coil*matmul(dinductancedomega(iomega,:,:), basis_functions)
