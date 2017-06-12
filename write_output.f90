@@ -42,7 +42,7 @@ subroutine write_output
        vn_exit_code = "exit_code", &
        vn_chi2_B_target = "chi2_B_target", &
        vn_sensitivity_option = "sensitivity_option", &
-       vn_normal_displacement_option = "normal_displacemenet_option", &
+       vn_normal_displacement_option = "normal_displacement_option", &
        vn_nmax_sensitivity = "nmax_sensitivity", &
        vn_mmax_sensitivity = "mmax_sensitivity", &
        vn_mnmax_sensitivity = "mnmax_sensitivity", &
