@@ -88,6 +88,7 @@ module global_variables
   real(dp) :: chi2_B_target = 0
 
 ! Needed for sensitivity calculation
+  integer :: normal_displacement_option = 1
   integer :: sensitivity_option = 1
   integer :: nmax_sensitivity = 0
   integer :: mmax_sensitivity = 0
