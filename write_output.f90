@@ -42,6 +42,7 @@ subroutine write_output
        vn_exit_code = "exit_code", &
        vn_chi2_B_target = "chi2_B_target", &
        vn_sensitivity_option = "sensitivity_option", &
+       vn_normal_displacement_option = "normal_displacemenet_option", &
        vn_nmax_sensitivity = "nmax_sensitivity", &
        vn_mmax_sensitivity = "mmax_sensitivity", &
        vn_mnmax_sensitivity = "mnmax_sensitivity", &
@@ -216,6 +217,7 @@ subroutine write_output
   call cdf_define(ncid, vn_exit_code, exit_code)
   if (general_option==4 .or. general_option==5) call cdf_define(ncid, vn_chi2_B_target, chi2_B_target)
   call cdf_define(ncid, vn_sensitivity_option, sensitivity_option)
+  call cdf_define(ncid, vn_normal_displacement_option, normal_displacement_option)
   if (sensitivity_option > 1) then
     call cdf_define(ncid, vn_mmax_sensitivity, mmax_sensitivity)
     call cdf_define(ncid, vn_nmax_sensitivity, nmax_sensitivity)
@@ -357,6 +359,7 @@ endif
   call cdf_write(ncid, vn_exit_code, exit_code)
   if (general_option==4 .or. general_option==5) call cdf_write(ncid, vn_chi2_B_target, chi2_B_target)
   call cdf_write(ncid, vn_sensitivity_option, sensitivity_option)
+  call cdf_write(ncid, vn_normal_displacement_option, normal_displacement_option)
   if (sensitivity_option > 1) then
     call cdf_write(ncid, vn_mmax_sensitivity, mmax_sensitivity)
     call cdf_write(ncid, vn_nmax_sensitivity, nmax_sensitivity)
