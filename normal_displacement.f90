@@ -34,15 +34,20 @@ subroutine normal_displacement()
         cosangle = cos(angle)
 
         if (omega_coil(iomega) == 1) then ! omega = rmnc
-          dchi2dx(index_coil,:) = dchi2dx(index_coil,:) + pi*pi*dchi2domega(iomega,:)*cosangle*cosangle2
-          dchi2dy(index_coil,:) = dchi2dy(index_coil,:) + pi*pi*dchi2domega(iomega,:)*cosangle*sinangle2
+          dchi2dx(index_coil,:) = dchi2dx(index_coil,:) + 2*pi*pi*dchi2domega(iomega,:)*cosangle*cosangle2
+          dchi2dy(index_coil,:) = dchi2dy(index_coil,:) + 2*pi*pi*dchi2domega(iomega,:)*cosangle*sinangle2
         else if (omega_coil(iomega) == 2) then ! omega = zmns
-          dchi2dz(index_coil,:) = dchi2dz(index_coil,:) + 2*pi*pi*dchi2domega(iomega,:)*sinangle
+          dchi2dz(index_coil,:) = dchi2dz(index_coil,:) + 4*pi*pi*dchi2domega(iomega,:)*sinangle
         else if (omega_coil(iomega) == 3) then ! omega = rmns
-          dchi2dx(index_coil,:) = dchi2dx(index_coil,:) + pi*pi*dchi2domega(iomega,:)*sinangle*cosangle2
-          dchi2dy(index_coil,:) = dchi2dy(index_coil,:) + pi*pi*dchi2domega(iomega,:)*sinangle*sinangle2
+          dchi2dx(index_coil,:) = dchi2dx(index_coil,:) + 2*pi*pi*dchi2domega(iomega,:)*sinangle*cosangle2
+          dchi2dy(index_coil,:) = dchi2dy(index_coil,:) + 2*pi*pi*dchi2domega(iomega,:)*sinangle*sinangle2
         else if (omega_coil(iomega) == 4) then ! omega = zmnc
-          dchi2dz(index_coil,:) = dchi2dz(index_coil,:) + 2*pi*pi*dchi2domega(iomega,:)*cosangle
+          dchi2dz(index_coil,:) = dchi2dz(index_coil,:) + 4*pi*pi*dchi2domega(iomega,:)*cosangle
+        endif
+        if (xm_sensitivity(iomega) /= 0 .or. xn_sensitivity(iomega) /= 0) then
+          dchi2dx(index_coil,:) = dchi2dx(index_coil,:)*2
+          dchi2dy(index_coil,:) = dchi2dy(index_coil,:)*2
+          dchi2dz(index_coil,:) = dchi2dz(index_coil,:)*2
         endif
 
       enddo

@@ -66,17 +66,6 @@ subroutine build_matrices()
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(dfzdomega(nomega_coil, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
-    allocate(dgdomega(nomega_coil, ntheta_plasma*nzeta_plasma, num_basis_functions),stat=iflag)
-    if (iflag .ne. 0) stop 'Allocation error!'
-    allocate(dinductancednorm(3),stat=iflag)
-    if (iflag .ne. 0) stop 'Allocation error!'
-    allocate(dinductancedr(3),stat=iflag)
-    if (iflag .ne. 0) stop 'Allocation error!'
-    allocate(dinductancedomega(nomega_coil, ntheta_plasma*nzeta_plasma, &
-    ntheta_coil*nzeta_coil),stat=iflag)
-    if (iflag .ne. 0) stop 'Allocation error!'
-    allocate(dhdomega(nomega_coil,ntheta_plasma*nzeta_plasma),stat=iflag)
-    if (iflag .ne. 0) stop 'Allocation error!'
   endif
 
   d_x = reshape((net_poloidal_current_Amperes * drdtheta_coil(1,:,1:nzeta_coil) - net_toroidal_current_Amperes * drdzeta_coil(1,:,1:nzeta_coil)) / twopi, &
@@ -175,7 +164,6 @@ subroutine build_matrices()
   call system_clock(toc)
   print *,"Done. Took",real(toc-tic)/countrate,"sec."
   
-
   allocate(g(ntheta_plasma*nzeta_plasma, num_basis_functions),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(inductance(ntheta_plasma*nzeta_plasma, ntheta_coil*nzeta_coil),stat=iflag)
@@ -186,6 +174,19 @@ subroutine build_matrices()
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(Bnormal_from_net_coil_currents(ntheta_plasma,nzeta_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
+  if (sensitivity_option > 1) then
+    allocate(dgdomega(nomega_coil, ntheta_plasma*nzeta_plasma, num_basis_functions),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dinductancednorm(3),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dinductancedr(3),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dinductancedomega(nomega_coil, ntheta_plasma*nzeta_plasma, &
+    ntheta_coil*nzeta_coil),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dhdomega(nomega_coil,ntheta_plasma*nzeta_plasma),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+  endif
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Now compute g and h
