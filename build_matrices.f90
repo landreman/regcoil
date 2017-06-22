@@ -163,7 +163,7 @@ subroutine build_matrices()
   
   call system_clock(toc)
   print *,"Done. Took",real(toc-tic)/countrate,"sec."
-  
+
   allocate(g(ntheta_plasma*nzeta_plasma, num_basis_functions),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(inductance(ntheta_plasma*nzeta_plasma, ntheta_coil*nzeta_coil),stat=iflag)
