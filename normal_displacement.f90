@@ -44,24 +44,24 @@ subroutine normal_displacement()
         cosangle = cos(angle)
 
         if (omega_coil(iomega) == 1) then ! omega = rmnc
-          this_dchi2dx = pi*pi*dchi2domega(iomega,:)*cosangle*cosangle2
-          this_dchi2dy = pi*pi*dchi2domega(iomega,:)*cosangle*sinangle2
+          this_dchi2dx = dchi2domega(iomega,:)*cosangle*cosangle2/(pi*pi)
+          this_dchi2dy = dchi2domega(iomega,:)*cosangle*sinangle2/(pi*pi)
         else if (omega_coil(iomega) == 2) then ! omega = zmns
-          this_dchi2dz = 2*pi*pi*dchi2domega(iomega,:)*sinangle
+          this_dchi2dz = dchi2domega(iomega,:)*sinangle/(2*pi*pi)
         else if (omega_coil(iomega) == 3) then ! omega = rmns
-          this_dchi2dx = pi*pi*dchi2domega(iomega,:)*sinangle*cosangle2
-          this_dchi2dy = pi*pi*dchi2domega(iomega,:)*sinangle*sinangle2
+          this_dchi2dx = dchi2domega(iomega,:)*sinangle*cosangle2/(pi*pi)
+          this_dchi2dy = dchi2domega(iomega,:)*sinangle*sinangle2/(pi*pi)
         else if (omega_coil(iomega) == 4) then ! omega = zmnc
-          this_dchi2dz = 2*pi*pi*dchi2domega(iomega,:)*cosangle
+          this_dchi2dz = dchi2domega(iomega,:)*cosangle/(2*pi*pi)
         else
           print *,"omega_coil out of range!\n"
           call exit
         endif
 
         if (xm_sensitivity(iomega) == 0 .and. xn_sensitivity(iomega) == 0) then
-          this_dchi2dx = this_dchi2dx*2
-          this_dchi2dy = this_dchi2dy*2
-          this_dchi2dz = this_dchi2dz*2
+          this_dchi2dx = this_dchi2dx/2
+          this_dchi2dy = this_dchi2dy/2
+          this_dchi2dz = this_dchi2dz/2
         endif
 
         ! Check for NaNs
