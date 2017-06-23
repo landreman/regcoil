@@ -39,6 +39,14 @@ program regcoil
 
   call build_matrices()
 
+  if (sensitivity_option > 2) then
+    select case (general_option)
+    case (1,4,5)
+      print *,"Initializing sensitivity adjoint."
+      call init_sensitivity_adjoint()
+    end select
+  endif
+
   select case (general_option)
   case (1)
      print *,"Case 1."
