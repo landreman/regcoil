@@ -44,11 +44,10 @@ subroutine init_sensitivity_adjoint()
 
 
   if (sensitivity_option == 4 .or. sensitivity_option == 3) then  ! Compute dchi2K adjoint
+    print *,"Building dchi2Kdomega adjoint matrices."
     call system_clock(tic,countrate)
     norm_normal_coil_inv1D   = reshape(1/norm_normal_coil,   (/ ntheta_coil*nzeta_coil /))
     do iomega = 1, nomega_coil
-      ! dfxdomega(nomega_coil, ntheta_coil*nzeta_coil, num_basis_functions)
-      ! f_x(ntheta_coil*nzeta_coil, num_basis_functions)
       dAKdomega(:,:,iomega) = dtheta_coil*dzeta_coil*(2*(matmul(transpose(f_x), dfxdomega(iomega,:,:)) &
       + matmul(transpose(f_y), dfydomega(iomega,:,:)) + matmul(transpose(f_z),dfzdomega(iomega,:,:))))
       dnorm_normaldomega2D(iomega,:) = reshape(dnorm_normaldomega(iomega,:,:),(/ ntheta_coil * nzeta_coil /))
@@ -62,8 +61,9 @@ subroutine init_sensitivity_adjoint()
       enddo
       dAKdomega(:,:,iomega) = dAKdomega(:,:,iomega) - dtheta_coil*dzeta_coil*(matmul(transpose(f_x),Afactorx) &
         + matmul(transpose(f_y),Afactory) + matmul(transpose(f_z), Afactorz))
-      dbKdomega(:,iomega) = dtheta_coil*dzeta_coil*(matmul(transpose(bfactorx),dddomega(1,iomega,:)) + &
-        matmul(transpose(bfactory),dddomega(2,iomega,:)) + matmul(transpose(bfactorz),dddomega(3,iomega,:)))
+      dbKdomega(:,iomega) = dtheta_coil*dzeta_coil*(matmul(transpose(bfactorx),dddomega(1,iomega,1:ntheta_coil*nzeta_coil)) &
+        + matmul(transpose(bfactory),dddomega(2,iomega,1:ntheta_coil*nzeta_coil)) &
+        + matmul(transpose(bfactorz),dddomega(3,iomega,1:ntheta_coil*nzeta_coil)))
       dbKdomega(:,iomega) = dbKdomega(:,iomega) + dtheta_coil*dzeta_coil*(matmul(transpose(dfxdomega(iomega,:,:)), &
         d_x*norm_normal_coil_inv1D) + matmul(transpose(dfydomega(iomega,:,:)),d_y*norm_normal_coil_inv1D) &
         + matmul(transpose(dfzdomega(iomega,:,:)),d_z*norm_normal_coil_inv1D))
@@ -78,6 +78,7 @@ subroutine init_sensitivity_adjoint()
   endif
 
   if (sensitivity_option == 5 .or. sensitivity_option == 3) then ! Compute chi2B adjoint
+    print *,"Building dchi2Bdomega adjoint matrices."
     call system_clock(tic,countrate)
 
     norm_normal_plasma_inv1D   = reshape(1/norm_normal_plasma,   (/ ntheta_plasma*nzeta_plasma /))
