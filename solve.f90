@@ -296,7 +296,11 @@ subroutine solve
      if (sensitivity_option == 4) then
         dchi2Bdomega(:,ilambda) = dchi2domega(:,ilambda) - lambda(ilambda)*dchi2Kdomega(:,ilambda)
      else if (sensitivity_option == 5) then
-        dchi2Kdomega(:,ilambda) = dchi2domega(:,ilambda) - lambda(ilambda)*dchi2Bdomega(:,ilambda)
+        if (lambda(ilambda) /= 0) then
+          dchi2Kdomega(:,ilambda) = (dchi2domega(:,ilambda) - dchi2Bdomega(:,ilambda))/lambda(ilambda)
+        else
+          dchi2Kdomega(:,ilambda) = 0
+        endif
      endif
 
      call system_clock(toc)
@@ -304,39 +308,6 @@ subroutine solve
      print "(a,es10.3,a,es10.3)","   chi2_B:",chi2_B(ilambda),",  chi2_K:",chi2_K(ilambda)
      print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda),",  rms K:",sqrt(chi2_K(ilambda)/area_coil)
   end do
-
-
-!if (sensitivity_option == 3 .or. sensitivity_option == 4) then
-!allocate(dchi2Kdphi(num_basis_functions,1),stat=iflag)
-!if (iflag .ne. 0) stop 'Allocation error!'
-!allocate(q_K(num_basis_functions, nlambda),stat=iflag)
-!if (iflag .ne. 0) stop 'Allocation error!'
-
-!allocate(dFKdomega(num_basis_functions, nomega_coil),stat=iflag)
-!if (iflag .ne. 0) stop 'Allocation error!'
-!allocate(adjoint_bx(ntheta_coil*nzeta_coil,1),stat=iflag)
-!if (iflag .ne. 0) stop 'Allocation error!'
-!allocate(adjoint_by(ntheta_coil*nzeta_coil,1),stat=iflag)
-!if (iflag .ne. 0) stop 'Allocation error!'
-!allocate(adjoint_bz(ntheta_coil*nzeta_coil,1),stat=iflag)
-!if (iflag .ne. 0) stop 'Allocation error!'
-!allocate(adjoint_Ax(num_basis_functions,ntheta_coil*nzeta_coil),stat=iflag)
-!if (iflag .ne. 0) stop 'Allocation error!'
-!allocate(adjoint_Ay(num_basis_functions,ntheta_coil*nzeta_coil),stat=iflag)
-!if (iflag .ne. 0) stop 'Allocation error!'
-!allocate(adjoint_Az(num_basis_functions,ntheta_coil*nzeta_coil),stat=iflag)
-!if (iflag .ne. 0) stop 'Allocation error!'
-!endif
-!if (sensitivity_option == 3 .or. sensitivity_option == 5) then
-!allocate(dchi2Bdphi(num_basis_functions,1),stat=iflag)
-!if (iflag .ne. 0) stop 'Allocation error!'
-!allocate(adjoint_c(ntheta_coil*nzeta_coil,1),stat=iflag)
-!if (iflag .ne. 0) stop 'Allocation error!'
-!allocate(q_B(num_basis_functions, nlambda),stat=iflag)
-!if (iflag .ne. 0) stop 'Allocation error!'
-!allocate(dFBdomega(num_basis_functions, nomega_coil),stat=iflag)
-!if (iflag .ne. 0) stop 'Allocation error!'
-!endif
 
   if (sensitivity_option > 1) then
     deallocate(term1)
