@@ -167,7 +167,7 @@ subroutine write_output
        nlambda_nthetanzeta_coil_dim = (/character(len=50) :: &
           'nlambda', 'ntheta_times_nzeta_coil'/), &
        num_basis_functions_nlambda_dim = (/character(len=50) :: &
-          'num_basis_funcions', 'nlambda'/), &
+          'num_basis_functions', 'nlambda'/), &
        nomega_coil_num_basis_functions_dim = (/character(len=50) :: &
           'nomega_coil', 'num_basis_functions'/), &
        nthetanzeta_plasma_basis_dim = (/ character(len=50) :: &
