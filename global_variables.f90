@@ -99,13 +99,16 @@ module global_variables
   real(dp), dimension(:,:,:), allocatable :: dddomega, dfxdomega, dfydomega, dfzdomega
   real(dp), dimension(:,:,:), allocatable :: dnorm_normaldomega, dgdomega, dinductancedomega
   real(dp), dimension(:,:,:), allocatable :: dnormxdomega, dnormydomega, dnormzdomega
-  real(dp), dimension(:,:,:), allocatable :: dAKdomega, dABdomega
-  real(dp), dimension(:,:), allocatable :: dchi2domega, dchi2Kdomega, dchi2Bdomega, dbKdomega, dbBdomega
+  real(dp), dimension(:,:), allocatable :: dchi2domega, dchi2Kdomega, dchi2Bdomega
+  !real(dp), dimension(:,:,:), allocatable :: dbdomega
   real(dp), dimension(:,:,:,:), allocatable :: drdomega
   real(dp), dimension(:,:,:), allocatable :: domegadxdtheta, domegadxdzeta, domegadydtheta, domegadydzeta
   real(dp), dimension(:,:,:), allocatable :: domegadzdtheta, domegadzdzeta
   real(dp), dimension(:,:), allocatable :: dhdomega, dchi2dr_normal
   real(dp), dimension(:,:), allocatable :: domegadx, domegady, domegadz
+  real(dp), dimension(:,:), allocatable :: q_K, q_B
+  real(dp), dimension(:,:,:), allocatable :: dmatrix_Kdomega, dmatrix_Bdomega, dmatrixdomega
+  real(dp), dimension(:,:), allocatable :: dRHS_Bdomega, dRHS_Kdomega, dRHSdomega, adjoint_sum
 
 end module global_variables
 

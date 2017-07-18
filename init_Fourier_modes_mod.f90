@@ -17,6 +17,7 @@ contains
     ! xn can be negative, zero, or positive.
     ! When xm is 0, xn must be positive.
     mnmax = mpol*(ntor*2+1) + ntor
+    print *,"mnmax: ", mnmax
     
     allocate(xm(mnmax),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'

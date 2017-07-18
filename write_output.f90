@@ -95,7 +95,12 @@ subroutine write_output
      vn_dchi2dr_normal = "dchi2dr_normal", &
      vn_domegadx = "domegadx", &
      vn_domegady = "domegady", &
-     vn_domegadz = "domegadz"
+     vn_domegadz = "domegadz", &
+     vn_q_K = "q_K", &
+     vn_q_B = "q_B", &
+     vn_dRHS_Bdomega = "dRHS_Bdomega", &
+     vn_dRHS_Kdomega = "dRHS_Kdomega", &
+     vn_adjoint_sum = "adjoint_sum"
 
   ! Arrays with dimension 3
   character(len=*), parameter :: &
@@ -120,7 +125,9 @@ subroutine write_output
     vn_dnormzdomega = "dnormzdomega", &
     vn_dfxdomega = "dfxdomega", &
     vn_dfydomega = "dfydomega", &
-    vn_dfzdomega = "dfzdomega"
+    vn_dfzdomega = "dfzdomega", &
+    vn_dmatrix_Bdomega = "dmatrix_Bdomega", &
+    vn_dmatrix_Kdomega = "dmatrix_Kdomega"
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Now create variables that name the dimensions.
@@ -149,8 +156,6 @@ subroutine write_output
        ntheta_nzeta_coil_dim = (/ character(len=50) :: 'ntheta_coil','nzeta_coil'/), &
        nthetanzeta_plasma_nthetanzeta_coil_dim = (/ character(len=50) :: &
          'ntheta_nzeta_plasma','ntheta_times_nzeta_coil'/), &
-       nthetanzeta_plasma_basis_dim = (/ character(len=50) :: &
-         'ntheta_nzeta_plasma','num_basis_functions'/), &
        basis_basis_dim = (/ character(len=50) :: &
          'num_basis_functions','num_basis_functions'/), &
        basis_nlambda_dim = (/ character(len=50) :: 'num_basis_functions','nlambda'/), &
@@ -160,7 +165,13 @@ subroutine write_output
        nomega_coil_nthetanzeta_plasma_dim = (/character(len=50) :: &
          'nomega_coil','ntheta_nzeta_plasma'/), &
        nlambda_nthetanzeta_coil_dim = (/character(len=50) :: &
-          'nlambda', 'ntheta_times_nzeta_coil'/)
+          'nlambda', 'ntheta_times_nzeta_coil'/), &
+       num_basis_functions_nlambda_dim = (/character(len=50) :: &
+          'num_basis_funcions', 'nlambda'/), &
+       nomega_coil_num_basis_functions_dim = (/character(len=50) :: &
+          'nomega_coil', 'num_basis_functions'/), &
+       nthetanzeta_plasma_basis_dim = (/ character(len=50) :: &
+          'ntheta_nzeta_plasma','num_basis_functions'/)
 
   ! Arrays with dimension 3:
   character(len=*), parameter, dimension(3) :: &
@@ -175,7 +186,9 @@ subroutine write_output
          'ntheta_times_nzeta_plasma', 'ntheta_times_nzeta_coil'/), &
        nomega_coil_ntheta_nzetal_coil_dim = (/character(len=50) :: 'nomega_coil', 'ntheta_coil', &
          'nzetal_coil'/), &
-       nomega_coil_ntheta_times_nzeta_coil_basis_dim = (/character(len=50):: 'nomega_coil', 'ntheta_times_nzeta_coil','num_basis_functions' /)
+       nomega_coil_ntheta_times_nzeta_coil_basis_dim = (/character(len=50):: 'nomega_coil', 'ntheta_times_nzeta_coil','num_basis_functions' /), &
+       nomega_coil_num_basis_num_basis_dim = (/character(len=50) :: 'nomega_coil', 'num_basis_functions', &
+         'num_basis_functions' /)
 
   print *,"Beginning write output."
 
@@ -216,8 +229,8 @@ subroutine write_output
   call cdf_define(ncid, vn_totalTime, totalTime)
   call cdf_define(ncid, vn_exit_code, exit_code)
   if (general_option==4 .or. general_option==5) call cdf_define(ncid, vn_chi2_B_target, chi2_B_target)
-  call cdf_define(ncid, vn_sensitivity_option, sensitivity_option)
-  call cdf_define(ncid, vn_normal_displacement_option, normal_displacement_option)
+    call cdf_define(ncid, vn_sensitivity_option, sensitivity_option)
+    call cdf_define(ncid, vn_normal_displacement_option, normal_displacement_option)
   if (sensitivity_option > 1) then
     call cdf_define(ncid, vn_mmax_sensitivity, mmax_sensitivity)
     call cdf_define(ncid, vn_nmax_sensitivity, nmax_sensitivity)
@@ -276,13 +289,26 @@ subroutine write_output
     call cdf_define(ncid, vn_dhdomega, dhdomega, dimname=nomega_coil_nthetanzeta_plasma_dim)
     call cdf_define(ncid, vn_dchi2dr_normal, dchi2dr_normal, dimname=&
       nlambda_nthetanzeta_coil_dim)
-
     if (save_level < 1) then
       call cdf_define(ncid, vn_f_x, f_x, dimname=nthetanzeta_coil_basis_dim)
       call cdf_define(ncid, vn_f_y, f_y, dimname=nthetanzeta_coil_basis_dim)
       call cdf_define(ncid, vn_f_z, f_z, dimname=nthetanzeta_coil_basis_dim)
     endif
-
+  endif
+  if (sensitivity_option == 3 .or. sensitivity_option == 5) then
+    call cdf_define(ncid, vn_q_B, q_B(:,1:Nlambda),dimname=num_basis_functions_nlambda_dim)
+  endif
+  if (sensitivity_option == 3 .or. sensitivity_option == 4) then
+    call cdf_define(ncid, vn_q_K, q_K(:,1:Nlambda),dimname=num_basis_functions_nlambda_dim)
+  endif
+  if (sensitivity_option > 2) then
+    call cdf_define(ncid, vn_dRHS_Kdomega, dRHS_Kdomega,dimname=nomega_coil_num_basis_functions_dim)
+    call cdf_define(ncid, vn_dRHS_Bdomega, dRHS_Bdomega,dimname=nomega_coil_num_basis_functions_dim)
+    call cdf_define(ncid, vn_matrix_K, matrix_K, dimname=basis_basis_dim)
+    call cdf_define(ncid, vn_matrix_B, matrix_B, dimname=basis_basis_dim)
+  endif
+  if (sensitivity_option == 3) then
+    call cdf_define(ncid, vn_adjoint_sum, adjoint_sum(:,1:nlambda),dimname=num_basis_functions_nlambda_dim)
   endif
 
   ! Arrays with dimension 3
@@ -321,7 +347,11 @@ subroutine write_output
       call cdf_define(ncid, vn_dfydomega, dfydomega, dimname=nomega_coil_ntheta_times_nzeta_coil_basis_dim)
       call cdf_define(ncid, vn_dfzdomega, dfzdomega, dimname=nomega_coil_ntheta_times_nzeta_coil_basis_dim)
     endif
-endif
+  endif
+  if (sensitivity_option > 2) then
+    call cdf_define(ncid, vn_dmatrix_Bdomega, dmatrix_Bdomega, dimname=nomega_coil_num_basis_num_basis_dim)
+    call cdf_define(ncid, vn_dmatrix_Kdomega, dmatrix_Kdomega, dimname=nomega_coil_num_basis_num_basis_dim)
+  endif
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
   ! Done with cdf_define calls. Now write the data.
@@ -411,12 +441,10 @@ endif
 
   call cdf_write(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda))
   if (sensitivity_option > 1) then
+
     call cdf_write(ncid, vn_dchi2Bdomega, dchi2Bdomega(:,1:Nlambda))
     call cdf_write(ncid, vn_dchi2Kdomega, dchi2Kdomega(:,1:Nlambda))
     call cdf_write(ncid, vn_dchi2domega, dchi2domega(:,1:Nlambda))
-    !call cdf_write(ncid, vn_domegadx, domegadx)
-    !call cdf_write(ncid, vn_domegady, domegady)
-    !call cdf_write(ncid, vn_domegadz, domegadz)
     call cdf_write(ncid, vn_dchi2dr_normal, dchi2dr_normal(1:nlambda,:))
 
     if (save_level < 1) then
@@ -425,6 +453,21 @@ endif
       call cdf_write(ncid, vn_f_z, f_z)
       call cdf_write(ncid, vn_dhdomega, dhdomega)
     endif
+  endif
+  if (sensitivity_option == 3 .or. sensitivity_option == 4) then
+    call cdf_write(ncid, vn_q_K, q_K(:,1:Nlambda))
+  endif
+  if (sensitivity_option == 3 .or. sensitivity_option == 5) then
+    call cdf_write(ncid, vn_q_B, q_B(:,1:Nlambda))
+  endif
+  if (sensitivity_option > 2) then
+    call cdf_write(ncid, vn_dRHS_Bdomega, dRHS_Bdomega)
+    call cdf_write(ncid, vn_dRHS_Kdomega, dRHS_Kdomega)
+    call cdf_write(ncid, vn_matrix_B, matrix_B)
+    call cdf_write(ncid, vn_matrix_K, matrix_K)
+  endif
+  if (sensitivity_option == 3) then
+    call cdf_write(ncid, vn_adjoint_sum, adjoint_sum)
   endif
 
   ! Arrays with dimension 3
@@ -461,6 +504,10 @@ endif
       call cdf_write(ncid, vn_dfydomega, dfydomega)
       call cdf_write(ncid, vn_dfzdomega, dfzdomega)
     endif
+  endif
+  if (sensitivity_option > 2) then
+    call cdf_write(ncid, vn_dmatrix_Bdomega, dmatrix_Bdomega)
+    call cdf_write(ncid, vn_dmatrix_Kdomega, dmatrix_Kdomega)
   endif
 
   ! Finish up:
