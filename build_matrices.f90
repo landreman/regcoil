@@ -45,6 +45,7 @@ subroutine build_matrices()
      print *,"Error! Invalid setting for symmetry_option:",symmetry_option
      stop
   end select
+  print *,"num_basis_function = ", num_basis_functions
   
   allocate(basis_functions(ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
