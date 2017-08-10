@@ -71,7 +71,8 @@ subroutine write_output
        vn_d_x = "d_x", &
        vn_d_y = "d_y", &
        vn_d_z = "d_z", &
-       vn_omega_coil = "omega_coil"
+       vn_omega_coil = "omega_coil", &
+       vn_dvolume_coildomega = "dvolume_coildomega"
 
   ! Arrays with dimension 2
   character(len=*), parameter :: &
@@ -92,7 +93,7 @@ subroutine write_output
      vn_f_y = "f_y", &
      vn_f_z = "f_z", &
      vn_dhdomega = "dhdomega", &
-     vn_dchi2dr_normal = "dchi2dr_normal", &
+     ! vn_dchi2dr_normal = "dchi2dr_normal", &
      vn_domegadx = "domegadx", &
      vn_domegady = "domegady", &
      vn_domegadz = "domegadz", &
@@ -265,6 +266,7 @@ subroutine write_output
       call cdf_define(ncid, vn_d_y, d_y, dimname=ntheta_times_nzeta_coil_dim)
       call cdf_define(ncid, vn_d_z, d_z, dimname=ntheta_times_nzeta_coil_dim)
     endif
+    call cdf_define(ncid, vn_dvolume_coildomega, dvolume_coildomega, dimname=nomega_coil_dim)
   endif
 
   ! Arrays with dimension 2
@@ -287,8 +289,8 @@ subroutine write_output
     call cdf_define(ncid, vn_dchi2Kdomega, dchi2Kdomega(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
     call cdf_define(ncid, vn_dchi2domega, dchi2domega(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
     call cdf_define(ncid, vn_dhdomega, dhdomega, dimname=nomega_coil_nthetanzeta_plasma_dim)
-    call cdf_define(ncid, vn_dchi2dr_normal, dchi2dr_normal, dimname=&
-      nlambda_nthetanzeta_coil_dim)
+    ! call cdf_define(ncid, vn_dchi2dr_normal, dchi2dr_normal, dimname=&
+     ! nlambda_nthetanzeta_coil_dim)
     if (save_level < 1) then
       call cdf_define(ncid, vn_f_x, f_x, dimname=nthetanzeta_coil_basis_dim)
       call cdf_define(ncid, vn_f_y, f_y, dimname=nthetanzeta_coil_basis_dim)
@@ -424,6 +426,7 @@ subroutine write_output
       call cdf_write(ncid, vn_d_y, d_y)
       call cdf_write(ncid, vn_d_z, d_z)
     endif
+    call cdf_write(ncid, vn_dvolume_coildomega, dvolume_coildomega)
   endif
 
   ! Arrays with dimension 2
@@ -445,7 +448,7 @@ subroutine write_output
     call cdf_write(ncid, vn_dchi2Bdomega, dchi2Bdomega(:,1:Nlambda))
     call cdf_write(ncid, vn_dchi2Kdomega, dchi2Kdomega(:,1:Nlambda))
     call cdf_write(ncid, vn_dchi2domega, dchi2domega(:,1:Nlambda))
-    call cdf_write(ncid, vn_dchi2dr_normal, dchi2dr_normal(1:nlambda,:))
+    ! call cdf_write(ncid, vn_dchi2dr_normal, dchi2dr_normal(1:nlambda,:))
 
     if (save_level < 1) then
       call cdf_write(ncid, vn_f_x, f_x)

@@ -28,7 +28,7 @@ subroutine free_sensitivity()
   deallocate(domegadzdtheta)
   deallocate(domegadzdzeta)
   deallocate(dhdomega)
-  deallocate(dchi2dr_normal)
+  !deallocate(dchi2dr_normal)
   if (normal_displacement_option == 2) then
     deallocate(domegadx)
     deallocate(domegady)

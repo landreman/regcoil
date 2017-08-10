@@ -15,6 +15,11 @@ subroutine init_sensitivity()
   integer :: izeta_plasma, itheta_plasma, izeta_coil, itheta_coil
   integer :: index_coil, l_coil, izetal_coil, index_plasma
 
+  ! For volume calculation
+  real(dp) :: volume_coil_alt, major_R_squared_half_grid, dzdtheta_coil_half_grid
+  integer :: index_coil_first, index_coil_last
+  real(dp), dimension(:), allocatable :: dR_squared_domega_half_grid,domegadzdtheta_half_grid
+
   ! Initialize Fourier arrays - need to include m = 0, n = 0 mode
   call init_Fourier_modes_sensitivity(mmax_sensitivity, nmax_sensitivity, mnmax_sensitivity, nomega_coil, &
     xm_sensitivity, xn_sensitivity, omega_coil)
@@ -135,9 +140,79 @@ subroutine init_sensitivity()
       enddo
     enddo
   enddo
-
   call system_clock(toc)
   print *,"Loop over coil geom in init_sensitivity:",real(toc-tic)/countrate," sec."
+
+  call system_clock(tic,countrate)
+
+  ! Compute Volume Sensitivity - need arrays on half theta grid
+  volume_coil_alt = 0
+  allocate(dvolume_coildomega(nomega_coil))
+  allocate(dR_squared_domega_half_grid(nomega_coil))
+  allocate(domegadzdtheta_half_grid(nomega_coil))
+  dvolume_coildomega = 0
+  do itheta_coil=1,ntheta_coil-1
+    do izeta_coil=1,nzeta_coil
+      index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
+      do l_coil = 0, (nfp-1)
+        izetal_coil = izeta_coil + l_coil*nzeta_coil
+
+        major_R_squared_half_grid = (r_coil(1,itheta_coil,izetal_coil) &
+          *r_coil(1,itheta_coil,izetal_coil) &
+          + r_coil(2,itheta_coil,izetal_coil)*r_coil(2,itheta_coil,izetal_coil) &
+          + r_coil(1,itheta_coil+1,izetal_coil)*r_coil(1,itheta_coil+1,izetal_coil) &
+          + r_coil(2,itheta_coil+1,izetal_coil)*r_coil(2,itheta_coil+1,izetal_coil))/2
+        dzdtheta_coil_half_grid = (drdtheta_coil(3,itheta_coil,izetal_coil) &
+          + drdtheta_coil(3,itheta_coil,izetal_coil))/2
+
+        dR_squared_domega_half_grid = &
+          drdomega(1,index_coil,l_coil+1,:)*r_coil(1,itheta_coil,izetal_coil) &
+          + drdomega(2,index_coil,l_coil+1,:)*r_coil(2,itheta_coil,izetal_coil) &
+          + drdomega(1,index_coil+1,l_coil+1,:)*r_coil(1,itheta_coil+1,izetal_coil) &
+          + drdomega(2,index_coil+1,l_coil+1,:)*r_coil(2,itheta_coil+1,izetal_coil)
+        domegadzdtheta_half_grid = &
+          (domegadzdtheta(:,itheta_coil,izetal_coil) + domegadzdtheta(:,itheta_coil+1,izetal_coil))/2
+
+        dvolume_coildomega = dvolume_coildomega + dR_squared_domega_half_grid*dzdtheta_coil_half_grid &
+          + major_R_squared_half_grid*domegadzdtheta_half_grid*dtheta_coil*dzeta_coil/2
+        volume_coil_alt = volume_coil_alt + major_R_squared_half_grid*dzdtheta_coil_half_grid &
+          * dtheta_coil*dzeta_coil/2
+      end do
+    end do
+  end do
+  do izeta_coil=1,nzeta_coil
+    index_coil_first = (izeta_coil-1)*ntheta_coil + 1
+    index_coil_last = (izeta_coil-1)*ntheta_coil + ntheta_coil
+    do l_coil = 0, (nfp-1)
+      izetal_coil = izeta_coil + l_coil*nzeta_coil
+
+      major_R_squared_half_grid = (r_coil(1,ntheta_coil,izetal_coil)*r_coil(1,ntheta_coil,izetal_coil) &
+        + r_coil(2,ntheta_coil,izetal_coil)*r_coil(2,ntheta_coil,izetal_coil) &
+        + r_coil(1,1,izetal_coil)*r_coil(1,1,izetal_coil) &
+        + r_coil(2,1,izetal_coil)*r_coil(2,1,izetal_coil))/2
+      dzdtheta_coil_half_grid = (drdtheta_coil(3,ntheta_coil,izetal_coil) + drdtheta_coil(3,1,izetal_coil))/2
+
+      dR_squared_domega_half_grid = &
+        drdomega(1,index_coil_first,l_coil+1,:)*r_coil(1,1,izetal_coil) &
+        + drdomega(2,index_coil_first,l_coil+1,:)*r_coil(2,1,izetal_coil) &
+        + drdomega(1,index_coil_last,l_coil+1,:)*r_coil(1,ntheta_coil,izetal_coil) &
+        + drdomega(2,index_coil_last,l_coil+1,:)*r_coil(2,ntheta_coil,izetal_coil)
+      domegadzdtheta_half_grid = &
+        (domegadzdtheta(:,1,izetal_coil) + domegadzdtheta(1,ntheta_coil,izetal_coil))/2
+
+      dvolume_coildomega = dvolume_coildomega + dR_squared_domega_half_grid*dzdtheta_coil_half_grid &
+        + major_R_squared_half_grid*domegadzdtheta_half_grid*dtheta_coil*dzeta_coil/2
+      volume_coil_alt = volume_coil_alt + major_R_squared_half_grid*dzdtheta_coil_half_grid &
+        * dtheta_coil*dzeta_coil/2
+    end do
+  end do
+  ! volume_coil_alt should be the same as volume_coil
+  call system_clock(toc)
+  print *,"Volume computed in init_sensitivity: ", real(volume_coil_alt), " m^3"
+  call system_clock(toc)
+  print *,"Coil volume computation:",real(toc-tic)/countrate," sec."
+  deallocate(dR_squared_domega_half_grid)
+  deallocate(domegadzdtheta_half_grid)
 
 !  call system_clock(tic,countrate)
 !
