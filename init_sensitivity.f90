@@ -16,7 +16,7 @@ subroutine init_sensitivity()
   integer :: index_coil, l_coil, izetal_coil, index_plasma
 
   ! For volume calculation
-  real(dp) :: volume_coil_alt, major_R_squared_half_grid, dzdtheta_coil_half_grid
+  real(dp) :: major_R_squared_half_grid, dzdtheta_coil_half_grid
   integer :: index_coil_first, index_coil_last
   real(dp), dimension(:), allocatable :: dR_squared_domega_half_grid,domegadzdtheta_half_grid
 
@@ -146,7 +146,7 @@ subroutine init_sensitivity()
   call system_clock(tic,countrate)
 
   ! Compute Volume Sensitivity - need arrays on half theta grid
-  volume_coil_alt = 0
+  volume_coil_with_dzdtheta = 0
   allocate(dvolume_coildomega(nomega_coil))
   allocate(dR_squared_domega_half_grid(nomega_coil))
   allocate(domegadzdtheta_half_grid(nomega_coil))
@@ -173,9 +173,9 @@ subroutine init_sensitivity()
         domegadzdtheta_half_grid = &
           (domegadzdtheta(:,itheta_coil,izetal_coil) + domegadzdtheta(:,itheta_coil+1,izetal_coil))/2
 
-        dvolume_coildomega = dvolume_coildomega + dR_squared_domega_half_grid*dzdtheta_coil_half_grid &
-          + major_R_squared_half_grid*domegadzdtheta_half_grid*dtheta_coil*dzeta_coil/2
-        volume_coil_alt = volume_coil_alt + major_R_squared_half_grid*dzdtheta_coil_half_grid &
+        dvolume_coildomega = dvolume_coildomega + (dR_squared_domega_half_grid*dzdtheta_coil_half_grid &
+          + major_R_squared_half_grid*domegadzdtheta_half_grid)*dtheta_coil*dzeta_coil/2
+        volume_coil_with_dzdtheta = volume_coil_with_dzdtheta + major_R_squared_half_grid*dzdtheta_coil_half_grid &
           * dtheta_coil*dzeta_coil/2
       end do
     end do
@@ -200,15 +200,15 @@ subroutine init_sensitivity()
       domegadzdtheta_half_grid = &
         (domegadzdtheta(:,1,izetal_coil) + domegadzdtheta(1,ntheta_coil,izetal_coil))/2
 
-      dvolume_coildomega = dvolume_coildomega + dR_squared_domega_half_grid*dzdtheta_coil_half_grid &
-        + major_R_squared_half_grid*domegadzdtheta_half_grid*dtheta_coil*dzeta_coil/2
-      volume_coil_alt = volume_coil_alt + major_R_squared_half_grid*dzdtheta_coil_half_grid &
+      dvolume_coildomega = dvolume_coildomega + (dR_squared_domega_half_grid*dzdtheta_coil_half_grid &
+        + major_R_squared_half_grid*domegadzdtheta_half_grid)*dtheta_coil*dzeta_coil/2
+      volume_coil_with_dzdtheta = volume_coil_with_dzdtheta + major_R_squared_half_grid*dzdtheta_coil_half_grid &
         * dtheta_coil*dzeta_coil/2
     end do
   end do
   ! volume_coil_alt should be the same as volume_coil
   call system_clock(toc)
-  print *,"Volume computed in init_sensitivity: ", real(volume_coil_alt), " m^3"
+  print *,"Volume computed in init_sensitivity: ", real(volume_coil_with_dzdtheta), " m^3"
   call system_clock(toc)
   print *,"Coil volume computation:",real(toc-tic)/countrate," sec."
   deallocate(dR_squared_domega_half_grid)

@@ -46,7 +46,8 @@ subroutine write_output
        vn_nmax_sensitivity = "nmax_sensitivity", &
        vn_mmax_sensitivity = "mmax_sensitivity", &
        vn_mnmax_sensitivity = "mnmax_sensitivity", &
-       vn_nomega_coil = "nomega_coil"
+       vn_nomega_coil = "nomega_coil", &
+       vn_volume_coil_with_dzdtheta = "volume_coil_with_dzdtheta"
 
   ! Arrays with dimension 1
   character(len=*), parameter :: &
@@ -237,6 +238,7 @@ subroutine write_output
     call cdf_define(ncid, vn_nmax_sensitivity, nmax_sensitivity)
     call cdf_define(ncid, vn_mnmax_sensitivity, mnmax_sensitivity)
     call cdf_define(ncid, vn_nomega_coil, nomega_coil)
+    call cdf_define(ncid, vn_volume_coil_with_dzdtheta, volume_coil_with_dzdtheta)
   endif
 
   ! Arrays with dimension 1
@@ -397,6 +399,7 @@ subroutine write_output
     call cdf_write(ncid, vn_nmax_sensitivity, nmax_sensitivity)
     call cdf_write(ncid, vn_mnmax_sensitivity, mnmax_sensitivity)
     call cdf_write(ncid, vn_nomega_coil, nomega_coil)
+    call cdf_write(ncid, vn_volume_coil_with_dzdtheta, volume_coil_with_dzdtheta)
   endif
 
   ! Arrays with dimension 1

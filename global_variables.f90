@@ -110,6 +110,7 @@ module global_variables
   real(dp), dimension(:,:,:), allocatable :: dmatrix_Kdomega, dmatrix_Bdomega, dmatrixdomega
   real(dp), dimension(:,:), allocatable :: dRHS_Bdomega, dRHS_Kdomega, dRHSdomega, adjoint_sum
   real(dp), dimension(:), allocatable :: dvolume_coildomega
+  real(dp) :: volume_coil_with_dzdtheta
 
 end module global_variables
 
