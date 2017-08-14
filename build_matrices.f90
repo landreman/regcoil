@@ -68,21 +68,21 @@ subroutine build_matrices()
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(dfzdomega(nomega_coil, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
-  endif
-  if (sensitivity_option > 2) then
     allocate(dmatrix_Kdomega(nomega_coil,num_basis_functions,num_basis_functions),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(dmatrix_Bdomega(nomega_coil,num_basis_functions,num_basis_functions),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dRHS_Kdomega(nomega_coil,num_basis_functions),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dRHS_Bdomega(nomega_coil,num_basis_functions),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+  endif
+  if (sensitivity_option > 2) then
     allocate(f_xdNdomega_over_N_coil2(nomega_coil,ntheta_coil*nzeta_coil,num_basis_functions),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(f_ydNdomega_over_N_coil2(nomega_coil,ntheta_coil*nzeta_coil,num_basis_functions),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(f_zdNdomega_over_N_coil2(nomega_coil,ntheta_coil*nzeta_coil,num_basis_functions),stat=iflag)
-    if (iflag .ne. 0) stop 'Allocation error!'
-    allocate(dRHS_Kdomega(nomega_coil,num_basis_functions),stat=iflag)
-    if (iflag .ne. 0) stop 'Allocation error!'
-    allocate(dRHS_Bdomega(nomega_coil,num_basis_functions),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
   endif
 

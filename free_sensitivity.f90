@@ -48,8 +48,5 @@ subroutine free_sensitivity()
     deallocate(dRHS_Bdomega)
     deallocate(dRHSdomega)
   endif
-  if (sensitivity_option == 3) then
-    deallocate(adjoint_sum)
-  endif
 
 end subroutine free_sensitivity

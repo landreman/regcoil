@@ -119,10 +119,6 @@ subroutine solve
     allocate(dFdomega(nomega_coil,num_basis_functions),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
   endif
-  if (sensitivity_option == 3) then
-    allocate(adjoint_sum(num_basis_functions,nlambda),stat=iflag)
-    if (iflag .ne. 0) stop 'Allocation error!'
-  endif
 
   ! Call LAPACK's DSYSV in query mode to determine the optimal size of the work array
   call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, IPIV, RHS, num_basis_functions, WORK, -1, INFO)
@@ -142,6 +138,7 @@ subroutine solve
      matrix = matrix_B + lambda(ilambda) * matrix_K
      RHS    =    RHS_B + lambda(ilambda) *    RHS_K
 
+     ! dmatrixdomega and dRHSdomega needed for adjoint solve
      if (sensitivity_option > 2) then
         dmatrixdomega = dmatrix_Bdomega + lambda(ilambda)*dmatrix_Kdomega
         dRHSdomega = dRHS_Bdomega + lambda(ilambda)*dRHS_Kdomega
@@ -222,14 +219,8 @@ subroutine solve
       adjoint_Az = transpose(f_z)
       dchi2Kdphi = -2*nfp*dtheta_coil*dzeta_coil*(matmul(adjoint_Ax,adjoint_bx) + matmul(adjoint_Ay,adjoint_by) + matmul(adjoint_Az,adjoint_bz))
       ! Solve Adjoint Equation
-      ! Call LAPACK's DSYSV in query mode to determine the optimal size of the work array
-      ! matrix is symmetric, so no transpose needed
-      call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, IPIV, dchi2Kdphi(:,1), num_basis_functions, WORK, -1, INFO)
-      LWORK = WORK(1)
-      print *,"Optimal LWORK:",LWORK
-      deallocate(WORK)
-      allocate(WORK(LWORK), stat=iflag)
-      if (iflag .ne. 0) stop 'Allocation error!'
+      ! matrix was overwritten previously
+      matrix = matrix_B + lambda(ilambda) * matrix_K
       call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, IPIV, dchi2Kdphi, num_basis_functions, WORK, LWORK, INFO)
       if (INFO /= 0) then
         print *, "!!!!!! Error in LAPACK DSYSV: INFO = ", INFO
@@ -278,13 +269,8 @@ subroutine solve
         adjoint_c(:,1) = reshape(Bnormal_total(:,:,ilambda), (/ ntheta_plasma * nzeta_plasma /))
         dchi2Bdphi = 2*nfp*dtheta_plasma*dzeta_plasma*matmul(transpose(g), adjoint_c)
         ! Solve Adjoint Equation
-        ! Call LAPACK's DSYSV in query mode to determine the optimal size of the work array
-        call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, IPIV, dchi2Bdphi(:,1), num_basis_functions, WORK, -1, INFO)
-        LWORK = WORK(1)
-        print *,"Optimal LWORK:",LWORK
-        deallocate(WORK)
-        allocate(WORK(LWORK), stat=iflag)
-        if (iflag .ne. 0) stop 'Allocation error!'
+        ! matrix was overwritten previously
+        matrix = matrix_B + lambda(ilambda) * matrix_K
         call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, IPIV, dchi2Bdphi(:,1), num_basis_functions, WORK, LWORK, INFO)
         if (INFO /= 0) then
           print *, "!!!!!! Error in LAPACK DSYSV: INFO = ", INFO
@@ -296,8 +282,6 @@ subroutine solve
      if (sensitivity_option == 3) then
         dchi2Kdomega(:,ilambda) = dchi2Kdomega(:,ilambda) - matmul(dFdomega, q_K(:,ilambda))
         dchi2Bdomega(:,ilambda) = dchi2Bdomega(:,ilambda) - matmul(dFdomega, q_B(:,ilambda))
-        ! Saved for diagnostic testing - adjoint_sum should be 0 
-        adjoint_sum(:,ilambda) = - matmul(dFdomega, q_B(:,ilambda)) - lambda(ilambda)*matmul(dFdomega, q_K(:,ilambda))
      endif
      if (sensitivity_option == 4) then
         dchi2Kdomega(:,ilambda) = dchi2Kdomega(:,ilambda) - matmul(dFdomega, q_K(:,ilambda))
