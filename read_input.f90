@@ -21,7 +21,7 @@ subroutine read_input
        load_bnorm, bnorm_filename, &
        shape_filename_plasma, nlambda, lambda_min, lambda_max, general_option, nescout_filename, &
        target_option, current_density_target, lambda_search_tolerance, sensitivity_option, &
-       normal_displacement_option, nmax_sensitivity, mmax_sensitivity
+       normal_displacement_option, nmax_sensitivity, mmax_sensitivity, sensitivity_symmetry_option
 
   ! getcarg is in LIBSTELL
   call getcarg(1, inputFilename, numargs)
@@ -68,6 +68,7 @@ subroutine read_input
 
   print *,"Sensitivity parameters:"
   print "(a,i4)","   sensitivity_option =",sensitivity_option
+  print "(a,i4)","   sensitivity_symmetry_option =", sensitivity_symmetry_option
   print "(a,i4)","   normal_displacement_option =",normal_displacement_option
   print "(a,i4)","   nmax_sensitivity =",nmax_sensitivity
   print "(a,i4)","   mmax_sensitivity =",mmax_sensitivity

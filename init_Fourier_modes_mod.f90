@@ -47,12 +47,13 @@ contains
 
   end subroutine init_Fourier_modes
 
-  subroutine init_Fourier_modes_sensitivity(mpol,ntor,mnmax,nomega,xm,xn,omega)
+  subroutine init_Fourier_modes_sensitivity(mpol,ntor,mnmax,nomega,xm,xn,omega,sensitivity_symmetry_option)
 
     implicit none
 
     integer :: mpol, ntor, mnmax, iomega, i, nomega
     integer, dimension(:), allocatable :: xm, xn, omega
+    integer :: minSymmetry, maxSymmetry, sensitivity_symmetry_option
 
     integer :: jn, jm, iflag
 
@@ -62,7 +63,20 @@ contains
     mnmax = mpol*(ntor*2+1) + ntor+1
 
     ! nomega is the length of the number of fourier coefficients
-    nomega = mnmax*4
+    select case (sensitivity_symmetry_option)
+      case (1) ! stellarator symmetric
+        nomega = mnmax*2
+        minSymmetry = 1
+        maxSymmetry = 2
+      case (2) ! even in theta and zeta
+        nomega = mnmax*2
+        minSymmetry = 3
+        maxSymmetry = 4
+      case (3) ! no symmetry
+        nomega = mnmax*4
+        minSymmetry = 1
+        maxSymmetry = 4
+    end select
 
     allocate(xm(nomega),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
@@ -75,7 +89,7 @@ contains
     xm=0
     iomega = 0
     do jn=1,ntor+1
-      do i=1,4
+      do i=minSymmetry,maxSymmetry
         iomega = iomega + 1
         omega(iomega) = i
         xn(iomega)=jn-1
@@ -85,7 +99,7 @@ contains
     ! Handle the xm>0 modes:
     do jm = 1,mpol
       do jn = -ntor, ntor
-        do i=1,4
+        do i=minSymmetry,maxSymmetry
           iomega = iomega + 1
           xn(iomega) = jn
           xm(iomega) = jm

@@ -491,3 +491,20 @@ so the units are Amperes/meter.
 {0}
 {When \parlink{sensitivity\_option} $> 1$.}
 {Sensitivity of $\chi^2$, $\chi^2_B$, and $\chi^2_K$ will be computed with respect to $r_{mn}^c$ and $z_{mn}^s$ for $m \leq $ \texttt{nmax\_sensitivity}.}
+
+\myhrule
+
+\param{sensitivity\_symmetry\_option}
+{integer}
+{1}
+{When \parlink{sensitivity\_option} $> 1$.}
+{Symmetry assumed when computed sensitivity to coil geometry parameters. This does not need to be the same as \parlink{symmetry\_option}. \\
+{\ttfamily sensitivity\_symmetry\_option} = 1: Force the single-valued part of the current potential
+to be odd in $\theta$ and $\zeta$. This option corresponds to stellarator symmetry.\\
+
+{\ttfamily sensitivity\_symmetry\_option} = 2: Force the single-valued part of the current potential
+to be even in $\theta$ and $\zeta$. I'm not sure why you would ever use this option,
+but it is available for completeness.\\
+
+{\ttfamily sensitivity\_symmetry\_option} = 3: No symmetry in the current potential is imposed.
+}

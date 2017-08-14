@@ -90,6 +90,7 @@ module global_variables
 ! Needed for sensitivity calculation
   integer :: normal_displacement_option = 0
   integer :: sensitivity_option = 1
+  integer :: sensitivity_symmetry_option = 1
   integer :: nmax_sensitivity = 0
   integer :: mmax_sensitivity = 0
   integer :: mnmax_sensitivity
