@@ -146,7 +146,7 @@ subroutine solve
 
      call system_clock(toc)
      print *,"  Additions: ",real(toc-tic)/countrate," sec."
-     call system_clock(tic)
+     call system_clock(tic,countrate)
 
      ! Compute solution = matrix \ RHS.
      ! Use LAPACK's DSYSV since matrix is symmetric.
@@ -160,7 +160,7 @@ subroutine solve
 
      call system_clock(toc)
      print *,"  DSYSV: ",real(toc-tic)/countrate," sec."
-     call system_clock(tic)
+     call system_clock(tic,countrate)
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! Now compute diagnostics
@@ -184,6 +184,20 @@ subroutine solve
           / norm_normal_coil
      chi2_K(ilambda) = nfp * dtheta_coil * dzeta_coil * sum(this_K2_times_N)
      K2(:,:,ilambda) = this_K2_times_N / norm_normal_coil
+
+     Bnormal_total(:,:,ilambda) = (reshape(matmul(g,solution),(/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma) &
+          + Bnormal_from_plasma_current + Bnormal_from_net_coil_currents
+
+     max_Bnormal(ilambda) = maxval(abs(Bnormal_total(:,:,ilambda)))
+     max_K(ilambda) = sqrt(maxval(K2    (:,:,ilambda)))
+
+     chi2_B(ilambda) = nfp * dtheta_plasma * dzeta_plasma &
+          * sum(Bnormal_total(:,:,ilambda) * Bnormal_total(:,:,ilambda) * norm_normal_plasma)
+
+    call system_clock(toc)
+    print *,"  Diagnostics: ",real(toc-tic)/countrate," sec."
+    print "(a,es10.3,a,es10.3)","   chi2_B:",chi2_B(ilambda),",  chi2_K:",chi2_K(ilambda)
+    print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda),",  rms K:",sqrt(chi2_K(ilambda)/area_coil)
 
      if (sensitivity_option > 1) then
        call system_clock(tic,countrate)
@@ -230,15 +244,6 @@ subroutine solve
       print *,"Adjoint chi2_K calculation in solve:",real(toc-tic)/countrate," sec."
     endif
 
-     Bnormal_total(:,:,ilambda) = (reshape(matmul(g,solution),(/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma) &
-          + Bnormal_from_plasma_current + Bnormal_from_net_coil_currents
-
-     max_Bnormal(ilambda) = maxval(abs(Bnormal_total(:,:,ilambda)))
-     max_K(ilambda) = sqrt(maxval(K2    (:,:,ilambda)))
-
-     chi2_B(ilambda) = nfp * dtheta_plasma * dzeta_plasma &
-          * sum(Bnormal_total(:,:,ilambda) * Bnormal_total(:,:,ilambda) * norm_normal_plasma)
-
      if (sensitivity_option > 1) then
        call system_clock(tic,countrate)
        !$OMP PARALLEL
@@ -256,11 +261,15 @@ subroutine solve
        print *,"chi2_B sensitivity in solve:",real(toc-tic)/countrate," sec."
        dchi2domega(:,ilambda) = dchi2Bdomega(:,ilambda) + lambda(ilambda)*dchi2Kdomega(:,ilambda)
      endif
+
      ! Compute dFdomega for adjoint solution
      if (sensitivity_option > 2) then
+        call system_clock(tic,countrate)
         do iomega = 1, nomega_coil
           dFdomega(iomega,:) = matmul(dmatrixdomega(iomega,:,:),solution) - dRHSdomega(iomega,:)
         enddo
+        call system_clock(toc)
+        print *,"dFdomega in solve:", real(toc-tic)/countrate," sec."
      endif
 
      if (sensitivity_option == 3 .or. sensitivity_option == 5) then
@@ -280,26 +289,30 @@ subroutine solve
         print *,"Adjoint chi2_B calculation in solve:",real(toc-tic)/countrate," sec."
      endif
      if (sensitivity_option == 3) then
+        call system_clock(tic,countrate)
         dchi2Kdomega(:,ilambda) = dchi2Kdomega(:,ilambda) - matmul(dFdomega, q_K(:,ilambda))
         dchi2Bdomega(:,ilambda) = dchi2Bdomega(:,ilambda) - matmul(dFdomega, q_B(:,ilambda))
+        call system_clock(toc)
+        print *,"dchi2K and dchi2B in solve:",real(toc-tic)/countrate," sec."
      endif
      if (sensitivity_option == 4) then
+        call system_clock(tic,countrate)
         dchi2Kdomega(:,ilambda) = dchi2Kdomega(:,ilambda) - matmul(dFdomega, q_K(:,ilambda))
         dchi2Bdomega(:,ilambda) = dchi2domega(:,ilambda) - lambda(ilambda)*dchi2Kdomega(:,ilambda)
+        call system_clock(toc)
+        print *,"dchi2K and dchi2B in solve:",real(toc-tic)/countrate," sec."
      endif
      if (sensitivity_option == 5) then
+        call system_clock(tic,countrate)
         dchi2Bdomega(:,ilambda) = dchi2Bdomega(:,ilambda) - matmul(dFdomega, q_B(:,ilambda))
         if (lambda(ilambda) /= 0) then
           dchi2Kdomega(:,ilambda) = (dchi2domega(:,ilambda) - dchi2Bdomega(:,ilambda))/lambda(ilambda)
         else
           dchi2Kdomega(:,ilambda) = 0
         endif
+        call system_clock(toc)
+        print *,"dchi2K and dchi2B in solve:",real(toc-tic)/countrate," sec."
      endif
-
-     call system_clock(toc)
-     print *,"  Diagnostics: ",real(toc-tic)/countrate," sec."
-     print "(a,es10.3,a,es10.3)","   chi2_B:",chi2_B(ilambda),",  chi2_K:",chi2_K(ilambda)
-     print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda),",  rms K:",sqrt(chi2_K(ilambda)/area_coil)
   end do
 
   if (sensitivity_option > 1) then

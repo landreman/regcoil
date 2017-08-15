@@ -377,8 +377,6 @@ subroutine build_matrices()
   !$OMP END MASTER
   !$OMP DO 
   do iomega = 1, nomega_coil
-    ! With matmuls is about 10x slower so commenting out
-    !dgdomega(iomega,:,:) = dtheta_coil*dzeta_coil*matmul(dinductancedomega(iomega,:,:), basis_functions)
     call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedomega(iomega,:,:),LDA,basis_functions,LDB,BLAS_BETA,dgdomega(iomega,:,:),LDC)
   enddo
   !$OMP END DO
@@ -452,6 +450,9 @@ subroutine build_matrices()
   endif
 
   matrix_B = 0
+  if (sensitivity_option > 2) then
+    dmatrix_Bdomega = 0
+  end if
 
   deallocate(norm_normal_plasma_inv1D)
   deallocate(norm_normal_coil_inv1D)
@@ -479,28 +480,30 @@ subroutine build_matrices()
   call system_clock(toc)
   print *,"matmul for matrix_B:",real(toc-tic)/countrate,"sec."
 
-  call system_clock(tic)
-
   if (sensitivity_option > 2) then
+    BLAS_BETA=1
+    call system_clock(tic)
+    !$OMP PARALLEL
+    !$OMP MASTER
+    print *,"  Number of OpenMP threads:",omp_get_num_threads()
+    !$OMP END MASTER
+    !$OMP DO
     do iomega = 1, nomega_coil
-      ! g_over_N_plasma(ntheta_plasma*nzeta_plasma,num_basis_functions)
-      ! dgdomega(nomega_coil, ntheta_plasma*nzeta_plasma, num_basis_functions)
-      !dmatrix_Bdomega(iomega,:,:) = 2*dtheta_plasma*dzeta_plasma*matmul(transpose(g_over_N_plasma),dgdomega(iomega,:,:))
-      dmatrix_Bdomega(iomega,:,:) = dtheta_plasma*dzeta_plasma*(matmul(transpose(g_over_N_plasma),dgdomega(iomega,:,:)) &
-        + matmul(transpose(dgdomega(iomega,:,:)),g_over_N_plasma))
-      !call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dgdomega(iomega,:,:),LDA,g_over_N_plasma,LDB,2*BLAS_BETA,dmatrix_Bdomega(iomega,:,:),LDC)
+      call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dgdomega(iomega,:,:),LDA,g_over_N_plasma,LDB,BLAS_BETA,dmatrix_Bdomega(iomega,:,:),LDC)
+      call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,g_over_N_plasma,LDA,dgdomega(iomega,:,:),LDB,BLAS_BETA,dmatrix_Bdomega(iomega,:,:),LDC)
     enddo
+    !$OMP END DO
+    !$OMP END PARALLEL
+    call system_clock(toc)
+    print *,"matmul for dmatrix_Bdomega:",real(toc-tic)/countrate,"sec."
   endif
-
-  call system_clock(toc)
-  print *,"matmul for dmatrix_Bdomega:",real(tic-toc)/countrate,"sec."
 
   deallocate(g_over_N_plasma)
 
   matrix_K = 0
   if (sensitivity_option > 2) then
     dmatrix_Kdomega = 0
-  end if 
+  end if
 
   call system_clock(tic)
   ! Here we carry out matrix_K += dtheta*dzeta*(f_x ^ T) * f_x_over_N_coil
@@ -522,34 +525,6 @@ subroutine build_matrices()
   call system_clock(toc)
   print *,"matmul for matrix_K:",real(tic-toc)/countrate,"sec."
 
-
-  ! Construct dmatrix_Kdomega
-  if (sensitivity_option > 2) then
-    call system_clock(tic)
-    do iomega = 1, nomega_coil
-      ! f_xdNdomega_over_N_coil2(nomega_coil,ntheta_coil*nzeta_coil,num_basis_functions)
-      ! f_x(ntheta_coil*nzeta_coil, num_basis_functions)
-      ! dfxdomega(nomega_coil, ntheta_coil*nzeta_coil, num_basis_functions)
-      ! f_x_over_N_coil(ntheta_coil*nzeta_coil,num_basis_functions)
-      ! This should be changed to DGEMM eventually
-      dmatrix_Kdomega(iomega,:,:) = dtheta_coil*dzeta_coil*(matmul(transpose(dfxdomega(iomega,:,:)),f_x_over_N_coil) &
-        + matmul(transpose(dfydomega(iomega,:,:)),f_y_over_N_coil) &
-        + matmul(transpose(dfzdomega(iomega,:,:)),f_z_over_N_coil) &
-        + matmul(transpose(f_x_over_N_coil),dfxdomega(iomega,:,:)) &
-        + matmul(transpose(f_y_over_N_coil),dfydomega(iomega,:,:)) &
-        + matmul(transpose(f_z_over_N_coil),dfzdomega(iomega,:,:)) &
-        - matmul(transpose(f_x),f_xdNdomega_over_N_coil2(iomega,:,:)) &
-        - matmul(transpose(f_y),f_ydNdomega_over_N_coil2(iomega,:,:)) &
-        - matmul(transpose(f_z),f_zdNdomega_over_N_coil2(iomega,:,:)))
-      !call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dfxdomega(iomega,:,:),LDA,f_x_over_N_coil,LDB,2*BLAS_BETA,dmatrix_Kdomega(iomega,:,:),LDC)
-      !call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_x,LDA,f_xdNdomega_over_N_coil2(iomega,:,:),LDB,-BLAS_BETA,dmatrix_Kdomega(iomega,:,:),LDC)
-    enddo
-    call system_clock(toc)
-    print *,"matmul for dmatrix_Kdomega:",real(tic-toc)/countrate,"sec."
-  endif
-
-
-
   call system_clock(tic)
   ! Here we carry out matrix_K += dtheta*dzeta*(f_y ^ T) * f_y_over_N_coil
   ! A = f_y
@@ -569,15 +544,6 @@ subroutine build_matrices()
 
   call system_clock(toc)
   print *,"matmul 2 for matrix_K:",real(toc-tic)/countrate,"sec."
-
-!  ! Construct dmatrix_Kdomega
-!  if (sensitivity_option > 2) then
-!    do iomega = 1, nomega_coil
-!      call DGEMM(TRANSA,TRANSB,M,N,K,2*BLAS_ALPHA,dfydomega(iomega,:,:),LDA,f_y_over_N_coil,LDB,BLAS_BETA,dmatrix_Kdomega(iomega,:,:),LDC)
-!      call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_y,LDA,f_ydNdomega_over_N_coil2(iomega,:,:),LDB,-BLAS_BETA,dmatrix_Kdomega(iomega,:,:),LDC)
-!    enddo
-!  endif
-
 
   call system_clock(tic)
   ! Here we carry out matrix_K += dtheta*dzeta*(f_z ^ T) * f_z_over_N_coil
@@ -599,13 +565,30 @@ subroutine build_matrices()
   call system_clock(toc)
   print *,"matmul 3 for matrix_K:",real(toc-tic)/countrate,"sec."
 
-!  ! Construct dmatrix_Kdomega
-!  if (sensitivity_option > 2) then
-!    do iomega = 1, nomega_coil
-!      call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dfzdomega(iomega,:,:),LDA,f_z_over_N_coil,LDB,2*BLAS_BETA,dmatrix_Kdomega(iomega,:,:),LDC)
-!      call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_z,LDA,f_zdNdomega_over_N_coil2(iomega,:,:),LDB,-BLAS_BETA,dmatrix_Kdomega(iomega,:,:),LDC)
-!    enddo
-!  endif
+  ! Construct dmatrix_Kdomega
+  if (sensitivity_option > 2) then
+    call system_clock(tic)
+    !$OMP PARALLEL
+    !$OMP MASTER
+    print *,"  Number of OpenMP threads:",omp_get_num_threads()
+    !$OMP END MASTER
+    !$OMP DO
+    do iomega = 1, nomega_coil
+      call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dfxdomega(iomega,:,:),LDA,f_x_over_N_coil,LDB,BLAS_BETA,dmatrix_Kdomega(iomega,:,:),LDC)
+      call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dfydomega(iomega,:,:),LDA,f_y_over_N_coil,LDB,BLAS_BETA,dmatrix_Kdomega(iomega,:,:),LDC)
+      call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dfzdomega(iomega,:,:),LDA,f_z_over_N_coil,LDB,BLAS_BETA,dmatrix_Kdomega(iomega,:,:),LDC)
+      call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_x_over_N_coil,LDA,dfxdomega(iomega,:,:),LDB,BLAS_BETA,dmatrix_Kdomega(iomega,:,:),LDC)
+      call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_y_over_N_coil,LDA,dfydomega(iomega,:,:),LDB,BLAS_BETA,dmatrix_Kdomega(iomega,:,:),LDC)
+      call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_z_over_N_coil,LDA,dfzdomega(iomega,:,:),LDB,BLAS_BETA,dmatrix_Kdomega(iomega,:,:),LDC)
+      call DGEMM(TRANSA,TRANSB,M,N,K,-BLAS_ALPHA,f_x,LDA,f_xdNdomega_over_N_coil2(iomega,:,:),LDB,BLAS_BETA,dmatrix_Kdomega(iomega,:,:),LDC)
+      call DGEMM(TRANSA,TRANSB,M,N,K,-BLAS_ALPHA,f_y,LDA,f_ydNdomega_over_N_coil2(iomega,:,:),LDB,BLAS_BETA,dmatrix_Kdomega(iomega,:,:),LDC)
+      call DGEMM(TRANSA,TRANSB,M,N,K,-BLAS_ALPHA,f_z,LDA,f_zdNdomega_over_N_coil2(iomega,:,:),LDB,BLAS_BETA,dmatrix_Kdomega(iomega,:,:),LDC)
+    enddo
+    !$OMP END DO
+    !$OMP END PARALLEL
+    call system_clock(toc)
+    print *,"matmul for dmatrix_Kdomega:",real(toc-tic)/countrate,"sec."
+  endif
 
   call system_clock(tic)
 
@@ -616,12 +599,13 @@ subroutine build_matrices()
   print *,"Matmuls for RHS_K:",real(toc-tic)/countrate,"sec."
 
   ! Compute dRHS_Kdomega
-  ! f_x_over_N_coil(ntheta_coil*nzeta_coil,num_basis_functions)
-  ! d_x(ntheta_coil*nzeta_coil)
-  ! f_xdNdomega_over_N_coil2(nomega_coil,ntheta_coil*nzeta_coil,num_basis_functions)
-  ! dfxdomega(nomega_coil, ntheta_coil*nzeta_coil, num_basis_functions
   if (sensitivity_option > 2) then
     call system_clock(tic)
+    !$OMP PARALLEL
+    !$OMP MASTER
+    print *,"  Number of OpenMP threads:",omp_get_num_threads()
+    !$OMP END MASTER
+    !$OMP DO
     do iomega = 1,nomega_coil
       dRHS_Kdomega(iomega,:) = dtheta_coil*dzeta_coil*(matmul(dddomega(1,iomega,1:ntheta_coil*nzeta_coil),f_x_over_N_coil) &
         + matmul(dddomega(2,iomega,1:ntheta_coil*nzeta_coil),f_y_over_N_coil) &
@@ -633,6 +617,8 @@ subroutine build_matrices()
         + matmul(transpose(dfydomega(iomega,:,:)),d_y/reshape(norm_normal_coil, (/ntheta_coil*nzeta_coil/))) &
         + matmul(transpose(dfzdomega(iomega,:,:)),d_z/reshape(norm_normal_coil, (/ntheta_coil*nzeta_coil/))))
     enddo
+    !$OMP END DO
+    !$OMP END PARALLEL
     call system_clock(toc)
     print *,"Matmuls for dRHS_Kdomega:",real(toc-tic)/countrate,"sec."
   endif
