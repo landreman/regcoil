@@ -498,7 +498,9 @@ subroutine build_matrices()
   deallocate(g_over_N_plasma)
 
   matrix_K = 0
-  dmatrix_Kdomega = 0
+  if (sensitivity_option > 2) then
+    dmatrix_Kdomega = 0
+  end if 
 
   call system_clock(tic)
   ! Here we carry out matrix_K += dtheta*dzeta*(f_x ^ T) * f_x_over_N_coil
