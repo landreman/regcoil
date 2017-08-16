@@ -21,7 +21,8 @@ subroutine read_input
        load_bnorm, bnorm_filename, &
        shape_filename_plasma, nlambda, lambda_min, lambda_max, general_option, nescout_filename, &
        target_option, current_density_target, lambda_search_tolerance, sensitivity_option, &
-       normal_displacement_option, nmax_sensitivity, mmax_sensitivity, sensitivity_symmetry_option
+       normal_displacement_option, nmax_sensitivity, mmax_sensitivity, sensitivity_symmetry_option, &
+       save_nescin_option, save_nescin_mpol, save_nescin_ntor
 
   ! getcarg is in LIBSTELL
   call getcarg(1, inputFilename, numargs)

@@ -48,7 +48,10 @@ subroutine write_output
        vn_mnmax_sensitivity = "mnmax_sensitivity", &
        vn_nomega_coil = "nomega_coil", &
        vn_volume_coil_with_dzdtheta = "volume_coil_with_dzdtheta", &
-       vn_sensitivity_symmetry_option = "sensitivity_symmetry_option"
+       vn_sensitivity_symmetry_option = "sensitivity_symmetry_option", &
+       vn_save_nescin_option = "save_nescin_option", &
+       vn_save_nescin_ntor = "save_nescin_ntor", &
+       vn_save_nescin_mpol = "save_nescin_mpol"
 
   ! Arrays with dimension 1
   character(len=*), parameter :: &
@@ -241,6 +244,11 @@ subroutine write_output
     call cdf_define(ncid, vn_volume_coil_with_dzdtheta, volume_coil_with_dzdtheta)
     call cdf_define(ncid, vn_sensitivity_symmetry_option, sensitivity_symmetry_option)
   endif
+  call cdf_define(ncid, vn_save_nescin_option, save_nescin_option)
+  if (save_nescin_option == 1) then
+    call cdf_define(ncid, vn_save_nescin_ntor, save_nescin_ntor)
+    call cdf_define(ncid, vn_save_nescin_mpol, save_nescin_mpol)
+  end if
 
   ! Arrays with dimension 1
 
@@ -400,6 +408,11 @@ subroutine write_output
     call cdf_write(ncid, vn_volume_coil_with_dzdtheta, volume_coil_with_dzdtheta)
     call cdf_write(ncid, vn_sensitivity_symmetry_option, sensitivity_symmetry_option)
   endif
+  call cdf_write(ncid, vn_save_nescin_option, save_nescin_option)
+  if (save_nescin_option == 1) then
+    call cdf_write(ncid, vn_save_nescin_ntor, save_nescin_ntor)
+    call cdf_write(ncid, vn_save_nescin_mpol, save_nescin_mpol)
+  end if
 
   ! Arrays with dimension 1
 

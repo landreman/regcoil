@@ -606,6 +606,7 @@ subroutine build_matrices()
     print *,"  Number of OpenMP threads:",omp_get_num_threads()
     !$OMP END MASTER
     !$OMP DO
+    ! This would be faster with LAPACK, but constructing dinductancematrixdomega is much more expensive
     do iomega = 1,nomega_coil
       dRHS_Kdomega(iomega,:) = dtheta_coil*dzeta_coil*(matmul(dddomega(1,iomega,1:ntheta_coil*nzeta_coil),f_x_over_N_coil) &
         + matmul(dddomega(2,iomega,1:ntheta_coil*nzeta_coil),f_y_over_N_coil) &

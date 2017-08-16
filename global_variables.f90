@@ -112,6 +112,8 @@ module global_variables
   real(dp), dimension(:,:), allocatable :: dRHS_Bdomega, dRHS_Kdomega, dRHSdomega
   real(dp), dimension(:), allocatable :: dvolume_coildomega
   real(dp) :: volume_coil_with_dzdtheta
+  integer :: save_nescin_option = 0
+  integer :: save_nescin_mpol = 12, save_nescin_ntor = 12
 
 end module global_variables
 

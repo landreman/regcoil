@@ -13,7 +13,7 @@ module init_surface_mod
          geometry_option, R_specified, a, separation, dtheta, dzeta, nescin_filename, which_surface)
 
       use compute_offset_surface_mod
-      use global_variables, only: R0_plasma, nfp, volume_coil
+      use global_variables, only: R0_plasma, nfp, volume_coil, save_nescin_option
       use stel_kinds
       use stel_constants
       use omp_lib
@@ -208,6 +208,11 @@ module init_surface_mod
          end do
          !$OMP END DO
          !$OMP END PARALLEL
+
+        if (save_nescin_option == 1) then
+          ! Fourier transform and save surface to nescin file
+          call save_nescin()
+        end if
 
       case (3)
          ! Nothing to do - we already read the nescin file.
