@@ -382,6 +382,32 @@ if  \parlink{geometry\_option\_plasma} is 2.
 {Name of a \nescoil~{\ttfamily nescin} input file. The coil surface from
 this file will be used as the coil surface for \regcoil.}
 
+\myhrule
+
+\param{save\_nescin\_option}
+{integer}
+{0}
+{When \parlink{geometry\_option\_coil = 2}.}
+{Determines whether or not to save the offset surface coefficients in nescin format. Stellarator symmetry is assumed. \\
+{\ttfamily save\_nescin\_option} = 0: No nescin file is saved. \\
+{\ttfamily save\_nescin\_option} = 1: Nescin file is saved with name \texttt{nescin.offset}. }
+
+\myhrule
+
+\param{save\_nescin\_mpol}
+{integer}
+{12}
+{When \parlink{save\_nescin\_option =1}. }
+{Number of poloidal Fourier modes for the nescin file.}
+
+\myhrule
+
+\param{save\_nescin\_ntor}
+{integer}
+{12}
+{When \parlink{save\_nescin\_option = 1}.}
+{Number of toroidal Fourier modes for the nescin file.}
+
 
 \section{Parameters related to the regularization weight}
 
@@ -508,3 +534,4 @@ but it is available for completeness.\\
 
 {\ttfamily sensitivity\_symmetry\_option} = 3: No symmetry in the current potential is imposed.
 }
+
