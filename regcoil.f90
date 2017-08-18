@@ -39,24 +39,21 @@ program regcoil
 
   call build_matrices()
 
-!  if (sensitivity_option > 2) then
-!    select case (general_option)
-!    case (1,4,5)
-!      print *,"Initializing sensitivity adjoint."
-!      call init_sensitivity_adjoint()
-!    end select
-!  endif
-
   select case (general_option)
   case (1)
-     print *,"Case 1."
      call solve()
+     if (sensitivity_option > 1) then
+      call adjoint_solve()
+     end if
   case (2)
      call compute_diagnostics_for_nescout_potential()
   case (3)
      call svd_scan()
   case (4,5)
      call auto_regularization_solve()
+     if (sensitivity_option > 1 ) then
+       call adjoint_solve()
+     end if
   case default
      print *,"Invalid general_option:",general_option
      stop

@@ -164,7 +164,7 @@ subroutine write_output
        basis_basis_dim = (/ character(len=50) :: &
          'num_basis_functions','num_basis_functions'/), &
        basis_nlambda_dim = (/ character(len=50) :: 'num_basis_functions','nlambda'/), &
-       nomega_coil_nlambda_dim = (/ character(len=50) :: 'nomega_coil', 'nlambda'/), &
+       nomega_coil_nlambda_sensitivity_dim = (/ character(len=50) :: 'nomega_coil', 'nlambda_sensitivity'/), &
        nthetanzeta_coil_basis_dim = (/ character(len=50) :: &
          'ntheta_times_nzeta_coil','num_basis_functions'/), &
        nomega_coil_nthetanzeta_plasma_dim = (/character(len=50) :: &
@@ -174,7 +174,9 @@ subroutine write_output
        nomega_coil_num_basis_functions_dim = (/character(len=50) :: &
           'nomega_coil', 'num_basis_functions'/), &
        nthetanzeta_plasma_basis_dim = (/ character(len=50) :: &
-          'ntheta_nzeta_plasma','num_basis_functions'/)
+          'ntheta_nzeta_plasma','num_basis_functions'/), &
+       basis_nlambda_sensitivity_dim = (/character(len=50) :: &
+          'num_basis_functions','nlambda_sensitivity'/)
 
   ! Arrays with dimension 3:
   character(len=*), parameter, dimension(3) :: &
@@ -294,11 +296,12 @@ subroutine write_output
   end if
   call cdf_define(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda), &
        dimname=basis_nlambda_dim)
-  ! Sensitivity output
   if (sensitivity_option > 1) then
-    call cdf_define(ncid, vn_dchi2Bdomega, dchi2Bdomega(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
-    call cdf_define(ncid, vn_dchi2Kdomega, dchi2Kdomega(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
-    call cdf_define(ncid, vn_dchi2domega, dchi2domega(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
+    call cdf_define(ncid, vn_dchi2domega, dchi2domega(:,1:Nlambda_sensitivity),dimname=nomega_coil_nlambda_sensitivity_dim)
+  end if
+  if (sensitivity_option > 2) then
+    call cdf_define(ncid, vn_dchi2Bdomega, dchi2Bdomega(:,1:Nlambda_sensitivity),dimname=nomega_coil_nlambda_sensitivity_dim)
+    call cdf_define(ncid, vn_dchi2Kdomega, dchi2Kdomega(:,1:Nlambda_sensitivity),dimname=nomega_coil_nlambda_sensitivity_dim)
   end if
   if (save_level == 0) then
     if (sensitivity_option > 1) then
@@ -308,10 +311,10 @@ subroutine write_output
         call cdf_define(ncid, vn_f_z, f_z, dimname=nthetanzeta_coil_basis_dim)
     endif
     if (sensitivity_option == 3 .or. sensitivity_option == 5) then
-      call cdf_define(ncid, vn_q_B, q_B(:,1:Nlambda),dimname=basis_nlambda_dim)
+      call cdf_define(ncid, vn_q_B, q_B(:,1:Nlambda_sensitivity),dimname=basis_nlambda_sensitivity_dim)
     endif
     if (sensitivity_option == 3 .or. sensitivity_option == 4) then
-      call cdf_define(ncid, vn_q_K, q_K(:,1:Nlambda),dimname=basis_nlambda_dim)
+      call cdf_define(ncid, vn_q_K, q_K(:,1:Nlambda_sensitivity),dimname=basis_nlambda_sensitivity_dim)
     endif
     if (sensitivity_option > 2) then
       call cdf_define(ncid, vn_dRHS_Kdomega, dRHS_Kdomega,dimname=nomega_coil_num_basis_functions_dim)
@@ -458,11 +461,11 @@ subroutine write_output
   end if
   call cdf_write(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda))
   if (sensitivity_option > 1) then
-    call cdf_write(ncid, vn_dchi2Bdomega, dchi2Bdomega(:,1:Nlambda))
+    call cdf_write(ncid, vn_dchi2domega, dchi2domega(:,1:Nlambda_sensitivity))
   end if
   if (sensitivity_option > 2) then
-    call cdf_write(ncid, vn_dchi2Kdomega, dchi2Kdomega(:,1:Nlambda))
-    call cdf_write(ncid, vn_dchi2domega, dchi2domega(:,1:Nlambda))
+    call cdf_write(ncid, vn_dchi2Kdomega, dchi2Kdomega(:,1:Nlambda_sensitivity))
+    call cdf_write(ncid, vn_dchi2Bdomega, dchi2Bdomega(:,1:Nlambda_sensitivity))
   end if
   if (save_level == 0) then
     if (sensitivity_option > 1) then
@@ -472,10 +475,10 @@ subroutine write_output
       call cdf_write(ncid, vn_dhdomega, dhdomega)
     endif
     if (sensitivity_option == 3 .or. sensitivity_option == 4) then
-      call cdf_write(ncid, vn_q_K, q_K(:,1:Nlambda))
+      call cdf_write(ncid, vn_q_K, q_K(:,1:Nlambda_sensitivity))
     end if
     if (sensitivity_option == 3 .or. sensitivity_option == 5) then
-      call cdf_write(ncid, vn_q_B, q_B(:,1:Nlambda))
+      call cdf_write(ncid, vn_q_B, q_B(:,1:Nlambda_sensitivity))
     end if
     if (sensitivity_option > 2) then
       call cdf_write(ncid, vn_dRHS_Bdomega, dRHS_Bdomega)

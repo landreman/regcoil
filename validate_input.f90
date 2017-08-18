@@ -157,4 +157,10 @@ subroutine validate_input
      print *,line
   end if
 
+  if (sensitivity_option > 1) then
+    if (general_option == 2 .or. general_option == 3) then
+      stop "sensitivity_option > 1 must be used with general_option = 1 or general_option > 3."
+    end if
+  end if
+
 end subroutine validate_input

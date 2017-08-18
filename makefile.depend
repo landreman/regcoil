@@ -1,6 +1,6 @@
 # -*- mode: makefile -*-
 
-OBJ_FILES = regcoil.o auto_regularization_solve.o build_matrices.o \
+OBJ_FILES = adjoint_solve.o regcoil.o auto_regularization_solve.o build_matrices.o \
 	compute_lambda.o compute_diagnostics_for_nescout_potential.o \
 	compute_offset_surface_mod.o \
 	expand_plasma_surface.o free_sensitivity.o fzero.o global_variables.o \
@@ -12,6 +12,7 @@ OBJ_FILES = regcoil.o auto_regularization_solve.o build_matrices.o \
 # Dependencies:
 #regcoil.o: global_variables.o init_plasma_mod.o init_sensitivity.o free_sensitivity.o normal_displacement.o normal_displacement.o
 regcoil.o: global_variables.o init_plasma_mod.o init_sensitivity.o free_sensitivity.o normal_displacement.o
+adjoint_solve.o: global_variables.o
 auto_regularization_solve.o: global_variables.o
 build_matrices.o: global_variables.o init_Fourier_modes_mod.o
 compute_lambda.o: global_variables.o
