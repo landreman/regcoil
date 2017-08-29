@@ -47,7 +47,6 @@ subroutine write_output
        vn_mmax_sensitivity = "mmax_sensitivity", &
        vn_mnmax_sensitivity = "mnmax_sensitivity", &
        vn_nomega_coil = "nomega_coil", &
-       vn_volume_coil_with_dzdtheta = "volume_coil_with_dzdtheta", &
        vn_sensitivity_symmetry_option = "sensitivity_symmetry_option", &
        vn_save_nescin_option = "save_nescin_option", &
        vn_save_nescin_ntor = "save_nescin_ntor", &
@@ -243,7 +242,6 @@ subroutine write_output
     call cdf_define(ncid, vn_nmax_sensitivity, nmax_sensitivity)
     call cdf_define(ncid, vn_mnmax_sensitivity, mnmax_sensitivity)
     call cdf_define(ncid, vn_nomega_coil, nomega_coil)
-    call cdf_define(ncid, vn_volume_coil_with_dzdtheta, volume_coil_with_dzdtheta)
     call cdf_define(ncid, vn_sensitivity_symmetry_option, sensitivity_symmetry_option)
   endif
   call cdf_define(ncid, vn_save_nescin_option, save_nescin_option)
@@ -408,7 +406,6 @@ subroutine write_output
     call cdf_write(ncid, vn_nmax_sensitivity, nmax_sensitivity)
     call cdf_write(ncid, vn_mnmax_sensitivity, mnmax_sensitivity)
     call cdf_write(ncid, vn_nomega_coil, nomega_coil)
-    call cdf_write(ncid, vn_volume_coil_with_dzdtheta, volume_coil_with_dzdtheta)
     call cdf_write(ncid, vn_sensitivity_symmetry_option, sensitivity_symmetry_option)
   endif
   call cdf_write(ncid, vn_save_nescin_option, save_nescin_option)

@@ -110,11 +110,10 @@ module global_variables
   real(dp), dimension(:,:), allocatable :: q_K, q_B
   real(dp), dimension(:,:,:), allocatable :: dmatrix_Kdomega, dmatrix_Bdomega, dmatrixdomega
   real(dp), dimension(:,:), allocatable :: dRHS_Bdomega, dRHS_Kdomega, dRHSdomega
-  real(dp), dimension(:), allocatable :: dvolume_coildomega
-  real(dp) :: volume_coil_with_dzdtheta
   integer :: save_nescin_option = 0
   integer :: save_nescin_mpol = 12, save_nescin_ntor = 12
   integer :: nlambda_sensitivity
+  real(dp), dimension(:), allocatable :: dvolume_coildomega
 
 end module global_variables
 
