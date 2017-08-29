@@ -11,7 +11,11 @@ subroutine compute_lambda
   
   lambda(1) = 0
   do j = 1,nlambda-1
-     lambda(j+1) = lambda_min * exp((log(lambda_max/lambda_min)*(j-1))/(nlambda-2))
+    if (nlambda > 2) then
+      lambda(j+1) = lambda_min * exp((log(lambda_max/lambda_min)*(j-1))/(nlambda-2))
+    else
+      lambda(j+1) = lambda_min
+    end if
   end do
 
   if (general_option==1) then

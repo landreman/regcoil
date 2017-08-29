@@ -14,6 +14,7 @@ subroutine solve
   real(dp), dimension(:,:), allocatable :: this_K2_times_N
   real(dp) :: factor_theta, factor_zeta
   integer :: ilambda, itheta, izeta
+  integer :: this_p, ip
 
   ! Variables needed by LAPACK:
   integer :: INFO, LWORK
@@ -59,6 +60,20 @@ subroutine solve
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(this_K2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
+
+  if (L_p_diagnostic_option > 1) then
+    L_p_diagnostic_np = (L_p_diagnostic_max - L_p_diagnostic_min)/L_p_diagnostic_dp + 1
+    allocate(ps(L_p_diagnostic_np), stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(L_p_diagnostic(nlambda,L_p_diagnostic_np), stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(L_p_diagnostic_with_area(nlambda,L_p_diagnostic_np), stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    ps(1) = L_p_diagnostic_min
+    do ip=2,L_p_diagnostic_np
+      ps(ip) = ps(ip-1) + L_p_diagnostic_dp
+    end do
+  end if
 
   ! Call LAPACK's DSYSV in query mode to determine the optimal size of the work array
   call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, IPIV, RHS, num_basis_functions, WORK, -1, INFO)
@@ -124,6 +139,15 @@ subroutine solve
 
      max_Bnormal(ilambda) = maxval(abs(Bnormal_total(:,:,ilambda)))
      max_K(ilambda) = sqrt(maxval(K2    (:,:,ilambda)))
+
+     if (L_p_diagnostic_option > 1) then
+        do ip = 1,L_p_diagnostic_np
+          this_p = ps(ip)
+          L_p_diagnostic_with_area(ilambda,ip) = (dtheta_coil*dzeta_coil*nfp*sum(norm_normal_coil*K2(:,:,ilambda)**(this_p/2.0))/area_coil)**(1.0/this_p)
+          L_p_diagnostic(ilambda,ip) = sum(K2(:,:,ilambda)**(this_p/2.0))**(1.0/this_p)
+          !L_p_diagnostic(ilambda,ip) = (dtheta_coil*dzeta_coil*nfp*sum(norm_normal_coil*K2(:,:,ilambda)**(this_p/2.0)))**(1.0/this_p)/area_coil
+        end do
+     end if
 
      chi2_B(ilambda) = nfp * dtheta_plasma * dzeta_plasma &
           * sum(Bnormal_total(:,:,ilambda) * Bnormal_total(:,:,ilambda) * norm_normal_plasma)

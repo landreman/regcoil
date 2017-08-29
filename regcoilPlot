@@ -51,6 +51,13 @@ current_potential = f.variables['current_potential'][()]
 Bnormal_from_plasma_current = f.variables['Bnormal_from_plasma_current'][()]
 Bnormal_from_net_coil_currents = f.variables['Bnormal_from_net_coil_currents'][()]
 Bnormal_total = f.variables['Bnormal_total'][()]
+L_p_diagnostic_option = f.variables['L_p_diagnostic_option'][()]
+if (L_p_diagnostic_option > 1):
+  L_p_diagnostic = f.variables['L_p_diagnostic'][()]
+  L_p_diagnostic_with_area = f.variables['L_p_diagnostic_with_area'][()]
+  ps = f.variables['ps'][()]
+  area_coil = f.variables['area_coil'][()]
+max_K = f.variables['max_K'][()]
 # = f.variables[''][()]
 
 # lambda used to be called alpha, so try both names for backward-compatibility.
@@ -97,6 +104,10 @@ K2 = K2[permutation,:,:]
 current_potential = current_potential[permutation,:,:]
 if lambdas[-1]>1.0e199:
     lambdas[-1] = np.inf
+if (L_p_diagnostic_option > 1):
+  L_p_diagnostic = L_p_diagnostic[:,permutation]
+  L_p_diagnostic_with_area = L_p_diagnostic_with_area[:,permutation]
+  max_K = max_K[permutation]
 
 ########################################################
 # For 3D plotting, 'close' the arrays in u and v
@@ -345,7 +356,28 @@ for whichPlot in range(numPlots-2):
 plt.tight_layout()
 plt.figtext(0.5,0.99,"Bnormal [Tesla]",horizontalalignment='center',verticalalignment='top',fontsize='small')
 
+########################################################
+# Plot L_p norm of current density
+########################################################
 
+if (L_p_diagnostic_option > 1):
+  figureNum += 1
+  fig = plt.figure(figureNum)
+  fig.patch.set_facecolor('white')
+
+  numPlots = np.min((nlambda,16))
+  numCols = int(np.ceil(np.sqrt(numPlots)))
+  numRows = int(np.ceil(numPlots*1.0/numCols))
+
+  for whichPlot in range(numPlots):
+    plt.subplot(numRows,numCols,whichPlot+1)
+    plt.axhline(max_K[whichPlot], label='max_K',color='green')
+    plt.plot(ps,L_p_diagnostic[:,whichPlot],'ob',label='L_p norm',color='purple')
+    plt.plot(ps,L_p_diagnostic_with_area[:,whichPlot],'ob',label='with area',color='red')
+    plt.axhline(np.sqrt(chi2_K[whichPlot])/area_coil, label='RMS',color='blue')
+    plt.legend(fontsize='x-small')
+    plt.xlabel('p',fontsize='small')
+    plt.title('lambda='+str(lambdas[whichPlot]),fontsize='x-small')
 
 ########################################################
 # Now make 3D surface plot

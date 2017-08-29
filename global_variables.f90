@@ -82,10 +82,21 @@ module global_variables
   real(dp), dimension(:), allocatable :: lambda
 
   integer :: target_option = 1
+  integer :: target_option_p = 4
   real(dp) :: current_density_target = 8.0d+6
   real(dp) :: lambda_search_tolerance = 1.0d-5
   integer :: exit_code = 0
   real(dp) :: chi2_B_target = 0
+
+! Items related to L_p norm
+  integer :: L_p_diagnostic_option = 1
+  integer :: L_p_diagnostic_min = 4
+  integer :: L_p_diagnostic_max = 16
+  integer :: L_p_diagnostic_dp = 2
+  integer :: L_p_diagnostic_np
+  real(dp), dimension(:,:), allocatable :: L_p_diagnostic, L_p_diagnostic_with_area
+  real(dp), dimension(:), allocatable :: L_p_norm
+  integer, dimension(:), allocatable :: ps
 
 ! Needed for sensitivity calculation
   integer :: normal_displacement_option = 0
