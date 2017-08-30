@@ -95,7 +95,7 @@ module global_variables
   integer :: L_p_diagnostic_dp = 2
   integer :: L_p_diagnostic_np
   real(dp), dimension(:,:), allocatable :: L_p_diagnostic, L_p_diagnostic_with_area
-  real(dp), dimension(:), allocatable :: L_p_norm
+  real(dp), dimension(:), allocatable :: L_p_norm, L_p_norm_with_area
   integer, dimension(:), allocatable :: ps
 
 ! Needed for sensitivity calculation

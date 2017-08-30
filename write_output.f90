@@ -83,6 +83,7 @@ subroutine write_output
        vn_omega_coil = "omega_coil", &
        vn_dvolume_coildomega = "dvolume_coildomega", &
        vn_L_p_norm = "L_p_norm", &
+       vn_L_p_norm_with_area = "L_p_norm_with_area", &
        vn_ps = "ps"
 
   ! Arrays with dimension 2
@@ -295,8 +296,11 @@ subroutine write_output
     endif
     call cdf_define(ncid, vn_dvolume_coildomega, dvolume_coildomega, dimname=nomega_coil_dim)
   endif
-  if (general_option > 3) then
+  if (target_option == 3) then
     call cdf_define(ncid, vn_L_p_norm, L_p_norm(1:Nlambda), dimname=nlambda_dim)
+  end if
+  if (target_option == 4) then
+    call cdf_define(ncid, vn_L_p_norm_with_area, L_p_norm_with_area(1:Nlambda), dimname=nlambda_dim)
   end if
   if (L_p_diagnostic_option > 1) then
     call cdf_define(ncid, vn_ps, ps, dimname=np_dim)
@@ -474,8 +478,11 @@ subroutine write_output
     endif
     call cdf_write(ncid, vn_dvolume_coildomega, dvolume_coildomega)
   endif
-  if (general_option > 3) then
+  if (target_option == 3) then
     call cdf_write(ncid, vn_L_p_norm, L_p_norm(1:Nlambda))
+  end if
+  if (target_option == 4) then
+    call cdf_write(ncid, vn_L_p_norm_with_area, L_p_norm_with_area(1:Nlambda))
   end if
   if (L_p_diagnostic_option > 1) then
     call cdf_write(ncid, vn_ps, ps)

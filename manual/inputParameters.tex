@@ -452,7 +452,16 @@ current density over the winding surface equals \parlink{current\_density\_targe
 
 {\ttfamily target\_option} = 3: Search for the $\lambda$ value such that the $L^p$ norm of the current 
 density over the winding surface equals \parlink{current\_density\_target}. Here $p$ is specified by 
-\parlink{target\_option\_p}.
+\parlink{target\_option\_p}. The norm is defined in the following way.
+\begin{gather}
+\norm{\bm{K}}_p = \left( \int d \theta' \int d \zeta' \, (\abs{\bm{K}}^2)^{p/2} \right)^{1/p}
+\end{gather}\\
+
+{\ttfamily target\_option} = 4: Same as \parlink{target\_option} = 3, but $L^p$ norm is defined using a
+surface integral.
+\begin{gather}
+\norm{\bm{K}}_p = \left( \frac{\int d \theta' \int d \zeta' \, N' (\abs{\bm{K}}^2)^{p/2}}{\int d \theta' \int d \zeta' \, N'} \right)^{1/p}
+\end{gather}
 }
 
 \myhrule
@@ -493,7 +502,7 @@ winding surface.}
 {
 \texttt{L\_p\_diagnostic\_option} = 1: The $L^p$ norm of the current density is not computed. 
 \texttt{L\_p\_diagnostic\_option} = 2: The $L^p$ norm of the current density will be computed
-for a range of $p$.
+for a range of $p$. The norm defined with and without the surface integral, \texttt{L\_p\_diagnostic\_with\_area} and \texttt{L\_p\_diagnostic}, are computed (see \parlink{target\_option} documentation for definitions).
 }
 
 \myhrule

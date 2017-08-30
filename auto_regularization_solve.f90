@@ -65,6 +65,8 @@ subroutine auto_regularization_solve
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(L_P_norm(nlambda),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(L_p_norm_with_area(nlambda),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
 
   if (L_p_diagnostic_option > 1) then
     L_p_diagnostic_np = (L_p_diagnostic_max - L_p_diagnostic_min)/L_p_diagnostic_dp + 1
@@ -259,7 +261,9 @@ subroutine auto_regularization_solve
      chi2_B(ilambda) = nfp * dtheta_plasma * dzeta_plasma &
           * sum(Bnormal_total(:,:,ilambda) * Bnormal_total(:,:,ilambda) * norm_normal_plasma)
 
-     L_p_norm(ilambda) = (dtheta_coil*dzeta_coil*nfp*sum(norm_normal_coil*K2(:,:,ilambda)**(target_option_p/2.0))/area_coil)**(1.0/target_option_p)
+     L_p_norm_with_area(ilambda) = (dtheta_coil*dzeta_coil*nfp*sum(norm_normal_coil*K2(:,:,ilambda)**(target_option_p/2.0))/area_coil)**(1.0/target_option_p)
+
+     L_p_norm(ilambda) = sum(K2(:,:,ilambda)**(target_option_p/2.0))**(1.0/target_option_p)
 
      if (L_p_diagnostic_option > 1) then
         do ip = 1,L_p_diagnostic_np
@@ -381,6 +385,9 @@ contains
     case (3)
        ! L^p norm current density
        target_function = L_p_norm(jlambda)
+    case (4)
+       ! L^p norm current density - norm defined with surface integral
+       target_function = L_p_norm_with_area(jlambda)
     case default
        print *,"Invalid target_option: ",target_option
        stop

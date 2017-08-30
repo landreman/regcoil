@@ -145,7 +145,6 @@ subroutine solve
           this_p = ps(ip)
           L_p_diagnostic_with_area(ilambda,ip) = (dtheta_coil*dzeta_coil*nfp*sum(norm_normal_coil*K2(:,:,ilambda)**(this_p/2.0))/area_coil)**(1.0/this_p)
           L_p_diagnostic(ilambda,ip) = sum(K2(:,:,ilambda)**(this_p/2.0))**(1.0/this_p)
-          !L_p_diagnostic(ilambda,ip) = (dtheta_coil*dzeta_coil*nfp*sum(norm_normal_coil*K2(:,:,ilambda)**(this_p/2.0)))**(1.0/this_p)/area_coil
         end do
      end if
 
