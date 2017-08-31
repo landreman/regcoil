@@ -4,6 +4,7 @@ program regcoil
 
   use global_variables, only: totalTime, outputFilename, general_option
   use init_plasma_mod
+  use regcoil_input_mod
 
   implicit none
 

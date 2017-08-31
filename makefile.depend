@@ -1,16 +1,25 @@
 # -*- mode: makefile -*-
 
+# JCS Modified to use regcoil_input_mod
+# OBJ_FILES = regcoil.o auto_regularization_solve.o build_matrices.o \
+# 	compute_lambda.o compute_diagnostics_for_nescout_potential.o \
+# 	compute_offset_surface_mod.o \
+# 	expand_plasma_surface.o fzero.o global_variables.o \
+# 	init_Fourier_modes_mod.o init_coil_surface.o init_plasma_mod.o \
+# 	init_surface_mod.o read_bnorm.o \
+# 	read_efit_mod.o read_input.o read_nescin.o splines.o \
+# 	solve.o svd_scan.o validate_input.o write_output.o
 OBJ_FILES = regcoil.o auto_regularization_solve.o build_matrices.o \
 	compute_lambda.o compute_diagnostics_for_nescout_potential.o \
 	compute_offset_surface_mod.o \
 	expand_plasma_surface.o fzero.o global_variables.o \
 	init_Fourier_modes_mod.o init_coil_surface.o init_plasma_mod.o \
 	init_surface_mod.o read_bnorm.o \
-	read_efit_mod.o read_input.o read_nescin.o splines.o \
+	read_efit_mod.o regcoil_input_mod.o read_nescin.o splines.o \
 	solve.o svd_scan.o validate_input.o write_output.o
 
 # Dependencies:
-regcoil.o: global_variables.o init_plasma_mod.o
+regcoil.o: global_variables.o init_plasma_mod.o regcoil_input_mod.o
 auto_regularization_solve.o: global_variables.o
 build_matrices.o: global_variables.o init_Fourier_modes_mod.o
 compute_lambda.o: global_variables.o
@@ -25,7 +34,9 @@ init_plasma_mod.o: global_variables.o read_efit_mod.o
 init_surface_mod.o: compute_offset_surface_mod.o global_variables.o
 read_bnorm.o: global_variables.o
 read_efit_mod.o: splines.o
-read_input.o: global_variables.o
+# JCS Modified to use regcoil_input_mod instead
+#read_input.o: global_variables.o
+regcoil_input_mod.o: global_variables.o
 read_nescin.o: global_variables.o
 splines.o:
 solve.o: global_variables.o
