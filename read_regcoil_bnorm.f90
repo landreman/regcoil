@@ -1,6 +1,10 @@
+module read_regcoil_bnorm
+
+contains
+
 subroutine read_bnorm()
 
-  use global_variables, only: load_bnorm, bnorm_filename, ntheta_plasma, nzeta_plasma, &
+  use regcoil_variables, only: load_bnorm, bnorm_filename, ntheta_plasma, nzeta_plasma, &
        Bnormal_from_plasma_current, theta_plasma, zeta_plasma, nfp, curpol
   use safe_open_mod
   use stel_constants
@@ -76,3 +80,5 @@ subroutine read_bnorm()
   print *,"Took ",real(toc-tic)/countrate," sec."
 
 end subroutine  read_bnorm
+
+end module read_regcoil_bnorm

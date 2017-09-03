@@ -1,6 +1,6 @@
 subroutine read_input
 
-  use global_variables
+  use regcoil_variables
 
   implicit none
 

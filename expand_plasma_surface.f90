@@ -1,6 +1,6 @@
 subroutine expand_plasma_surface(theta, zeta, separation, x,y,z)
   
-  use global_variables, only: nfp, xm, xn, mnmax, rmnc, zmns, rmns, zmnc, lasym
+  use regcoil_variables, only: nfp, xm, xn, mnmax, rmnc, zmns, rmns, zmnc, lasym
   use stel_kinds
   use stel_constants
 

@@ -54,7 +54,7 @@ contains
   
     function fzero_residual(zeta_plasma_test)
     
-      use global_variables, only: nfp
+      use regcoil_variables, only: nfp
       use stel_constants
       
       implicit none

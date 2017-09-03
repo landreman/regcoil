@@ -58,18 +58,18 @@ endif
 LIBSTELL_DIR = mini_libstell
 TARGET = regcoil
 
-# JCS Modified to use regcoil_input_mod
+# JCS Modified to use regcoil_input_mod and renamed global_variables to regcoil_variables and more. see the diff file
 # REGCOILLIB_OBJ_FILES = auto_regularization_solve.o compute_offset_surface_mod.o init_Fourier_modes_mod.o  \
 #	read_bnorm.o regcoil.o validate_input.o build_matrices.o expand_plasma_surface.o  \
 #	init_coil_surface.o read_efit_mod.o solve.o write_output.o  \
 #	compute_diagnostics_for_nescout_potential.o  fzero.o  \
 #	init_plasma_mod.o read_input.o splines.o compute_lambda.o global_variables.o  \
 #	init_surface_mod.o read_nescin.o svd_scan.o
-REGCOILLIB_OBJ_FILES = auto_regularization_solve.o compute_offset_surface_mod.o init_Fourier_modes_mod.o  \
-	read_bnorm.o regcoil.o validate_input.o build_matrices.o expand_plasma_surface.o  \
-	init_coil_surface.o read_efit_mod.o solve.o write_output.o  \
+REGCOILLIB_OBJ_FILES = regcoil_auto_regularization_solve.o compute_offset_surface_mod.o init_Fourier_modes_mod.o  \
+	read_regcoil_bnorm.o regcoil.o validate_regcoil_input.o build_regcoil_matrices.o expand_plasma_surface.o  \
+	init_regcoil_coil_surface.o read_efit_mod.o solve.o write_regcoil_output.o  \
 	compute_diagnostics_for_nescout_potential.o  fzero.o  \
-	init_plasma_mod.o regcoil_input_mod.o splines.o compute_lambda.o global_variables.o  \
+	init_regcoil_plasma.o regcoil_input_mod.o splines.o compute_regcoil_lambda.o regcoil_variables.o  \
 	init_surface_mod.o read_nescin.o svd_scan.o
 REGCOILLIB_TARGET = libregcoil.a
 

@@ -1,4 +1,4 @@
-module init_plasma_mod
+module init_regcoil_plasma
 
   use stel_kinds
 
@@ -14,7 +14,7 @@ contains
 
   subroutine init_plasma
 
-    use global_variables
+    use regcoil_variables
     use read_efit_mod
     use read_wout_mod, only: nfp_vmec => nfp, xm_vmec => xm, xn_vmec => xn, &
          rmnc_vmec => rmnc, zmns_vmec => zmns, rmns_vmec => rmns, zmnc_vmec => zmnc, &
@@ -476,7 +476,7 @@ contains
 
   function fzero_residual(theta_old)
 
-    use global_variables, only: nfp
+    use regcoil_variables, only: nfp
     use read_wout_mod, only: xm_vmec => xm, xn_vmec => xn, mnmax_vmec => mnmax, lmns, ns
     use stel_constants
     
@@ -494,4 +494,4 @@ contains
 
   end function fzero_residual
 
-end module init_plasma_mod
+end module init_regcoil_plasma

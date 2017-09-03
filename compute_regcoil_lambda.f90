@@ -1,6 +1,10 @@
+module compute_regcoil_lambda
+
+contains
+ 
 subroutine compute_lambda
 
-  use global_variables, only: nlambda, lambda_min, lambda_max, lambda, general_option
+  use regcoil_variables, only: nlambda, lambda_min, lambda_max, lambda, general_option
   use stel_kinds
 
   implicit none
@@ -21,4 +25,4 @@ subroutine compute_lambda
 
 end subroutine compute_lambda
 
-
+end module compute_regcoil_lambda

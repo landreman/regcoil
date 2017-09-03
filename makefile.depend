@@ -9,37 +9,41 @@
 # 	init_surface_mod.o read_bnorm.o \
 # 	read_efit_mod.o read_input.o read_nescin.o splines.o \
 # 	solve.o svd_scan.o validate_input.o write_output.o
-OBJ_FILES = regcoil.o auto_regularization_solve.o build_matrices.o \
-	compute_lambda.o compute_diagnostics_for_nescout_potential.o \
+OBJ_FILES = regcoil.o regcoil_auto_regularization_solve.o build_regcoil_matrices.o \
+	compute_regcoil_lambda.o compute_diagnostics_for_nescout_potential.o \
 	compute_offset_surface_mod.o \
-	expand_plasma_surface.o fzero.o global_variables.o \
-	init_Fourier_modes_mod.o init_coil_surface.o init_plasma_mod.o \
-	init_surface_mod.o read_bnorm.o \
+	expand_plasma_surface.o fzero.o regcoil_variables.o \
+	init_Fourier_modes_mod.o init_regcoil_coil_surface.o init_regcoil_plasma.o \
+	init_surface_mod.o read_regcoil_bnorm.o \
 	read_efit_mod.o regcoil_input_mod.o read_nescin.o splines.o \
-	solve.o svd_scan.o validate_input.o write_output.o
+	solve.o svd_scan.o validate_regcoil_input.o write_regcoil_output.o
 
 # Dependencies:
-regcoil.o: global_variables.o init_plasma_mod.o regcoil_input_mod.o
-auto_regularization_solve.o: global_variables.o
-build_matrices.o: global_variables.o init_Fourier_modes_mod.o
-compute_lambda.o: global_variables.o
-compute_diagnostics_for_nescout_potential.o: global_variables.o
-compute_offset_surface_mod.o: global_variables.o
-expand_plasma_surface.o: global_variables.o
+regcoil.o: regcoil_variables.o init_regcoil_plasma.o regcoil_input_mod.o \
+	validate_regcoil_input.o compute_regcoil_lambda.o init_regcoil_coil_surface.o \
+	read_regcoil_bnorm.o build_regcoil_matrices.o \
+	regcoil_auto_regularization_solve.o write_regcoil_output.o
+regcoil_auto_regularization_solve.o: regcoil_variables.o
+build_regcoil_matrices.o: regcoil_variables.o init_Fourier_modes_mod.o
+compute_regcoil_lambda.o: regcoil_variables.o
+compute_diagnostics_for_nescout_potential.o: regcoil_variables.o
+compute_offset_surface_mod.o: regcoil_variables.o
+expand_plasma_surface.o: regcoil_variables.o
 fzero.o: 
-global_variables.o: 
+regcoil_variables.o: 
 init_Fourier_modes_mod.o:
-init_coil_surface.o: global_variables.o init_surface_mod.o
-init_plasma_mod.o: global_variables.o read_efit_mod.o
-init_surface_mod.o: compute_offset_surface_mod.o global_variables.o
-read_bnorm.o: global_variables.o
+init_regcoil_coil_surface.o: regcoil_variables.o init_surface_mod.o
+init_regcoil_plasma.o: regcoil_variables.o read_efit_mod.o
+init_surface_mod.o: compute_offset_surface_mod.o regcoil_variables.o
+read_regcoil_bnorm.o: regcoil_variables.o
 read_efit_mod.o: splines.o
-# JCS Modified to use regcoil_input_mod instead
+# JCS Modified to use regcoil_input_mod instead (and global_variables)
+# was renamed to regcoil_variables
 #read_input.o: global_variables.o
-regcoil_input_mod.o: global_variables.o
-read_nescin.o: global_variables.o
+regcoil_input_mod.o: regcoil_variables.o
+read_nescin.o: regcoil_variables.o
 splines.o:
-solve.o: global_variables.o
-svd_scan.o: global_variables.o
-validate_input.o: global_variables.o
-write_output.o: global_variables.o
+solve.o: regcoil_variables.o
+svd_scan.o: regcoil_variables.o
+validate_regcoil_input.o: regcoil_variables.o
+write_regcoil_output.o: regcoil_variables.o

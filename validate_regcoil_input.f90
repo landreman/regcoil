@@ -1,6 +1,10 @@
+module validate_regcoil_input
+
+contains
+
 subroutine validate_input
 
-  use global_variables
+  use regcoil_variables
   use safe_open_mod
 
   implicit none
@@ -158,3 +162,5 @@ subroutine validate_input
   end if
 
 end subroutine validate_input
+
+end module validate_regcoil_input

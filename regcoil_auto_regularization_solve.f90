@@ -1,6 +1,11 @@
+module regcoil_auto_regularization_solve
+
+
+contains
+
 subroutine auto_regularization_solve
 
-  use global_variables
+  use regcoil_variables
   use stel_constants
   use stel_kinds
 
@@ -519,3 +524,5 @@ end subroutine auto_regularization_solve
 !!$*>               has been completed, but the block diagonal matrix D is
 !!$*>               exactly singular, so the solution could not be computed.
 !!$*> \endverbatim
+
+end module regcoil_auto_regularization_solve

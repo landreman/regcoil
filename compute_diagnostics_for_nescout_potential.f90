@@ -1,6 +1,6 @@
 subroutine compute_diagnostics_for_nescout_potential
 
-  use global_variables
+  use regcoil_variables
   use safe_open_mod
   use stel_constants
   use stel_kinds

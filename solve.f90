@@ -1,6 +1,6 @@
 subroutine solve
 
-  use global_variables
+  use regcoil_variables
   use stel_constants
   use stel_kinds
 

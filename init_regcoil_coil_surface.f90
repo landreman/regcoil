@@ -1,6 +1,10 @@
+module init_regcoil_coil_surface
+
+contains
+ 
 subroutine init_coil_surface
 
-  use global_variables
+  use regcoil_variables
   use init_surface_mod
 
   implicit none
@@ -33,3 +37,5 @@ subroutine init_coil_surface
   
 
 end subroutine init_coil_surface
+
+end module init_regcoil_coil_surface

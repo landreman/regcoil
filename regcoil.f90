@@ -2,9 +2,16 @@
 
 program regcoil
 
-  use global_variables, only: totalTime, outputFilename, general_option
-  use init_plasma_mod
+  use regcoil_variables, only: totalTime, outputFilename, general_option
+  use init_regcoil_plasma
   use regcoil_input_mod
+  use validate_regcoil_input
+  use compute_regcoil_lambda
+  use init_regcoil_coil_surface
+  use read_regcoil_bnorm
+  use build_regcoil_matrices
+  use regcoil_auto_regularization_solve
+  use write_regcoil_output
 
   implicit none
 
@@ -14,7 +21,7 @@ program regcoil
   print *,"a regularized least-squares method for computing stellarator coil shapes."
   call system_clock(tic,countrate)
 
-  call read_input()
+  call read_regcoil_cmd_input()
   call validate_input()
   call compute_lambda()
 

@@ -13,7 +13,7 @@ module init_surface_mod
          geometry_option, R_specified, a, separation, dtheta, dzeta, nescin_filename, which_surface)
 
       use compute_offset_surface_mod
-      use global_variables, only: R0_plasma, nfp, volume_coil
+      use regcoil_variables, only: R0_plasma, nfp, volume_coil
       use stel_kinds
       use stel_constants
       use omp_lib

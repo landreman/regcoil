@@ -1,6 +1,10 @@
+module build_regcoil_matrices
+
+contains
+
 subroutine build_matrices()
 
-  use global_variables
+  use regcoil_variables
   use stel_constants
   use stel_kinds
   use omp_lib
@@ -536,3 +540,7 @@ end subroutine build_matrices
 !!$*>           in  the  calling  (sub)  program.   LDC  must  be  at  least
 !!$*>           max( 1, m ).
 !!$*> \endverbatim
+
+
+end module build_regcoil_matrices
+
