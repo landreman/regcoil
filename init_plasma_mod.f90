@@ -463,7 +463,7 @@ contains
        if (abs(net_poloidal_current_Amperes-1)<1e-12) then
           print *,"No VMEC file is available, and the default value of net_poloidal_current_Amperes (=1) will be used."
        else
-          print *,"No VMEC file is available, so net_poloidal_current_Amperes will be taken from the bdistrib input file."
+          print *,"No VMEC file is available, so net_poloidal_current_Amperes will be taken from the regcoil input file."
        end if
     end select
     

@@ -3,7 +3,6 @@ print "usage: regcoilPlot regcoil_out.XXX.nc"
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-#from mpl_toolkits.mplot3d import Axes3D
 #from matplotlib import cm
 import numpy as np
 from scipy.io import netcdf
@@ -351,20 +350,19 @@ plt.figtext(0.5,0.99,"Bnormal [Tesla]",horizontalalignment='center',verticalalig
 # Now make 3D surface plot
 ########################################################
 
+#from mpl_toolkits.mplot3d import Axes3D
+#
 #figureNum += 1
 #fig = plt.figure(figureNum)
 #fig.patch.set_facecolor('white')
 #ax = fig.gca(projection='3d')
 #ax.plot_surface(r_plasma[:,:,0], r_plasma[:,:,1], r_plasma[:,:,2], rstride=1, cstride=1, color='r',linewidth=0)
 #
-#maxIndex = int(nvl_middle*0.7)
-#ax.plot_surface(r_middle[:maxIndex,:,0], r_middle[:maxIndex,:,1], r_middle[:maxIndex,:,2], rstride=1, cstride=1, color='m',linewidth=0)
+#maxIndex = int(nzetal_coil*0.55)
+#minIndex = int(nzetal_coil*0.15)
+#ax.plot_surface(r_coil[minIndex:maxIndex,:,0], r_coil[minIndex:maxIndex,:,1], r_coil[minIndex:maxIndex,:,2], rstride=1, cstride=1, color='b',linewidth=0)
 #
-#maxIndex = int(nvl_outer*0.55)
-#minIndex = int(nvl_outer*0.15)
-#ax.plot_surface(r_outer[minIndex:maxIndex,:,0], r_outer[minIndex:maxIndex,:,1], r_outer[minIndex:maxIndex,:,2], rstride=1, cstride=1, color='b',linewidth=0)
-#
-#plotLMax = r_outer.max()
+#plotLMax = r_coil.max()
 #ax.auto_scale_xyz([-plotLMax, plotLMax], [-plotLMax, plotLMax], [-plotLMax, plotLMax])
 
 
