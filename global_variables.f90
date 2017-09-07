@@ -45,6 +45,7 @@ module global_variables
 
   real(dp), dimension(:,:), allocatable :: norm_normal_plasma, norm_normal_coil
   real(dp), dimension(:,:), allocatable :: basis_functions
+  real(dp), dimension(:,:), allocatable :: KDifference_x, KDifference_y, KDifference_z
 
   real(dp) :: dtheta_plasma, dzeta_plasma, dtheta_coil, dzeta_coil
 
@@ -88,11 +89,11 @@ module global_variables
   integer :: exit_code = 0
   real(dp) :: chi2_B_target = 0
 
-! Items related to L_p norm
+  ! Items related to L_p norm
   integer :: L_p_diagnostic_option = 1
-  integer :: L_p_diagnostic_min = 4
-  integer :: L_p_diagnostic_max = 16
-  integer :: L_p_diagnostic_dp
+  real(dp) :: L_p_diagnostic_min = 4.0
+  real(dp) :: L_p_diagnostic_max = 16.0
+  real(dp) :: L_p_diagnostic_dp
   integer :: L_p_diagnostic_np = 4
   real(dp), dimension(:,:), allocatable :: L_p_diagnostic, L_p_diagnostic_with_area, L_p_diagnostic_3
   real(dp), dimension(:,:), allocatable :: L_p_diagnostic_4, L_p_diagnostic_5, L_p_diagnostic_6
@@ -106,7 +107,7 @@ module global_variables
   real(dp), dimension(:), allocatable :: darea_coildomega
   real(dp), dimension(:,:), allocatable :: q_tilde, dlambdadomega
 
-! Needed for sensitivity calculation
+  ! Needed for sensitivity calculation
   integer :: normal_displacement_option = 0
   integer :: sensitivity_option = 1
   integer :: sensitivity_symmetry_option = 1
@@ -121,7 +122,7 @@ module global_variables
   real(dp), dimension(:,:,:), allocatable :: dnorm_normaldomega, dgdomega, dinductancedomega
   real(dp), dimension(:,:,:), allocatable :: dnormxdomega, dnormydomega, dnormzdomega
   real(dp), dimension(:,:), allocatable :: dchi2domega, dchi2Kdomega, dchi2Bdomega, dchi2Kdomega_withoutadjoint
-  real(dp), dimension(:,:,:,:), allocatable :: drdomega
+  real(dp), dimension(:,:,:,:), allocatable :: drdomega, dKDifferencedomega
   real(dp), dimension(:,:,:), allocatable :: domegadxdtheta, domegadxdzeta, domegadydtheta, domegadydzeta
   real(dp), dimension(:,:,:), allocatable :: domegadzdtheta, domegadzdzeta
   real(dp), dimension(:,:), allocatable :: dhdomega, dchi2dr_normal
