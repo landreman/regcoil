@@ -55,6 +55,10 @@ L_p_diagnostic_option = f.variables['L_p_diagnostic_option'][()]
 if (L_p_diagnostic_option > 1):
   L_p_diagnostic = f.variables['L_p_diagnostic'][()]
   L_p_diagnostic_with_area = f.variables['L_p_diagnostic_with_area'][()]
+  L_p_diagnostic_3 = f.variables['L_p_diagnostic_3'][()]
+  L_p_diagnostic_4 = f.variables['L_p_diagnostic_4'][()]
+  L_p_diagnostic_5 = f.variables['L_p_diagnostic_5'][()]
+  L_p_diagnostic_6 = f.variables['L_p_diagnostic_6'][()]
   ps = f.variables['ps'][()]
   area_coil = f.variables['area_coil'][()]
 max_K = f.variables['max_K'][()]
@@ -372,10 +376,14 @@ if (L_p_diagnostic_option > 1):
   for whichPlot in range(numPlots):
     plt.subplot(numRows,numCols,whichPlot+1)
     plt.axhline(max_K[whichPlot], label='max_K',color='green')
-    plt.plot(ps,L_p_diagnostic[:,whichPlot],'ob',label='L_p norm',color='purple')
+    plt.plot(ps,L_p_diagnostic[:,whichPlot],'ob',label='L^p norm',color='purple')
     plt.plot(ps,L_p_diagnostic_with_area[:,whichPlot],'ob',label='with area',color='red')
-    plt.axhline(np.sqrt(chi2_K[whichPlot])/area_coil, label='RMS',color='blue')
-    plt.legend(fontsize='x-small')
+    plt.plot(ps,L_p_diagnostic_3[:,whichPlot],'ob',label='option 3',color='orange')
+    plt.plot(ps,L_p_diagnostic_4[:,whichPlot],'ob',label='option 4',color='green')
+    plt.plot(ps,L_p_diagnostic_5[:,whichPlot],'ob',label='option 5',color='blue')
+    plt.plot(ps,L_p_diagnostic_6[:,whichPlot],'ob',label='option 6',color='pink')
+#plt.axhline(np.sqrt(chi2_K[whichPlot])/area_coil, label='RMS',color='blue')
+    plt.legend(fontsize='small',loc=4)
     plt.xlabel('p',fontsize='small')
     plt.title('lambda='+str(lambdas[whichPlot]),fontsize='x-small')
 

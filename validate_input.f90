@@ -163,4 +163,13 @@ subroutine validate_input
     end if
   end if
 
+  if (fixed_norm_sensitivity_option > 1) then
+    if (sensitivity_option < 2) then
+      stop "fixed_norm_sensitivity_option > 1 must be used with sensitivity_option > 2."
+    end if
+    if (general_option == 1) then
+      stop "fixed_norm_sensitivity_option > 1 must be used with general_option > 3."
+    end if
+  end if
+
 end subroutine validate_input

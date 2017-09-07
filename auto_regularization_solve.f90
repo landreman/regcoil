@@ -18,6 +18,7 @@ subroutine auto_regularization_solve
   real(dp) :: Brendt_a, Brendt_b, Brendt_c, Brendt_fa, Brendt_fb, Brendt_fc, Brendt_d, Brendt_e
   real(dp) :: Brendt_p, Brendt_q, Brendt_r, Brendt_s, Brendt_tol1, Brendt_xm, Brendt_EPS
   integer :: this_p, ip
+  real(dp) :: max_val
 
   ! Variables needed by LAPACK:
   integer :: INFO, LWORK
@@ -67,15 +68,35 @@ subroutine auto_regularization_solve
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(L_p_norm_with_area(nlambda),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(L_P_norm_option_3(nlambda),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(L_p_norm_option_4(nlambda),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(LSE_current_density(nlambda),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(LSE_current_density_with_area(nlambda),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+
+  allocate(rms_K(nlambda),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
 
   if (L_p_diagnostic_option > 1) then
-    L_p_diagnostic_np = (L_p_diagnostic_max - L_p_diagnostic_min)/L_p_diagnostic_dp + 1
-    print *,"L_p_diagnostic_np: ", L_p_diagnostic_np
+    if (L_p_diagnostic_np == 1) then
+      L_p_diagnostic_dp = 0
+    else
+      L_p_diagnostic_dp = (L_p_diagnostic_max-L_p_diagnostic_min)/(L_p_diagnostic_np - 1)
+    end if
     allocate(ps(L_p_diagnostic_np), stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(L_p_diagnostic(nlambda,L_p_diagnostic_np), stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(L_p_diagnostic_with_area(nlambda,L_p_diagnostic_np), stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(L_p_diagnostic_3(nlambda,L_p_diagnostic_np), stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(L_p_diagnostic_4(nlambda,L_p_diagnostic_np), stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(L_p_diagnostic_5(nlambda,L_p_diagnostic_np), stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
     ps(1) = L_p_diagnostic_min
     do ip=2,L_p_diagnostic_np
@@ -263,13 +284,33 @@ subroutine auto_regularization_solve
 
      L_p_norm_with_area(ilambda) = (dtheta_coil*dzeta_coil*nfp*sum(norm_normal_coil*K2(:,:,ilambda)**(target_option_p/2.0))/area_coil)**(1.0/target_option_p)
 
-     L_p_norm(ilambda) = sum(K2(:,:,ilambda)**(target_option_p/2.0))**(1.0/target_option_p)
+     L_p_norm(ilambda) = sum(dtheta_coil*dzeta_coil*nfp*K2(:,:,ilambda)**(target_option_p/2.0)/(4*pi*pi))**(1.0/target_option_p)
+
+     L_p_norm_option_3(ilambda) = sum(norm_normal_coil*K2(:,:,ilambda)**((target_option_p+1)/2.0))/sum(norm_normal_coil*K2(:,:,ilambda)**(target_option_p/2.0))
+
+     L_p_norm_option_4(ilambda) = sum(K2(:,:,ilambda)**((target_option_p+1)/2.0))/sum(K2(:,:,ilambda)**(target_option_p/2.0))
+
+    rms_K(ilambda) = sqrt(chi2_K(ilambda)/area_coil)
+
+    LSE_current_density_with_area(ilambda) = &
+      (1/target_option_p)*log(sum(dtheta_coil*dzeta_coil*nfp/area_coil*exp(target_option_p &
+      * (K2(:,:,ilambda)**(0.5) - max_K(ilambda))))) + max_K(ilambda)
+
+    LSE_current_density(ilambda) = &
+      (1/target_option_p) &
+      *log(sum(exp(target_option_p*(K2(:,:,ilambda)**(0.5)-max_K(ilambda))))) + max_K(ilambda)
 
      if (L_p_diagnostic_option > 1) then
         do ip = 1,L_p_diagnostic_np
           this_p = ps(ip)
-          L_p_diagnostic_with_area(ilambda,ip) = (dtheta_coil*dzeta_coil*nfp*sum(norm_normal_coil*K2(:,:,ilambda)**(this_p/2.0))/area_coil)**(1.0/this_p)
-          L_p_diagnostic(ilambda,ip) = sum(K2(:,:,ilambda)**(this_p/2.0))**(1.0/this_p)
+          L_p_diagnostic_with_area(ilambda,ip) = max_K(ilambda)*(dtheta_coil*dzeta_coil*nfp*sum(norm_normal_coil*(K2(:,:,ilambda)/max_K(ilambda)**2)**(this_p/2.0)/area_coil))**(1.0/this_p)
+          L_p_diagnostic(ilambda,ip) = max_K(ilambda)*sum(dtheta_coil*dzeta_coil*nfp*(K2(:,:,ilambda)/max_K(ilambda)**2)**(this_p/2.0)/(4*pi*pi))**(1.0/this_p)
+          L_p_diagnostic_3(ilambda,ip) = max_K(ilambda)*sum(norm_normal_coil*(K2(:,:,ilambda)/max_K(ilambda)**2)**((this_p+1)/2.0))/sum(norm_normal_coil*(K2(:,:,ilambda)/max_K(ilambda)**2)**(this_p/2.0))
+          L_p_diagnostic_4(ilambda,ip) = max_K(ilambda)*sum((K2(:,:,ilambda)/max_K(ilambda)**2)**((this_p+1)/2.0))/sum((K2(:,:,ilambda)/max_K(ilambda)**2)**(this_p/2.0))
+          L_p_diagnostic_5(ilambda,ip) = (rms_K(ilambda)/this_p)*log(sum(exp((this_p)*norm_normal_coil*nfp*dtheta_coil*dzeta_coil*(K2(:,:,ilambda)**(0.5)-max_K(ilambda))/(area_coil*rms_K(ilambda))))) + max_K(ilambda)
+          L_p_diagnostic_5(ilambda,ip) = (rms_K(ilambda)/this_p)*log(sum(exp((this_p)*((K2(:,:,ilambda)**(0.5)-max_K(ilambda))/rms_K(ilambda))))) + max_K(ilambda)
+          L_p_diagnostic_6(ilambda,ip) = (1/this_p)*log(sum(nfp*dtheta_coil*dzeta_coil*norm_normal_coil/area_coil &
+            * exp(this_p*(K2(:,:,ilambda)**(0.5)-max_K(ilambda))))) + max_K(ilambda)
         end do
      end if
 
@@ -277,7 +318,6 @@ subroutine auto_regularization_solve
      print *,"  Diagnostics: ",real(toc-tic)/countrate," sec."
      print "(a,es10.3,a,es10.3)","   chi2_B:",chi2_B(ilambda),",  chi2_K:",chi2_K(ilambda)
      print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda),",  rms K:",sqrt(chi2_K(ilambda)/area_coil)
-     print "(a,es10.3,a)"," L^p norm current density:",L_p_norm(ilambda)
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! Done computing diagnostics.
@@ -388,6 +428,14 @@ contains
     case (4)
        ! L^p norm current density - norm defined with surface integral
        target_function = L_p_norm_with_area(jlambda)
+    case (5)
+       target_function = L_p_norm_option_3(jlambda)
+    case (6)
+       target_function = L_p_norm_option_4(jlambda)
+    case (7)
+       target_function = LSE_current_density(jlambda)
+    case (8)
+       target_function = LSE_current_density_with_area(jlambda)
     case default
        print *,"Invalid target_option: ",target_option
        stop

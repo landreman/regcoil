@@ -7,7 +7,7 @@
 
 program regcoil
 
-  use global_variables, only: totalTime, outputFilename, general_option, sensitivity_option, normal_displacement_option
+  use global_variables, only: totalTime, outputFilename, general_option, sensitivity_option, normal_displacement_option, fixed_norm_sensitivity_option
   use init_plasma_mod
 
   implicit none
@@ -67,6 +67,9 @@ program regcoil
       call normal_displacement_svd()
       print *,"Normal displacement calculations complete (with SVD)."
     endif
+    if (fixed_norm_sensitivity_option > 1) then
+      call lse_sensitivity()
+    end if
   endif
 
   call system_clock(toc)
@@ -74,9 +77,9 @@ program regcoil
 
   call write_output()
 
-  if (sensitivity_option > 1) then
-    call free_sensitivity()
-  endif
+!  if (sensitivity_option > 1) then
+!    call free_sensitivity()
+!  endif
 
   print *,"REGCOIL complete. Total time=",totalTime,"sec."
   print *,"You can run regcoilPlot ",trim(outputFilename)," to plot results."

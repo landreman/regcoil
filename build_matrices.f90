@@ -77,7 +77,7 @@ subroutine build_matrices()
     allocate(dRHS_Bdomega(nomega_coil,num_basis_functions),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
   endif
-  if (sensitivity_option > 2) then
+  if (sensitivity_option > 2 .or. fixed_norm_sensitivity_option > 1) then
     allocate(f_xdNdomega_over_N_coil2(nomega_coil,ntheta_coil*nzeta_coil,num_basis_functions),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(f_ydNdomega_over_N_coil2(nomega_coil,ntheta_coil*nzeta_coil,num_basis_functions),stat=iflag)
@@ -421,7 +421,7 @@ subroutine build_matrices()
      f_x_over_N_coil(:,j) = f_x(:,j) * norm_normal_coil_inv1D
      f_y_over_N_coil(:,j) = f_y(:,j) * norm_normal_coil_inv1D
      f_z_over_N_coil(:,j) = f_z(:,j) * norm_normal_coil_inv1D
-     if (sensitivity_option > 2) then
+     if (sensitivity_option > 2 .or. fixed_norm_sensitivity_option > 1) then
         ! I'm premultiplying this
         do iomega = 1, nomega_coil
           f_xdNdomega_over_N_coil2(iomega,:,j) = f_x(:,j)*norm_normal_coil_inv1D*norm_normal_coil_inv1D &
@@ -434,7 +434,7 @@ subroutine build_matrices()
      endif
   end do
 
-  if (sensitivity_option > 2) then
+  if (sensitivity_option > 2 .or. fixed_norm_sensitivity_option > 1) then
     call system_clock(tic)
 
     do iomega = 1, nomega_coil
@@ -450,7 +450,7 @@ subroutine build_matrices()
   endif
 
   matrix_B = 0
-  if (sensitivity_option > 2) then
+  if (sensitivity_option > 2 .or. fixed_norm_sensitivity_option > 1) then
     dmatrix_Bdomega = 0
   end if
 
@@ -480,7 +480,7 @@ subroutine build_matrices()
   call system_clock(toc)
   print *,"matmul for matrix_B:",real(toc-tic)/countrate,"sec."
 
-  if (sensitivity_option > 2) then
+  if (sensitivity_option > 2 .or. fixed_norm_sensitivity_option > 1) then
     BLAS_BETA=1
     call system_clock(tic)
     !$OMP PARALLEL
@@ -501,7 +501,7 @@ subroutine build_matrices()
   deallocate(g_over_N_plasma)
 
   matrix_K = 0
-  if (sensitivity_option > 2) then
+  if (sensitivity_option > 2 .or. fixed_norm_sensitivity_option > 1) then
     dmatrix_Kdomega = 0
   end if
 
@@ -566,7 +566,7 @@ subroutine build_matrices()
   print *,"matmul 3 for matrix_K:",real(toc-tic)/countrate,"sec."
 
   ! Construct dmatrix_Kdomega
-  if (sensitivity_option > 2) then
+  if (sensitivity_option > 2 .or. fixed_norm_sensitivity_option > 1) then
     call system_clock(tic)
     !$OMP PARALLEL
     !$OMP MASTER
@@ -599,7 +599,7 @@ subroutine build_matrices()
   print *,"Matmuls for RHS_K:",real(toc-tic)/countrate,"sec."
 
   ! Compute dRHS_Kdomega
-  if (sensitivity_option > 2) then
+  if (sensitivity_option > 2 .or. fixed_norm_sensitivity_option > 1) then
     call system_clock(tic)
     !$OMP PARALLEL
     !$OMP MASTER
@@ -631,7 +631,7 @@ subroutine build_matrices()
     deallocate(dinductancednorm)
     deallocate(dinductancedr)
   endif
-  if (sensitivity_option > 2) then
+  if (sensitivity_option > 2 .or. fixed_norm_sensitivity_option > 1) then
     deallocate(f_xdNdomega_over_N_coil2)
     deallocate(f_ydNdomega_over_N_coil2)
     deallocate(f_zdNdomega_over_N_coil2)

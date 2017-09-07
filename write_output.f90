@@ -84,7 +84,10 @@ subroutine write_output
        vn_dvolume_coildomega = "dvolume_coildomega", &
        vn_L_p_norm = "L_p_norm", &
        vn_L_p_norm_with_area = "L_p_norm_with_area", &
-       vn_ps = "ps"
+       vn_LSE_current_density = "LSE_current_density", &
+       vn_LSE_current_density_with_area = "LSE_current_density_with_area", &
+       vn_ps = "ps", &
+       vn_darea_coildomega = "darea_coildomega"
 
   ! Arrays with dimension 2
   character(len=*), parameter :: &
@@ -113,7 +116,15 @@ subroutine write_output
      vn_dRHS_Bdomega = "dRHS_Bdomega", &
      vn_dRHS_Kdomega = "dRHS_Kdomega", &
      vn_L_p_diagnostic = "L_p_diagnostic", &
-     vn_L_p_diagnostic_with_area = "L_p_diagnostic_with_area"
+     vn_L_p_diagnostic_with_area = "L_p_diagnostic_with_area", &
+     vn_L_p_diagnostic_3 = "L_p_diagnostic_3", &
+     vn_L_p_diagnostic_4 = "L_p_diagnostic_4", &
+     vn_L_p_diagnostic_5 = "L_p_diagnostic_5", &
+     vn_L_p_diagnostic_6 = "L_p_diagnostic_6", &
+     vn_dLSE_current_density_with_areadOmega = "dLSE_current_density_with_areadOmega", &
+     vn_dRMSKdomega = "dRMSKdomega", &
+     vn_q_tilde = "q_tilde", &
+     vn_dlambdadomega = "dlambdadomega"
 
   ! Arrays with dimension 3
   character(len=*), parameter :: &
@@ -173,7 +184,7 @@ subroutine write_output
        basis_basis_dim = (/ character(len=50) :: &
          'num_basis_functions','num_basis_functions'/), &
        basis_nlambda_dim = (/ character(len=50) :: 'num_basis_functions','nlambda'/), &
-       nomega_coil_nlambda_sensitivity_dim = (/ character(len=50) :: 'nomega_coil', 'nlambda_sensitivity'/), &
+       nomega_coil_nlambda_dim = (/ character(len=50) :: 'nomega_coil', 'nlambda'/), &
        nthetanzeta_coil_basis_dim = (/ character(len=50) :: &
          'ntheta_times_nzeta_coil','num_basis_functions'/), &
        nomega_coil_nthetanzeta_plasma_dim = (/character(len=50) :: &
@@ -184,10 +195,10 @@ subroutine write_output
           'nomega_coil', 'num_basis_functions'/), &
        nthetanzeta_plasma_basis_dim = (/ character(len=50) :: &
           'ntheta_nzeta_plasma','num_basis_functions'/), &
-       basis_nlambda_sensitivity_dim = (/character(len=50) :: &
-          'num_basis_functions','nlambda_sensitivity'/), &
        nlambda_np_dim = (/ character(len=50) :: &
-          'nlambda', 'L_p_diagnostic_np'/)
+          'nlambda', 'L_p_diagnostic_np'/), &
+       nomega_nlambda_dim = (/ character(len=50) :: &
+          'nomega_coil', 'nlambda' /)
 
   ! Arrays with dimension 3:
   character(len=*), parameter, dimension(3) :: &
@@ -247,8 +258,8 @@ subroutine write_output
   call cdf_define(ncid, vn_totalTime, totalTime)
   call cdf_define(ncid, vn_exit_code, exit_code)
   if (general_option==4 .or. general_option==5) call cdf_define(ncid, vn_chi2_B_target, chi2_B_target)
-    call cdf_define(ncid, vn_sensitivity_option, sensitivity_option)
-    call cdf_define(ncid, vn_normal_displacement_option, normal_displacement_option)
+  call cdf_define(ncid, vn_sensitivity_option, sensitivity_option)
+  call cdf_define(ncid, vn_normal_displacement_option, normal_displacement_option)
   if (sensitivity_option > 1) then
     call cdf_define(ncid, vn_mmax_sensitivity, mmax_sensitivity)
     call cdf_define(ncid, vn_nmax_sensitivity, nmax_sensitivity)
@@ -302,8 +313,17 @@ subroutine write_output
   if (target_option == 4) then
     call cdf_define(ncid, vn_L_p_norm_with_area, L_p_norm_with_area(1:Nlambda), dimname=nlambda_dim)
   end if
+  if (target_option == 7) then
+    call cdf_define(ncid, vn_LSE_current_density, LSE_current_density(1:Nlambda), dimname=nlambda_dim)
+  end if
+  if (target_option == 8 .or. fixed_norm_sensitivity_option > 1) then
+    call cdf_define(ncid, vn_LSE_current_density_with_area, LSE_current_density_with_area(1:Nlambda), dimname=nlambda_dim)
+  end if
   if (L_p_diagnostic_option > 1) then
     call cdf_define(ncid, vn_ps, ps, dimname=np_dim)
+  end if
+  if (fixed_norm_sensitivity_option > 1) then
+    call cdf_define(ncid, vn_darea_coildomega, darea_coildomega,dimname=nomega_coil_dim)
   end if
 
   ! Arrays with dimension 2
@@ -321,11 +341,11 @@ subroutine write_output
   call cdf_define(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda), &
        dimname=basis_nlambda_dim)
   if (sensitivity_option > 1) then
-    call cdf_define(ncid, vn_dchi2domega, dchi2domega(:,1:Nlambda_sensitivity),dimname=nomega_coil_nlambda_sensitivity_dim)
+    call cdf_define(ncid, vn_dchi2domega, dchi2domega(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
   end if
   if (sensitivity_option > 2) then
-    call cdf_define(ncid, vn_dchi2Bdomega, dchi2Bdomega(:,1:Nlambda_sensitivity),dimname=nomega_coil_nlambda_sensitivity_dim)
-    call cdf_define(ncid, vn_dchi2Kdomega, dchi2Kdomega(:,1:Nlambda_sensitivity),dimname=nomega_coil_nlambda_sensitivity_dim)
+    call cdf_define(ncid, vn_dchi2Bdomega, dchi2Bdomega(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
+    call cdf_define(ncid, vn_dchi2Kdomega, dchi2Kdomega(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
   end if
   if (save_level == 0) then
     if (sensitivity_option > 1) then
@@ -335,10 +355,10 @@ subroutine write_output
         call cdf_define(ncid, vn_f_z, f_z, dimname=nthetanzeta_coil_basis_dim)
     endif
     if (sensitivity_option == 3 .or. sensitivity_option == 5) then
-      call cdf_define(ncid, vn_q_B, q_B(:,1:Nlambda_sensitivity),dimname=basis_nlambda_sensitivity_dim)
+      call cdf_define(ncid, vn_q_B, q_B(:,1:Nlambda),dimname=basis_nlambda_dim)
     endif
     if (sensitivity_option == 3 .or. sensitivity_option == 4) then
-      call cdf_define(ncid, vn_q_K, q_K(:,1:Nlambda_sensitivity),dimname=basis_nlambda_sensitivity_dim)
+      call cdf_define(ncid, vn_q_K, q_K(:,1:Nlambda),dimname=basis_nlambda_dim)
     endif
     if (sensitivity_option > 2) then
       call cdf_define(ncid, vn_dRHS_Kdomega, dRHS_Kdomega,dimname=nomega_coil_num_basis_functions_dim)
@@ -348,6 +368,17 @@ subroutine write_output
   if (L_p_diagnostic_option > 1) then
     call cdf_define(ncid, vn_L_p_diagnostic, L_p_diagnostic(1:Nlambda,:),dimname=nlambda_np_dim)
     call cdf_define(ncid, vn_L_p_diagnostic_with_area, L_p_diagnostic_with_area(1:Nlambda,:),dimname=nlambda_np_dim)
+    call cdf_define(ncid, vn_L_p_diagnostic_3, L_p_diagnostic_3(1:Nlambda,:),dimname=nlambda_np_dim)
+    call cdf_define(ncid, vn_L_P_diagnostic_4, L_p_diagnostic_4(1:Nlambda,:),dimname=nlambda_np_dim)
+    call cdf_define(ncid, vn_L_P_diagnostic_5, L_p_diagnostic_5(1:Nlambda,:),dimname=nlambda_np_dim)
+    call cdf_define(ncid, vn_L_P_diagnostic_6, L_p_diagnostic_6(1:Nlambda,:),dimname= &
+      nlambda_np_dim)
+  end if
+  if (fixed_norm_sensitivity_option > 1) then
+    call cdf_define(ncid, vn_dLSE_current_density_with_areadOmega, dLSE_current_density_with_areadOmega(:,1:Nlambda), dimname=nomega_nlambda_dim)
+    call cdf_define(ncid, vn_dRMSKdomega, dRMSKdomega(:,1:Nlambda),dimname=nomega_nlambda_dim)
+    call cdf_define(ncid, vn_q_tilde, q_tilde(:,1:Nlambda),dimname=basis_nlambda_dim)
+    call cdf_define(ncid, vn_dlambdadomega, dlambdadomega(:,1:Nlambda),dimname=nomega_nlambda_dim)
   end if
 
   ! Arrays with dimension 3
@@ -484,8 +515,18 @@ subroutine write_output
   if (target_option == 4) then
     call cdf_write(ncid, vn_L_p_norm_with_area, L_p_norm_with_area(1:Nlambda))
   end if
+  if (target_option == 7) then
+    call cdf_write(ncid, vn_LSE_current_density, LSE_current_density(1:Nlambda))
+  end if
+  if (target_option == 8 .or. fixed_norm_sensitivity_option > 1) then
+    call cdf_write(ncid, vn_LSE_current_density_with_area, &
+      LSE_current_density_with_area(1:Nlambda))
+  end if
   if (L_p_diagnostic_option > 1) then
     call cdf_write(ncid, vn_ps, ps)
+  end if
+  if (fixed_norm_sensitivity_option > 1) then
+    call cdf_write(ncid, vn_darea_coildomega, darea_coildomega)
   end if
 
   ! Arrays with dimension 2
@@ -502,11 +543,11 @@ subroutine write_output
   end if
   call cdf_write(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda))
   if (sensitivity_option > 1) then
-    call cdf_write(ncid, vn_dchi2domega, dchi2domega(:,1:Nlambda_sensitivity))
+    call cdf_write(ncid, vn_dchi2domega, dchi2domega(:,1:Nlambda))
   end if
   if (sensitivity_option > 2) then
-    call cdf_write(ncid, vn_dchi2Kdomega, dchi2Kdomega(:,1:Nlambda_sensitivity))
-    call cdf_write(ncid, vn_dchi2Bdomega, dchi2Bdomega(:,1:Nlambda_sensitivity))
+    call cdf_write(ncid, vn_dchi2Kdomega, dchi2Kdomega(:,1:Nlambda))
+    call cdf_write(ncid, vn_dchi2Bdomega, dchi2Bdomega(:,1:Nlambda))
   end if
   if (save_level == 0) then
     if (sensitivity_option > 1) then
@@ -516,10 +557,10 @@ subroutine write_output
       call cdf_write(ncid, vn_dhdomega, dhdomega)
     endif
     if (sensitivity_option == 3 .or. sensitivity_option == 4) then
-      call cdf_write(ncid, vn_q_K, q_K(:,1:Nlambda_sensitivity))
+      call cdf_write(ncid, vn_q_K, q_K(:,1:Nlambda))
     end if
     if (sensitivity_option == 3 .or. sensitivity_option == 5) then
-      call cdf_write(ncid, vn_q_B, q_B(:,1:Nlambda_sensitivity))
+      call cdf_write(ncid, vn_q_B, q_B(:,1:Nlambda))
     end if
     if (sensitivity_option > 2) then
       call cdf_write(ncid, vn_dRHS_Bdomega, dRHS_Bdomega)
@@ -531,6 +572,16 @@ subroutine write_output
   if (L_p_diagnostic_option > 1) then
     call cdf_write(ncid, vn_L_p_diagnostic, L_p_diagnostic(1:Nlambda,:))
     call cdf_write(ncid, vn_L_p_diagnostic_with_area, L_p_diagnostic_with_area(1:Nlambda,:))
+    call cdf_write(ncid, vn_L_p_diagnostic_3, L_p_diagnostic_3(1:Nlambda,:))
+    call cdf_write(ncid, vn_L_p_diagnostic_4, L_p_diagnostic_4(1:Nlambda,:))
+    call cdf_write(ncid, vn_L_p_diagnostic_5, L_p_diagnostic_5(1:Nlambda,:))
+    call cdf_write(ncid, vn_L_p_diagnostic_6, L_p_diagnostic_6(1:Nlambda,:))
+  end if
+  if (fixed_norm_sensitivity_option > 1) then
+    call cdf_write(ncid, vn_dLSE_current_density_with_areadOmega, dLSE_current_density_with_areadOmega(:,1:Nlambda))
+    call cdf_write(ncid, vn_dRMSKdomega, dRMSKdomega(:,1:Nlambda))
+    call cdf_write(ncid, vn_q_tilde, q_tilde(:,1:Nlambda))
+    call cdf_write(ncid, vn_dlambdadomega, dlambdadomega(:,1:Nlambda))
   end if
 
   ! Arrays with dimension 3

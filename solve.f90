@@ -60,14 +60,32 @@ subroutine solve
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(this_K2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(rms_K(nlambda),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  if (fixed_norm_sensitivity_option > 1) then
+    allocate(LSE_current_density_with_area(nlambda),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+  end if
 
   if (L_p_diagnostic_option > 1) then
-    L_p_diagnostic_np = (L_p_diagnostic_max - L_p_diagnostic_min)/L_p_diagnostic_dp + 1
+    if (L_p_diagnostic_np == 1) then
+      L_p_diagnostic_dp = 0
+    else
+      L_p_diagnostic_dp = (L_p_diagnostic_max-L_p_diagnostic_min)/(L_p_diagnostic_np - 1)
+    end if
     allocate(ps(L_p_diagnostic_np), stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(L_p_diagnostic(nlambda,L_p_diagnostic_np), stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(L_p_diagnostic_with_area(nlambda,L_p_diagnostic_np), stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(L_p_diagnostic_3(nlambda,L_p_diagnostic_np), stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(L_p_diagnostic_4(nlambda,L_p_diagnostic_np), stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(L_p_diagnostic_5(nlambda,L_p_diagnostic_np), stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(L_p_diagnostic_6(nlambda,L_p_diagnostic_np), stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
     ps(1) = L_p_diagnostic_min
     do ip=2,L_p_diagnostic_np
@@ -140,11 +158,18 @@ subroutine solve
      max_Bnormal(ilambda) = maxval(abs(Bnormal_total(:,:,ilambda)))
      max_K(ilambda) = sqrt(maxval(K2    (:,:,ilambda)))
 
+     rms_K(ilambda) = sqrt(chi2_K(ilambda)/area_coil)
      if (L_p_diagnostic_option > 1) then
         do ip = 1,L_p_diagnostic_np
           this_p = ps(ip)
-          L_p_diagnostic_with_area(ilambda,ip) = (dtheta_coil*dzeta_coil*nfp*sum(norm_normal_coil*K2(:,:,ilambda)**(this_p/2.0))/area_coil)**(1.0/this_p)
-          L_p_diagnostic(ilambda,ip) = sum(K2(:,:,ilambda)**(this_p/2.0))**(1.0/this_p)
+          L_p_diagnostic_with_area(ilambda,ip) = max_K(ilambda)*(dtheta_coil*dzeta_coil*nfp*sum(norm_normal_coil*(K2(:,:,ilambda)/max_K(ilambda)**2)**(this_p/2.0)/area_coil))**(1.0/this_p)
+          L_p_diagnostic(ilambda,ip) = max_K(ilambda)*sum(dtheta_coil*dzeta_coil*nfp*(K2(:,:,ilambda)/max_K(ilambda)**2)**(this_p/2.0)/(4*pi*pi))**(1.0/this_p)
+          L_p_diagnostic_3(ilambda,ip) = max_K(ilambda)*sum(norm_normal_coil*(K2(:,:,ilambda)/max_K(ilambda)**2)**((this_p+1)/2.0))/sum(norm_normal_coil*(K2(:,:,ilambda)/max_K(ilambda)**2)**(this_p/2.0))
+          L_p_diagnostic_4(ilambda,ip) = max_K(ilambda)*sum((K2(:,:,ilambda)/max_K(ilambda)**2)**((this_p+1)/2.0))/sum((K2(:,:,ilambda)/max_K(ilambda)**2)**(this_p/2.0))
+          L_p_diagnostic_5(ilambda,ip) = (rms_K(ilambda)/this_p)*log(sum(exp((this_p)*norm_normal_coil*nfp*dtheta_coil*dzeta_coil*(K2(:,:,ilambda)**(0.5)-max_K(ilambda))/(area_coil*rms_K(ilambda))))) + max_K(ilambda)
+          L_p_diagnostic_5(ilambda,ip) = (rms_K(ilambda)/this_p)*log(sum(exp((this_p)*((K2(:,:,ilambda)**(0.5)-max_K(ilambda))/rms_K(ilambda))))) + max_K(ilambda)
+          L_p_diagnostic_6(ilambda,ip) = (1/this_p)*log(sum(nfp*dtheta_coil*dzeta_coil*norm_normal_coil/area_coil &
+            * exp(this_p*(K2(:,:,ilambda)**(0.5)-max_K(ilambda))))) + max_K(ilambda)
         end do
      end if
 

@@ -82,7 +82,7 @@ module global_variables
   real(dp), dimension(:), allocatable :: lambda
 
   integer :: target_option = 1
-  integer :: target_option_p = 4
+  real(dp) :: target_option_p = 4.0
   real(dp) :: current_density_target = 8.0d+6
   real(dp) :: lambda_search_tolerance = 1.0d-5
   integer :: exit_code = 0
@@ -92,11 +92,19 @@ module global_variables
   integer :: L_p_diagnostic_option = 1
   integer :: L_p_diagnostic_min = 4
   integer :: L_p_diagnostic_max = 16
-  integer :: L_p_diagnostic_dp = 2
-  integer :: L_p_diagnostic_np
-  real(dp), dimension(:,:), allocatable :: L_p_diagnostic, L_p_diagnostic_with_area
-  real(dp), dimension(:), allocatable :: L_p_norm, L_p_norm_with_area
+  integer :: L_p_diagnostic_dp
+  integer :: L_p_diagnostic_np = 4
+  real(dp), dimension(:,:), allocatable :: L_p_diagnostic, L_p_diagnostic_with_area, L_p_diagnostic_3
+  real(dp), dimension(:,:), allocatable :: L_p_diagnostic_4, L_p_diagnostic_5, L_p_diagnostic_6
+  real(dp), dimension(:), allocatable :: L_p_norm, L_p_norm_with_area, L_p_norm_option_3, L_p_norm_option_4
+  real(dp), dimension(:), allocatable :: LSE_current_density, LSE_current_density_with_area
   integer, dimension(:), allocatable :: ps
+  real(dp), dimension(:,:), allocatable :: dLSE_current_density_with_areadOmega, dLSE_current_density_with_areadPhi
+  real(dp), dimension(:), allocatable :: rms_K
+  integer :: fixed_norm_sensitivity_option = 1
+  real(dp), dimension(:,:), allocatable :: dRMSKdomega
+  real(dp), dimension(:), allocatable :: darea_coildomega
+  real(dp), dimension(:,:), allocatable :: q_tilde, dlambdadomega
 
 ! Needed for sensitivity calculation
   integer :: normal_displacement_option = 0
@@ -106,24 +114,24 @@ module global_variables
   integer :: mmax_sensitivity = 0
   integer :: mnmax_sensitivity
   integer :: nomega_coil
+  real(dp), dimension(:,:), allocatable :: dchi2Kdphi, dchi2Bdphi
   integer, dimension(:), allocatable :: omega_coil
   integer, dimension(:), allocatable :: xm_sensitivity, xn_sensitivity
   real(dp), dimension(:,:,:), allocatable :: dddomega, dfxdomega, dfydomega, dfzdomega
   real(dp), dimension(:,:,:), allocatable :: dnorm_normaldomega, dgdomega, dinductancedomega
   real(dp), dimension(:,:,:), allocatable :: dnormxdomega, dnormydomega, dnormzdomega
-  real(dp), dimension(:,:), allocatable :: dchi2domega, dchi2Kdomega, dchi2Bdomega
-  !real(dp), dimension(:,:,:), allocatable :: dbdomega
+  real(dp), dimension(:,:), allocatable :: dchi2domega, dchi2Kdomega, dchi2Bdomega, dchi2Kdomega_withoutadjoint
   real(dp), dimension(:,:,:,:), allocatable :: drdomega
   real(dp), dimension(:,:,:), allocatable :: domegadxdtheta, domegadxdzeta, domegadydtheta, domegadydzeta
   real(dp), dimension(:,:,:), allocatable :: domegadzdtheta, domegadzdzeta
   real(dp), dimension(:,:), allocatable :: dhdomega, dchi2dr_normal
   real(dp), dimension(:,:), allocatable :: domegadx, domegady, domegadz
-  real(dp), dimension(:,:), allocatable :: q_K, q_B
+  real(dp), dimension(:,:), allocatable :: q_K, q_B, dFdomega
   real(dp), dimension(:,:,:), allocatable :: dmatrix_Kdomega, dmatrix_Bdomega, dmatrixdomega
   real(dp), dimension(:,:), allocatable :: dRHS_Bdomega, dRHS_Kdomega, dRHSdomega
   integer :: save_nescin_option = 0
   integer :: save_nescin_mpol = 12, save_nescin_ntor = 12
-  integer :: nlambda_sensitivity
+  integer :: minLambda, maxLambda
   real(dp), dimension(:), allocatable :: dvolume_coildomega
 
 end module global_variables

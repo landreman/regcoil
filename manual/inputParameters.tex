@@ -454,15 +454,36 @@ current density over the winding surface equals \parlink{current\_density\_targe
 density over the winding surface equals \parlink{current\_density\_target}. Here $p$ is specified by 
 \parlink{target\_option\_p}. The norm is defined in the following way.
 \begin{gather}
-\norm{\bm{K}}_p = \left( \int d \theta' \int d \zeta' \, (\abs{\bm{K}}^2)^{p/2} \right)^{1/p}
+\norm{\bm{K}}_p = \left( \frac{\int d \theta' \int d \zeta' \, (\abs{\bm{K}'}^2)^{p/2}}{(2\pi)^2} \right)^{1/p}
 \end{gather}\\
 
 {\ttfamily target\_option} = 4: Same as \parlink{target\_option} = 3, but $L^p$ norm is defined using a
 surface integral.
 \begin{gather}
-\norm{\bm{K}}_p = \left( \frac{\int d \theta' \int d \zeta' \, N' (\abs{\bm{K}}^2)^{p/2}}{\int d \theta' \int d \zeta' \, N'} \right)^{1/p}
+\norm{\bm{K}}_p = \left( \frac{\int d \theta' \int d \zeta' \, N' (\abs{\bm{K}'}^2)^{p/2}}{\int d \theta' \int d \zeta' \, N'} \right)^{1/p}
+\end{gather} \\
+
+{\ttfamily target\_option} = 5: Same as \parlink{target\_option} = 3, but maximum is approximated in the following way.
+\begin{gather}
+\norm{\bm{K}}_p = \frac{ \int d \theta' \int d \zeta' \, (\abs{\bm{K}'}^2)^{(p+1)/2}}{  \int d \theta' \int d \zeta' \, (\abs{\bm{K}'}^2)^{p/2} }
+\end{gather}
+
+{\ttfamily target\_option} = 6: Same as \parlink{target\_option} = 3, but maximum is approximated in the following way.
+\begin{gather}
+\norm{\bm{K}}_p = \frac{ \int d \theta' \int d \zeta' \, N' (\abs{\bm{K}'}^2)^{(p+1)/2}}{  \int d \theta' \int d \zeta' \, N' (\abs{\bm{K}'}^2)^{p/2} }
+\end{gather}
+
+{\ttfamily target\_option} = 7: Same as \parlink{target\_option} = 3, but maximum is approximated using the log-sum-exponent norm. 
+\begin{gather}
+\norm{\bm{K}}_p = \frac{1}{p} \log\left( \frac{\int d \theta' \int d \zeta'  \exp (p \abs{\bm{K}'}^2 ) }{ (2 \pi)^2}\right)
+\end{gather}
+
+{\ttfamily target\_option} = 8: Same as \parlink{target\_option} = 3, but maximum is approximated using the following variant of the log-sum-exponent norm.
+\begin{gather}
+\norm{\bm{K}}_p = \frac{1}{p} \log \left( \frac{\int d \theta' \int d \zeta' \, N' \exp (p \abs{\bm{K}'}^2 ) }{ \int d \theta' \int d \zeta' \, N' }\right)
 \end{gather}
 }
+
 
 \myhrule
 
@@ -498,11 +519,11 @@ winding surface.}
 \param{L\_p\_diagnostic\_option}
 {integer}
 {1}
-{Typically will be used with \parlink{target\_option} = 3 to determine a sufficient value for $p$.}
+{Typically will be used with \parlink{target\_option} $> 2$ to determine a sufficient value for $p$.}
 {
 \texttt{L\_p\_diagnostic\_option} = 1: The $L^p$ norm of the current density is not computed. 
 \texttt{L\_p\_diagnostic\_option} = 2: The $L^p$ norm of the current density will be computed
-for a range of $p$. The norm defined with and without the surface integral, \texttt{L\_p\_diagnostic\_with\_area} and \texttt{L\_p\_diagnostic}, are computed (see \parlink{target\_option} documentation for definitions).
+for a range of $p$. The norms defined as documented for \parlink{target\_option} $> 3$ are computed. 
 }
 
 \myhrule
@@ -527,12 +548,12 @@ The maximum value of $p$ to use for computing the $L^p$ norm of the current dens
 
 \myhrule
 
-\param{L\_p\_diagnostic\_dp}
+\param{L\_p\_diagnostic\_np}
 {integer}
-{2}
+{4}
 {When \parlink{L\_p\_diagnostic\_option} = 2.}
 {
-The interval in $p$ used for computing the $L^p$ norm of the current density. 
+Number of values of $p$ to use for compute the $L^p$ norm of the current density. 
 }
 
 \myhrule
@@ -599,3 +620,12 @@ but it is available for completeness.\\
 {\ttfamily sensitivity\_symmetry\_option} = 3: No symmetry in the current potential is imposed.
 }
 
+\myhrule
+
+\param{fixed\_norm\_sensitivity\_option}
+{integer}
+{1}
+{When \parlink{sensitivity\_option} $> 1$ and \parlink{target\_option} $ == 8$.}
+{If \parlink{fixed\_norm\_sensitivity\_option} $> 1$, gradients of $\chi^2$ are computed at fixed $\norm{\bm{K}'}_p$ rather than fixed $\lambda$. This option must be used with \parlink{general\_option} $> 3$ and  \parlink{target\_option} $ == 8$. If \parlink{sensitivity\_option} $ >2$, then gradients of $\chi^2_K$ and $\chi^2_B$ will also be computed at fixed $\norm{\bm{K}'}_p$. 
+
+}
