@@ -30,6 +30,13 @@ subroutine svd_scan
   allocate(solution(num_basis_functions), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
+
+  allocate(KDifference_x(ntheta_coil*nzeta_coil,nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(KDifference_y(ntheta_coil*nzeta_coil,nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(KDifference_z(ntheta_coil*nzeta_coil,nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
   allocate(chi2_B(nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(chi2_K(nlambda), stat=iflag)

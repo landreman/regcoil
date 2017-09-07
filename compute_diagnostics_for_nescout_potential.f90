@@ -22,7 +22,12 @@ subroutine compute_diagnostics_for_nescout_potential
   character(*), parameter :: matchString_phi2 = "---- end Phi(m,n)"
 
 
-
+  allocate(KDifference_x(ntheta_coil*nzeta_coil,nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(KDifference_y(ntheta_coil*nzeta_coil,nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(KDifference_z(ntheta_coil*nzeta_coil,nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
   allocate(matrix(num_basis_functions, num_basis_functions), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(RHS(num_basis_functions), stat=iflag)
