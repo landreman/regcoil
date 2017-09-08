@@ -90,8 +90,8 @@ module global_variables
 
 ! Items related to L_p norm
   integer :: L_p_diagnostic_option = 1
-  integer :: L_p_diagnostic_min = 4
-  integer :: L_p_diagnostic_max = 16
+  real(dp) :: L_p_diagnostic_min = 4.0
+  real(dp) :: L_p_diagnostic_max = 16.0
   integer :: L_p_diagnostic_dp
   integer :: L_p_diagnostic_np = 4
   real(dp), dimension(:,:), allocatable :: L_p_diagnostic, L_p_diagnostic_with_area, L_p_diagnostic_3
