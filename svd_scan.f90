@@ -9,7 +9,6 @@ subroutine svd_scan
   integer :: iflag, tic, toc, countrate
   real(dp), dimension(:,:), allocatable :: this_current_potential
   real(dp), dimension(:), allocatable :: RHS, solution, singular_values, U_transpose_times_RHS
-  real(dp), dimension(:), allocatable :: KDifference_x, KDifference_y, KDifference_z
   real(dp), dimension(:,:), allocatable :: this_K2_times_N, svd_matrix, U, VT
   real(dp) :: factor_theta, factor_zeta, factor
   integer :: ilambda, itheta, izeta, index, n_singular_values
@@ -31,6 +30,13 @@ subroutine svd_scan
   allocate(solution(num_basis_functions), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
+
+  allocate(KDifference_x(ntheta_coil*nzeta_coil,nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(KDifference_y(ntheta_coil*nzeta_coil,nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(KDifference_z(ntheta_coil*nzeta_coil,nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
   allocate(chi2_B(nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(chi2_K(nlambda), stat=iflag)
@@ -50,12 +56,6 @@ subroutine svd_scan
   allocate(Bnormal_total(ntheta_plasma,nzeta_plasma,nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(K2(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(KDifference_x(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(KDifference_y(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(KDifference_z(ntheta_coil*nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(this_K2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
@@ -173,10 +173,10 @@ subroutine svd_scan
      end do
      current_potential(:,:,ilambda) = this_current_potential
 
-     KDifference_x = d_x - matmul(f_x, solution)
-     KDifference_y = d_y - matmul(f_y, solution)
-     KDifference_z = d_z - matmul(f_z, solution)
-     this_K2_times_N = reshape(KDifference_x*KDifference_x + KDifference_y*KDifference_y + KDifference_z*KDifference_z, (/ ntheta_coil, nzeta_coil /)) &
+     KDifference_x(:,ilambda) = d_x - matmul(f_x, solution)
+     KDifference_y(:,ilambda) = d_y - matmul(f_y, solution)
+     KDifference_z(:,ilambda) = d_z - matmul(f_z, solution)
+     this_K2_times_N = reshape(KDifference_x(:,ilambda)*KDifference_x(:,ilambda) + KDifference_y(:,ilambda)*KDifference_y(:,ilambda) + KDifference_z(:,ilambda)*KDifference_z(:,ilambda), (/ ntheta_coil, nzeta_coil /)) &
           / norm_normal_coil
      chi2_K(ilambda) = nfp * dtheta_coil * dzeta_coil * sum(this_K2_times_N)
      K2(:,:,ilambda) = this_K2_times_N / norm_normal_coil

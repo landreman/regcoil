@@ -7,7 +7,7 @@
 
 program regcoil
 
-  use global_variables, only: totalTime, outputFilename, general_option, sensitivity_option, normal_displacement_option, fixed_norm_sensitivity_option
+  use global_variables, only: totalTime, outputFilename, general_option, sensitivity_option, normal_displacement_option, fixed_norm_sensitivity_option, exit_code
   use init_plasma_mod
 
   implicit none
@@ -51,7 +51,7 @@ program regcoil
      call svd_scan()
   case (4,5)
      call auto_regularization_solve()
-     if (sensitivity_option > 1 ) then
+     if (sensitivity_option > 1 .and. exit_code == 0) then
        call adjoint_solve()
      end if
   case default
@@ -59,7 +59,7 @@ program regcoil
      stop
   end select
 
-  if (sensitivity_option > 1) then
+  if (sensitivity_option > 1 .and. exit_code == 0) then
     if (normal_displacement_option == 1) then
       call normal_displacement()
       print *,"Normal displacement calculations complete."

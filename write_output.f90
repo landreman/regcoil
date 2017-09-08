@@ -55,7 +55,8 @@ subroutine write_output
        vn_L_p_diagnostic_min = "L_p_diagnostic_min", &
        vn_L_p_diagnostic_max = "L_p_diagnostic_max", &
        vn_L_p_diagnostic_np = "L_p_diagnostic_np", &
-       vn_L_p_diagnostic_dp = "L_p_diagnostic_dp"
+       vn_L_p_diagnostic_dp = "L_p_diagnostic_dp", &
+       vn_fixed_norm_sensitivity_option = "fixed_norm_sensitivity_option"
 
   ! Arrays with dimension 1
   character(len=*), parameter :: &
@@ -266,6 +267,7 @@ subroutine write_output
     call cdf_define(ncid, vn_mnmax_sensitivity, mnmax_sensitivity)
     call cdf_define(ncid, vn_nomega_coil, nomega_coil)
     call cdf_define(ncid, vn_sensitivity_symmetry_option, sensitivity_symmetry_option)
+    call cdf_define(ncid, vn_fixed_norm_sensitivity_option, fixed_norm_sensitivity_option)
   endif
   call cdf_define(ncid, vn_save_nescin_option, save_nescin_option)
   if (save_nescin_option == 1) then
@@ -468,6 +470,7 @@ subroutine write_output
     call cdf_write(ncid, vn_mnmax_sensitivity, mnmax_sensitivity)
     call cdf_write(ncid, vn_nomega_coil, nomega_coil)
     call cdf_write(ncid, vn_sensitivity_symmetry_option, sensitivity_symmetry_option)
+    call cdf_write(ncid, vn_fixed_norm_sensitivity_option, fixed_norm_sensitivity_option)
   endif
   call cdf_write(ncid, vn_save_nescin_option, save_nescin_option)
   if (save_nescin_option == 1) then

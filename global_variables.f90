@@ -88,11 +88,11 @@ module global_variables
   integer :: exit_code = 0
   real(dp) :: chi2_B_target = 0
 
-! Items related to L_p norm
+  ! Items related to L_p norm
   integer :: L_p_diagnostic_option = 1
   real(dp) :: L_p_diagnostic_min = 4.0
   real(dp) :: L_p_diagnostic_max = 16.0
-  integer :: L_p_diagnostic_dp
+  real(dp) :: L_p_diagnostic_dp
   integer :: L_p_diagnostic_np = 4
   real(dp), dimension(:,:), allocatable :: L_p_diagnostic, L_p_diagnostic_with_area, L_p_diagnostic_3
   real(dp), dimension(:,:), allocatable :: L_p_diagnostic_4, L_p_diagnostic_5, L_p_diagnostic_6
@@ -106,7 +106,7 @@ module global_variables
   real(dp), dimension(:), allocatable :: darea_coildomega
   real(dp), dimension(:,:), allocatable :: q_tilde, dlambdadomega
 
-! Needed for sensitivity calculation
+  ! Needed for sensitivity calculation
   integer :: normal_displacement_option = 0
   integer :: sensitivity_option = 1
   integer :: sensitivity_symmetry_option = 1

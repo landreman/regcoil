@@ -9,20 +9,21 @@ subroutine adjoint_solve
   integer :: ilambda
   integer :: iflag, tic, toc, countrate
 
-  real(dp), dimension(:,:), allocatable :: dKDifferencedomega, term1, term2, dBnormaldomega
+  real(dp), dimension(:,:), allocatable :: term1, term2, dBnormaldomega
   integer :: iomega
   real(dp), dimension(:), allocatable :: adjoint_bx, adjoint_by, adjoint_bz
   real(dp), dimension(:,:), allocatable :: adjoint_Ax, adjoint_Ay, adjoint_Az
   real(dp), dimension(:), allocatable :: adjoint_c
   real(dp), dimension(:,:), allocatable :: dFKdomega, dFBdomega
   real(dp), dimension(:,:), allocatable :: matrix, this_K2_times_N
-  real(dp), dimension(:), allocatable :: RHS, KDifference_x, KDifference_y, KDifference_z, solution
+  real(dp), dimension(:), allocatable :: RHS, solution
 
   ! Variables needed by LAPACK:
   integer :: INFO, LWORK
   real(dp), dimension(:), allocatable :: WORK
   integer, dimension(:), allocatable :: IPIV
 
+  ! In case of a lambda search, sensitivity only computed for Nlambda
   if (general_option == 1) then
     minLambda = 1
     maxLambda = NLambda
@@ -39,7 +40,7 @@ subroutine adjoint_solve
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dchi2Bdomega(nomega_coil,nlambda),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dKDifferencedomega(3,ntheta_coil*nzeta_coil),stat=iflag)
+  allocate(dKDifferencedomega(3,ntheta_coil*nzeta_coil,nlambda,nomega_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(term1(ntheta_coil,nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
@@ -94,12 +95,6 @@ subroutine adjoint_solve
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(RHS(num_basis_functions), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(KDifference_x(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(KDifference_y(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(KDifference_z(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
   allocate(this_K2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
@@ -128,10 +123,7 @@ subroutine adjoint_solve
       dRHSdomega = dRHS_Bdomega + lambda(ilambda)*dRHS_Kdomega
     endif
 
-    KDifference_x = d_x - matmul(f_x, solution)
-    KDifference_y = d_y - matmul(f_y, solution)
-    KDifference_z = d_z - matmul(f_z, solution)
-    this_K2_times_N = reshape(KDifference_x*KDifference_x + KDifference_y*KDifference_y + KDifference_z*KDifference_z, (/ ntheta_coil, nzeta_coil /)) &
+    this_K2_times_N = reshape(KDifference_x(:,ilambda)*KDifference_x(:,ilambda) + KDifference_y(:,ilambda)*KDifference_y(:,ilambda) + KDifference_z(:,ilambda)*KDifference_z(:,ilambda), (/ ntheta_coil, nzeta_coil /)) &
         / norm_normal_coil
 
     call system_clock(tic,countrate)
@@ -141,12 +133,12 @@ subroutine adjoint_solve
     !$OMP END MASTER
     !$OMP DO PRIVATE(dKDifferencedomega,term1,term2)
     do iomega = 1, nomega_coil
-      dKDifferencedomega(1,:) = dddomega(1,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfxdomega(iomega,:,:), solution)
-      dKDifferencedomega(2,:) = dddomega(2,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfydomega(iomega,:,:), solution)
-      dKDifferencedomega(3,:) = dddomega(3,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfzdomega(iomega,:,:), solution)
+      dKDifferencedomega(1,:,ilambda,iomega) = dddomega(1,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfxdomega(iomega,:,:), solution)
+      dKDifferencedomega(2,:,ilambda,iomega) = dddomega(2,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfydomega(iomega,:,:), solution)
+      dKDifferencedomega(3,:,ilambda,iomega) = dddomega(3,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfzdomega(iomega,:,:), solution)
       term1 = -dnorm_normaldomega(iomega,:,:)*this_K2_times_N/norm_normal_coil
-      term2 = reshape(KDifference_x*dKDifferencedomega(1,:) + KDifference_y*dKDifferencedomega(2,:) &
-        + KDifference_z*dKDifferencedomega(3,:),(/ ntheta_coil, nzeta_coil/))*(2/norm_normal_coil)
+      term2 = reshape(KDifference_x(:,ilambda)*dKDifferencedomega(1,:,ilambda,iomega) + KDifference_y(:,ilambda)*dKDifferencedomega(2,:,ilambda,iomega) &
+        + KDifference_z(:,ilambda)*dKDifferencedomega(3,:,ilambda,iomega),(/ ntheta_coil, nzeta_coil/))*(2/norm_normal_coil)
       dchi2Kdomega_withoutadjoint(iomega,ilambda) = nfp*dtheta_coil*dzeta_coil*(sum(term1) + sum(term2))
       dchi2Kdomega(iomega,ilambda) = dchi2Kdomega_withoutadjoint(iomega,ilambda)
     enddo
@@ -157,9 +149,9 @@ subroutine adjoint_solve
 
     if (sensitivity_option == 3 .or. sensitivity_option == 4 .or. fixed_norm_sensitivity_option > 1) then
       ! Adjoint chi2_K calculation - compute dchi2Kdphi
-      adjoint_bx = Kdifference_x/reshape(norm_normal_coil, (/ ntheta_coil*nzeta_coil /))
-      adjoint_by = Kdifference_y/reshape(norm_normal_coil, (/ ntheta_coil*nzeta_coil /))
-      adjoint_bz = Kdifference_z/reshape(norm_normal_coil, (/ ntheta_coil*nzeta_coil /))
+      adjoint_bx = Kdifference_x(:,ilambda)/reshape(norm_normal_coil, (/ ntheta_coil*nzeta_coil /))
+      adjoint_by = Kdifference_y(:,ilambda)/reshape(norm_normal_coil, (/ ntheta_coil*nzeta_coil /))
+      adjoint_bz = Kdifference_z(:,ilambda)/reshape(norm_normal_coil, (/ ntheta_coil*nzeta_coil /))
       adjoint_Ax = transpose(f_x)
       adjoint_Ay = transpose(f_y)
       adjoint_Az = transpose(f_z)
@@ -253,7 +245,6 @@ subroutine adjoint_solve
 
   deallocate(term1)
   deallocate(term2)
-  deallocate(dKDifferencedomega)
   deallocate(dBnormaldomega)
   if (sensitivity_option == 3 .or. sensitivity_option == 4) then
     deallocate(adjoint_Ax)
