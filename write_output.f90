@@ -324,7 +324,7 @@ subroutine write_output
   if (L_p_diagnostic_option > 1) then
     call cdf_define(ncid, vn_ps, ps, dimname=np_dim)
   end if
-  if (fixed_norm_sensitivity_option > 1) then
+  if (fixed_norm_sensitivity_option > 1 .and. exit_code==0) then
     call cdf_define(ncid, vn_darea_coildomega, darea_coildomega,dimname=nomega_coil_dim)
   end if
 
@@ -342,10 +342,10 @@ subroutine write_output
   end if
   call cdf_define(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda), &
        dimname=basis_nlambda_dim)
-  if (sensitivity_option > 1) then
+  if (sensitivity_option > 1 .and. exit_code == 0) then
     call cdf_define(ncid, vn_dchi2domega, dchi2domega(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
   end if
-  if (sensitivity_option > 2) then
+  if (sensitivity_option > 2 .and. exit_code == 0) then
     call cdf_define(ncid, vn_dchi2Bdomega, dchi2Bdomega(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
     call cdf_define(ncid, vn_dchi2Kdomega, dchi2Kdomega(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
   end if
@@ -356,10 +356,10 @@ subroutine write_output
         call cdf_define(ncid, vn_f_y, f_y, dimname=nthetanzeta_coil_basis_dim)
         call cdf_define(ncid, vn_f_z, f_z, dimname=nthetanzeta_coil_basis_dim)
     endif
-    if (sensitivity_option == 3 .or. sensitivity_option == 5) then
+    if ((sensitivity_option == 3 .or. sensitivity_option == 5) .and. exit_code == 0) then
       call cdf_define(ncid, vn_q_B, q_B(:,1:Nlambda),dimname=basis_nlambda_dim)
     endif
-    if (sensitivity_option == 3 .or. sensitivity_option == 4) then
+    if ((sensitivity_option == 3 .or. sensitivity_option == 4) .and. exit_code == 0) then
       call cdf_define(ncid, vn_q_K, q_K(:,1:Nlambda),dimname=basis_nlambda_dim)
     endif
     if (sensitivity_option > 2) then
@@ -376,7 +376,7 @@ subroutine write_output
     call cdf_define(ncid, vn_L_P_diagnostic_6, L_p_diagnostic_6(1:Nlambda,:),dimname= &
       nlambda_np_dim)
   end if
-  if (fixed_norm_sensitivity_option > 1) then
+  if (fixed_norm_sensitivity_option > 1 .and. exit_code == 0) then
     call cdf_define(ncid, vn_dLSE_current_density_with_areadOmega, dLSE_current_density_with_areadOmega(:,1:Nlambda), dimname=nomega_nlambda_dim)
     call cdf_define(ncid, vn_dRMSKdomega, dRMSKdomega(:,1:Nlambda),dimname=nomega_nlambda_dim)
     call cdf_define(ncid, vn_q_tilde, q_tilde(:,1:Nlambda),dimname=basis_nlambda_dim)
@@ -528,7 +528,7 @@ subroutine write_output
   if (L_p_diagnostic_option > 1) then
     call cdf_write(ncid, vn_ps, ps)
   end if
-  if (fixed_norm_sensitivity_option > 1) then
+  if (fixed_norm_sensitivity_option > 1 .and. exit_code==0) then
     call cdf_write(ncid, vn_darea_coildomega, darea_coildomega)
   end if
 
@@ -545,10 +545,10 @@ subroutine write_output
      call cdf_write(ncid, vn_g, g)
   end if
   call cdf_write(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda))
-  if (sensitivity_option > 1) then
+  if (sensitivity_option > 1 .and. exit_code == 0) then
     call cdf_write(ncid, vn_dchi2domega, dchi2domega(:,1:Nlambda))
   end if
-  if (sensitivity_option > 2) then
+  if (sensitivity_option > 2 .and. exit_code == 0) then
     call cdf_write(ncid, vn_dchi2Kdomega, dchi2Kdomega(:,1:Nlambda))
     call cdf_write(ncid, vn_dchi2Bdomega, dchi2Bdomega(:,1:Nlambda))
   end if
@@ -559,10 +559,10 @@ subroutine write_output
       call cdf_write(ncid, vn_f_z, f_z)
       call cdf_write(ncid, vn_dhdomega, dhdomega)
     endif
-    if (sensitivity_option == 3 .or. sensitivity_option == 4) then
+    if ((sensitivity_option == 3 .or. sensitivity_option == 4) .and. exit_code == 0) then
       call cdf_write(ncid, vn_q_K, q_K(:,1:Nlambda))
     end if
-    if (sensitivity_option == 3 .or. sensitivity_option == 5) then
+    if ((sensitivity_option == 3 .or. sensitivity_option == 5) .and. exit_code == 0) then
       call cdf_write(ncid, vn_q_B, q_B(:,1:Nlambda))
     end if
     if (sensitivity_option > 2) then
@@ -580,7 +580,7 @@ subroutine write_output
     call cdf_write(ncid, vn_L_p_diagnostic_5, L_p_diagnostic_5(1:Nlambda,:))
     call cdf_write(ncid, vn_L_p_diagnostic_6, L_p_diagnostic_6(1:Nlambda,:))
   end if
-  if (fixed_norm_sensitivity_option > 1) then
+  if (fixed_norm_sensitivity_option > 1 .and. exit_code == 0) then
     call cdf_write(ncid, vn_dLSE_current_density_with_areadOmega, dLSE_current_density_with_areadOmega(:,1:Nlambda))
     call cdf_write(ncid, vn_dRMSKdomega, dRMSKdomega(:,1:Nlambda))
     call cdf_write(ncid, vn_q_tilde, q_tilde(:,1:Nlambda))
