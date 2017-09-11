@@ -86,7 +86,7 @@ subroutine lse_sensitivity()
   !$OMP MASTER
   print *,"  Number of OpenMP threads:",omp_get_num_threads()
   !$OMP END MASTER
-  !$OMP DO PRIVATE(dKDifferencedomega,dnorm_Kdomega)
+  !$OMP DO PRIVATE(dKDifferencedomega,dnorm_Kdomega,dsum_expdomega)
   do iomega = 1, nomega_coil
     dKDifferencedomega(1,:) = dddomega(1,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfxdomega(iomega,:,:), solution)
     dKDifferencedomega(2,:) = dddomega(2,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfydomega(iomega,:,:), solution)
