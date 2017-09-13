@@ -9,7 +9,7 @@ subroutine init_sensitivity()
 
   integer :: iomega, iflag, minSymmetry, maxSymmetry, offset, whichSymmetry, tic, toc, countrate,indexl_coil
 
-  real(dp) :: angle, angle2, sinangle, cosangle, sum_exp, max_dist
+  real(dp) :: angle, angle2, sinangle, cosangle, sum_exp, min_dist
   real(dp) :: sinangle2, cosangle2
   real(dp) :: dxdtheta, dxdzeta, dydtheta, dydzeta, dzdtheta, dzdzeta
   real(dp), dimension(:,:,:,:), allocatable :: dist
