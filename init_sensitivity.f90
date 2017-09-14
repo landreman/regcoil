@@ -230,7 +230,7 @@ subroutine init_sensitivity()
     end do
   end do
   min_dist = minval(dist)
-  print *,"max_dist:", min_dist
+  print *,"min_dist:", min_dist
   sum_exp = sum(exp(-100*(dist-min_dist)))
   print *,"sum_exp: ", sum_exp
   do itheta_coil = 1, ntheta_coil

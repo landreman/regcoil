@@ -212,15 +212,15 @@ subroutine write_output
        nomega_coil_ntheta_nzeta_coil_dim = (/ character(len=50) :: 'nomega_coil', 'ntheta_coil', 'nzeta_coil'/), &
        xyz_nomega_coil_ntheta_nzetal_coil_dim = (/character(len=50) :: 'xyz', 'nomega_coil', 'ntheta_times_nzetal_coil'/), &
        nomega_coil_ntheta_times_nzeta_num_basis_functions_dim = (/character(len=50) :: 'nomega_coil', 'ntheta_times_nzeta_plasma', 'num_basis_functions' /), &
-       nomega_coil_ntheta_times_nzeta_plasma_coil_dim = (/character(len=50) :: 'nomega_coil', &
-         'ntheta_times_nzeta_plasma', 'ntheta_times_nzeta_coil'/), &
        nomega_coil_ntheta_nzetal_coil_dim = (/character(len=50) :: 'nomega_coil', 'ntheta_coil', &
          'nzetal_coil'/), &
        nomega_coil_ntheta_times_nzeta_coil_basis_dim = (/character(len=50):: 'nomega_coil', 'ntheta_times_nzeta_coil','num_basis_functions' /), &
        nomega_coil_num_basis_num_basis_dim = (/character(len=50) :: 'nomega_coil', 'num_basis_functions', &
          'num_basis_functions' /), &
        nlambda_num_basis_nomega_coil_dim = (/character(len=50):: 'nlambda',  &
-        'num_basis_functions', 'nomega_coil' /)
+        'num_basis_functions', 'nomega_coil' /), &
+       ntheta_times_nzeta_plasma_coil_nomega_coil_dim = (/character(len=50) :: 'ntheta_times_nzeta_plasma', &
+        'ntheta_times_nzeta_coil', 'nomega_coil' /)
 
   print *,"Beginning write output."
 
@@ -420,7 +420,7 @@ subroutine write_output
       call cdf_define(ncid, vn_dddomega, dddomega, dimname=xyz_nomega_coil_ntheta_nzetal_coil_dim)
       call cdf_define(ncid, vn_dgdomega, dgdomega, dimname=nomega_coil_ntheta_times_nzeta_num_basis_functions_dim)
       call cdf_define(ncid, vn_dinductancedomega, dinductancedomega, dimname = &
-        nomega_coil_ntheta_times_nzeta_plasma_coil_dim)
+        ntheta_times_nzeta_plasma_coil_nomega_coil_dim)
       call cdf_define(ncid, vn_dnormxdomega, dnormxdomega, dimname=nomega_coil_ntheta_nzetal_coil_dim)
       call cdf_define(ncid, vn_dnormydomega, dnormydomega, dimname=nomega_coil_ntheta_nzetal_coil_dim)
       call cdf_define(ncid, vn_dnormzdomega, dnormzdomega, dimname=nomega_coil_ntheta_nzetal_coil_dim)

@@ -199,8 +199,8 @@ subroutine build_matrices()
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(dinductancedr(3),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
-    allocate(dinductancedomega(nomega_coil, ntheta_plasma*nzeta_plasma, &
-      ntheta_coil*nzeta_coil),stat=iflag)
+    allocate(dinductancedomega(ntheta_plasma*nzeta_plasma, &
+      ntheta_coil*nzeta_coil,nomega_coil),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(dhdomega(nomega_coil,ntheta_plasma*nzeta_plasma),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
@@ -277,7 +277,7 @@ subroutine build_matrices()
                   indexl_coil = (izetal_coil-1)*ntheta_coil + itheta_coil
                   dr52inv = dr2inv*dr32inv
 
-                 dinductancedomega(:,index_plasma,index_coil) = dinductancedomega(:,index_plasma,index_coil) &
+                 dinductancedomega(index_plasma,index_coil,:) = dinductancedomega(index_plasma,index_coil,:) &
                     + (normal_plasma(1,itheta_plasma,izeta_plasma) &
                     - 3*dr2inv*dr_dot_norm_plasma*dx)*(dr32inv*mu0/(4*pi))*dnormxdomega(:,index_coil,l_coil+1) &
                     + (normal_plasma(2,itheta_plasma,izeta_plasma) &
@@ -377,7 +377,7 @@ subroutine build_matrices()
   !$OMP END MASTER
   !$OMP DO 
   do iomega = 1, nomega_coil
-    call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedomega(iomega,:,:),LDA,basis_functions,LDB,BLAS_BETA,dgdomega(iomega,:,:),LDC)
+    call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedomega(:,:,iomega),LDA,basis_functions,LDB,BLAS_BETA,dgdomega(iomega,:,:),LDC)
   enddo
   !$OMP END DO
   !$OMP END PARALLEL
