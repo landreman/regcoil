@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from evaluateRegcoil import coilFourier, evaluateFunctionRegcoil, evaluateGradientRegcoil
 import numpy as np
 import sys
