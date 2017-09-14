@@ -1,0 +1,122 @@
+#!/usr/bin/env python
+print "usage: regcoilPlot regcoil_out1.XXX.nc regcoil_out2.XXX.nc"
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+#from mpl_toolkits.mplot3d import Axes3D
+#from matplotlib import cm
+import numpy as np
+from scipy.io import netcdf
+from scipy.interpolate import interp1d
+import sys
+import math
+
+if len(sys.argv) != 3:
+    print "Error! You must specify 2 arguments: two regcoil_out.XXX.nc files."
+    exit(1)
+
+def maximizeWindow():
+    # Maximize window. The command for this depends on the backend.
+    mng = plt.get_current_fig_manager()
+    try:
+        mng.resize(*mng.window.maxsize())
+    except AttributeError:
+        try:
+            mng.window.showMaximized()
+        except AttributeError:
+            pass
+
+f1 = netcdf.netcdf_file(sys.argv[1],'r',mmap=False)
+f2 = netcdf.netcdf_file(sys.argv[2],'r',mmap=False)
+nfp = f1.variables['nfp'][()]
+r_plasma  = f1.variables['r_plasma'][()]
+r_coil1  = f1.variables['r_coil'][()]
+zetal_plasma = f1.variables['zetal_plasma'][()]
+zetal_coil = f1.variables['zetal_coil'][()]
+
+r_coil2 = f2.variables['r_coil'][()]
+
+########################################################
+# For 3D plotting, 'close' the arrays in u and v
+########################################################
+
+r_plasma  = np.append(r_plasma,  r_plasma[[0],:,:], axis=0)
+r_plasma  = np.append(r_plasma,  r_plasma[:,[0],:], axis=1)
+zetal_plasma = np.append(zetal_plasma,nfp)
+
+r_coil1  = np.append(r_coil1,  r_coil1[[0],:,:], axis=0)
+r_coil1  = np.append(r_coil1,  r_coil1[:,[0],:], axis=1)
+zetal_coil = np.append(zetal_coil,nfp)
+
+r_coil2 = np.append(r_coil2,  r_coil2[[0],:,:], axis=0)
+r_coil2 = np.append(r_coil2,  r_coil2[:,[0],:], axis=1)
+
+########################################################
+# Extract cross-sections of the 3 surfaces at several toroidal angles
+########################################################
+
+def getCrossSection(rArray, zetal_old, zeta_new):
+    zetal_old = np.concatenate((zetal_old-nfp,zetal_old))
+    rArray = np.concatenate((rArray,rArray),axis=0)
+
+
+    print "zetal_old shape:",zetal_old.shape
+    print "rArray shape:",rArray.shape
+
+    x = rArray[:,:,0]
+    y = rArray[:,:,1]
+    z = rArray[:,:,2]
+    R = np.sqrt(x**2 + y**2)
+
+
+    ntheta = z.shape[1]
+    nzeta_new = len(zeta_new)
+    R_slice = np.zeros([nzeta_new,ntheta])
+    Z_slice = np.zeros([nzeta_new,ntheta])
+    for itheta in range(ntheta):
+        interpolator = interp1d(zetal_old, R[:,itheta])
+        R_slice[:,itheta] = interpolator(zeta_new)
+        interpolator = interp1d(zetal_old, z[:,itheta])
+        Z_slice[:,itheta] = interpolator(zeta_new)
+
+    return R_slice, Z_slice
+
+zeta_slices = np.array([0, 0.25, 0.5, 0.75])*2*np.pi/nfp
+R_slice_plasma, Z_slice_plasma = getCrossSection(r_plasma, zetal_plasma, zeta_slices)
+R_slice_coil1, Z_slice_coil1 = getCrossSection(r_coil1, zetal_coil, zeta_slices)
+R_slice_coil2, Z_slice_coil2 = getCrossSection(r_coil2, zetal_coil, zeta_slices)
+
+########################################################
+# Now make plot of surfaces at given toroidal angle
+########################################################
+
+figureNum = 1
+fig = plt.figure(figureNum)
+fig.patch.set_facecolor('white')
+
+numRows = 2
+numCols = 2
+
+Rmin = min(R_slice_coil1.min(),R_slice_coil2.min())
+Rmax = max(R_slice_coil1.max(),R_slice_coil2.max())
+Zmin = min(Z_slice_coil1.min(),Z_slice_coil2.min())
+Zmax = max(Z_slice_coil1.max(),Z_slice_coil2.max())
+
+for whichPlot in range(4):
+    plt.subplot(numRows,numCols,whichPlot+1)
+    zeta = zeta_slices[whichPlot]
+    plt.plot(R_slice_coil1[whichPlot,:], Z_slice_coil1[whichPlot,:], 'b.-', label='coil 1')
+    plt.plot(R_slice_coil2[whichPlot,:], Z_slice_coil2[whichPlot,:], 'g.-', label='coil 2')
+    plt.plot(R_slice_plasma[whichPlot,:], Z_slice_plasma[whichPlot,:], 'r.-', label='plasma')
+    plt.gca().set_aspect('equal',adjustable='box')
+    plt.legend(fontsize='x-small')
+    plt.title('zeta='+str(zeta))
+    plt.xlabel('R [meters]')
+    plt.ylabel('Z [meters]')
+    plt.xlim([Rmin,Rmax])
+    plt.ylim([Zmin,Zmax])
+
+plt.tight_layout()
+
+plt.show()
+
