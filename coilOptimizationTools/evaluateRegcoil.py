@@ -179,10 +179,10 @@ class coilFourier:
     if(self.objective_function_option==0):
       self.set_objective_function(self.chi2B - self.alpha*self.coil_volume)
       self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*self.dcoil_volumedomega)
-    if(self.objective_function_option==1):
+    elif(self.objective_function_option==1):
       self.set_objective_function(self.chi2B - self.alpha*self.coil_volume**(1/3))
       self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*(1/3)*(self.coil_volume**(-2/3))*self.dcoil_volumedomega)
-    if(self.objective_function_option==2):
+    elif(self.objective_function_option==2):
       self.set_objective_function(self.chi2B - self.alpha*self.coil_plasma_dist)
       self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*self.dcoil_plasma_distdomega)
     else:
