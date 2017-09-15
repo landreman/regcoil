@@ -13,7 +13,7 @@ module init_surface_mod
          geometry_option, R_specified, a, separation, dtheta, dzeta, nescin_filename, which_surface)
 
       use compute_offset_surface_mod
-      use global_variables, only: R0_plasma, nfp, volume_coil, save_nescin_option
+      use global_variables, only: R0_plasma, nfp, volume_coil, save_nescin_option, d2r_coildtheta2, d2r_coildthetadzeta, d2r_coildzeta2, compute_curvature
       use stel_kinds
       use stel_constants
       use omp_lib
@@ -146,19 +146,20 @@ module init_surface_mod
                !drdzeta(3,itheta,izeta) = 0, so no equation needed for it here.
 
 ! This next bit is remarked out since we don't need 2nd derivatives presently
-!$               if (transfer_matrix_option==2 .and. which_surface == 1) then
-!$                  d2rdu2(1,itheta,izeta) = a * d2cosangledu2 * cosangle2
-!$                  d2rdu2(2,itheta,izeta) = a * d2cosangledu2 * sinangle2
-!$                  d2rdu2(3,itheta,izeta) = a * d2sinangledu2
-!$
-!$                  d2rdudzeta(1,itheta,izeta) = a * dcosangledu * dcosangle2dv
-!$                  d2rdudzeta(2,itheta,izeta) = a * dcosangledu * dsinangle2dv
-!$                  !d2rdudzeta(3,itheta,izeta) = 0, so no equation needed for it here.
-!$
-!$                  d2rdv2(1,itheta,izeta) = (R0_to_use + a * cosangle) * d2cosangle2dv2
-!$                  d2rdv2(2,itheta,izeta) = (R0_to_use + a * cosangle) * d2sinangle2dv2
-!$                  !d2rdv2(3,itheta,izeta) = 0, so no equation needed for it here.
-!$               end if
+
+!!$               if (transfer_matrix_option==2 .and. which_surface == 1) then
+!!$                  d2rdu2(1,itheta,izeta) = a * d2cosangledu2 * cosangle2
+!!$                  d2rdu2(2,itheta,izeta) = a * d2cosangledu2 * sinangle2
+!!$                  d2rdu2(3,itheta,izeta) = a * d2sinangledu2
+!!$
+!!$                  d2rdudzeta(1,itheta,izeta) = a * dcosangledu * dcosangle2dv
+!!$                  d2rdudzeta(2,itheta,izeta) = a * dcosangledu * dsinangle2dv
+!!$                  !d2rdudzeta(3,itheta,izeta) = 0, so no equation needed for it here.
+!!$
+!!$                  d2rdv2(1,itheta,izeta) = (R0_to_use + a * cosangle) * d2cosangle2dv2
+!!$                  d2rdv2(2,itheta,izeta) = (R0_to_use + a * cosangle) * d2sinangle2dv2
+!!$                  !d2rdv2(3,itheta,izeta) = 0, so no equation needed for it here.
+!!$               end if
             end do
          end do
 

@@ -1,6 +1,6 @@
 subroutine read_nescin(nescin_filename, r, drdtheta, drdzeta, d2rdtheta2, d2rdthetadzeta, d2rdzeta2, ntheta, nzetal, theta, zetal, compute_2nd_derivs)
 
-  use global_variables, only: nfp, xm, xn, mnmax, rmnc_global => rmnc, zmns_global => zmns, rmns_global => rmns, zmnc_global => zmnc
+  use global_variables, only: nfp, xm, xn, mnmax, rmnc_global => rmnc, zmns_global => zmns, rmns_global => rmns, zmnc_global => zmnc, principle_curvature_1, principle_curvature_2, compute_curvature, normal_coil, nzetal_coil, ntheta_coil, norm_normal_coil
   use safe_open_mod
   use stel_constants
   use stel_kinds
@@ -55,6 +55,13 @@ subroutine read_nescin(nescin_filename, r, drdtheta, drdzeta, d2rdtheta2, d2rdth
 
   read (iunit, *) ntotal
   print *,"  Reading",ntotal,"Fourier modes from nescin"
+
+  if (compute_curvature) then
+    allocate(principle_curvature_1(ntheta_coil,nzetal_coil), stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(principle_curvature_2(ntheta_coil,nzetal_coil), stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+  end if
 
 
 !!$  if (geometry_option_outer==4) then
@@ -157,19 +164,19 @@ subroutine read_nescin(nescin_filename, r, drdtheta, drdzeta, d2rdtheta2, d2rdth
 
               curvature_L = (normal_coil(1,itheta,izeta)*d2rdtheta2(1,itheta,izeta) &
                 + normal_coil(2,itheta,izeta)*d2rdtheta2(3,itheta,izeta) &
-                + normal_coil(3,itheta,izeta)*d2rdtheta2(3,itheta,izeta))/norm_normal_coil
+                + normal_coil(3,itheta,izeta)*d2rdtheta2(3,itheta,izeta))/norm_normal_coil(itheta,izeta)
               curvature_N = (normal_coil(1,itheta,izeta)*d2rdzeta2(1,itheta,izeta) &
                 + normal_coil(2,itheta,izeta)*d2rdzeta2(2,itheta,izeta) &
-                + normal_coil(3,itheta,izeta)*d2rdzeta2(3,itheta,izeta))/norm_normal_coil
+                + normal_coil(3,itheta,izeta)*d2rdzeta2(3,itheta,izeta))/norm_normal_coil(itheta,izeta)
               curvature_M = (normal_coil(1,itheta,izeta)*d2rdthetadzeta(1,itheta,izeta) &
                 + normal_coil(2,itheta,izeta)*d2rdthetadzeta(2,itheta,izeta) &
-                + normal_coil(3,itheta,izeta)*d2rdthetadzeta(3,itheta,izeta))/norm_normal_coil
+                + normal_coil(3,itheta,izeta)*d2rdthetadzeta(3,itheta,izeta))/norm_normal_coil(itheta,izeta)
 
               principle_curvature_1(itheta,izeta) = (curvature_L + curvature_N &
-                + sqrt(curvature_L^2 + 4*curvature_M^2 - 2*curvature_L*curvature_N + curvature_N^2))/2
+                + sqrt(curvature_L**2 + 4*curvature_M**2 - 2*curvature_L*curvature_N + curvature_N**2))/2
 
               principle_curvature_2(itheta,izeta) = (curvature_L + curvature_N &
-                - sqrt(curvature_L^2 + 4*curvature_M^2 - 2*curvature_L*curvature_N + curvature_N^2))/2
+                - sqrt(curvature_L**2 + 4*curvature_M**2 - 2*curvature_L*curvature_N + curvature_N**2))/2
 
            end if
         end do

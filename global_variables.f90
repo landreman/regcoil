@@ -140,6 +140,7 @@ module global_variables
   ! Curvature-related things
   logical :: compute_curvature = .false.
   real(dp), dimension(:,:,:), allocatable :: d2r_coildtheta2, d2r_coildthetadzeta, d2r_coildzeta2
+  real(dp), dimension(:,:), allocatable :: principle_curvature_1, principle_curvature_2
 
 end module global_variables
 
