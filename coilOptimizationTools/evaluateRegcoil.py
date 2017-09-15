@@ -177,17 +177,23 @@ class coilFourier:
     print "coil_volume: " + str(self.coil_volume)
     print "coil_plasma_dist: " + str(self.coil_plasma_dist)
     if(self.objective_function_option==0):
+      objective_funciton = self.chi2B - self.alpha*self.coil_volume
       self.set_objective_function(self.chi2B - self.alpha*self.coil_volume)
       self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*self.dcoil_volumedomega)
-    if(self.objective_function_option==1):
-      self.set_objective_function(self.chi2B - self.alpha*self.coil_volume**(1/3))
-      self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*(1/3)*(self.coil_volume**(-2/3))*self.dcoil_volumedomega)
-    if(self.objective_function_option==2):
+    elif(self.objective_function_option==1):
+      objective_function = self.chi2B - self.alpha*self.coil_volume**(1.0/3.0)
+		volume_cube_root = self.coil_volume**(1.0/3.0)
+      self.set_objective_function(self.chi2B - self.alpha*self.coil_volume**(1.0/3.0))
+      self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega)
+    elif(self.objective_function_option==2):
+      objective_function = self.dchi2Bdomega - self.alpha*self.dcoil_plasma_distdomega
       self.set_objective_function(self.chi2B - self.alpha*self.coil_plasma_dist)
       self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*self.dcoil_plasma_distdomega)
     else:
       print "Incorrect choice of objective_function_option!"
       sys.exit(0)
+    print "objective_function: " + str(objective_function)
+	 print "volume_cube_root: " + str(volume_cub_root)
 
   # This is a script to be called within a nonlinear optimization routine in order to evaluate
   # chi2 and its gradient with respect to the Fourier coefficients

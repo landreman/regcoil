@@ -94,8 +94,8 @@ Zmax = max(Z_slice_coil1.max(),Z_slice_coil2.max())
 for whichPlot in range(4):
     plt.subplot(numRows,numCols,whichPlot+1)
     zeta = zeta_slices[whichPlot]
-    plt.plot(R_slice_coil1[whichPlot,:], Z_slice_coil1[whichPlot,:], 'b.-', label='coil 1')
-    plt.plot(R_slice_coil2[whichPlot,:], Z_slice_coil2[whichPlot,:], 'g.-', label='coil 2')
+    plt.plot(R_slice_coil1[whichPlot,:], Z_slice_coil1[whichPlot,:], 'b.-', label='coil old')
+    plt.plot(R_slice_coil2[whichPlot,:], Z_slice_coil2[whichPlot,:], 'g.-', label='coil new')
     plt.plot(R_slice_plasma[whichPlot,:], Z_slice_plasma[whichPlot,:], 'r.-', label='plasma')
     plt.gca().set_aspect('equal',adjustable='box')
     plt.legend(fontsize='x-small')
