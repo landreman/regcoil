@@ -252,6 +252,13 @@ subroutine init_sensitivity()
   coil_plasma_dist_lse = -log(sum_exp)/coil_plasma_dist_lse_p + min_dist
   print *,"coil_plasma_dist computed form log_sum: ", coil_plasma_dist_lse
 
+  ! Computing principle curvatures
+  do itheta_coil = 1,ntheta_coil
+    do izeta_coil = 1,nzeta_coil
+      d2r_coild2theta(itheta_coil,izeta_coil) = 
+    end do
+  end do
+
   do izeta_coil = 1, nzeta_coil
     do itheta_coil = 1, ntheta_coil
       index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil

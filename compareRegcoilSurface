@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-print "usage: regcoilPlot regcoil_out1.XXX.nc regcoil_out2.XXX.nc"
+print "usage: compareRegcoilSurface regcoil_out1.XXX.nc regcoil_out2.XXX.nc"
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -14,17 +14,6 @@ import math
 if len(sys.argv) != 3:
     print "Error! You must specify 2 arguments: two regcoil_out.XXX.nc files."
     exit(1)
-
-def maximizeWindow():
-    # Maximize window. The command for this depends on the backend.
-    mng = plt.get_current_fig_manager()
-    try:
-        mng.resize(*mng.window.maxsize())
-    except AttributeError:
-        try:
-            mng.window.showMaximized()
-        except AttributeError:
-            pass
 
 f1 = netcdf.netcdf_file(sys.argv[1],'r',mmap=False)
 f2 = netcdf.netcdf_file(sys.argv[2],'r',mmap=False)

@@ -23,6 +23,7 @@ subroutine read_nescin(nescin_filename, r, drdtheta, drdzeta, d2rdtheta2, d2rdth
   real(dp) :: d2sinangle2dzeta2, d2cosangle2dzeta2
   real(dp) :: d2sinangledtheta2, d2sinangledthetadzeta, d2sinangledzeta2
   real(dp) :: d2cosangledtheta2, d2cosangledthetadzeta, d2cosangledzeta2
+  real(dp) :: curvature_L, curvature_M, curvature_N
 
   character(300) :: myline
   character(*), parameter :: matchString = "------ Current Surface"
@@ -133,7 +134,7 @@ subroutine read_nescin(nescin_filename, r, drdtheta, drdzeta, d2rdtheta2, d2rdth
                 + rmns * (dsinangledzeta * sinangle2 + sinangle * dsinangle2dzeta)
            drdzeta(3,itheta,izeta) = drdzeta(3,itheta,izeta) + zmns * dsinangledzeta + zmnc * dcosangledzeta
 
-           if (compute_2nd_derivs) then
+           if (compute_curvature) then
               d2rdtheta2(1,itheta,izeta) = d2rdtheta2(1,itheta,izeta) + rmnc * d2cosangledtheta2 * cosangle2 + rmns * d2sinangledtheta2 * cosangle2
               d2rdtheta2(2,itheta,izeta) = d2rdtheta2(2,itheta,izeta) + rmnc * d2cosangledtheta2 * sinangle2 + rmns * d2sinangledtheta2 * sinangle2
               d2rdtheta2(3,itheta,izeta) = d2rdtheta2(3,itheta,izeta) + zmns * d2sinangledtheta2 + zmnc * d2cosangledtheta2
@@ -153,6 +154,23 @@ subroutine read_nescin(nescin_filename, r, drdtheta, drdzeta, d2rdtheta2, d2rdth
                    + rmns * (d2sinangledzeta2 * sinangle2 + dsinangledzeta * dsinangle2dzeta &
                    + dsinangledzeta * dsinangle2dzeta + sinangle * d2sinangle2dzeta2)
               d2rdzeta2(3,itheta,izeta) = d2rdzeta2(3,itheta,izeta) + zmns * d2sinangledzeta2 + zmnc * d2cosangledzeta2
+
+              curvature_L = (normal_coil(1,itheta,izeta)*d2rdtheta2(1,itheta,izeta) &
+                + normal_coil(2,itheta,izeta)*d2rdtheta2(3,itheta,izeta) &
+                + normal_coil(3,itheta,izeta)*d2rdtheta2(3,itheta,izeta))/norm_normal_coil
+              curvature_N = (normal_coil(1,itheta,izeta)*d2rdzeta2(1,itheta,izeta) &
+                + normal_coil(2,itheta,izeta)*d2rdzeta2(2,itheta,izeta) &
+                + normal_coil(3,itheta,izeta)*d2rdzeta2(3,itheta,izeta))/norm_normal_coil
+              curvature_M = (normal_coil(1,itheta,izeta)*d2rdthetadzeta(1,itheta,izeta) &
+                + normal_coil(2,itheta,izeta)*d2rdthetadzeta(2,itheta,izeta) &
+                + normal_coil(3,itheta,izeta)*d2rdthetadzeta(3,itheta,izeta))/norm_normal_coil
+
+              principle_curvature_1(itheta,izeta) = (curvature_L + curvature_N &
+                + sqrt(curvature_L^2 + 4*curvature_M^2 - 2*curvature_L*curvature_N + curvature_N^2))/2
+
+              principle_curvature_2(itheta,izeta) = (curvature_L + curvature_N &
+                - sqrt(curvature_L^2 + 4*curvature_M^2 - 2*curvature_L*curvature_N + curvature_N^2))/2
+
            end if
         end do
      end do

@@ -87,6 +87,18 @@ module init_surface_mod
       if (geometry_option==3 .or. geometry_option == 4) then
          print *,"  Reading coil surface from nescin file ",trim(nescin_filename)
 
+        if (compute_curvature .and. which_surface==1) then
+          allocate(d2r_coildtheta2(3,ntheta,nzetal),stat=iflag)
+          if (iflag .ne. 0) stop 'Allocation error! init_surface_mod 8'
+          allocate(d2r_coildthetadzeta(3,ntheta,nzetal),stat=iflag)
+          if (iflag .ne. 0) stop 'Allocation error! init_surface_mod 9'
+          allocate(d2r_coildzeta2(3,ntheta,nzetal),stat=iflag)
+          if (iflag .ne. 0) stop 'Allocation error! init_surface_mod 10'
+          d2r_coildtheta2 = 0
+          d2r_coildthetadzeta = 0
+          d2r_coildzeta2 = 0
+        end if
+
          call read_nescin(nescin_filename, r, drdtheta, drdzeta, d2rdtheta2, d2rdthetadzeta, d2rdzeta2, &
               ntheta, nzetal, theta, zetal, .false.)
       end if
@@ -134,19 +146,19 @@ module init_surface_mod
                !drdzeta(3,itheta,izeta) = 0, so no equation needed for it here.
 
 ! This next bit is remarked out since we don't need 2nd derivatives presently
-!!$               if (transfer_matrix_option==2 .and. which_surface == 1) then
-!!$                  d2rdu2(1,itheta,izeta) = a * d2cosangledu2 * cosangle2
-!!$                  d2rdu2(2,itheta,izeta) = a * d2cosangledu2 * sinangle2
-!!$                  d2rdu2(3,itheta,izeta) = a * d2sinangledu2
-!!$
-!!$                  d2rdudzeta(1,itheta,izeta) = a * dcosangledu * dcosangle2dv
-!!$                  d2rdudzeta(2,itheta,izeta) = a * dcosangledu * dsinangle2dv
-!!$                  !d2rdudzeta(3,itheta,izeta) = 0, so no equation needed for it here.
-!!$
-!!$                  d2rdv2(1,itheta,izeta) = (R0_to_use + a * cosangle) * d2cosangle2dv2
-!!$                  d2rdv2(2,itheta,izeta) = (R0_to_use + a * cosangle) * d2sinangle2dv2
-!!$                  !d2rdv2(3,itheta,izeta) = 0, so no equation needed for it here.
-!!$               end if
+!$               if (transfer_matrix_option==2 .and. which_surface == 1) then
+!$                  d2rdu2(1,itheta,izeta) = a * d2cosangledu2 * cosangle2
+!$                  d2rdu2(2,itheta,izeta) = a * d2cosangledu2 * sinangle2
+!$                  d2rdu2(3,itheta,izeta) = a * d2sinangledu2
+!$
+!$                  d2rdudzeta(1,itheta,izeta) = a * dcosangledu * dcosangle2dv
+!$                  d2rdudzeta(2,itheta,izeta) = a * dcosangledu * dsinangle2dv
+!$                  !d2rdudzeta(3,itheta,izeta) = 0, so no equation needed for it here.
+!$
+!$                  d2rdv2(1,itheta,izeta) = (R0_to_use + a * cosangle) * d2cosangle2dv2
+!$                  d2rdv2(2,itheta,izeta) = (R0_to_use + a * cosangle) * d2sinangle2dv2
+!$                  !d2rdv2(3,itheta,izeta) = 0, so no equation needed for it here.
+!$               end if
             end do
          end do
 
