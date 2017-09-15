@@ -114,6 +114,7 @@ module global_variables
   integer :: mmax_sensitivity = 0
   integer :: mnmax_sensitivity
   integer :: nomega_coil
+  real(dp) :: coil_plasma_dist_lse_p = 1.0d4
   real(dp), dimension(:,:), allocatable :: dchi2Kdphi, dchi2Bdphi
   integer, dimension(:), allocatable :: omega_coil
   integer, dimension(:), allocatable :: xm_sensitivity, xn_sensitivity

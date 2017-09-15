@@ -629,3 +629,16 @@ but it is available for completeness.\\
 {If \parlink{fixed\_norm\_sensitivity\_option} $> 1$, gradients of $\chi^2$ are computed at fixed $\norm{\bm{K}'}_p$ rather than fixed $\lambda$. This option must be used with \parlink{general\_option} $> 3$ and  \parlink{target\_option} $ == 8$. If \parlink{sensitivity\_option} $ >2$, then gradients of $\chi^2_K$ and $\chi^2_B$ will also be computed at fixed $\norm{\bm{K}'}_p$. 
 
 }
+
+\myhrule
+
+\param{coil\_plasma\_dist\_lse\_p}
+{real}
+{1}
+{1e4}
+{When \parlink{sensitivity\_option} $> 1$.}
+{If \parlink{sensitivity\_option} $>1$, the sensitivity of the log-sum-exponent approximation to the coil-plasma distance will be computed. The value of \parlink{coil\_plasma\_dist\_lse\_p} determines the scaling, $p$, in the exponent for this form of the distance.
+\begin{gather}
+\min d = - \frac{1}{p} \log \left( \sum_{i_{\theta'}} \sum_{i_{\zeta'}} \sum_{i_{\theta}} \sum_{i_{\zeta}} \exp \left( - p \sqrt{ \bm{r}' - \bm{r})^2} \right) \right)
+\end{gather}
+}

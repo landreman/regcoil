@@ -9,7 +9,7 @@ subroutine init_sensitivity()
 
   integer :: iomega, iflag, minSymmetry, maxSymmetry, offset, whichSymmetry, tic, toc, countrate,indexl_coil
 
-  real(dp) :: angle, angle2, sinangle, cosangle, sum_exp, min_dist
+  real(dp) :: angle, angle2, sinangle, cosangle, sum_exp, min_dist, max_dist, coil_plasma_dist_lse
   real(dp) :: sinangle2, cosangle2
   real(dp) :: dxdtheta, dxdzeta, dydtheta, dydzeta, dzdtheta, dzdzeta
   real(dp), dimension(:,:,:,:), allocatable :: dist
@@ -230,9 +230,10 @@ subroutine init_sensitivity()
     end do
   end do
   min_dist = minval(dist)
+  max_dist = maxval(dist)
   print *,"min_dist:", min_dist
-  sum_exp = sum(exp(-100*(dist-min_dist)))
-  print *,"sum_exp: ", sum_exp
+  sum_exp = sum(exp(-coil_plasma_dist_lse_p*(dist-min_dist)))
+  print *,"sum_exp:",sum_exp
   do itheta_coil = 1, ntheta_coil
     do izeta_coil = 1, nzeta_coil
       do itheta_plasma = 1, ntheta_plasma
@@ -242,14 +243,14 @@ subroutine init_sensitivity()
             *((r_coil(1,itheta_coil,izeta_coil)-r_plasma(1,itheta_plasma,izeta_plasma))*drdomega(1,index_coil,1,:) &
             + (r_coil(2,itheta_coil,izeta_coil)-r_plasma(2,itheta_plasma,izeta_plasma))*drdomega(2,index_coil,1,:) &
             + (r_coil(3,itheta_coil,izeta_coil)-r_plasma(3,itheta_plasma,izeta_plasma))*drdomega(3,index_coil,1,:)) &
-            * exp(-100*(dist(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma)-min_dist))/sum_exp
+            * exp(-coil_plasma_dist_lse_p*(dist(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma)-min_dist))/sum_exp
         end do
       end do
     end do
   end do
-  coil_plasma_dist = -log(sum_exp)/100 + min_dist
-  print *,"coil_plasma_dist: ", coil_plasma_dist
-  print *,"method 2: ", minval(dist)
+  coil_plasma_dist = min_dist
+  coil_plasma_dist_lse = -log(sum_exp)/coil_plasma_dist_lse_p + min_dist
+  print *,"coil_plasma_dist computed form log_sum: ", coil_plasma_dist_lse
 
   do izeta_coil = 1, nzeta_coil
     do itheta_coil = 1, ntheta_coil

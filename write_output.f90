@@ -57,7 +57,8 @@ subroutine write_output
        vn_L_p_diagnostic_np = "L_p_diagnostic_np", &
        vn_L_p_diagnostic_dp = "L_p_diagnostic_dp", &
        vn_fixed_norm_sensitivity_option = "fixed_norm_sensitivity_option", &
-       vn_coil_plasma_dist = "coil_plasma_dist"
+       vn_coil_plasma_dist = "coil_plasma_dist", &
+       vn_coil_plasma_dist_lse_p = "coil_plasma_dist_lse_p"
 
   ! Arrays with dimension 1
   character(len=*), parameter :: &
@@ -284,6 +285,7 @@ subroutine write_output
 
   if (sensitivity_option > 1) then
     call cdf_define(ncid, vn_coil_plasma_dist, coil_plasma_dist)
+    call cdf_define(ncid, vn_coil_plasma_dist_lse_p, coil_plasma_dist_lse_p)
   end if
 
   ! Arrays with dimension 1
@@ -493,6 +495,7 @@ subroutine write_output
   call cdf_write(ncid, vn_L_p_diagnostic_np, L_p_diagnostic_np)
   if (sensitivity_option > 1) then
     call cdf_write(ncid, vn_coil_plasma_dist, coil_plasma_dist)
+    call cdf_write(ncid, vn_coil_plasma_dist_lse_p, coil_plasma_dist_lse_p)
   end if
 
   ! Arrays with dimension 1
