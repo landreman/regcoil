@@ -87,7 +87,7 @@ module init_surface_mod
       if (geometry_option==3 .or. geometry_option == 4) then
          print *,"  Reading coil surface from nescin file ",trim(nescin_filename)
 
-        if (compute_curvature .and. which_surface==1) then
+        if (compute_curvature==1 .and. which_surface==1) then
           allocate(d2r_coildtheta2(3,ntheta,nzetal),stat=iflag)
           if (iflag .ne. 0) stop 'Allocation error! init_surface_mod 8'
           allocate(d2r_coildthetadzeta(3,ntheta,nzetal),stat=iflag)

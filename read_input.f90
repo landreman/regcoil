@@ -24,7 +24,7 @@ subroutine read_input
        normal_displacement_option, nmax_sensitivity, mmax_sensitivity, sensitivity_symmetry_option, &
        save_nescin_option, save_nescin_mpol, save_nescin_ntor, target_option_p, L_p_diagnostic_option, &
        L_p_diagnostic_min, L_p_diagnostic_max, L_p_diagnostic_np, fixed_norm_sensitivity_option, &
-       coil_plasma_dist_lse_p, compute_curvature
+       coil_plasma_dist_lse_p, compute_curvature, compute_curvature
 
   ! getcarg is in LIBSTELL
   call getcarg(1, inputFilename, numargs)

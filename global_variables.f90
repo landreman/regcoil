@@ -138,9 +138,10 @@ module global_variables
   real(dp) :: coil_plasma_dist
 
   ! Curvature-related things
-  logical :: compute_curvature = .false.
+  integer :: compute_curvature = 0
   real(dp), dimension(:,:,:), allocatable :: d2r_coildtheta2, d2r_coildthetadzeta, d2r_coildzeta2
   real(dp), dimension(:,:), allocatable :: principle_curvature_1, principle_curvature_2
+  real(dp) :: max_curvature_1, max_curvature_2
 
 end module global_variables
 
