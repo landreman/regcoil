@@ -13,7 +13,7 @@ module init_surface_mod
          geometry_option, R_specified, a, separation, dtheta, dzeta, nescin_filename, which_surface)
 
       use compute_offset_surface_mod
-      use global_variables, only: R0_plasma, nfp, volume_coil, save_nescin_option, compute_curvature
+      use global_variables, only: R0_plasma, nfp, volume_coil, save_nescin_option, compute_curvature, principle_curvature_1, principle_curvature_2
       use stel_kinds
       use stel_constants
       use omp_lib
@@ -34,6 +34,7 @@ module init_surface_mod
       real(dp) :: d2sinangledtheta2, d2cosangledtheta2, d2sinangle2dzeta2, d2cosangle2dzeta2
       integer :: i, itheta, izeta
       real(dp) :: x_new, y_new, z_new, x_old, y_old, z_old, delta_theta, delta_zeta, temp
+      real(dp) :: curvature_l, curvature_m, curvature_n, max_curvature_1, max_curvature_2
 
       allocate(theta(ntheta),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error! init_surface_mod 1'
@@ -67,6 +68,13 @@ module init_surface_mod
       if (iflag .ne. 0) stop 'Allocation error! init_surface_mod 6'
       allocate(normal(3,ntheta,nzetal),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error! init_surface_mod 7'
+
+      if (compute_curvature==1) then
+        allocate(principle_curvature_1(ntheta,nzeta),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(principle_curvature_2(ntheta,nzeta),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+      end if
 
       r = 0
       drdtheta = 0
@@ -264,15 +272,15 @@ module init_surface_mod
       print "(a,es10.3,a,es10.3,a)"," Coil surface area:",area," m^2. Volume:",volume_coil," m^3."
 
       if (compute_curvature==1) then
-        curvature_L = (normal_coil(1,itheta,izeta)*d2rdtheta2(1,itheta,izeta) &
-          + normal_coil(2,itheta,izeta)*d2rdtheta2(3,itheta,izeta) &
-          + normal_coil(3,itheta,izeta)*d2rdtheta2(3,itheta,izeta))/norm_normal_coil(itheta,izeta)
-        curvature_N = (normal_coil(1,itheta,izeta)*d2rdzeta2(1,itheta,izeta) &
-          + normal_coil(2,itheta,izeta)*d2rdzeta2(2,itheta,izeta) &
-          + normal_coil(3,itheta,izeta)*d2rdzeta2(3,itheta,izeta))/norm_normal_coil(itheta,izeta)
-        curvature_M = (normal_coil(1,itheta,izeta)*d2rdthetadzeta(1,itheta,izeta) &
-          + normal_coil(2,itheta,izeta)*d2rdthetadzeta(2,itheta,izeta) &
-          + normal_coil(3,itheta,izeta)*d2rdthetadzeta(3,itheta,izeta))/norm_normal_coil(itheta,izeta)
+        curvature_L = (normal(1,itheta,izeta)*d2rdtheta2(1,itheta,izeta) &
+          + normal(2,itheta,izeta)*d2rdtheta2(3,itheta,izeta) &
+          + normal(3,itheta,izeta)*d2rdtheta2(3,itheta,izeta))/norm_normal(itheta,izeta)
+        curvature_N = (normal(1,itheta,izeta)*d2rdzeta2(1,itheta,izeta) &
+          + normal(2,itheta,izeta)*d2rdzeta2(2,itheta,izeta) &
+          + normal(3,itheta,izeta)*d2rdzeta2(3,itheta,izeta))/norm_normal(itheta,izeta)
+        curvature_M = (normal(1,itheta,izeta)*d2rdthetadzeta(1,itheta,izeta) &
+          + normal(2,itheta,izeta)*d2rdthetadzeta(2,itheta,izeta) &
+          + normal(3,itheta,izeta)*d2rdthetadzeta(3,itheta,izeta))/norm_normal(itheta,izeta)
 
         principle_curvature_1(itheta,izeta) = (curvature_L + curvature_N &
           + sqrt(curvature_L**2 + 4*curvature_M**2 - 2*curvature_L*curvature_N + curvature_N**2))/2
