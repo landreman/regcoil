@@ -371,16 +371,18 @@ subroutine build_matrices()
   BLAS_BETA=0
   call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,inductance,LDA,basis_functions,LDB,BLAS_BETA,g,LDC)
 
-  !$OMP PARALLEL
-  !$OMP MASTER
-  print *,"  Number of OpenMP threads:",omp_get_num_threads()
-  !$OMP END MASTER
-  !$OMP DO 
-  do iomega = 1, nomega_coil
-    call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedomega(:,:,iomega),LDA,basis_functions,LDB,BLAS_BETA,dgdomega(iomega,:,:),LDC)
-  enddo
-  !$OMP END DO
-  !$OMP END PARALLEL
+  if (sensitivity_option > 1) then
+	!$OMP PARALLEL
+   !$OMP MASTER
+   print *,"  Number of OpenMP threads:",omp_get_num_threads()
+   !$OMP END MASTER
+   !$OMP DO 
+   do iomega = 1, nomega_coil
+		call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedomega(:,:,iomega),LDA,basis_functions,LDB,BLAS_BETA,dgdomega(iomega,:,:),LDC)
+	enddo
+	!$OMP END DO
+	!$OMP END PARALLEL
+  end if
 
   call system_clock(toc)
   print *,"inductance*basis_functions:",real(toc-tic)/countrate,"sec."

@@ -251,6 +251,7 @@ module init_surface_mod
       ! but we will need to interpolate R^2 from the full to half grid.
       allocate(major_R_squared(ntheta,nzetal))
       major_R_squared = r(1,:,:)*r(1,:,:) + r(2,:,:)*r(2,:,:)
+		print *,"min(major_R_squared): ", minval(major_R_squared)
 
       ! First handle the interior of the theta grid:
       volume_coil = sum((major_R_squared(1:ntheta-1,:) + major_R_squared(2:ntheta,:)) * (0.5d+0) & ! R^2, interpolated from full to half grid
