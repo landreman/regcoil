@@ -32,7 +32,8 @@ def cg_scipy(regcoil_input_file):
   x0 = nescinObject.omegas_sensitivity
 
   f = evaluateFunctionRegcoil
-  fprime = evaluateGradientRegcoil
+  #fprime = evaluateGradientRegcoil
+  fprime = None
   args = (nescinObject,)
   full_output = True
   disp = True
