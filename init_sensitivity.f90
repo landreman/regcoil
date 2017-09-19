@@ -232,6 +232,7 @@ subroutine init_sensitivity()
   min_dist = minval(dist)
   max_dist = maxval(dist)
   print *,"min_dist:", min_dist
+  print *,"max_dist:", max_dist
   sum_exp = sum(exp(-coil_plasma_dist_lse_p*(dist-min_dist)))
   print *,"sum_exp:",sum_exp
   do itheta_coil = 1, ntheta_coil
