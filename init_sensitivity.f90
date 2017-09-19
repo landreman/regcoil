@@ -15,6 +15,7 @@ subroutine init_sensitivity()
   real(dp), dimension(:,:,:,:), allocatable :: dist
   integer :: izeta_plasma, itheta_plasma, izeta_coil, itheta_coil
   integer :: index_coil, l_coil, izetal_coil, index_plasma
+  real(dp), dimension(:,:), allocatable :: normal_dist
 
   ! For volume calculation
   real(dp) :: major_R_squared_half_grid, dzdtheta_coil_half_grid
@@ -53,6 +54,8 @@ subroutine init_sensitivity()
   allocate(dist(ntheta_coil,nzeta_coil,ntheta_plasma,nzeta_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dcoil_plasma_distdomega(nomega_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(normal_dist(ntheta_coil,nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
   call system_clock(tic,countrate)
@@ -227,12 +230,13 @@ subroutine init_sensitivity()
             + (r_coil(3,itheta_coil,izeta_coil)-r_plasma(3,itheta_plasma,izeta_plasma))**2)
         end do
       end do
+      normal_dist(itheta_coil,izeta_coil) = minval(dist(itheta_coil,izeta_coil,:,:))
     end do
   end do
   min_dist = minval(dist)
   max_dist = maxval(dist)
-  print *,"min_dist:", min_dist
-  print *,"max_dist:", max_dist
+  print *,"min_dist:", minval(normal_dist)
+  print *,"max_dist:", maxval(normal_dist)
   sum_exp = sum(exp(-coil_plasma_dist_lse_p*(dist-min_dist)))
   print *,"sum_exp:",sum_exp
   do itheta_coil = 1, ntheta_coil
@@ -252,7 +256,6 @@ subroutine init_sensitivity()
   coil_plasma_dist = min_dist
   coil_plasma_dist_lse = -log(sum_exp)/coil_plasma_dist_lse_p + min_dist
   print *,"coil_plasma_dist computed form log_sum: ", coil_plasma_dist_lse
-
 
   do izeta_coil = 1, nzeta_coil
     do itheta_coil = 1, ntheta_coil
