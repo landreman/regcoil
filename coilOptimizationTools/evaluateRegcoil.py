@@ -15,6 +15,7 @@ class coilFourier:
     mmax_sensitivity = readVariable("mmax_sensitivity","int",regcoil_input_file,required=True)
     geometry_option_coil = readVariable("geometry_option_coil","int",regcoil_input_file,required=True)
     geometry_option_plasma = readVariable("geometry_option_plasma","int",regcoil_input_file,required=True)
+    current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=True)
     alpha = readVariable("alpha","float",regcoil_input_file,required=True)
     objective_function_option = readVariable("objective_function_option","int",regcoil_input_file,required=True)
     # Check parameters
@@ -24,6 +25,7 @@ class coilFourier:
     if (geometry_option_coil != 3):
       print "Error! This script is only compatible with geometry_option_coil=3 at the moment."
       sys.exit(0)
+    self.current_density_target = current_density_target
     self.alpha = alpha
     self.objective_function_option = objective_function_option
     self.nmax_sensitivity = nmax_sensitivity
@@ -191,7 +193,7 @@ class coilFourier:
 
   # This is a script to be called within a nonlinear optimization routine in order to evaluate
   # chi2 and its gradient with respect to the Fourier coefficients
-  def evaluateRegcoil(self,omegas_sensitivity_new):
+  def evaluateRegcoil(self,omegas_sensitivity_new,current_density_target):
     
     self.set_omegas_sensitivity(omegas_sensitivity_new)
     
@@ -232,6 +234,8 @@ class coilFourier:
       if namelistLineContains(line,"wout_filename"):
         new_wout = '../' + wout_filename
         line = 'wout_filename = "'+new_wout+'"\n'
+      if namelistLineContains(line,"current_density_target"):
+        line = 'current_density_target = '+str(current_density_target)+'\n'
       f.write(line)
     f.close()
 
@@ -296,14 +300,13 @@ class coilFourier:
               line = 'nlambda = '+str(new_nlambda)+'\n'
             f.write(line)
           f.close()
-        self.evaluateRegcoil(omegas_sensitivity_new)
+        self.evaluateRegcoil(omegas_sensitivity_new,self.current_density_target)
       elif (exit_code == -2): # current density too low
         print "Current density too low."
-        sys.exit(0)
-#        current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=True)
-#        current_density_target_new = 1.1*current_density_target
-#        print "Trying again with current_density_target = " + str(current_density_target_new)
-#        os.chdir('..')
+        current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=True)
+        current_density_target_new = 1.1*current_density_target
+        print "Trying again with current_density_target = " + str(current_density_target_new)
+        os.chdir('..')
 #        with open(regcoil_input_file, 'r') as f:
 #          inputFile = f.readlines()
 #          f = open(regcoil_input_file,"w")
@@ -312,13 +315,13 @@ class coilFourier:
 #              line = 'current_density_target = '+str(current_density_target_new)+'\n'
 #            f.write(line)
 #          f.close()
-#        self.evaluateRegcoil(omegas_sensitivity_new)
+        self.evaluateRegcoil(omegas_sensitivity_new,current_density_target_new)
       elif (exit_code == -3): # current density too high
         print "Current density too high."
-#        current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=True)
-#        current_density_target_new = 0.9*current_density_target
-#        print "Trying again with current_density_target = " + str(current_density_target_new)
-#        os.chdir('..')
+        current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=True)
+        current_density_target_new = 0.9*current_density_target
+        print "Trying again with current_density_target = " + str(current_density_target_new)
+        os.chdir('..')
 #        with open(regcoil_input_file, 'r') as f:
 #          inputFile = f.readlines()
 #          f = open(regcoil_input_file,"w")
@@ -327,8 +330,7 @@ class coilFourier:
 #              line = 'current_density_target = '+str(current_density_target_new)+'\n'
 #            f.write(line)
 #          f.close()
-#        self.evaluateRegcoil(omegas_sensitivity_new)
-        sys.exit(0)
+        self.evaluateRegcoil(omegas_sensitivity_new,current_density_target_new)
       else:
         sys.exit(0)
 
@@ -379,14 +381,14 @@ class coilFourier:
 def evaluateFunctionRegcoil(omegas_sensitivity_new, nescinObject):
   # Check if function has already been evaluated
   if (nescinObject.evaluated == False or not np.array_equal(omegas_sensitivity_new,nescinObject.omegas_sensitivity)):
-    nescinObject.evaluateRegcoil(omegas_sensitivity_new)
+    nescinObject.evaluateRegcoil(omegas_sensitivity_new,nescinObject.current_density_target)
   print "objective_function = " + str(nescinObject.objective_function)
   return np.array(nescinObject.objective_function)
 
 def evaluateGradientRegcoil(omegas_sensitivity_new, nescinObject):
   # Check if function has already been evaluated
   if (nescinObject.evaluated == False or not np.array_equal(omegas_sensitivity_new,nescinObject.omegas_sensitivity)):
-    nescinObject.evaluateRegcoil(omegas_sensitivity_new)
+    nescinObject.evaluateRegcoil(omegas_sensitivity_new,nescinObject.current_density_target)
   #print(nescinObject.dobjective_functiondomegas_sensitivity)
   return np.array(nescinObject.dobjective_functiondomegas_sensitivity)
 
