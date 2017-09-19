@@ -299,36 +299,38 @@ class coilFourier:
         self.evaluateRegcoil(omegas_sensitivity_new)
       elif (exit_code == -2): # current density too low
         print "Current density too low."
-        current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=True)
-        current_density_target_new = 1.1*current_density_target
-        print "Trying again with current_density_target = " + str(current_density_target_new)
-        os.chdir('..')
-        with open(regcoil_input_file, 'r') as f:
-          inputFile = f.readlines()
-          f = open(regcoil_input_file,"w")
-          for line in inputFile:
-            if namelistLineContains(line,"current_density_target"):
-              line = 'current_density_target = '+str(current_density_target_new)+'\n'
-            f.write(line)
-          f.close()
-        self.evaluateRegcoil(omegas_sensitivity_new)
+        sys.exit(0)
+#        current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=True)
+#        current_density_target_new = 1.1*current_density_target
+#        print "Trying again with current_density_target = " + str(current_density_target_new)
+#        os.chdir('..')
+#        with open(regcoil_input_file, 'r') as f:
+#          inputFile = f.readlines()
+#          f = open(regcoil_input_file,"w")
+#          for line in inputFile:
+#            if namelistLineContains(line,"current_density_target"):
+#              line = 'current_density_target = '+str(current_density_target_new)+'\n'
+#            f.write(line)
+#          f.close()
+#        self.evaluateRegcoil(omegas_sensitivity_new)
       elif (exit_code == -3): # current density too high
         print "Current density too high."
-        current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=True)
-        current_density_target_new = 0.9*current_density_target
-        print "Trying again with current_density_target = " + str(current_density_target_new)
-        os.chdir('..')
-        with open(regcoil_input_file, 'r') as f:
-          inputFile = f.readlines()
-          f = open(regcoil_input_file,"w")
-          for line in inputFile:
-            if namelistLineContains(line,"current_density_target"):
-              line = 'current_density_target = '+str(current_density_target_new)+'\n'
-            f.write(line)
-          f.close()
-        self.evaluateRegcoil(omegas_sensitivity_new)
+#        current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=True)
+#        current_density_target_new = 0.9*current_density_target
+#        print "Trying again with current_density_target = " + str(current_density_target_new)
+#        os.chdir('..')
+#        with open(regcoil_input_file, 'r') as f:
+#          inputFile = f.readlines()
+#          f = open(regcoil_input_file,"w")
+#          for line in inputFile:
+#            if namelistLineContains(line,"current_density_target"):
+#              line = 'current_density_target = '+str(current_density_target_new)+'\n'
+#            f.write(line)
+#          f.close()
+#        self.evaluateRegcoil(omegas_sensitivity_new)
+        sys.exit(0)
       else:
-          sys.exit(0)
+        sys.exit(0)
 
   # Creates new nescin file with current Fourier coefficients
   # old_nescin and new_nescin are names of nescin files
