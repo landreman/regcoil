@@ -105,6 +105,22 @@ using the python script {\ttfamily cutCoilsFromRegcoil}. You can run this script
 to see a list of the input parameters. This script will generate a coils file suitable for input to the
 {\ttfamily makegrid} code (distributed with \vmec), which in turn generates an mgrid file used as input for free-boundary \vmec.
 
+\section{Output quantities}
+
+The output variables are documented using metadata (the `{\ttfamily long\_name}' attribute)
+in the netCDF output files {\ttfamily regcoil\_out.<extension>.nc}.
+To view the available output variables, their annotations, and their values, you can run
+{\ttfamily ncdump regcoil\_out.<extension>.nc | less} from the command line.
+Some of the most commonly used output quantities which can be found in the netCDF file are 
+{\ttfamily lambda},
+{\ttfamily chi2\_B},
+{\ttfamily chi2\_K},
+{\ttfamily max\_Bnormal},
+{\ttfamily max\_K},
+{\ttfamily chi2\_B\_target},
+and
+{\ttfamily current\_potential}.
+
 \section{Questions, Bugs, and Feedback}
 
 We welcome any contributions to the code or documentation.
