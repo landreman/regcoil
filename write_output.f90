@@ -228,7 +228,9 @@ subroutine write_output
        nlambda_num_basis_nomega_coil_dim = (/character(len=50):: 'nlambda',  &
         'num_basis_functions', 'nomega_coil' /), &
        ntheta_times_nzeta_plasma_coil_nomega_coil_dim = (/character(len=50) :: 'ntheta_times_nzeta_plasma', &
-        'ntheta_times_nzeta_coil', 'nomega_coil' /)
+        'ntheta_times_nzeta_coil', 'nomega_coil' /), &
+       ntheta_times_nzeta_num_basis_functions_nomega_dim = (/character(len=50) :: 'ntheta_times_nzeta_plasma', &
+        'num_basis_functions', 'nomega_coil' /)
 
   print *,"Beginning write output."
 
@@ -437,7 +439,7 @@ subroutine write_output
     if (sensitivity_option > 1) then
       call cdf_define(ncid, vn_dnorm_normaldomega, dnorm_normaldomega, dimname=nomega_coil_ntheta_nzeta_coil_dim)
       call cdf_define(ncid, vn_dddomega, dddomega, dimname=xyz_nomega_coil_ntheta_nzetal_coil_dim)
-      call cdf_define(ncid, vn_dgdomega, dgdomega, dimname=nomega_coil_ntheta_times_nzeta_num_basis_functions_dim)
+      call cdf_define(ncid, vn_dgdomega, dgdomega, dimname=ntheta_times_nzeta_num_basis_functions_nomega_dim)
       call cdf_define(ncid, vn_dinductancedomega, dinductancedomega, dimname = &
         ntheta_times_nzeta_plasma_coil_nomega_coil_dim)
       call cdf_define(ncid, vn_dnormxdomega, dnormxdomega, dimname=nomega_coil_ntheta_nzetal_coil_dim)

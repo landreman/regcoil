@@ -190,7 +190,7 @@ subroutine adjoint_solve
     !$OMP END MASTER
     !$OMP DO PRIVATE(dBnormaldomega)
     do iomega = 1, nomega_coil
-     dBnormaldomega = reshape(matmul(dgdomega(iomega,:,:),solution),(/ ntheta_plasma, nzeta_plasma /))/norm_normal_plasma + reshape(dhdomega(iomega,:),(/ ntheta_plasma, nzeta_plasma /))/norm_normal_plasma
+     dBnormaldomega = reshape(matmul(dgdomega(:,:,iomega),solution),(/ ntheta_plasma, nzeta_plasma /))/norm_normal_plasma + reshape(dhdomega(iomega,:),(/ ntheta_plasma, nzeta_plasma /))/norm_normal_plasma
      dchi2Bdomega(iomega,ilambda) = 2*nfp*dtheta_plasma*dzeta_plasma*sum(Bnormal_total(:,:,ilambda)*dBnormaldomega*norm_normal_plasma)
     enddo
     !$OMP END DO

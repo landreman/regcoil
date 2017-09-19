@@ -193,7 +193,7 @@ subroutine build_matrices()
   allocate(Bnormal_from_net_coil_currents(ntheta_plasma,nzeta_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   if (sensitivity_option > 1) then
-    allocate(dgdomega(nomega_coil, ntheta_plasma*nzeta_plasma, num_basis_functions),stat=iflag)
+    allocate(dgdomega(ntheta_plasma*nzeta_plasma,num_basis_functions,nomega_coil),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(dinductancednorm(3),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
@@ -378,7 +378,7 @@ subroutine build_matrices()
    !$OMP END MASTER
    !$OMP DO 
    do iomega = 1, nomega_coil
-		call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedomega(:,:,iomega),LDA,basis_functions,LDB,BLAS_BETA,dgdomega(iomega,:,:),LDC)
+		call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dinductancedomega(:,:,iomega),LDA,basis_functions,LDB,BLAS_BETA,dgdomega(:,:,iomega),LDC)
 	enddo
 	!$OMP END DO
 	!$OMP END PARALLEL
@@ -441,7 +441,7 @@ subroutine build_matrices()
 
     do iomega = 1, nomega_coil
       dRHS_Bdomega(iomega,:) = -dtheta_plasma*dzeta_plasma*matmul( &
-      reshape(Bnormal_from_plasma_current+Bnormal_from_net_coil_currents, (/ ntheta_plasma*nzeta_plasma /)), dgdomega(iomega,:,:))
+      reshape(Bnormal_from_plasma_current+Bnormal_from_net_coil_currents, (/ ntheta_plasma*nzeta_plasma /)), dgdomega(:,:,iomega))
       dRHS_Bdomega(iomega,:) = dRHS_Bdomega(iomega,:) - &
         dtheta_plasma*dzeta_plasma*matmul(transpose(g_over_N_plasma),dhdomega(iomega,:))
     enddo
@@ -491,8 +491,8 @@ subroutine build_matrices()
     !$OMP END MASTER
     !$OMP DO
     do iomega = 1, nomega_coil
-      call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dgdomega(iomega,:,:),LDA,g_over_N_plasma,LDB,BLAS_BETA,dmatrix_Bdomega(iomega,:,:),LDC)
-      call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,g_over_N_plasma,LDA,dgdomega(iomega,:,:),LDB,BLAS_BETA,dmatrix_Bdomega(iomega,:,:),LDC)
+      call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dgdomega(:,:,iomega),LDA,g_over_N_plasma,LDB,BLAS_BETA,dmatrix_Bdomega(iomega,:,:),LDC)
+      call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,g_over_N_plasma,LDA,dgdomega(:,:,iomega),LDB,BLAS_BETA,dmatrix_Bdomega(iomega,:,:),LDC)
     enddo
     !$OMP END DO
     !$OMP END PARALLEL
