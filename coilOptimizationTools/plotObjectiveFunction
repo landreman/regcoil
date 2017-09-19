@@ -60,6 +60,8 @@ def plotObjectiveFunction(inputFilename):
   if (objective_function_option == 2):
       objective_functions = chi2_Bs - alpha*coil_plasma_dists
 
+  print objective_functions
+
   plt.figure(facecolor='white')
   plt.semilogy(evals, chi2_Bs,'b.',label='chi2_B')
   plt.semilogy(evals, coil_volumes,'g.',label='coil_volume')

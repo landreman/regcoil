@@ -14,6 +14,11 @@ def cg_scipy(regcoil_input_file):
   nmax_sensitivity = readVariable("nmax_sensitivity","int",regcoil_input_file,required=True)
   mmax_sensitivity = readVariable("mmax_sensitivity","int",regcoil_input_file,required=True)
   nescin_filename = readVariable("nescin_filename","string",regcoil_input_file,required=True)
+
+  # scipy.optimize method
+  # The following methods using gradient information: CG, BFGS, Newton-CG, L-BFGS-B, TNC
+  # SLSQP, dogleg, trust-ncg
+  method = readVariable("scipy_optimize_method","string",regcoil_input_file,required=True)
   # Order to use for norm of the gradient
   norm = readVariable("norm","int",regcoil_input_file,required=True)
   # Tolerance for norm of the gradient
@@ -37,7 +42,13 @@ def cg_scipy(regcoil_input_file):
   full_output = True
   disp = True
   retall = True
-  [xopt,fopt,func_calls,grad_calls,warnflag,allvecs] = scipy.optimize.fmin_cg(f=f,x0=x0,fprime=fprime,args=args,gtol=gtol,norm=norm,maxiter=maxiter,full_output=full_output,disp=disp,retall=retall)
+
+  OptimizeResult = scipy.optimize.minimize(fun=f,x0=x0,args=args,method=method,jac=fprime,hess=None,hessp=None,bounds=None)
+  sol = OptimizeResult.x
+  func = evaluateFunctionRegcoil(sol,nescinObject)
+  grad = evaluateGradientRegclil(sol,nescinObject)
+  print "funcion value: " + str(func)
+  print "norm of grad: " + np.linalg.norm(grad,2)
 
 if __name__ == "__main__":
   cg_scipy(sys.argv[1])

@@ -162,25 +162,6 @@ subroutine read_nescin(nescin_filename, r, drdtheta, drdzeta, d2rdtheta2, d2rdth
                    + dsinangledzeta * dsinangle2dzeta + sinangle * d2sinangle2dzeta2)
               d2rdzeta2(3,itheta,izeta) = d2rdzeta2(3,itheta,izeta) + zmns * d2sinangledzeta2 + zmnc * d2cosangledzeta2
 
-              curvature_L = (normal_coil(1,itheta,izeta)*d2rdtheta2(1,itheta,izeta) &
-                + normal_coil(2,itheta,izeta)*d2rdtheta2(3,itheta,izeta) &
-                + normal_coil(3,itheta,izeta)*d2rdtheta2(3,itheta,izeta))/norm_normal_coil(itheta,izeta)
-              curvature_N = (normal_coil(1,itheta,izeta)*d2rdzeta2(1,itheta,izeta) &
-                + normal_coil(2,itheta,izeta)*d2rdzeta2(2,itheta,izeta) &
-                + normal_coil(3,itheta,izeta)*d2rdzeta2(3,itheta,izeta))/norm_normal_coil(itheta,izeta)
-              curvature_M = (normal_coil(1,itheta,izeta)*d2rdthetadzeta(1,itheta,izeta) &
-                + normal_coil(2,itheta,izeta)*d2rdthetadzeta(2,itheta,izeta) &
-                + normal_coil(3,itheta,izeta)*d2rdthetadzeta(3,itheta,izeta))/norm_normal_coil(itheta,izeta)
-
-              principle_curvature_1(itheta,izeta) = (curvature_L + curvature_N &
-                + sqrt(curvature_L**2 + 4*curvature_M**2 - 2*curvature_L*curvature_N + curvature_N**2))/2
-
-              principle_curvature_2(itheta,izeta) = (curvature_L + curvature_N &
-                - sqrt(curvature_L**2 + 4*curvature_M**2 - 2*curvature_L*curvature_N + curvature_N**2))/2
-
-              max_curvature_1 = maxval(abs(principle_curvature_1))
-              max_curvature_2 = maxval(abs(principle_curvature_2))
-
            end if
         end do
      end do

@@ -379,14 +379,14 @@ def evaluateFunctionRegcoil(omegas_sensitivity_new, nescinObject):
   if (nescinObject.evaluated == False or not np.array_equal(omegas_sensitivity_new,nescinObject.omegas_sensitivity)):
     nescinObject.evaluateRegcoil(omegas_sensitivity_new)
   print "objective_function = " + str(nescinObject.objective_function)
-  return nescinObject.objective_function
+  return np.array(nescinObject.objective_function)
 
 def evaluateGradientRegcoil(omegas_sensitivity_new, nescinObject):
   # Check if function has already been evaluated
   if (nescinObject.evaluated == False or not np.array_equal(omegas_sensitivity_new,nescinObject.omegas_sensitivity)):
     nescinObject.evaluateRegcoil(omegas_sensitivity_new)
   #print(nescinObject.dobjective_functiondomegas_sensitivity)
-  return nescinObject.dobjective_functiondomegas_sensitivity
+  return np.array(nescinObject.dobjective_functiondomegas_sensitivity)
 
 ## Testing ##
 if __name__ == "__main__":
