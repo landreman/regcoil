@@ -72,24 +72,28 @@ def plotObjectiveFunction(inputFilename):
   if (objective_function_option == 2):
       objective_functions = chi2_Bs - alpha*coil_plasma_dists
 
-  print objective_functions
+  eval_min = evals[np.argmin(objective_functions)]
+  print "Minimum attained at eval : " + str(eval_min)
 
   plt.figure(facecolor='white')
   plt.semilogy(evals, chi2_Bs,'b.',label='chi2_B')
   plt.semilogy(evals, coil_volumes,'g.',label='coil_volume')
   plt.semilogy(evals, coil_plasma_dists,'r.',label='coil_plasma_dists')
+  plt.axvline(eval_min)
   plt.legend()
   plt.xlabel('Function Evaluations')
   plt.legend()
 
   plt.figure(facecolor='white')
   plt.plot(evals, objective_functions,'r.',label='objective_function')
+  plt.axvline(eval_min)
   plt.legend()
   plt.xlabel('Function Evaluations')
   plt.legend()
 
   plt.figure(facecolor='white')
   plt.semilogy(evals, dobjective_functiondomegas,'r.',label='2-norm of gradient')
+  plt.axvline(eval_min)
   plt.legend()
   plt.xlabel('Function Evaluations')
 
