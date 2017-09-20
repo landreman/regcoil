@@ -100,8 +100,8 @@ def plotObjectiveFunction(inputFilename):
   plt.legend()
   plt.xlabel('Function Evaluations')
 
-  plt.figure(facecolor='whie')
-  plt.semilogy(evals, current_density_targets,'r.',label='current_density_target')
+  plt.figure(facecolor='white')
+  plt.plot(evals, current_density_targets,'r.',label='current_density_target')
   plt.axvline(eval_min)
   plt.legend()
   plt.xlabel('Function Evaluations')
