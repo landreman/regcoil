@@ -16,7 +16,7 @@ def cg_scipy(regcoil_input_file):
   nescin_filename = readVariable("nescin_filename","string",regcoil_input_file,required=True)
 
   # scipy.optimize method
-  # The following methods using gradient information: CG, BFGS, Newton-CG, L-BFGS-B, TNC
+  # The following methods use gradient information: CG, BFGS, Newton-CG, L-BFGS-B, TNC
   # SLSQP, dogleg, trust-ncg
   method = readVariable("scipy_optimize_method","string",regcoil_input_file,required=True)
   # Order to use for norm of the gradient
@@ -38,10 +38,11 @@ def cg_scipy(regcoil_input_file):
 
   f = evaluateFunctionRegcoil
   fprime = evaluateGradientRegcoil
-  #fprime = None
   args = (nescinObject,)
-  scipy.optimize.show_options(solver='minimize',method='cg',disp=True)
-  options={'gtol':gtol,'disp':True}
+  if (method=="CG" or method=="BFGS"):
+    options={'gtol':gtol,'disp':True}
+  else:
+    options={'disp':True}
   full_output = True
   disp = True
   retall = True
