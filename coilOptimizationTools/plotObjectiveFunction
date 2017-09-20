@@ -23,6 +23,7 @@ def plotObjectiveFunction(inputFilename):
   coil_plasma_dists = []
   evals = []
   dobjective_functiondomegas = []
+  current_density_targets = []
 
   for directory in directories:
     
@@ -60,6 +61,8 @@ def plotObjectiveFunction(inputFilename):
       if (objective_function_option == 2):
          dobjective_functiondomega = np.linalg.norm(dchi2Bdomega - alpha*dcoil_plasma_distdomega,2)
       dobjective_functiondomegas.append(dobjective_functiondomega)
+      current_density_target = readVariable("current_density_target","float",inputFilename,required=True)
+      current_density_targets.append(current_density_target)
 
   chi2_Bs = np.array(chi2_Bs)
   coil_volumes = np.array(coil_volumes)
@@ -93,6 +96,12 @@ def plotObjectiveFunction(inputFilename):
 
   plt.figure(facecolor='white')
   plt.semilogy(evals, dobjective_functiondomegas,'r.',label='2-norm of gradient')
+  plt.axvline(eval_min)
+  plt.legend()
+  plt.xlabel('Function Evaluations')
+
+  plt.figure(facecolor='whie')
+  plt.semilogy(evals, current_density_targets,'r.',label='current_density_target')
   plt.axvline(eval_min)
   plt.legend()
   plt.xlabel('Function Evaluations')
