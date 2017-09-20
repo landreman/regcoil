@@ -18,6 +18,8 @@ class coilFourier:
     current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=True)
     alpha = readVariable("alpha","float",regcoil_input_file,required=True)
     objective_function_option = readVariable("objective_function_option","int",regcoil_input_file,required=True)
+    if (objective_function_option > 2):
+      beta = readVariable("beta","float",regcoil_input_file,required=True)
     # Check parameters
     if (geometry_option_plasma != 3):
       print "Error! This script is only compatible with geometry_option_plasma=3 at the moment."
@@ -79,39 +81,6 @@ class coilFourier:
         self.xn_sensitivity[imode] = ni
         self.xm_sensitivity[imode] = mi
         imode = imode + 1
-
-#  def set_rmnc(self,new_rmnc):
-#    self.rmncs = new_rmnc
-#    for imn in range(0,self.nmodes):
-#      self.omegas[2*imn] = self.rmncs[imn]
-#    for imn in range(0,self.nmodes_sensitivity):
-#      for jmn in range(0,self.nmodes):
-#        if (self.xn[jmn] == self.xn_sensitivity[imn]):
-#          if (self.xm[jmn] == self.xm_sensitivity[imn]):
-#            self.omegas_sensitivity[2*imn+1] = self.rmncs[jmn]
-#
-#  def set_zmns(self,new_zmns):
-#    self.zmnss = new_zmns
-#    for imn in range(0,self.nmodes):
-#      self.omegas[2*imn+1] = self.zmnss[imn]
-#    for imn in range(0,self.nmodes_sensitivity):
-#      for jmn in range(0,self.nmodes):
-#        if (self.xn[jmn] == self.xn_sensitivity[imn]):
-#          if (self.xm[jmn] == self.xm_sensitivity[imn]):
-#            self.omegas_sensitivity[2*imn+1] = self.zmnss[jmn]
-#  
-#  def set_omegas(self,new_omegas):
-#    self.omegas = new_omegas
-#    for imn in range(0,self.nmodes):
-#      self.rmncs[imn] = self.omegas[2*imn]
-#      self.zmnss[imn] = self.omegas[2*imn+1]
-#        # Set omegas_sensitivity
-#    for imn in range(0,self.nmodes_sensitivity):
-#      for jmn in range(0,self.nmodes):
-#        if (self.xn[jmn] == self.xn_sensitivity[imn]):
-#          if (self.xm[jmn] == self.xm_sensitivity[imn]):
-#            self.omegas_sensitivity[2*imn] = self.omegas[2*jmn]
-#            self.omegas_sensitivity[2*imn+1] = self.omegas[2*jmn]
 
   def set_omegas_sensitivity(self,new_omegas_sensitivity):
     self.omegas_sensitivity = new_omegas_sensitivity
@@ -187,6 +156,9 @@ class coilFourier:
     elif(self.objective_function_option==2):
       self.set_objective_function(self.chi2B - self.alpha*self.coil_plasma_dist)
       self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*self.dcoil_plasma_distdomega)
+    elif(self.objective_function_option==3):
+      self.set_objective_function(self.chi2B - self.alpha*self.coil_plasma_dist - self.beta*self.coil_volume**(1.0/3.0))
+      self.set_objective_function(self.dchi2Bdomega - self.alpha*self.dcoil_plasma_distdomega - self.beta*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega)
     else:
       print "Incorrect choice of objective_function_option!"
       sys.exit(0)

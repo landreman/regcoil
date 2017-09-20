@@ -15,6 +15,8 @@ def plotObjectiveFunction(inputFilename):
   
   alpha = readVariable("alpha","float",inputFilename,required=True)
   objective_function_option = readVariable("objective_function_option","int",inputFilename,required=True)
+  if (objective_funciton_option > 2):
+    beta = readVariable("beta","float",inputFilename,required=True)
 
   directories = filter(os.path.isdir, os.listdir("."))
 
@@ -60,6 +62,8 @@ def plotObjectiveFunction(inputFilename):
          dobjective_functiondomega = np.linalg.norm(dchi2Bdomega - alpha*coil_volume**(-2.0/3.0)*dvolume_coildomega,2)
       if (objective_function_option == 2):
          dobjective_functiondomega = np.linalg.norm(dchi2Bdomega - alpha*dcoil_plasma_distdomega,2)
+      if (objective_function_option == 3):
+         dobjective_functiondomega = np.linalg.norm(dchi2Bdomega - alpha*dcoil_plasma_distdomega - beta*coil_volume**(-2.0/3.0)*dvolume_coildomega,2)
       dobjective_functiondomegas.append(dobjective_functiondomega)
       current_density_target = readVariable("current_density_target","float",currFileName,required=True)
       current_density_targets.append(current_density_target)
@@ -74,6 +78,8 @@ def plotObjectiveFunction(inputFilename):
       objective_funcitons = chi2_Bs - alpha*coil_volumes**(1.0/3.0)
   if (objective_function_option == 2):
       objective_functions = chi2_Bs - alpha*coil_plasma_dists
+  if (objective_function_option == 3):
+      objective_functions = chi2_Bs - alpha*oil_plasma_dists - beta*coil_volumes**(1.0/3.0)
 
   eval_min = evals[np.argmin(objective_functions)]
   print "Minimum attained at eval : " + str(eval_min)
