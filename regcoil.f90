@@ -2,7 +2,7 @@
 
 program regcoil
 
-  use global_variables, only: totalTime, outputFilename, general_option
+  use global_variables, only: total_time, outputFilename, general_option
   use init_plasma_mod
 
   implicit none
@@ -40,11 +40,11 @@ program regcoil
   end select
 
   call system_clock(toc)
-  totalTime = real(toc-tic)/countrate
+  total_time = real(toc-tic)/countrate
 
   call write_output()
  
-  print *,"REGCOIL complete. Total time=",totalTime,"sec."
+  print *,"REGCOIL complete. Total time=",total_time,"sec."
   print *,"You can run regcoilPlot ",trim(outputFilename)," to plot results."
 
 end program regcoil
