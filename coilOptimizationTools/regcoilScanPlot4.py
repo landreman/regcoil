@@ -213,8 +213,8 @@ def regcoilScanPlot4(inputFilename):
               finitediffdplotVariabledscanVariable[i] = (plotVariables[i+1]-plotVariables[i-1])/(scanVariables[i+1]-scanVariables[i-1])
 
         plt.figure(facecolor='white')
-        plt.plot(scanVariables, finitediffdplotVariabledscanVariable,linestyle='none',marker='o',label='Finite differencing')
-        plt.plot(scanVariables, dplotVariabledscanVariable,linestyle='none',marker='o',label='regcoil_sensitivity')
+        plt.plot(scanVariables, finitediffdplotVariabledscanVariable,'-.r',label='Finite differencing')
+        plt.plot(scanVariables, dplotVariabledscanVariable,'-.b',label='Gradient Computation')
         plt.xlabel(scanVariableName)
         plt.legend()
         plt.ylabel('d' + plotVariableName + 'd' + scanVariableName)

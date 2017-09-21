@@ -29,6 +29,8 @@ def cg_scipy(regcoil_input_file):
   nmax = readVariable("nmax","int",regcoil_input_file,required=True)
   # max m in nescin file
   mmax = readVariable("mmax","int",regcoil_input_file,required=True)
+  # 0 = don't use gradient function (finite diff), 1 = use gradient
+  grad_option = readVariable("grad_option","int",regcoil_input_file,required=True)
   
   f = open(nescin_filename,'r')
   nescinObject = coilFourier(nmax,mmax,regcoil_input_file)
@@ -37,7 +39,10 @@ def cg_scipy(regcoil_input_file):
   x0 = nescinObject.omegas_sensitivity
 
   f = evaluateFunctionRegcoil
-  fprime = evaluateGradientRegcoil
+  if (grad_option == 1):
+    fprime = evaluateGradientRegcoil
+  else:
+    fprime = None
   args = (nescinObject,)
   if (method=="CG" or method=="BFGS"):
     options={'gtol':gtol,'disp':True}
