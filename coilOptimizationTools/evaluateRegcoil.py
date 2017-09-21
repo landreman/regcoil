@@ -282,7 +282,7 @@ class coilFourier:
       elif (exit_code == -2): # current density too low
         print "Current density too low."
         current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=True)
-        if (self.decreased_current_density): # previously tried decreasing target
+        if (self.decreased_target_current): # previously tried decreasing target
           self.current_factor = self.current_factor*0.5
         current_density_target_new = (1+self.current_factor)*current_density_target
         print "Trying again with current_density_target = " + str(current_density_target_new)
@@ -293,7 +293,7 @@ class coilFourier:
         print "Current density too high."
         current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=True)
         # Target has been bracketed. Decrease interval.
-        if (self.increased_current_density):
+        if (self.increased_target_current):
           self.current_factor = self.current_factor*0.5
         current_density_target_new = (1-self.current_factor)*current_density_target
         print "Trying again with current_density_target = " + str(current_density_target_new)
