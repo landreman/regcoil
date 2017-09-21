@@ -15,7 +15,7 @@ def plotObjectiveFunction(inputFilename):
   
   alpha = readVariable("alpha","float",inputFilename,required=True)
   objective_function_option = readVariable("objective_function_option","int",inputFilename,required=True)
-  if (objective_funciton_option > 2):
+  if (objective_function_option > 2):
     beta = readVariable("beta","float",inputFilename,required=True)
 
   directories = filter(os.path.isdir, os.listdir("."))
@@ -75,12 +75,11 @@ def plotObjectiveFunction(inputFilename):
   if (objective_function_option == 0):
       objective_functions = chi2_Bs - alpha*coil_volumes
   if (objective_function_option == 1):
-      objective_funcitons = chi2_Bs - alpha*coil_volumes**(1.0/3.0)
+      objective_functions = chi2_Bs - alpha*coil_volumes**(1.0/3.0)
   if (objective_function_option == 2):
       objective_functions = chi2_Bs - alpha*coil_plasma_dists
   if (objective_function_option == 3):
       objective_functions = chi2_Bs - alpha*oil_plasma_dists - beta*coil_volumes**(1.0/3.0)
-
   eval_min = evals[np.argmin(objective_functions)]
   print "Minimum attained at eval : " + str(eval_min)
 

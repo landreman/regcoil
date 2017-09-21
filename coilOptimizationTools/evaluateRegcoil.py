@@ -20,6 +20,7 @@ class coilFourier:
     objective_function_option = readVariable("objective_function_option","int",regcoil_input_file,required=True)
     if (objective_function_option > 2):
       beta = readVariable("beta","float",regcoil_input_file,required=True)
+      self.beta = beta
     # Check parameters
     if (geometry_option_plasma != 3):
       print "Error! This script is only compatible with geometry_option_plasma=3 at the moment."
@@ -158,7 +159,7 @@ class coilFourier:
       self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*self.dcoil_plasma_distdomega)
     elif(self.objective_function_option==3):
       self.set_objective_function(self.chi2B - self.alpha*self.coil_plasma_dist - self.beta*self.coil_volume**(1.0/3.0))
-      self.set_objective_function(self.dchi2Bdomega - self.alpha*self.dcoil_plasma_distdomega - self.beta*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega)
+      self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*self.dcoil_plasma_distdomega - self.beta*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega)
     else:
       print "Incorrect choice of objective_function_option!"
       sys.exit(0)
