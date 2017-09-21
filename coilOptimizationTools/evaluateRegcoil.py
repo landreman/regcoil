@@ -22,8 +22,8 @@ class coilFourier:
       beta = readVariable("beta","float",regcoil_input_file,required=True)
       self.beta = beta
     # Check parameters
-    if (geometry_option_plasma != 3):
-      print "Error! This script is only compatible with geometry_option_plasma=3 at the moment."
+    if (geometry_option_plasma < 2 or geometry_option_plasma > 4):
+      print "Error! This script is only compatible with geometry_option_plasma=(3,4,5) at the moment."
       sys.exit(0)
     if (geometry_option_coil != 3):
       print "Error! This script is only compatible with geometry_option_coil=3 at the moment."
@@ -60,6 +60,9 @@ class coilFourier:
     self.dcoil_volumedomega = 0
     self.dcoil_plasma_distdomega = 0
     self.coil_plasma_dist = 0
+    self.increased_target_current = False
+    self.decreased_target_current = False
+    self.current_factor = 0.1
     # Initialize m = 0 modes
     imode = 0
     for ni in range(0,nmax+1):
@@ -144,7 +147,6 @@ class coilFourier:
     file.close()
   
   def evaluateObjectiveFunction(self):
-    # Linear in coil_volume
     print "chi2B: " + str(self.chi2B)
     print "coil_volume: " + str(self.coil_volume)
     print "coil_plasma_dist: " + str(self.coil_plasma_dist)
@@ -256,6 +258,9 @@ class coilFourier:
       os.chdir('..')
       self.increment_feval()
       self.evaluated = True
+      self.increased_target_current = False
+      self.decreased_target_current = False
+      self.current_factor = 0.1
 
     else:
       print "Error! Job did not complete."
@@ -277,32 +282,23 @@ class coilFourier:
       elif (exit_code == -2): # current density too low
         print "Current density too low."
         current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=True)
-        current_density_target_new = 1.1*current_density_target
+        if (self.decreased_current_density): # previously tried decreasing target
+          self.current_factor = self.current_factor*0.5
+        current_density_target_new = (1+self.current_factor)*current_density_target
         print "Trying again with current_density_target = " + str(current_density_target_new)
         os.chdir('..')
-#        with open(regcoil_input_file, 'r') as f:
-#          inputFile = f.readlines()
-#          f = open(regcoil_input_file,"w")
-#          for line in inputFile:
-#            if namelistLineContains(line,"current_density_target"):
-#              line = 'current_density_target = '+str(current_density_target_new)+'\n'
-#            f.write(line)
-#          f.close()
+        self.increased_target_current = True
         self.evaluateRegcoil(omegas_sensitivity_new,current_density_target_new)
       elif (exit_code == -3): # current density too high
         print "Current density too high."
         current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=True)
-        current_density_target_new = 0.9*current_density_target
+        # Target has been bracketed. Decrease interval.
+        if (self.increased_current_density):
+          self.current_factor = self.current_factor*0.5
+        current_density_target_new = (1-self.current_factor)*current_density_target
         print "Trying again with current_density_target = " + str(current_density_target_new)
         os.chdir('..')
-#        with open(regcoil_input_file, 'r') as f:
-#          inputFile = f.readlines()
-#          f = open(regcoil_input_file,"w")
-#          for line in inputFile:
-#            if namelistLineContains(line,"current_density_target"):
-#              line = 'current_density_target = '+str(current_density_target_new)+'\n'
-#            f.write(line)
-#          f.close()
+        self.decreased_target_current = True
         self.evaluateRegcoil(omegas_sensitivity_new,current_density_target_new)
       else:
         sys.exit(0)
