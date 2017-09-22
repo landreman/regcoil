@@ -282,9 +282,11 @@ class coilFourier:
       elif (exit_code == -2): # current density too low
         print "Current density too low."
         current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=True)
+        # Decrease factor of increase/decrease
         if (self.decreased_target_current): # previously tried decreasing target
           self.current_factor = self.current_factor*0.5
-        current_density_target_new = (1+self.current_factor)*current_density_target
+          print "current_factor is now: " + str(self.current_factor)
+        current_density_target_new = (1.0+self.current_factor)*current_density_target
         print "Trying again with current_density_target = " + str(current_density_target_new)
         os.chdir('..')
         self.increased_target_current = True
@@ -295,7 +297,8 @@ class coilFourier:
         # Target has been bracketed. Decrease interval.
         if (self.increased_target_current):
           self.current_factor = self.current_factor*0.5
-        current_density_target_new = (1-self.current_factor)*current_density_target
+          print "current_factor is now: " + str(self.current_factor)
+        current_density_target_new = (1.0-self.current_factor)*current_density_target
         print "Trying again with current_density_target = " + str(current_density_target_new)
         os.chdir('..')
         self.decreased_target_current = True
@@ -337,7 +340,6 @@ class coilFourier:
         + "\t" + str(self.zmnss[currentMode]) + "\t" + str(self.rmnss[currentMode]) \
         + "\t" + str(self.zmncs[currentMode]) + "\n"
       newFile.write(lineToWrite)
-#print "wrote n = " + str(self.xn[currentMode]) + ", m = " + str(self.xm[currentMode]) + ", rmnc = " + str(self.rmncs[currentMode])
       if (currentMode < self.nmodes-1):
         currentMode = currentMode + 1
       else:
@@ -358,7 +360,6 @@ def evaluateGradientRegcoil(omegas_sensitivity_new, nescinObject):
   # Check if function has already been evaluated
   if (nescinObject.evaluated == False or not np.array_equal(omegas_sensitivity_new,nescinObject.omegas_sensitivity)):
     nescinObject.evaluateRegcoil(omegas_sensitivity_new,nescinObject.current_density_target)
-  #print(nescinObject.dobjective_functiondomegas_sensitivity)
   return np.array(nescinObject.dobjective_functiondomegas_sensitivity)
 
 ## Testing ##
