@@ -19,18 +19,30 @@ def cg_scipy(regcoil_input_file):
   # The following methods use gradient information: CG, BFGS, Newton-CG, L-BFGS-B, TNC
   # SLSQP, dogleg, trust-ncg
   method = readVariable("scipy_optimize_method","string",regcoil_input_file,required=True)
+  if (method is None):
+    method = 'CG'
   # Order to use for norm of the gradient
   norm = readVariable("norm","int",regcoil_input_file,required=True)
+  if (norm is None):
+    norm = 2
   # Tolerance for norm of the gradient
   gtol = readVariable("gtol","float",regcoil_input_file,required=True)
+  if (gtol is None):
+    gtol = 1e-5
   # Number of iterations
   maxiter = readVariable("maxiter","int",regcoil_input_file,required=True)
+  if (maxiter is None):
+    maxiter = 1000
+  # 0 = don't use gradient function (finite diff), 1 = use gradient
+  grad_option = readVariable("grad_option","int",regcoil_input_file,required=False)
+  if (grad_option is None):
+    grad_option = 1
+
+  # nmax and mmax are required!
   # Max n in nescin file
   nmax = readVariable("nmax","int",regcoil_input_file,required=True)
   # max m in nescin file
   mmax = readVariable("mmax","int",regcoil_input_file,required=True)
-  # 0 = don't use gradient function (finite diff), 1 = use gradient
-  grad_option = readVariable("grad_option","int",regcoil_input_file,required=True)
   
   f = open(nescin_filename,'r')
   nescinObject = coilFourier(nmax,mmax,regcoil_input_file)
@@ -55,8 +67,8 @@ def cg_scipy(regcoil_input_file):
   OptimizeResult = scipy.optimize.minimize(fun=f,x0=x0,args=args,method=method,jac=fprime,hess=None,hessp=None,bounds=None,options=options)
   sol = OptimizeResult.x
   func = evaluateFunctionRegcoil(sol,nescinObject)
-  grad = evaluateGradientRegclil(sol,nescinObject)
-  print "funcion value: " + str(func)
+  grad = evaluateGradientRegcoil(sol,nescinObject)
+  print "function value: " + str(func)
   print "norm of grad: " + np.linalg.norm(grad,2)
   print OptimizeResult.message
 

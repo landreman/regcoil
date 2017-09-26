@@ -29,6 +29,7 @@ class coilFourier:
       print "Error! This script is only compatible with geometry_option_coil=3 at the moment."
       sys.exit(0)
     self.current_density_target = current_density_target
+    self.current_density_target_init = current_density_target
     self.alpha = alpha
     self.objective_function_option = objective_function_option
     self.nmax_sensitivity = nmax_sensitivity
@@ -150,6 +151,9 @@ class coilFourier:
     print "chi2B: " + str(self.chi2B)
     print "coil_volume: " + str(self.coil_volume)
     print "coil_plasma_dist: " + str(self.coil_plasma_dist)
+    print "norm(dchi2Bdomega): " + str(np.linalg.norm(self.dchi2Bdomega,2))
+    print "norm(dcoil_volumedomega): " + str(np.linalg.norm(self.dcoil_volumedomega,2))
+    print "norm(dcoil_plasma_distdomega): " + str(np.linalg.norm(self.dcoil_plasma_distdomega,2))
     if(self.objective_function_option==0):
       self.set_objective_function(self.chi2B - self.alpha*self.coil_volume)
       self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*self.dcoil_volumedomega)
@@ -261,6 +265,7 @@ class coilFourier:
       self.increased_target_current = False
       self.decreased_target_current = False
       self.current_factor = 0.1
+      self.current_density_target = self.current_density_target_init
 
     else:
       print "Error! Job did not complete."
@@ -281,25 +286,26 @@ class coilFourier:
         self.evaluateRegcoil(omegas_sensitivity_new,self.current_density_target)
       elif (exit_code == -2): # current density too low
         print "Current density too low."
-        current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=True)
+        # Decrease factor of increase/decrease
         if (self.decreased_target_current): # previously tried decreasing target
           self.current_factor = self.current_factor*0.5
-        current_density_target_new = (1+self.current_factor)*current_density_target
-        print "Trying again with current_density_target = " + str(current_density_target_new)
+          print "current_factor is now: " + str(self.current_factor)
+        self.current_density_target = (1.0+self.current_factor)*self.current_density_target
+        print "Trying again with current_density_target = " + str(self.current_density_target)
         os.chdir('..')
         self.increased_target_current = True
-        self.evaluateRegcoil(omegas_sensitivity_new,current_density_target_new)
+        self.evaluateRegcoil(omegas_sensitivity_new,self.current_density_target)
       elif (exit_code == -3): # current density too high
         print "Current density too high."
-        current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=True)
         # Target has been bracketed. Decrease interval.
         if (self.increased_target_current):
           self.current_factor = self.current_factor*0.5
-        current_density_target_new = (1-self.current_factor)*current_density_target
-        print "Trying again with current_density_target = " + str(current_density_target_new)
+          print "current_factor is now: " + str(self.current_factor)
+        self.current_density_target = (1.0-self.current_factor)*self.current_density_target
+        print "Trying again with current_density_target = " + str(self.current_density_target)
         os.chdir('..')
         self.decreased_target_current = True
-        self.evaluateRegcoil(omegas_sensitivity_new,current_density_target_new)
+        self.evaluateRegcoil(omegas_sensitivity_new,self.current_density_target)
       else:
         sys.exit(0)
 
@@ -337,7 +343,6 @@ class coilFourier:
         + "\t" + str(self.zmnss[currentMode]) + "\t" + str(self.rmnss[currentMode]) \
         + "\t" + str(self.zmncs[currentMode]) + "\n"
       newFile.write(lineToWrite)
-#print "wrote n = " + str(self.xn[currentMode]) + ", m = " + str(self.xm[currentMode]) + ", rmnc = " + str(self.rmncs[currentMode])
       if (currentMode < self.nmodes-1):
         currentMode = currentMode + 1
       else:
@@ -358,7 +363,6 @@ def evaluateGradientRegcoil(omegas_sensitivity_new, nescinObject):
   # Check if function has already been evaluated
   if (nescinObject.evaluated == False or not np.array_equal(omegas_sensitivity_new,nescinObject.omegas_sensitivity)):
     nescinObject.evaluateRegcoil(omegas_sensitivity_new,nescinObject.current_density_target)
-  #print(nescinObject.dobjective_functiondomegas_sensitivity)
   return np.array(nescinObject.dobjective_functiondomegas_sensitivity)
 
 ## Testing ##
