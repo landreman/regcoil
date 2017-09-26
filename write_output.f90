@@ -133,7 +133,9 @@ subroutine write_output
      vn_q_tilde = "q_tilde", &
      vn_dlambdadomega = "dlambdadomega", &
      vn_principle_curvature_1 = "principle_curvature_1", &
-     vn_principle_curvature_2 = "principle_curvature_2"
+     vn_principle_curvature_2 = "principle_curvature_2", &
+     vn_mean_curvature = "mean_curvature", &
+     vn_gaussian_curvature = "gaussian_curvature"
 
   ! Arrays with dimension 3
   character(len=*), parameter :: &
@@ -409,8 +411,10 @@ subroutine write_output
     call cdf_define(ncid, vn_dlambdadomega, dlambdadomega(:,1:Nlambda),dimname=nomega_nlambda_dim)
   end if
   if (compute_curvature==1) then
-    call cdf_define(ncid, vn_principle_curvature_1, principle_curvature_1, dimname=ntheta_nzetal_coil_dim)
-    call cdf_define(ncid, vn_principle_curvature_1, principle_curvature_1, dimname=ntheta_nzetal_coil_dim)
+    call cdf_define(ncid, vn_principle_curvature_1, principle_curvature_1, dimname=ntheta_nzeta_coil_dim)
+    call cdf_define(ncid, vn_principle_curvature_2, principle_curvature_2, dimname=ntheta_nzeta_coil_dim)
+    call cdf_define(ncid, vn_mean_curvature, mean_curvature, dimname=ntheta_nzeta_coil_dim)
+    call cdf_define(ncid, vn_gaussian_curvature, gaussian_curvature, dimname=ntheta_nzeta_coil_dim)
   end if
 
   ! Arrays with dimension 3
@@ -631,6 +635,8 @@ subroutine write_output
   if (compute_curvature==1) then
     call cdf_write(ncid, vn_principle_curvature_1, principle_curvature_1)
     call cdf_write(ncid, vn_principle_curvature_2, principle_curvature_2)
+    call cdf_write(ncid, vn_mean_curvature, mean_curvature)
+    call cdf_write(ncid, vn_gaussian_curvature, gaussian_curvature)
   end if
 
   ! Arrays with dimension 3

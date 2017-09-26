@@ -13,7 +13,7 @@ module init_surface_mod
          geometry_option, R_specified, a, separation, dtheta, dzeta, nescin_filename, which_surface)
 
       use compute_offset_surface_mod
-      use global_variables, only: R0_plasma, nfp, volume_coil, save_nescin_option, compute_curvature, principle_curvature_1, principle_curvature_2
+      use global_variables, only: R0_plasma, nfp, volume_coil, save_nescin_option, compute_curvature, principle_curvature_1, principle_curvature_2, max_curvature_1, max_curvature_2, mean_curvature, gaussian_curvature
       use stel_kinds
       use stel_constants
       use omp_lib
@@ -34,7 +34,9 @@ module init_surface_mod
       real(dp) :: d2sinangledtheta2, d2cosangledtheta2, d2sinangle2dzeta2, d2cosangle2dzeta2
       integer :: i, itheta, izeta
       real(dp) :: x_new, y_new, z_new, x_old, y_old, z_old, delta_theta, delta_zeta, temp
-      real(dp) :: curvature_l, curvature_m, curvature_n, max_curvature_1, max_curvature_2
+      ! Curvature things
+      real(dp), dimension(:,:), allocatable :: curvature_l, curvature_m, curvature_n
+      real(dp), dimension(:,:), allocatable :: curvature_e, curvature_f, curvature_g
 
       allocate(theta(ntheta),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error! init_surface_mod 1'
@@ -73,6 +75,22 @@ module init_surface_mod
         allocate(principle_curvature_1(ntheta,nzeta),stat=iflag)
         if (iflag .ne. 0) stop 'Allocation error!'
         allocate(principle_curvature_2(ntheta,nzeta),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(curvature_l(ntheta,nzeta),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(curvature_m(ntheta,nzeta),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(curvature_n(ntheta,nzeta),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(curvature_e(ntheta,nzeta),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(curvature_f(ntheta,nzeta),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(curvature_g(ntheta,nzeta),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(mean_curvature(ntheta,nzeta),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(gaussian_curvature(ntheta,nzeta),stat=iflag)
         if (iflag .ne. 0) stop 'Allocation error!'
       end if
 
@@ -272,24 +290,50 @@ module init_surface_mod
       print "(a,es10.3,a,es10.3,a)"," Coil surface area:",area," m^2. Volume:",volume_coil," m^3."
 
       if (compute_curvature==1) then
-        curvature_L = (normal(1,itheta,izeta)*d2rdtheta2(1,itheta,izeta) &
-          + normal(2,itheta,izeta)*d2rdtheta2(3,itheta,izeta) &
-          + normal(3,itheta,izeta)*d2rdtheta2(3,itheta,izeta))/norm_normal(itheta,izeta)
-        curvature_N = (normal(1,itheta,izeta)*d2rdzeta2(1,itheta,izeta) &
-          + normal(2,itheta,izeta)*d2rdzeta2(2,itheta,izeta) &
-          + normal(3,itheta,izeta)*d2rdzeta2(3,itheta,izeta))/norm_normal(itheta,izeta)
-        curvature_M = (normal(1,itheta,izeta)*d2rdthetadzeta(1,itheta,izeta) &
-          + normal(2,itheta,izeta)*d2rdthetadzeta(2,itheta,izeta) &
-          + normal(3,itheta,izeta)*d2rdthetadzeta(3,itheta,izeta))/norm_normal(itheta,izeta)
+        curvature_L = (normal(1,:,:)*d2rdtheta2(1,:,:) &
+          + normal(2,:,:)*d2rdtheta2(3,:,:) &
+          + normal(3,:,:)*d2rdtheta2(3,:,:))/norm_normal
+        curvature_N = (normal(1,:,:)*d2rdzeta2(1,:,:) &
+          + normal(2,:,:)*d2rdzeta2(2,:,:) &
+          + normal(3,:,:)*d2rdzeta2(3,:,:))/norm_normal
+        curvature_M = (normal(1,:,:)*d2rdthetadzeta(1,:,:) &
+          + normal(2,:,:)*d2rdthetadzeta(2,:,:) &
+          + normal(3,:,:)*d2rdthetadzeta(3,:,:))/norm_normal
 
-        principle_curvature_1(itheta,izeta) = (curvature_L + curvature_N &
-          + sqrt(curvature_L**2 + 4*curvature_M**2 - 2*curvature_L*curvature_N + curvature_N**2))/2
+        curvature_E = drdtheta(1,:,:)*drdtheta(1,:,:) &
+          + drdtheta(2,:,:)*drdtheta(2,:,:) &
+          + drdtheta(3,:,:)*drdtheta(3,:,:)
 
-        principle_curvature_2(itheta,izeta) = (curvature_L + curvature_N &
-          - sqrt(curvature_L**2 + 4*curvature_M**2 - 2*curvature_L*curvature_N + curvature_N**2))/2
+        curvature_F = drdzeta(1,:,:)*drdtheta(1,:,:) &
+          + drdzeta(2,:,:)*drdtheta(2,:,:) &
+          + drdzeta(3,:,:)*drdtheta(3,:,:)
+
+        curvature_G = drdzeta(1,:,:)*drdzeta(1,:,:) &
+          + drdzeta(2,:,:)*drdzeta(2,:,:) &
+          + drdzeta(3,:,:)*drdzeta(3,:,:)
+
+        mean_curvature = (curvature_E*curvature_N + curvature_G*curvature_L &
+          -2*curvature_F*curvature_M) &
+          /(2*(curvature_E*curvature_G -curvature_F*curvature_F))
+
+        gaussian_curvature = (curvature_L*curvature_N-curvature_M*curvature_M) &
+          /(curvature_E*curvature_G - curvature_F*curvature_F)
+
+        principle_curvature_1 = mean_curvature + sqrt(mean_curvature*mean_curvature &
+          - gaussian_curvature)
+        principle_curvature_2 = mean_curvature - sqrt(mean_curvature*mean_curvature &
+          - gaussian_curvature)
+
+!        principle_curvature_1 = (curvature_L + curvature_N &
+!          + sqrt(curvature_L**2 + 4*curvature_M**2 - 2*curvature_L*curvature_N + curvature_N**2))/2
+!
+!        principle_curvature_2 = (curvature_L + curvature_N &
+!          - sqrt(curvature_L**2 + 4*curvature_M**2 - 2*curvature_L*curvature_N + curvature_N**2))/2
 
         max_curvature_1 = maxval(abs(principle_curvature_1))
         max_curvature_2 = maxval(abs(principle_curvature_2))
+        print *,"max_curvature_1: ", max_curvature_1
+        print *,"max_curvature_2: ", max_curvature_2
       end if
 
     end subroutine init_surface

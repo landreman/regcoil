@@ -142,6 +142,7 @@ module global_variables
   real(dp), dimension(:,:,:), allocatable :: d2r_coildtheta2, d2r_coildthetadzeta, d2r_coildzeta2
   real(dp), dimension(:,:), allocatable :: principle_curvature_1, principle_curvature_2
   real(dp) :: max_curvature_1, max_curvature_2
+  real(dp), dimension(:,:), allocatable :: mean_curvature, gaussian_curvature
 
 end module global_variables
 

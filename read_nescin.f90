@@ -1,6 +1,6 @@
 subroutine read_nescin(nescin_filename, r, drdtheta, drdzeta, d2rdtheta2, d2rdthetadzeta, d2rdzeta2, ntheta, nzetal, theta, zetal, compute_2nd_derivs)
 
-  use global_variables, only: nfp, xm, xn, mnmax, rmnc_global => rmnc, zmns_global => zmns, rmns_global => rmns, zmnc_global => zmnc, principle_curvature_1, principle_curvature_2, compute_curvature, normal_coil, nzetal_coil, ntheta_coil, norm_normal_coil, max_curvature_1, max_curvature_2
+  use global_variables, only: nfp, xm, xn, mnmax, rmnc_global => rmnc, zmns_global => zmns, rmns_global => rmns, zmnc_global => zmnc, compute_curvature
   use safe_open_mod
   use stel_constants
   use stel_kinds
@@ -23,7 +23,6 @@ subroutine read_nescin(nescin_filename, r, drdtheta, drdzeta, d2rdtheta2, d2rdth
   real(dp) :: d2sinangle2dzeta2, d2cosangle2dzeta2
   real(dp) :: d2sinangledtheta2, d2sinangledthetadzeta, d2sinangledzeta2
   real(dp) :: d2cosangledtheta2, d2cosangledthetadzeta, d2cosangledzeta2
-  real(dp) :: curvature_L, curvature_M, curvature_N
 
   character(300) :: myline
   character(*), parameter :: matchString = "------ Current Surface"
@@ -55,14 +54,6 @@ subroutine read_nescin(nescin_filename, r, drdtheta, drdzeta, d2rdtheta2, d2rdth
 
   read (iunit, *) ntotal
   print *,"  Reading",ntotal,"Fourier modes from nescin"
-
-  if (compute_curvature==1) then
-    allocate(principle_curvature_1(ntheta_coil,nzetal_coil), stat=iflag)
-    if (iflag .ne. 0) stop 'Allocation error!'
-    allocate(principle_curvature_2(ntheta_coil,nzetal_coil), stat=iflag)
-    if (iflag .ne. 0) stop 'Allocation error!'
-  end if
-
 
 !!$  if (geometry_option_outer==4) then
 !!$     ! Clear arrays associated with the plasma surface for offsetting,
