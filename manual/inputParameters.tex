@@ -634,7 +634,6 @@ but it is available for completeness.\\
 
 \param{coil\_plasma\_dist\_lse\_p}
 {real}
-{1}
 {1e4}
 {When \parlink{sensitivity\_option} $> 1$.}
 {If \parlink{sensitivity\_option} $>1$, the sensitivity of the log-sum-exponent approximation to the coil-plasma distance will be computed. The value of \parlink{coil\_plasma\_dist\_lse\_p} determines the scaling, $p$, in the exponent for this form of the distance.
@@ -642,3 +641,72 @@ but it is available for completeness.\\
 \min d = - \frac{1}{p} \log \left( \sum_{i_{\theta'}} \sum_{i_{\zeta'}} \sum_{i_{\theta}} \sum_{i_{\zeta}} \exp \left( - p \sqrt{ \bm{r}' - \bm{r})^2} \right) \right)
 \end{gather}
 }
+
+\myhrule
+
+\section{Coil-winding Surface Optimization Parameters}
+
+\myhrule
+
+\param{scipy\_optimize\_method}
+{string}
+{CG}
+{When \texttt{scipy\_optimize} is being called.}
+{The method used by \texttt{scipy\_optimize}. The following gradient-based methods are available: CG, BFGS, Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, and trust-ncp. See the \\
+\href{https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html}{scipy.optimize.minimize} documentation for more information.}
+
+\myhrule
+
+\param{grad\_option}
+{integer}
+{1}
+{When \texttt{scipy\_optimize} is being called.}
+{When \parlink{grad\_option} $ == 1$, the gradients computed by REGCOIL are used by \texttt{scipy.optimize.minimize}. If \parlink{grad\_option} $ == 0$, a gradient function handle is not passed to \texttt{scipy.optimize}, and finite differencing is used.}
+
+\myhrule
+
+\param {maxiter}
+{integer}
+{1000}
+{When \texttt{scipy\_optimize} is being called.}
+{Maximum number of iteration to be taken by \texttt{scipy.optimize.minimize}.}
+
+\myhrule
+
+\param{norm}
+{integer}
+{2}
+{When \texttt{scipy\_optimize} is being called.}
+{Order of norm of the gradient used by \texttt{scipy.optimize.minimize} to determine successful termination.}
+
+\myhrule
+
+\param{gtol}
+{float}
+{$10^{-5}$}
+{When \texttt{scipy\_optimize} is being called.}
+{Tolerance for gradient norm required for termination.}
+
+\myhrule
+
+\param{nmax}
+{integer}
+{none}
+{When \texttt{scipy\_optimize} is being called.}
+{Maximum $n$ for Fourier modes of coil winding surface parameterization in \parlink{nescin\_filename}.}
+
+\myhrule
+
+\param{mmax}
+{integer}
+{none}
+{When \texttt{scipy\_optimize} is being called.}
+{Maximum $m$ for Fourier modes of coil winding surface parameterization in \parlink{nescin\_filename}.}
+
+
+
+
+
+
+
+
