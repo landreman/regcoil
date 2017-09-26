@@ -17,9 +17,13 @@ class coilFourier:
     geometry_option_plasma = readVariable("geometry_option_plasma","int",regcoil_input_file,required=True)
     current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=True)
     alpha = readVariable("alpha","float",regcoil_input_file,required=True)
+    spectral_norm_p = readVariable("spectral_norm_p","float",regcoil_input_file,required=False)
+    spectral_norm_q = readVariable("spectral_norm_q","float",regcoil_input_file,required=False)
     objective_function_option = readVariable("objective_function_option","int",regcoil_input_file,required=True)
     if (objective_function_option > 2):
       beta = readVariable("beta","float",regcoil_input_file,required=True)
+      gamma = readVariable("gamma","float",regcoil_input_file,required=True)
+      self.gamma = gamma
       self.beta = beta
     # Check parameters
     if (geometry_option_plasma < 2 or geometry_option_plasma > 4):
@@ -38,6 +42,8 @@ class coilFourier:
     self.mmax = mmax
     # Number of modes - does not include factor of 2 from (rmnc,zmns) - not # of Fourier coefficients
     nmodes_sensitivity = (nmax_sensitivity+1) + (2*nmax_sensitivity+1)*mmax_sensitivity
+    self.dspectral_normdomegas = np.zeros(nmodes_sensitivity)
+    self.spectral_norm = 0
     nmodes = (nmax+1) + (2*nmax+1)*mmax
     self.nmodes = nmodes
     self.nmodes_sensitivity = nmodes_sensitivity
@@ -118,6 +124,12 @@ class coilFourier:
   def increment_feval(self):
     self.feval = self.feval + 1
   
+  def compute_spectral_norm(self):
+    self.spectral_norm = 0
+    for iomega in range(0,self.nmodes_sensitivity):
+      self.spectral_norm = self.spectral_norm + self.xm_sensitivity(iomega)**(self.spectral_norm_p)*(self.omegas_sensitivity(iomega)**2)
+      self.dspectral_normdomegas[iomega] = self.xm_sensitivity(iomega)**(self.spectral_norm_p)*2*self.omegas_sensitivity(iomega)
+  
   def set_Fourier_from_nescin(self,nescin_file):
     file = open(nescin_file, "r")
     imode = 0
@@ -164,8 +176,9 @@ class coilFourier:
       self.set_objective_function(self.chi2B - self.alpha*self.coil_plasma_dist)
       self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*self.dcoil_plasma_distdomega)
     elif(self.objective_function_option==3):
-      self.set_objective_function(self.chi2B - self.alpha*self.coil_plasma_dist - self.beta*self.coil_volume**(1.0/3.0))
-      self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*self.dcoil_plasma_distdomega - self.beta*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega)
+      self.compute_spectral_norm()
+      self.set_objective_function(self.chi2B - self.alpha*self.coil_plasma_dist - self.beta*self.coil_volume**(1.0/3.0) + self.gamma*self.spectral_norm)
+      self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*self.dcoil_plasma_distdomega - self.beta*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega + self.gamma*self.dspectral_normdomegas)
     else:
       print "Incorrect choice of objective_function_option!"
       sys.exit(0)
