@@ -1,0 +1,112 @@
+#!/usr/bin/env python
+
+# Fletcher-Reeves Conjugate Gradient Method
+# See Nocedal & Wright p. 121
+# Adapted from FRCG.m (AMSC 660)
+
+from numpy import linalg
+import numpy as np
+from evaluateRegcoil import coilFourier, evaluateFunctionRegcoil, evaluateGradientRegcoil
+import sys
+from regcoilScan import readVariable, namelistLineContains
+import os
+from scipy import optimize
+import scipy
+
+def conjugateGradientFR(regcoil_input_file):
+
+  # Create coilFourier object
+  nmax_sensitivity = readVariable("nmax_sensitivity","int",regcoil_input_file,required=True)
+  mmax_sensitivity = readVariable("mmax_sensitivity","int",regcoil_input_file,required=True)
+  nescin_filename = readVariable("nescin_filename","string",regcoil_input_file,required=True)
+  
+  # nmax and mmax are required!
+  # Max n in nescin file
+  nmax = readVariable("nmax","int",regcoil_input_file,required=True)
+  # max m in nescin file
+  mmax = readVariable("mmax","int",regcoil_input_file,required=True)
+
+  # Number of iterations
+  maxiter = readVariable("maxiter","int",regcoil_input_file,required=False)
+  if (maxiter is None):
+    maxiter = 10000
+  # Tolerance for norm of the gradient
+  gtol = readVariable("gtol","float",regcoil_input_file,required=False)
+  if (gtol is None):
+    gtol = 1e-5
+  pmax = readVariable("pmax","float",regcoil_input_file,required=False)
+  if (pmax is None):
+    pmax = 1
+  c1 = readVariable("c1","float",regcoil_input_file,required=False)
+  if (c1 is None):
+    c1 = 0.1
+  fac = readVariable("fac","float",regcoil_input_file,required=False)
+  if (fac is None):
+    fac = 0.9
+
+  # Evaluate function and gradient at point
+  nescinObject = coilFourier(nmax,mmax,regcoil_input_file)
+  nescinObject.set_Fourier_from_nescin(nescin_filename)
+  
+  x0 = nescinObject.omegas_sensitivity
+  
+  f = evaluateFunctionRegcoil(x0, nescinObject)
+  g = evaluateGradientRegcoil(x0, nescinObject)
+  nor = linalg.norm(g)
+
+  print("Initiallly, f = %5d\t, |grad f| = %5d\n" % (f,nor))
+
+  iter = 0
+  flag = 1
+  I = np.ones(len(x))
+  B = I
+  feval = 1
+  p = -g
+  x = x0
+  while (nor > gtol and iter < maxiter):
+    nor = linalg.norm(p)
+    if (nor > pmax):
+      p = pmax*p/nor
+    # Line Search
+    alp = 1
+    xnew = x + alp*p
+    fnew = evaluateFunctionRegcoil(xnew,nescinObject)
+    gnew = evaluateGradientRegcoil(xnew,nescinObject)
+    feval = feval + 1
+    # Backtracking
+    while (fnew > f + c1*alp*np.dot(g,p)):
+      alp = alp*fac
+      xnew = x + alp*p
+      fnew = evaluateFunctionRegcoil(xnew,nescinObject)
+      gnew = evaluateGradientRegcoil(xnew,nescinObject)
+      feval = feval + 1
+      if (alp < 1e-14):
+        flag = 0
+        break
+
+    if (flag == 0):
+      print(" \n Line search failed \n")
+      break
+    else:
+      beta = np.dot(gnew,gnew)/np.dot(g,g)
+      p = -gnew + beta*p
+
+      g = gnew
+      nor = linalg.norm(g)
+      x = xnew
+      f = fnew
+      iter = iter + 1
+
+      print('iter = %d; f = %.14f; |df| = %.4e; alpha = %d\n' % (iter,f,nor,alp))
+
+  if (iter == iter_max):
+    flag = 0
+    print("\n Line search failed - reached maximum iterations \n")
+  print ("Converged. Here comes xmin.")
+  print x
+
+if __name__ == "__main__":
+  conjugateGradientFR(sys.argv[1])
+
+
+

@@ -19,6 +19,12 @@ class coilFourier:
     alpha = readVariable("alpha","float",regcoil_input_file,required=True)
     spectral_norm_p = readVariable("spectral_norm_p","float",regcoil_input_file,required=False)
     spectral_norm_q = readVariable("spectral_norm_q","float",regcoil_input_file,required=False)
+    self.spectral_norm_p = spectral_norm_p
+    self.spectral_norm_q = spectral_norm_q
+    if (self.spectral_norm_p==None):
+      self.spectral_norm_p = 2
+    if (self.spectral_norm_q==None):
+      self.spectral_norm_q = 2
     objective_function_option = readVariable("objective_function_option","int",regcoil_input_file,required=True)
     if (objective_function_option > 2):
       beta = readVariable("beta","float",regcoil_input_file,required=True)
@@ -126,9 +132,11 @@ class coilFourier:
   
   def compute_spectral_norm(self):
     self.spectral_norm = 0
+    dspectral_normdomegas = np.zeros(self.nmodes_sensitivity)
     for iomega in range(0,self.nmodes_sensitivity):
-      self.spectral_norm = self.spectral_norm + self.xm_sensitivity(iomega)**(self.spectral_norm_p)*(self.omegas_sensitivity(iomega)**2)
-      self.dspectral_normdomegas[iomega] = self.xm_sensitivity(iomega)**(self.spectral_norm_p)*2*self.omegas_sensitivity(iomega)
+      self.spectral_norm = self.spectral_norm + self.xm_sensitivity[iomega]**(self.spectral_norm_p)*(self.omegas_sensitivity[iomega]**2)
+      dspectral_normdomegas[iomega] = self.xm_sensitivity[iomega]**(self.spectral_norm_p)*2*self.omegas_sensitivity[iomega]
+    self.set_dspectral_normdomegas(dspectral_normdomegas)
   
   def set_Fourier_from_nescin(self,nescin_file):
     file = open(nescin_file, "r")
@@ -158,6 +166,9 @@ class coilFourier:
         next(file)
         next(file)
     file.close()
+
+  def set_dspectral_normdomegas(self,new_dspectral_normdomegas):
+    self.dspectral_normdomegas = new_dspectral_normdomegas
   
   def evaluateObjectiveFunction(self):
     print "chi2B: " + str(self.chi2B)
@@ -386,7 +397,7 @@ if __name__ == "__main__":
 #  print nescinObject.nmax
 #  print nescinObject.mmax
 
-  file = "nescin.w7x_winding_surface_from_Drevlak"
+  file = "nescin.w7x_winding_surface_from_Drevlak_235"
   path = os.getcwd()
   filename = path + "/" + file
   nescinObject.set_Fourier_from_nescin(filename)
@@ -416,9 +427,6 @@ if __name__ == "__main__":
 
   nescinObject.set_omegas_sensitivity(new_omegas)
   print nescinObject.omegas
-#print nescinObject.omegas - omegas_old
-
-#  nescinObject.set_omegas_sensitivity(new_omegas)
-#  print nescinObject.omegas - omegas_old
-# nescinObject.set_rmnc(new_rmncs)
-#print nescinObject.rmncs
+  nescinObject.compute_spectral_norm()
+  print nescinObject.spectral_norm
+  print nescinObject.dspectral_normdomegas
