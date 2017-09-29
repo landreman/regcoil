@@ -15,7 +15,12 @@ class coilFourier:
     mmax_sensitivity = readVariable("mmax_sensitivity","int",regcoil_input_file,required=True)
     geometry_option_coil = readVariable("geometry_option_coil","int",regcoil_input_file,required=True)
     geometry_option_plasma = readVariable("geometry_option_plasma","int",regcoil_input_file,required=True)
-    current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=True)
+    general_option = readVariable("general_option","int",regcoil_input_file,required=True)
+    self.general_option = general_option
+    if (general_option > 3):
+      current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=False)
+      self.current_density_target = current_density_target
+      self.current_density_target_init = current_density_target
     alpha = readVariable("alpha","float",regcoil_input_file,required=True)
     spectral_norm_p = readVariable("spectral_norm_p","float",regcoil_input_file,required=False)
     spectral_norm_q = readVariable("spectral_norm_q","float",regcoil_input_file,required=False)
@@ -38,8 +43,7 @@ class coilFourier:
     if (geometry_option_coil != 3):
       print "Error! This script is only compatible with geometry_option_coil=3 at the moment."
       sys.exit(0)
-    self.current_density_target = current_density_target
-    self.current_density_target_init = current_density_target
+
     self.alpha = alpha
     self.objective_function_option = objective_function_option
     self.nmax_sensitivity = nmax_sensitivity
@@ -48,7 +52,7 @@ class coilFourier:
     self.mmax = mmax
     # Number of modes - does not include factor of 2 from (rmnc,zmns) - not # of Fourier coefficients
     nmodes_sensitivity = (nmax_sensitivity+1) + (2*nmax_sensitivity+1)*mmax_sensitivity
-    self.dspectral_normdomegas = np.zeros(nmodes_sensitivity)
+    self.dspectral_normdomegas = np.zeros(2*nmodes_sensitivity)
     self.spectral_norm = 0
     nmodes = (nmax+1) + (2*nmax+1)*mmax
     self.nmodes = nmodes
@@ -132,10 +136,11 @@ class coilFourier:
   
   def compute_spectral_norm(self):
     self.spectral_norm = 0
-    dspectral_normdomegas = np.zeros(self.nmodes_sensitivity)
-    for iomega in range(0,self.nmodes_sensitivity):
-      self.spectral_norm = self.spectral_norm + self.xm_sensitivity[iomega]**(self.spectral_norm_p)*(self.omegas_sensitivity[iomega]**2)
-      dspectral_normdomegas[iomega] = self.xm_sensitivity[iomega]**(self.spectral_norm_p)*2*self.omegas_sensitivity[iomega]
+    dspectral_normdomegas = np.zeros(2*self.nmodes_sensitivity)
+    for imode in range(0,self.nmodes_sensitivity):
+      self.spectral_norm = self.spectral_norm + self.xm_sensitivity[imode]**(self.spectral_norm_p)*(self.omegas_sensitivity[2*imode]**2 + self.omegas_sensitivity[2*imode+1]**2)
+      dspectral_normdomegas[2*imode] = self.xm_sensitivity[imode]**(self.spectral_norm_p)*2*self.omegas_sensitivity[2*imode]
+      dspectral_normdomegas[2*imode+1] = self.xm_sensitivity[imode]**(self.spectral_norm_p)*2*self.omegas_sensitivity[2*imode+1]
     self.set_dspectral_normdomegas(dspectral_normdomegas)
   
   def set_Fourier_from_nescin(self,nescin_file):
@@ -196,9 +201,9 @@ class coilFourier:
 
   # This is a script to be called within a nonlinear optimization routine in order to evaluate
   # chi2 and its gradient with respect to the Fourier coefficients
-  def evaluateRegcoil(self,omegas_sensitivity_new,current_density_target):
+  def evaluateRegcoil(self,omegas_sensitivity_new,current_density_target=0):
     
-    self.set_omegas_sensitivity(omegas_sensitivity_new)
+    self.set_omegas_sensitivity(omegas_sensitivity_new.copy())
     
     regcoil_input_file = self.regcoil_input_file
     
@@ -237,8 +242,9 @@ class coilFourier:
       if namelistLineContains(line,"wout_filename"):
         new_wout = '../' + wout_filename
         line = 'wout_filename = "'+new_wout+'"\n'
-      if namelistLineContains(line,"current_density_target"):
-        line = 'current_density_target = '+str(current_density_target)+'\n'
+      if (self.general_option > 3):
+        if namelistLineContains(line,"current_density_target"):
+          line = 'current_density_target = '+str(current_density_target)+'\n'
       f.write(line)
     f.close()
 
@@ -286,10 +292,11 @@ class coilFourier:
       os.chdir('..')
       self.increment_feval()
       self.evaluated = True
-      self.increased_target_current = False
-      self.decreased_target_current = False
-      self.current_factor = 0.1
-      self.current_density_target = self.current_density_target_init
+      if (self.general_option > 3):
+        self.increased_target_current = False
+        self.decreased_target_current = False
+        self.current_factor = 0.1
+        self.current_density_target = self.current_density_target_init
 
     else:
       print "Error! Job did not complete."
@@ -307,7 +314,11 @@ class coilFourier:
               line = 'nlambda = '+str(new_nlambda)+'\n'
             f.write(line)
           f.close()
-        self.evaluateRegcoil(omegas_sensitivity_new,self.current_density_target)
+        if (self.general_option > 3):
+          self.evaluateRegcoil(omegas_sensitivity_new,self.current_density_target)
+        else:
+          self.evaluateRegcoil(omegas_sensitivity_new)
+      # exit_code == -2 or -3 should only happen with general_option > 3
       elif (exit_code == -2): # current density too low
         print "Current density too low."
         # Decrease factor of increase/decrease
@@ -374,19 +385,21 @@ class coilFourier:
 
     newFile.close()
 
-# This is a script to be called within a nonlinear optimization routine in order to evaluate
-# chi2 and its gradient with respect to the Fourier coefficients
 def evaluateFunctionRegcoil(omegas_sensitivity_new, nescinObject):
   # Check if function has already been evaluated
   if (nescinObject.evaluated == False or not np.array_equal(omegas_sensitivity_new,nescinObject.omegas_sensitivity)):
-    nescinObject.evaluateRegcoil(omegas_sensitivity_new,nescinObject.current_density_target)
-  print "objective_function = " + str(nescinObject.objective_function)
-  return np.array(nescinObject.objective_function)
+    if (nescinObject.general_option > 3):
+      nescinObject.evaluateRegcoil(omegas_sensitivity_new,nescinObject.current_density_target)
+    else:
+      nescinObject.evaluateRegcoil(omegas_sensitivity_new)
+  return nescinObject.objective_function
 
 def evaluateGradientRegcoil(omegas_sensitivity_new, nescinObject):
-  # Check if function has already been evaluated
   if (nescinObject.evaluated == False or not np.array_equal(omegas_sensitivity_new,nescinObject.omegas_sensitivity)):
-    nescinObject.evaluateRegcoil(omegas_sensitivity_new,nescinObject.current_density_target)
+    if (nescinObject.general_option > 3):
+      nescinObject.evaluateRegcoil(omegas_sensitivity_new,nescinObject.current_density_target)
+    else:
+      nescinObject.evaluateRegcoil(omegas_sensitivity_new)
   return np.array(nescinObject.dobjective_functiondomegas_sensitivity)
 
 ## Testing ##

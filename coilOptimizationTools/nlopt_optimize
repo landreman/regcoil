@@ -1,0 +1,97 @@
+#!/usr/bin/env python
+from evaluateRegcoil import coilFourier, evaluateFunctionRegcoil, evaluateGradientRegcoil
+import numpy as np
+import sys
+from regcoilScan import readVariable, namelistLineContains
+import os
+import scipy
+import nlopt
+from numpy import *
+
+def nlopt_optimize(regcoil_input_file):
+  # Create coilFourier object
+  nmax_sensitivity = readVariable("nmax_sensitivity","int",regcoil_input_file,required=True)
+  mmax_sensitivity = readVariable("mmax_sensitivity","int",regcoil_input_file,required=True)
+  nescin_filename = readVariable("nescin_filename","string",regcoil_input_file,required=True)
+  # Max n in nescin file
+  nmax = readVariable("nmax","int",regcoil_input_file,required=True)
+  # max m in nescin file
+  mmax = readVariable("mmax","int",regcoil_input_file,required=True)
+  
+  constraint_tol = readVariable("constraint_tol","float",regcoil_input_file,required=False)
+  if (constraint_tol is None):
+    constraint_tol = 1e-6
+  d_min = readVariable("d_min","float",regcoil_input_file,required=False)
+  if (d_min is None):
+    d_min = 0.2
+  ftol_rel = readVariable("ftol_rel","float",regcoil_input_file,required=False)
+  if (ftol_rel is None):
+    ftol_rel = 1e-6
+  
+#global nescinObject
+  nescinObject = coilFourier(nmax,mmax,regcoil_input_file)
+  nescinObject.set_Fourier_from_nescin(nescin_filename)
+  global x0
+  x0 = nescinObject.omegas_sensitivity.copy()
+  nomega_sensitivity = len(x0)
+
+  algorithm = readVariable("nlopt_method","string",regcoil_input_file,required=True)
+  if (algorithm == "nlopt.LD_LBFGS"):
+    opt = nlopt.opt(nlopt.LD_LBFGS,nomega_sensitivity)
+    opt.set_min_objective(lambda x,grad: nlopt_evaluate(x,grad,nescinObject))
+  elif (algorithm == "nlopt.LD_MMA"):
+    opt = nlopt.opt(nlopt.LD_MMA,nomega_sensitivity)
+    opt.set_min_objective(lambda x,grad: nlopt_evaluate(x,grad,nescinObject))
+    opt.add_inequality_constraint(lambda x,grad: dist_constraint(x,grad,nescinObject,d_min),constraint_tol)
+  elif (algorithm == "nlopt.LD_SLSQP"):
+    opt = nlopt.opt(nlopt.LD_SLSQP,nomega_sensitivity)
+    opt.set_min_objective(lambda x,grad: nlopt_evaluate(x,grad,nescinObject))
+    opt.add_inequality_constraint(lambda x,grad: dist_constraint(x,grad,nescinObject,d_min),constraint_tol)
+  else:
+    print "Incorrect argument for algorithm!"
+    sys.exit(0)
+  print "Initializing optimizer: " + opt.get_algorithm_name()
+  print "Using " + str(opt.get_dimension()) + " dimensions."
+  # Set stopping criteria
+  opt.set_ftol_rel(ftol_rel)
+  print "Stopping when relative decrease in function is " + str(opt.get_ftol_rel()) + "."
+  opt.set_lower_bounds(-1.0e6)
+  opt.set_upper_bounds(1.0e6)
+  print "min(x0): " + str(np.amin(x0))
+  print "max(x0): " + str(np.amax(x0))
+  xopt = opt.optimize(x0)
+  opt_val = opt.last_optimum_value()
+  result = opt.last_optimize_result()
+  print "Optimum value: " + str(opt_val)
+  print "Result: " + str(result)
+
+def simple_evaluate(x,grad):
+  if grad.size > 0:
+    grad[0] = 1
+    grad[1] = 2
+  return x[0] + 2*x[1]
+
+def nlopt_evaluate(x,grad,nescinObject):
+  if grad.size > 0:
+    # Assign in place
+    grad[:] = evaluateGradientRegcoil(x, nescinObject)
+    print "norm(grad): " + str(np.linalg.norm(grad,2))
+  function_value = evaluateFunctionRegcoil(x, nescinObject)
+  print "objective function: " + str(function_value)
+  
+  return float(function_value)
+
+# Nonlinear inequality constraint preventing coil winding surface from getting
+# within d_min of plasma surface
+# f_constraint \leq 0
+def dist_constraint(x,grad,nescinObject,d_min):
+  # evaluate function
+  evaluateFunctionRegcoil(x, nescinObject)
+  # Gradient of constraint
+  if grad.size > 0:
+    grad[:] = -nescinObject.dcoil_plasma_distdomega
+  print "constraint function: " + str(d_min - nescinObject.coil_plasma_dist)
+  return (d_min - nescinObject.coil_plasma_dist)
+
+if __name__ == "__main__":
+  nlopt_optimize(sys.argv[1])

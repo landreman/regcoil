@@ -40,6 +40,9 @@ def conjugateGradientFR(regcoil_input_file):
   c1 = readVariable("c1","float",regcoil_input_file,required=False)
   if (c1 is None):
     c1 = 0.1
+  c2 = readVariable("c2","float",regcoil_input_file,required=False)
+  if (c2 is None):
+    c2 = 0.2
   fac = readVariable("fac","float",regcoil_input_file,required=False)
   if (fac is None):
     fac = 0.9
@@ -58,13 +61,14 @@ def conjugateGradientFR(regcoil_input_file):
 
   iter = 0
   flag = 1
-  I = np.ones(len(x))
+  I = np.ones(len(x0))
   B = I
   feval = 1
   p = -g
   x = x0
   while (nor > gtol and iter < maxiter):
     nor = linalg.norm(p)
+    # Makes sure step size does not get too large
     if (nor > pmax):
       p = pmax*p/nor
     # Line Search
@@ -73,13 +77,17 @@ def conjugateGradientFR(regcoil_input_file):
     fnew = evaluateFunctionRegcoil(xnew,nescinObject)
     gnew = evaluateGradientRegcoil(xnew,nescinObject)
     feval = feval + 1
-    # Backtracking
-    while (fnew > f + c1*alp*np.dot(g,p)):
+    # Backtracing line search
+    # Check Strong Wolfe conditions
+    print "Beginning backtracing line search."
+    while (fnew > f + c1*alp*np.dot(g,p) and np.abs(np.dot(gnew,p)) > - c2*np.dot(g,p)):
       alp = alp*fac
+      print "Evaluating with alpha = " + str(alp)
       xnew = x + alp*p
       fnew = evaluateFunctionRegcoil(xnew,nescinObject)
       gnew = evaluateGradientRegcoil(xnew,nescinObject)
       feval = feval + 1
+      # Check if step size got too small
       if (alp < 1e-14):
         flag = 0
         break
@@ -88,6 +96,7 @@ def conjugateGradientFR(regcoil_input_file):
       print(" \n Line search failed \n")
       break
     else:
+      print "Line search was successful."
       beta = np.dot(gnew,gnew)/np.dot(g,g)
       p = -gnew + beta*p
 
@@ -102,6 +111,7 @@ def conjugateGradientFR(regcoil_input_file):
   if (iter == iter_max):
     flag = 0
     print("\n Line search failed - reached maximum iterations \n")
+        
   print ("Converged. Here comes xmin.")
   print x
 

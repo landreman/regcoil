@@ -44,7 +44,6 @@ def cg_scipy(regcoil_input_file):
   # max m in nescin file
   mmax = readVariable("mmax","int",regcoil_input_file,required=True)
   
-  f = open(nescin_filename,'r')
   nescinObject = coilFourier(nmax,mmax,regcoil_input_file)
   nescinObject.set_Fourier_from_nescin(nescin_filename)
 
