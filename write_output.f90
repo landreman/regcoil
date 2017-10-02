@@ -57,7 +57,10 @@ subroutine write_output
        vn_L_p_diagnostic_np = "L_p_diagnostic_np", &
        vn_L_p_diagnostic_dp = "L_p_diagnostic_dp", &
        vn_fixed_norm_sensitivity_option = "fixed_norm_sensitivity_option", &
-       vn_coil_plasma_dist = "coil_plasma_dist", &
+       vn_coil_plasma_dist_min = "coil_plasma_dist_min", &
+       vn_coil_plasma_dist_max = "coil_plasma_dist_max", &
+       vn_coil_plasma_dist_min_lse = "coil_plasma_dist_min_lse", &
+       vn_coil_plasma_dist_max_lse = "coil_plasma_dist_max_lse", &
        vn_coil_plasma_dist_lse_p = "coil_plasma_dist_lse_p", &
        vn_compute_curvature = "compute_curvature", &
        vn_max_curvature_1 = "max_curvature_1", &
@@ -94,7 +97,8 @@ subroutine write_output
        vn_LSE_current_density_with_area = "LSE_current_density_with_area", &
        vn_ps = "ps", &
        vn_darea_coildomega = "darea_coildomega", &
-       vn_dcoil_plasma_distdomega = "dcoil_plasma_distdomega"
+       vn_dcoil_plasma_dist_mindomega = "dcoil_plasma_dist_mindomega", &
+       vn_dcoil_plasma_dist_maxdomega = "dcoil_plasma_dist_maxdomega"
 
   ! Arrays with dimension 2
   character(len=*), parameter :: &
@@ -295,8 +299,11 @@ subroutine write_output
   call cdf_define(ncid, vn_L_p_diagnostic_np, L_p_diagnostic_np)
 
   if (sensitivity_option > 1) then
-    call cdf_define(ncid, vn_coil_plasma_dist, coil_plasma_dist)
+    call cdf_define(ncid, vn_coil_plasma_dist_min, coil_plasma_dist_min)
+    call cdf_define(ncid, vn_coil_plasma_dist_max, coil_plasma_dist_max)
     call cdf_define(ncid, vn_coil_plasma_dist_lse_p, coil_plasma_dist_lse_p)
+    call cdf_define(ncid, vn_coil_plasma_dist_min_lse, coil_plasma_dist_min_lse)
+    call cdf_define(ncid, vn_coil_plasma_dist_max_lse, coil_plasma_dist_max_lse)
   end if
 
   call cdf_define(ncid, vn_compute_curvature, compute_curvature)
@@ -353,7 +360,8 @@ subroutine write_output
     call cdf_define(ncid, vn_darea_coildomega, darea_coildomega,dimname=nomega_coil_dim)
   end if
   if (sensitivity_option > 1) then
-    call cdf_define(ncid, vn_dcoil_plasma_distdomega, dcoil_plasma_distdomega, dimname=nomega_coil_dim)
+    call cdf_define(ncid, vn_dcoil_plasma_dist_mindomega, dcoil_plasma_dist_mindomega, dimname=nomega_coil_dim)
+    call cdf_define(ncid, vn_dcoil_plasma_dist_maxdomega, dcoil_plasma_dist_maxdomega, dimname=nomega_coil_dim)
   end if
 
   ! Arrays with dimension 2
@@ -517,8 +525,11 @@ subroutine write_output
   call cdf_write(ncid, vn_L_p_diagnostic_dp, L_p_diagnostic_dp)
   call cdf_write(ncid, vn_L_p_diagnostic_np, L_p_diagnostic_np)
   if (sensitivity_option > 1) then
-    call cdf_write(ncid, vn_coil_plasma_dist, coil_plasma_dist)
+    call cdf_write(ncid, vn_coil_plasma_dist_min, coil_plasma_dist_min)
+    call cdf_write(ncid, vn_coil_plasma_dist_max, coil_plasma_dist_max)
     call cdf_write(ncid, vn_coil_plasma_dist_lse_p, coil_plasma_dist_lse_p)
+    call cdf_write(ncid, vn_coil_plasma_dist_min_lse, coil_plasma_dist_min_lse)
+    call cdf_write(ncid, vn_coil_plasma_dist_max_lse, coil_plasma_dist_max_lse)
   end if
   call cdf_write(ncid, vn_compute_curvature, compute_curvature)
   if (compute_curvature == 1) then
@@ -575,7 +586,8 @@ subroutine write_output
     call cdf_write(ncid, vn_darea_coildomega, darea_coildomega)
   end if
   if (sensitivity_option > 1) then
-    call cdf_write(ncid, vn_dcoil_plasma_distdomega, dcoil_plasma_distdomega)
+    call cdf_write(ncid, vn_dcoil_plasma_dist_mindomega, dcoil_plasma_dist_mindomega)
+    call cdf_write(ncid, vn_dcoil_plasma_dist_maxdomega, dcoil_plasma_dist_maxdomega)
   end if
 
   ! Arrays with dimension 2

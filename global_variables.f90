@@ -114,7 +114,7 @@ module global_variables
   integer :: mmax_sensitivity = 0
   integer :: mnmax_sensitivity
   integer :: nomega_coil
-  real(dp) :: coil_plasma_dist_lse_p = 1.0d4
+  real(dp) :: coil_plasma_dist_lse_p = 1.0d3
   real(dp), dimension(:,:), allocatable :: dchi2Kdphi, dchi2Bdphi
   integer, dimension(:), allocatable :: omega_coil
   integer, dimension(:), allocatable :: xm_sensitivity, xn_sensitivity
@@ -134,8 +134,9 @@ module global_variables
   integer :: save_nescin_mpol = 12, save_nescin_ntor = 12
   integer :: minLambda, maxLambda
   real(dp), dimension(:), allocatable :: dvolume_coildomega
-  real(dp), dimension(:), allocatable :: dcoil_plasma_distdomega
-  real(dp) :: coil_plasma_dist
+  real(dp), dimension(:), allocatable :: dcoil_plasma_dist_mindomega, dcoil_plasma_dist_maxdomega
+  real(dp) :: coil_plasma_dist_min, coil_plasma_dist_max
+  real(dp) :: coil_plasma_dist_min_lse, coil_plasma_dist_max_lse
 
   ! Curvature-related things
   integer :: compute_curvature = 0

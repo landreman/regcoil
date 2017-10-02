@@ -23,7 +23,6 @@ def regcoilGeomScan4(filename):
     for whichM in range(coilFouriermmin, coilFouriermmax+1):
       for whichN in range(coilFouriernmin, coilFouriernmax+1):
         omega = nescinReadValue(nescin_filename,whichM,whichN,whichFourier)
-        print omega
         omegas = np.linspace(coilFourierMinFactor*omega,coilFourierMaxFactor*omega,coilFourierNumRuns)
         descriptions = []
         for i in range(len(omegas)):
@@ -33,10 +32,6 @@ def regcoilGeomScan4(filename):
         omegas = np.append(omegas,omega)
         parametersForScan = list(omegas)
         numRunsInScan = coilFourierNumRuns + 1
-        print len(descriptions)
-        print len(omegas)
-        print descriptions
-        print omegas
         
         runNum = 0
         
@@ -67,7 +62,7 @@ def regcoilGeomScan4(filename):
                 break
             print "You must enter either y or n."
         if proceed=="n":
-            exit(0)
+            continue
 
         print "launching jobs..."
                               

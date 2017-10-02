@@ -24,6 +24,9 @@ def nlopt_optimize(regcoil_input_file):
   d_min = readVariable("d_min","float",regcoil_input_file,required=False)
   if (d_min is None):
     d_min = 0.2
+  d_max = readVariable("d_max","float",regcoil_input_file,required=False)
+  if (d_max is None):
+    d_max = 2.0
   ftol_rel = readVariable("ftol_rel","float",regcoil_input_file,required=False)
   if (ftol_rel is None):
     ftol_rel = 1e-6

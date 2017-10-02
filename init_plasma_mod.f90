@@ -370,11 +370,11 @@ contains
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(normal_plasma(3,ntheta_plasma,nzetal_plasma),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
-    if (compute_curvature==1) then
-      allocate(d2r_plasmadzeta2(3,ntheta_plasma,nzeta_plasma),stat=iflag)
-      allocate(d2r_plasmadtheta2(3,ntheta_plasma,nzeta_plasma),stat=iflag)
-    end if
-    
+!    if (compute_curvature==1) then
+!      allocate(d2r_plasmadzeta2(3,ntheta_plasma,nzeta_plasma),stat=iflag)
+!      allocate(d2r_plasmadtheta2(3,ntheta_plasma,nzeta_plasma),stat=iflag)
+!    end if
+
     r_plasma=0
     drdtheta_plasma=0
     drdzeta_plasma=0

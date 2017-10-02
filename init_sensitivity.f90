@@ -9,13 +9,15 @@ subroutine init_sensitivity()
 
   integer :: iomega, iflag, minSymmetry, maxSymmetry, offset, whichSymmetry, tic, toc, countrate,indexl_coil
 
-  real(dp) :: angle, angle2, sinangle, cosangle, sum_exp, min_dist, max_dist, coil_plasma_dist_lse
+  real(dp) :: angle, angle2, sinangle, cosangle, sum_exp_min, sum_exp_max, max_dist
   real(dp) :: sinangle2, cosangle2
   real(dp) :: dxdtheta, dxdzeta, dydtheta, dydzeta, dzdtheta, dzdzeta
   real(dp), dimension(:,:,:,:), allocatable :: dist
   integer :: izeta_plasma, itheta_plasma, izeta_coil, itheta_coil
   integer :: index_coil, l_coil, izetal_coil, index_plasma
-  real(dp), dimension(:,:), allocatable :: normal_dist
+  real(dp), dimension(:,:), allocatable :: normal_dist, sum_exp_dist, normal_dist_lse
+  real(dp), dimension(:,:,:,:,:), allocatable :: ddistdomega
+  real(dp), dimension(:,:,:), allocatable :: dnormal_distdomega, dsum_exp_distdomega
 
   ! For volume calculation
   real(dp) :: major_R_squared_half_grid, dzdtheta_coil_half_grid
@@ -53,9 +55,21 @@ subroutine init_sensitivity()
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dist(ntheta_coil,nzeta_coil,ntheta_plasma,nzeta_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dcoil_plasma_distdomega(nomega_coil),stat=iflag)
+  allocate(dcoil_plasma_dist_mindomega(nomega_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(dcoil_plasma_dist_maxdomega(nomega_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(normal_dist(ntheta_coil,nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(normal_dist_lse(ntheta_coil,nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(ddistdomega(ntheta_coil,nzeta_coil,ntheta_plasma,nzeta_plasma,nomega_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(sum_exp_dist(ntheta_coil,nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(dnormal_distdomega(ntheta_coil,nzeta_coil,nomega_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(dsum_exp_distdomega(ntheta_coil,nzeta_coil,nomega_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
   call system_clock(tic,countrate)
@@ -219,43 +233,80 @@ subroutine init_sensitivity()
   call system_clock(tic,countrate)
 
   ! Compute coil-plasma distance using log-sum-exp norm
-  dcoil_plasma_distdomega = 0
   do itheta_coil = 1, ntheta_coil
     do izeta_coil = 1, nzeta_coil
+      index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
       do itheta_plasma = 1, ntheta_plasma
         do izeta_plasma = 1, nzeta_plasma
           dist(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma) = &
             sqrt((r_coil(1,itheta_coil,izeta_coil)-r_plasma(1,itheta_plasma,izeta_plasma))**2 &
             + (r_coil(2,itheta_coil,izeta_coil)-r_plasma(2,itheta_plasma,izeta_plasma))**2 &
             + (r_coil(3,itheta_coil,izeta_coil)-r_plasma(3,itheta_plasma,izeta_plasma))**2)
+          ddistdomega(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma,:) = &
+            dist(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma)**(-1) &
+            *((r_coil(1,itheta_coil,izeta_coil)-r_plasma(1,itheta_plasma,izeta_plasma))*drdomega(1,index_coil,1,:) &
+            + (r_coil(2,itheta_coil,izeta_coil)-r_plasma(2,itheta_plasma,izeta_plasma))*drdomega(2,index_coil,1,:) &
+            + (r_coil(3,itheta_coil,izeta_coil)-r_plasma(3,itheta_plasma,izeta_plasma))*drdomega(3,index_coil,1,:))
         end do
       end do
       normal_dist(itheta_coil,izeta_coil) = minval(dist(itheta_coil,izeta_coil,:,:))
     end do
   end do
-  min_dist = minval(dist)
+  coil_plasma_dist_min = minval(normal_dist)
+  coil_plasma_dist_max = maxval(normal_dist)
   max_dist = maxval(dist)
-  print *,"min_dist:", minval(normal_dist)
-  print *,"max_dist:", maxval(normal_dist)
-  sum_exp = sum(exp(-coil_plasma_dist_lse_p*(dist-min_dist)))
-  print *,"sum_exp:",sum_exp
+
+  ! Compute LSE normal coil-plasma distance
+  sum_exp_dist = 0
+  dsum_exp_distdomega = 0
   do itheta_coil = 1, ntheta_coil
     do izeta_coil = 1, nzeta_coil
       do itheta_plasma = 1, ntheta_plasma
         do izeta_plasma = 1, nzeta_plasma
-          index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
-          dcoil_plasma_distdomega = dcoil_plasma_distdomega + dist(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma)**(-1) &
-            *((r_coil(1,itheta_coil,izeta_coil)-r_plasma(1,itheta_plasma,izeta_plasma))*drdomega(1,index_coil,1,:) &
-            + (r_coil(2,itheta_coil,izeta_coil)-r_plasma(2,itheta_plasma,izeta_plasma))*drdomega(2,index_coil,1,:) &
-            + (r_coil(3,itheta_coil,izeta_coil)-r_plasma(3,itheta_plasma,izeta_plasma))*drdomega(3,index_coil,1,:)) &
-            * exp(-coil_plasma_dist_lse_p*(dist(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma)-min_dist))/sum_exp
+          sum_exp_dist(itheta_coil,izeta_coil) = sum_exp_dist(itheta_coil,izeta_coil) &
+            + exp(-coil_plasma_dist_lse_p*(dist(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma)-coil_plasma_dist_min))
+          dsum_exp_distdomega(itheta_coil,izeta_coil,:) = &
+            dsum_exp_distdomega(itheta_coil,izeta_coil,:) &
+            + ddistdomega(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma,:) &
+            * exp(-coil_plasma_dist_lse_p*(dist(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma)-coil_plasma_dist_min))
         end do
       end do
+      normal_dist_lse(itheta_coil,izeta_coil) = -(1/coil_plasma_dist_lse_p)*log(sum_exp_dist(itheta_coil,izeta_coil)) + coil_plasma_dist_min
+      dnormal_distdomega(itheta_coil,izeta_coil,:) = &
+        dsum_exp_distdomega(itheta_coil,izeta_coil,:)/sum_exp_dist(itheta_coil,izeta_coil)
     end do
   end do
-  coil_plasma_dist = min_dist
-  coil_plasma_dist_lse = -log(sum_exp)/coil_plasma_dist_lse_p + min_dist
-  print *,"coil_plasma_dist computed form log_sum: ", coil_plasma_dist_lse
+
+  coil_plasma_dist_min_lse = -(1/coil_plasma_dist_lse_p) &
+    *log(sum(exp(-coil_plasma_dist_lse_p*(normal_dist_lse-coil_plasma_dist_min)))) + coil_plasma_dist_min
+
+  coil_plasma_dist_max_lse = &
+    (1/coil_plasma_dist_lse_p)*log(sum(exp(coil_plasma_dist_lse_p*(normal_dist_lse-coil_plasma_dist_max)))) + coil_plasma_dist_max
+
+  sum_exp_min = sum(exp(-coil_plasma_dist_lse_p*(normal_dist_lse-coil_plasma_dist_min)))
+  sum_exp_max = sum(exp(coil_plasma_dist_lse_p*(normal_dist_lse-coil_plasma_dist_max)))
+
+  print *,"sum_exp_min", sum_exp_min
+  print *,"sum_exp_max", sum_exp_max
+  dcoil_plasma_dist_mindomega = 0
+  dcoil_plasma_dist_maxdomega = 0
+  do itheta_coil = 1, ntheta_coil
+    do izeta_coil = 1, nzeta_coil
+      dcoil_plasma_dist_mindomega = dcoil_plasma_dist_mindomega &
+        + dnormal_distdomega(itheta_coil,izeta_coil,:) &
+        * exp(-coil_plasma_dist_lse_p*(normal_dist_lse(itheta_coil,izeta_coil) &
+          - coil_plasma_dist_min))/sum_exp_min
+      dcoil_plasma_dist_maxdomega = dcoil_plasma_dist_maxdomega &
+        + dnormal_distdomega(itheta_coil,izeta_coil,:) &
+        * exp(coil_plasma_dist_lse_p*(normal_dist_lse(itheta_coil,izeta_coil) &
+          - coil_plasma_dist_max))/sum_exp_max
+    end do
+  end do
+
+  print *,"Max coil-plamsa dist: ", coil_plasma_dist_max
+  print *,"Max coil-plasma dist (LSE): ", coil_plasma_dist_max_lse
+  print *,"Min coil-plasma dist: ", coil_plasma_dist_min
+  print *,"Min coil-plasma dist (LSE): ", coil_plasma_dist_min_lse
 
   do izeta_coil = 1, nzeta_coil
     do itheta_coil = 1, ntheta_coil

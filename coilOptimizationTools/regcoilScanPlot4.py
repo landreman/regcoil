@@ -47,15 +47,15 @@ def regcoilScanPlot4(inputFilename):
     sensitivityVariable = "LSE_current_density_with_area"
     plotVariableName = plotVariable
   if (plotType == 6):
-    plotVariable = "area_coil"
-    sensitivityVariable = plotVariable
-    plotVariableName = plotVariable
-  if (plotType == 7):
     plotVariable = "lambda"
     sensitivityVariable = plotVariable
     plotVariableName = plotVariable
+  if (plotType == 7):
+    plotVariable = "coil_plasma_dist_min"
+    sensitivityVariable = plotVariable
+    plotVariableName = plotVariable
   if (plotType == 8):
-    plotVariable = "coil_plasma_dist"
+    plotVariable = "coil_plasma_dist_max"
     sensitivityVariable = plotVariable
     plotVariableName = plotVariable
 
@@ -132,8 +132,11 @@ def regcoilScanPlot4(inputFilename):
                 plotVariables.append(f.variables["lambda"][()][ilambda])
                 dplotVariabledomegas.append(f.variables["dlambdadomega"][()][ilambda,:])
               elif (plotType == 7):
-                plotVariables.append(f.variables["coil_plasma_dist"][()])
-                dplotVariabledomegas.append(f.variables["dcoil_plasma_distdomega"][()][:])
+                plotVariables.append(f.variables["coil_plasma_dist_min_lse"][()])
+                dplotVariabledomegas.append(f.variables["dcoil_plasma_dist_mindomega"][()][:])
+              elif (plotType == 8):
+                plotVariables.append(f.variables["coil_plasma_dist_max_lse"][()])
+                dplotVariabledomegas.append(f.variables["dcoil_plasma_dist_maxdomega"][()][:])
 
               omega = f.variables["omega_coil"][()]
               nomega_coil = f.variables["nomega_coil"][()]
@@ -170,7 +173,10 @@ def regcoilScanPlot4(inputFilename):
         if (plotType == 6): # lambda
           plotVariables = plotVariables[indices]
           dplotVariabledscanVariable = dplotVariabledomegas[:,indices]
-        if (plotType == 7): # coil_plasma_dist
+        if (plotType == 7): # coil_plasma_dist_min
+          plotVariables = plotVariables[indices]
+          dplotVariabledscanVariable = dplotVariabledomegas[:,indices]
+        if (plotType == 8): # coil_plasma_dist_max
           plotVariables = plotVariables[indices]
           dplotVariabledscanVariable = dplotVariabledomegas[:,indices]
 
