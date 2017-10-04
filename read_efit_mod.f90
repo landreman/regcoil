@@ -71,6 +71,9 @@ contains
     ! efit_psi = psi on 'big' grid
     ! sefit_psi = psi on 'small' (original) grid
     
+    ! Adding some checks to release previously allocated variables.
+    ! This is because STELLOPT may call this function multiple times.
+    ! if (allocated()) deallocate()
     
     print *,"  Reading EFIT file ",trim(filename)
     
@@ -87,7 +90,9 @@ contains
     ! Initialize a theta grid.
     ! (Factor 10 here is arbitrary. Really it just needs to be large enough to resolve mnmax modes without aliasing.)
     ntheta = mnmax * 10
+    if (allocated(theta_general)) deallocate(theta_general)
     allocate(theta_general(ntheta))
+    if (allocated(theta_atan)) deallocate(theta_atan)
     allocate(theta_atan(ntheta))
     do i=1,ntheta
        theta_general(i) = i-1
@@ -120,6 +125,19 @@ contains
     ! Next line replaced with the allocates by MJL
     !call alloc_module_arrays(nwb, nwb, nhb, nw, nh)
     !subroutine alloc_module_arrays(np, nw, nh, nws, nhs, ntime)
+    if (allocated(psi_bar)) deallocate(psi_bar)
+    if (allocated(fp)) deallocate(fp)
+    if (allocated(qsf)) deallocate(qsf)
+    if (allocated(pressure)) deallocate(pressure)
+    if (allocated(beta)) deallocate(beta)
+    if (allocated(dummy)) deallocate(dummy)
+    if (allocated(efit_R)) deallocate(efit_R)
+    if (allocated(efit_Z)) deallocate(efit_Z)
+    if (allocated(spsi_bar)) deallocate(spsi_bar)
+    if (allocated(sefit_R)) deallocate(sefit_R)
+    if (allocated(sefit_Z)) deallocate(sefit_Z)
+    if (allocated(efit_psi)) deallocate(efit_psi)
+    if (allocated(sefit_psi)) deallocate(sefit_psi)
     allocate(psi_bar(nwb), fp(nwb), qsf(nwb), pressure(nwb), beta(nwb))
     allocate(dummy(nw), efit_R(nwb), efit_Z(nhb))
     allocate(spsi_bar(nw), sefit_R(nw), sefit_Z(nh))
@@ -179,6 +197,10 @@ contains
     read(5,2022) nbbbs, ndum
 2022 format (2i5)      
     
+    if (allocated(rbbbs)) deallocate(rbbbs)
+    if (allocated(zbbbs)) deallocate(zbbbs)
+    if (allocated(thetab_atan)) deallocate(thetab_atan)
+    if (allocated(r_bound)) deallocate(r_bound)
     allocate(rbbbs(nbbbs), zbbbs(nbbbs), thetab_atan(nbbbs), r_bound(nbbbs))
     ! Read in location of the LCFS:
     read(5,2020) (rbbbs(i), zbbbs(i) , i = 1, nbbbs)
@@ -237,7 +259,13 @@ contains
     
     
     ! Use splines to interpolate psi(R,Z) from the original coarse grid to the fine ('big') grid:
+    ! if (allocated(zp)) deallocate(zp)
+    ! if (allocated(temp)) deallocate(temp)
     allocate(zp(3*nw*nh), temp(nw+2*nh))
+    if (allocated(zx1)) deallocate(zx1)
+    if (allocated(zxm)) deallocate(zxm)
+    if (allocated(zy1)) deallocate(zy1)
+    if (allocated(zyn)) deallocate(zyn)
     allocate(zx1(nh), zxm(nh), zy1(nw), zyn(nw))
     
     call fitp_surf1(nw, nh, sefit_R, sefit_Z, sefit_psi, &
@@ -260,7 +288,9 @@ contains
     ! Next, use spline interpolation to get r_LCFS on the theta grid we want.
     ! Since 'thetab_atan' does not run from exactly -pi to pi, there will be a bit of extrapolation
     ! at the ends of the grid. This could be eliminated if it is a problem.
+    if (allocated(thetab_atan_3)) deallocate(thetab_atan_3)
     allocate(thetab_atan_3(nbbbs*3))
+    if (allocated(r_bound_3)) deallocate(r_bound_3)
     allocate(r_bound_3(nbbbs*3))
     thetab_atan_3(1:nbbbs) = thetab_atan-2*pi
     thetab_atan_3((nbbbs+1):(2*nbbbs)) = thetab_atan
@@ -271,6 +301,7 @@ contains
     
     !call new_spline(nbbbs, thetab_atan, r_bound, LCFS_spline)
     call new_spline(nbbbs*3, thetab_atan_3, r_bound_3, LCFS_spline)
+    if (allocated(r_LCFS)) deallocate(r_LCFS)
     allocate(r_LCFS(ntheta))
     do i = 1,ntheta
        r_LCFS(i) = splint(theta_atan(i), LCFS_spline)
@@ -285,6 +316,8 @@ contains
 !!$  print *," "
 
     ! Now solve the root-finding problem at each theta
+    if (allocated(R_surface)) deallocate(R_surface)
+    if (allocated(Z_surface)) deallocate(R_surface)
     allocate(R_surface(ntheta), Z_surface(ntheta))
     
     rootSolve_abserr = 1.0e-10_dp
@@ -312,7 +345,7 @@ contains
           if (fzeroFlag == 4) then
              stop "ERROR: fzero returned error 4: no sign change in residual"
           else if (fzeroFlag > 2) then
-             print *,"WARNING: fzero returned an error code:",fzeroFlag
+             print *,"WARNING in rem: fzero returned an error code:",fzeroFlag
           end if
        end if
        

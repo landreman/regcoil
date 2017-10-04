@@ -2,7 +2,7 @@ module read_regcoil_bnorm
 
 contains
 
-subroutine read_bnorm()
+subroutine read_bnorm(lscreen_optin)
 
   use regcoil_variables, only: load_bnorm, bnorm_filename, ntheta_plasma, nzeta_plasma, &
        Bnormal_from_plasma_current, theta_plasma, zeta_plasma, nfp, curpol
@@ -16,19 +16,34 @@ subroutine read_bnorm()
   real(dp) :: bf
   integer :: tic, toc, countrate
 
+  ! variables to handle printing to the screen
+  logical, optional :: lscreen_optin
+  logical :: lscreen
+
+  if(present(lscreen_optin)) then 
+    lscreen = lscreen_optin
+  else
+    lscreen = .true.
+  endif
+
+  ! Adding some checks to release previously allocated variables.
+  ! This is because STELLOPT may call this function multiple times.
+  ! if (allocated()) deallocate()
+
   call system_clock(tic,countrate)
 
+  if (allocated(Bnormal_from_plasma_current)) deallocate(Bnormal_from_plasma_current)
   allocate(Bnormal_from_plasma_current(ntheta_plasma,nzeta_plasma),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'read_regcoil_bnorm Allocation error!'
 
   Bnormal_from_plasma_current = 0
 
   if (.not. load_bnorm) then
-     print *,"Not reading a bnorm file, so Bnormal_from_plasma_current arrays will all be 0."
+     if (lscreen) print *,"Not reading a bnorm file, so Bnormal_from_plasma_current arrays will all be 0."
      return
   end if
 
-  print *,"Loading B_normal on the plasma surface due to plasma current from file ",trim(bnorm_filename)
+  if (lscreen) print *,"Loading B_normal on the plasma surface due to plasma current from file ",trim(bnorm_filename)
 
   call safe_open(iunit, i, trim(bnorm_filename), 'old', 'formatted')
   if (i .ne. 0 ) then
@@ -72,12 +87,12 @@ subroutine read_bnorm()
 
   call system_clock(toc)
   if (num_modes_added>0) then
-     print *,"Number of modes read from bnorm file:",num_modes_added
+     if (lscreen) print *,"Number of modes read from bnorm file:",num_modes_added
   else
      print *,"WARNING!!! No modes found in the bnorm file."
   end if
-  print *,"Done reading B_normal on the plasma surface due to plasma current."
-  print *,"Took ",real(toc-tic)/countrate," sec."
+  if (lscreen) print *,"Done reading B_normal on the plasma surface due to plasma current."
+  if (lscreen) print *,"Took ",real(toc-tic)/countrate," sec."
 
 end subroutine  read_bnorm
 

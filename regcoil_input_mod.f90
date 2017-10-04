@@ -177,10 +177,10 @@ subroutine write_regcoil_input(proc_string,iunit,istat)
   character(LEN=*), parameter :: OUTFLT  = "(2X,A,1X,'=',1X,E22.14)"
   character(LEN=*), parameter :: OUTSTR  = "(2X,A,1X,'=',1X,'''',A,'''')"
 
-  print "(a,a)", "proc_string = ", proc_string
+  ! print "(a,a)", "proc_string = ", proc_string
   wout_filename_new = 'wout_'//TRIM(proc_string)//'.nc'
-  print "(a,a)", "wout_filename_new = ", wout_filename_new
-  print "(a,i12)", "iunit=", iunit
+  ! print "(a,a)", "wout_filename_new = ", wout_filename_new
+  ! print "(a,i12)", "iunit=", iunit
 
 
   write(iunit, '(A)') '&regcoil'
@@ -193,6 +193,7 @@ subroutine write_regcoil_input(proc_string,iunit,istat)
   write(iunit, OUTINT) 'ntor_coil', ntor_coil
   write(iunit, OUTINT) 'general_option', general_option
   write(iunit, OUTINT) 'target_option', target_option
+  !write(iunit, OUTFLT) 'current_density_target', current_density_target
   write(iunit, OUTINT) 'geometry_option_plasma', geometry_option_plasma
   write(iunit, OUTINT) 'geometry_option_coil', geometry_option_coil
   write(iunit, OUTFLT) 'separation', separation

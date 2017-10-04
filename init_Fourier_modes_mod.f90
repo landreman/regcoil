@@ -18,11 +18,17 @@ contains
     ! xn can be negative, zero, or positive.
     ! When xm is 0, xn must be positive.
     mnmax = mpol*(ntor*2+1) + ntor
-    
+   
+    ! Adding a check to release previously allocated variable.
+    ! This is because STELLOPT may call this function multiple times.
+
+    if (allocated(xm)) deallocate(xm)
     allocate(xm(mnmax),stat=iflag)
-    if (iflag .ne. 0) stop 'Allocation error!'
+    if (iflag .ne. 0) stop 'init_Fourier Allocation error!'
+ 
+    if (allocated(xn)) deallocate(xn)
     allocate(xn(mnmax),stat=iflag)
-    if (iflag .ne. 0) stop 'Allocation error!'
+    if (iflag .ne. 0) stop 'init_Fourier Allocation error!'
 
     ! Handle the xm=0 modes:
     xm=0

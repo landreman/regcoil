@@ -2,7 +2,7 @@ module build_regcoil_matrices
 
 contains
 
-subroutine build_matrices()
+subroutine build_matrices(lscreen_optin)
 
   use regcoil_variables
   use stel_constants
@@ -28,11 +28,18 @@ subroutine build_matrices()
   real(dp) :: BLAS_ALPHA=1, BLAS_BETA=0
   real(dp), dimension(:,:), allocatable :: tempMatrix
 
+  ! variables to handle printing to the screen
+  logical, optional :: lscreen_optin
+  logical :: lscreen
 
-
-
+  if(present(lscreen_optin)) then
+    lscreen = lscreen_optin
+  else
+    lscreen = .true.
+  endif
+ 
   call system_clock(tic,countrate)
-  print *,"Initializing basis functions and f"
+  if (lscreen) print *,"Initializing basis functions and f"
   
   ! Initialize Fourier arrays
   call init_Fourier_modes(mpol_coil, ntor_coil, mnmax_coil, xm_coil, xn_coil)
@@ -47,21 +54,38 @@ subroutine build_matrices()
      print *,"Error! Invalid setting for symmetry_option:",symmetry_option
      stop
   end select
+
+  ! Adding some checks to release previously allocated variables.
+  ! This is because STELLOPT may call this function multiple times.
+  ! if (allocated()) deallocate()
   
+  if (allocated(basis_functions)) deallocate(basis_functions)
   allocate(basis_functions(ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'brm Allocation error 1!'
+
+  if (allocated(f_x)) deallocate(f_x)
   allocate(f_x(ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'brm Allocation error 2!'
+
+  if (allocated(f_y)) deallocate(f_y)
   allocate(f_y(ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'brm Allocation error 3!'
+
+  if (allocated(f_z)) deallocate(f_z)
   allocate(f_z(ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'brm Allocation error 4!'
+
+  if (allocated(d_x)) deallocate(d_x)
   allocate(d_x(ntheta_coil*nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'brm Allocation error 5!'
+
+  if (allocated(d_y)) deallocate(d_y)
   allocate(d_y(ntheta_coil*nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'brm Allocation error 6!'
+
+  if (allocated(d_z)) deallocate(d_z)
   allocate(d_z(ntheta_coil*nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'brm Allocation error 7!'
 
   d_x = reshape((net_poloidal_current_Amperes * drdtheta_coil(1,:,1:nzeta_coil) - net_toroidal_current_Amperes * drdzeta_coil(1,:,1:nzeta_coil)) / twopi, &
        (/ ntheta_coil*nzeta_coil /))
@@ -118,19 +142,31 @@ subroutine build_matrices()
   end do
   
   call system_clock(toc)
-  print *,"Done. Took",real(toc-tic)/countrate,"sec."
+  if (lscreen) print *,"Done. Took",real(toc-tic)/countrate,"sec."
   
 
+  if (allocated(g)) deallocate(g)
   allocate(g(ntheta_plasma*nzeta_plasma, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'brm Allocation error 8!'
+
+  if (allocated(inductance)) deallocate(inductance)
   allocate(inductance(ntheta_plasma*nzeta_plasma, ntheta_coil*nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'brm Allocation error 9!'
+
+  if (allocated(h)) deallocate(h)
   allocate(h(ntheta_plasma*nzeta_plasma),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'brm Allocation error 10!'
+
+  ! if (allocated(factor_for_h)) then
+  !   print *, 'Deallocating factor_h_for_h (which should have been done?!?!)'
+  !   deallocate(factor_for_h)
+  ! endif
   allocate(factor_for_h(3,ntheta_coil,nzetal_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'brm Allocation error 11!'
+
+  if (allocated(Bnormal_from_net_coil_currents)) deallocate(Bnormal_from_net_coil_currents)
   allocate(Bnormal_from_net_coil_currents(ntheta_plasma,nzeta_plasma),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'brm Allocation error 12!'
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Now compute g and h
@@ -141,11 +177,11 @@ subroutine build_matrices()
   factor_for_h = net_poloidal_current_Amperes * drdtheta_coil - net_toroidal_current_Amperes * drdzeta_coil
 
   call system_clock(tic,countrate)
-  print *,"Building inductance matrix and h."
+  if (lscreen) print *,"Building inductance matrix and h."
   !$OMP PARALLEL
 
   !$OMP MASTER
-  print *,"  Number of OpenMP threads:",omp_get_num_threads()
+  if (lscreen) print *,"  Number of OpenMP threads:",omp_get_num_threads()
   !$OMP END MASTER
 
   ! Note: the outermost loop below must be over the plasma variables rather than over the coil variables.
@@ -199,7 +235,7 @@ subroutine build_matrices()
   !$OMP END PARALLEL
 
   call system_clock(toc)
-  print *,"Done. Took",real(toc-tic)/countrate,"sec."
+  if (lscreen) print *,"Done. Took",real(toc-tic)/countrate,"sec."
   
   h = h * (dtheta_coil*dzeta_coil*mu0/(8*pi*pi))
   inductance = inductance * (mu0/(4*pi))
@@ -236,28 +272,47 @@ subroutine build_matrices()
   call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,inductance,LDA,basis_functions,LDB,BLAS_BETA,g,LDC)
 
   call system_clock(toc)
-  print *,"inductance*basis_functions:",real(toc-tic)/countrate,"sec."
+  if (lscreen) print *,"inductance*basis_functions:",real(toc-tic)/countrate,"sec."
 
+  if (allocated(matrix_B)) deallocate(matrix_B)
   allocate(matrix_B(num_basis_functions, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'brm Allocation error 13!'
+
+  if (allocated(matrix_K)) deallocate(matrix_K)
   allocate(matrix_K(num_basis_functions, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'brm Allocation error 14!'
+
+  if (allocated(RHS_B)) deallocate(RHS_B)
   allocate(RHS_B(num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'brm Allocation error 15!'
+
+  if (allocated(RHS_K)) deallocate(RHS_K)
   allocate(RHS_K(num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'brm Allocation error 16!'
+
+  ! if (allocated(norm_normal_plasma_inv1D)) deallocate(norm_normal_plasma_inv1D)
   allocate(norm_normal_plasma_inv1D(ntheta_plasma*nzeta_plasma),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'brm Allocation error 17!'
+
+  ! if (allocated(norm_normal_coil_inv1D)) deallocate(norm_normal_coil_inv1D)
   allocate(norm_normal_coil_inv1D(ntheta_coil*nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'brm Allocation error 18!'
+
+  ! if (allocated(g_over_N_plasma)) deallocate(g_over_N_plasma)
   allocate(g_over_N_plasma(ntheta_plasma*nzeta_plasma,num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'brm Allocation error 19!'
+
+  ! if (allocated(f_x_over_N_coil)) deallocate(f_x_over_N_coil)
   allocate(f_x_over_N_coil(ntheta_coil*nzeta_coil,num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'brm Allocation error 20!'
+
+  ! if (allocated(f_y_over_N_coil)) deallocate(f_y_over_N_coil)
   allocate(f_y_over_N_coil(ntheta_coil*nzeta_coil,num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'brm Allocation error 21!'
+
+  ! if (allocated(f_z_over_N_coil)) deallocate(f_z_over_N_coil)
   allocate(f_z_over_N_coil(ntheta_coil*nzeta_coil,num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'brm Allocation error 22!'
 
   call system_clock(tic)
 
@@ -265,7 +320,7 @@ subroutine build_matrices()
        reshape(Bnormal_from_plasma_current+Bnormal_from_net_coil_currents, (/ ntheta_plasma*nzeta_plasma /)), g)
 
   call system_clock(toc)
-  print *,"Form RHS_B:",real(toc-tic)/countrate,"sec."
+  if (lscreen) print *,"Form RHS_B:",real(toc-tic)/countrate,"sec."
   call system_clock(tic)
 
   norm_normal_plasma_inv1D = reshape(1/norm_normal_plasma, (/ ntheta_plasma*nzeta_plasma /))
@@ -281,7 +336,7 @@ subroutine build_matrices()
   deallocate(norm_normal_coil_inv1D)
 
   call system_clock(toc)
-  print *,"Prepare for matrix_B:",real(toc-tic)/countrate,"sec."
+  if (lscreen) print *,"Prepare for matrix_B:",real(toc-tic)/countrate,"sec."
   call system_clock(tic)
 
 
@@ -302,7 +357,7 @@ subroutine build_matrices()
   call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,g,LDA,g_over_N_plasma,LDB,BLAS_BETA,matrix_B,LDC)
 
   call system_clock(toc)
-  print *,"matmul for matrix_B:",real(toc-tic)/countrate,"sec."
+  if (lscreen) print *,"matmul for matrix_B:",real(toc-tic)/countrate,"sec."
 
   deallocate(g_over_N_plasma)
     
@@ -328,7 +383,7 @@ subroutine build_matrices()
   call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_x,LDA,f_x_over_N_coil,LDB,BLAS_BETA,matrix_K,LDC)
 
   call system_clock(toc)
-  print *,"matmul 1 for matrix_K:",real(toc-tic)/countrate,"sec."
+  if (lscreen) print *,"matmul 1 for matrix_K:",real(toc-tic)/countrate,"sec."
 
   call system_clock(tic)
   ! Here we carry out matrix_K += dtheta*dzeta*(f_y ^ T) * f_y_over_N_coil
@@ -348,7 +403,7 @@ subroutine build_matrices()
   call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_y,LDA,f_y_over_N_coil,LDB,BLAS_BETA,matrix_K,LDC)
 
   call system_clock(toc)
-  print *,"matmul 2 for matrix_K:",real(toc-tic)/countrate,"sec."
+  if (lscreen) print *,"matmul 2 for matrix_K:",real(toc-tic)/countrate,"sec."
 
   call system_clock(tic)
   ! Here we carry out matrix_K += dtheta*dzeta*(f_z ^ T) * f_z_over_N_coil
@@ -368,7 +423,7 @@ subroutine build_matrices()
   call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_z,LDA,f_z_over_N_coil,LDB,BLAS_BETA,matrix_K,LDC)
 
   call system_clock(toc)
-  print *,"matmul 3 for matrix_K:",real(toc-tic)/countrate,"sec."
+  if (lscreen) print *,"matmul 3 for matrix_K:",real(toc-tic)/countrate,"sec."
 
 
 
@@ -378,7 +433,7 @@ subroutine build_matrices()
        * (dtheta_coil*dzeta_coil)
 
   call system_clock(toc)
-  print *,"Matmuls for RHS_K:",real(toc-tic)/countrate,"sec."
+  if (lscreen) print *,"Matmuls for RHS_K:",real(toc-tic)/countrate,"sec."
 
   deallocate(f_x_over_N_coil)
   deallocate(f_y_over_N_coil)

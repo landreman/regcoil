@@ -12,7 +12,7 @@ module init_regcoil_plasma
 
 contains
 
-  subroutine init_plasma
+  subroutine init_plasma(lscreen_optin)
 
     use regcoil_variables
     use read_efit_mod
@@ -24,7 +24,10 @@ contains
     use stel_constants
     
     implicit none
-    
+    ! variables to handle printing to the screen
+    logical, optional :: lscreen_optin
+    logical :: lscreen
+
     integer :: i, itheta, izeta, imn, tic, toc, countrate, iflag, ierr, iopen, tic1, toc1, iunit
     real(dp) :: angle, sinangle, cosangle, dsinangledtheta, dsinangledzeta, dcosangledtheta, dcosangledzeta
     real(dp) :: angle2, sinangle2, cosangle2, dsinangle2dzeta, dcosangle2dzeta
@@ -35,26 +38,43 @@ contains
     real(dp) :: rootSolve_abserr, rootSolve_relerr, theta_rootSolve_min, theta_rootSolve_max, theta_rootSolve_soln
     integer :: fzeroFlag, mpol, ntor, jm, jn, index
     
+    if(present(lscreen_optin)) then 
+      lscreen = lscreen_optin
+    else
+      lscreen = .true.
+    endif
+
+   ! Adding some checks to release previously allocated variables.
+   ! This is because STELLOPT may call this function multiple times.
+   ! if (allocated()) deallocate()
+
     call system_clock(tic, countrate)
-    print *,"Initializing plasma surface."
+    if (lscreen) print *,"Initializing plasma surface."
     
     select case (geometry_option_plasma)
     case (0,1)
        ! Plain circular torus
-       print *,"  Building a plain circular torus."
+       if (lscreen) print *,"  Building a plain circular torus."
        
        nfp = nfp_imposed
        mnmax = 2
        lasym = .false.
        
+       if (allocated(xm)) deallocate(xm)
        allocate(xm(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
+       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
+       if (allocated(xn)) deallocate(xn)
        allocate(xn(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
+       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
+       if (allocated(rmnc)) deallocate(rmnc)
        allocate(rmnc(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
+       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
+       if (allocated(zmns)) deallocate(zmns)
        allocate(zmns(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
+       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
        xm = (/0,1/)
        xn = (/0,0/)
        rmnc(1) = R0_plasma
@@ -73,18 +93,29 @@ contains
        read (iunit, *)
        read (iunit, *) mnmax
        
+       if (allocated(xm)) deallocate(xm)
        allocate(xm(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop "Allocation error! 1"
+       if (iflag .ne. 0) stop "init_regcoil_plasma Allocation error! 1"
+
+       if (allocated(xn)) deallocate(xn)
        allocate(xn(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop "Allocation error!  2"
+       if (iflag .ne. 0) stop "init_regcoil_plasma Allocation error!  2"
+
+       if (allocated(rmnc)) deallocate(rmnc)
        allocate(rmnc(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop "Allocation error!  3"
+       if (iflag .ne. 0) stop "init_regcoil_plasma Allocation error!  3"
+
+       if (allocated(zmns)) deallocate(zmns)
        allocate(zmns(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop "Allocation error!  4"
+       if (iflag .ne. 0) stop "init_regcoil_plasma Allocation error!  4"
+
+       if (allocated(rmns)) deallocate(rmns)
        allocate(rmns(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop "Allocation error!  5"
+       if (iflag .ne. 0) stop "init_regcoil_plasma Allocation error!  5"
+
+       if (allocated(zmnc)) deallocate(zmnc)
        allocate(zmnc(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop "Allocation error!  6"
+       if (iflag .ne. 0) stop "init_regcoil_plasma Allocation error!  6"
        
        ! Skip a line
        read (iunit, *)
@@ -102,45 +133,57 @@ contains
        call read_wout_file(wout_filename, ierr, iopen)
        if (iopen .ne. 0) stop 'error opening wout file'
        if (ierr .ne. 0) stop 'error reading wout file'
-       print *,"  Successfully read VMEC data from ",trim(wout_filename)
+       if (lscreen) print *,"  Successfully read VMEC data from ",trim(wout_filename)
        
        if (geometry_option_plasma == 2) then
           ! Only use the outermost point in the full radial mesh:
           weight1 = 0
           weight2 = 1
-          print *,"  Using outermost grid point in VMEC's FULL radial grid."
+          if (lscreen) print *,"  Using outermost grid point in VMEC's FULL radial grid."
        else
           ! Average the two outermost points in the full radial mesh 
           ! to get a value on the outermost point of the half radial mesh:
           weight1 = 0.5_dp
           weight2 = 0.5_dp
-          print *,"  Using outermost grid point in VMEC's HALF radial grid."
+          if (lscreen) print *,"  Using outermost grid point in VMEC's HALF radial grid."
        end if
        
        nfp = nfp_vmec
        mnmax = mnmax_vmec
        lasym = lasym_vmec
        R0_plasma = Rmajor
-       
+      
+       if (allocated(xm)) deallocate(xm)
        allocate(xm(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
+       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
+       if (allocated(xn)) deallocate(xn)
        allocate(xn(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
+       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
+       if (allocated(rmnc)) deallocate(rmnc)
        allocate(rmnc(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
+       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
+       if (allocated(zmns)) deallocate(zmns)
        allocate(zmns(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
+       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
        
        xm = xm_vmec
        xn = xn_vmec
-       print *,"size of rmnc_vmec:",size(rmnc_vmec,1),size(rmnc_vmec,2)
+       if (lscreen) print *,"size of rmnc_vmec:",size(rmnc_vmec,1),size(rmnc_vmec,2)
        rmnc = rmnc_vmec(:,ns-1) * weight1 + rmnc_vmec(:,ns) * weight2
        zmns = zmns_vmec(:,ns-1) * weight1 + zmns_vmec(:,ns) * weight2
        if (lasym) then
+
+          if (allocated(rmns)) deallocate(rmns)
           allocate(rmns(mnmax),stat=iflag)
-          if (iflag .ne. 0) stop 'Allocation error!'
+          if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
+          if (allocated(zmnc)) deallocate(zmnc)
           allocate(zmnc(mnmax),stat=iflag)
-          if (iflag .ne. 0) stop 'Allocation error!'
+
+          if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
           rmns = rmns_vmec(:,ns-1) * weight1 + rmns_vmec(:,ns) * weight2
           zmnc = zmnc_vmec(:,ns-1) * weight1 + zmnc_vmec(:,ns) * weight2
        end if
@@ -150,7 +193,7 @@ contains
        call read_wout_file(wout_filename, ierr, iopen)
        if (iopen .ne. 0) stop 'error opening wout file'
        if (ierr .ne. 0) stop 'error reading wout file'
-       print *,"  Successfully read VMEC data from ",trim(wout_filename)
+       if (lscreen) print *,"  Successfully read VMEC data from ",trim(wout_filename)
        
        
        nfp = nfp_vmec
@@ -164,10 +207,15 @@ contains
        ! to get R and Z on the outermost point of vmec's half mesh:
        weight1 = 0.5_dp
        weight2 = 0.5_dp
+
+       if (allocated(rmnc_vmecLast)) deallocate(rmnc_vmecLast)
        allocate(rmnc_vmecLast(mnmax_vmec),stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
+       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
+       if (allocated(zmns_vmecLast)) deallocate(zmns_vmecLast)
        allocate(zmns_vmecLast(mnmax_vmec),stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
+       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
        rmnc_vmecLast = rmnc_vmec(:,ns-1) * weight1 + rmnc_vmec(:,ns) * weight2
        zmns_vmecLast = zmns_vmec(:,ns-1) * weight1 + zmns_vmec(:,ns) * weight2
        
@@ -181,10 +229,14 @@ contains
        ! Set up high-resolution grid in the "new" theta coordinate:
        ntheta_coordTransform = mpol * 2 
        nzeta_coordTransform = ntor * 2
+
+       if (allocated(r_coordTransform)) deallocate(r_coordTransform)
        allocate(r_coordTransform(ntheta_coordTransform, nzeta_coordTransform), stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
+       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
+       if (allocated(z_coordTransform)) deallocate(z_coordTransform)
        allocate(z_coordTransform(ntheta_coordTransform, nzeta_coordTransform), stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
+       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
        r_coordTransform = 0
        z_coordTransform = 0
        
@@ -208,7 +260,7 @@ contains
              if (fzeroFlag == 4) then
                 stop "ERROR: fzero returned error 4: no sign change in residual"
              else if (fzeroFlag > 2) then
-                print *,"WARNING: fzero returned an error code:",fzeroFlag
+                print *,"WARNING in irp: fzero returned an error code:",fzeroFlag
              end if
              ! Now that we have the old theta, evaluate r and z:
              r_temp = 0
@@ -226,7 +278,7 @@ contains
        end do
        !close(unit=5)
        call system_clock(toc1)
-       print *,"  Time for root solving:",real(toc1-tic1)/countrate
+       if (lscreen) print *,"  Time for root solving:",real(toc1-tic1)/countrate
        
        ! Now that we have R and Z on a grid in the new coordinates, Fourier transform the results.
        
@@ -239,14 +291,21 @@ contains
        ! When xm is 0, xn must be positive.
        mnmax = mpol*(ntor*2+1) + ntor + 1
        
+       if (allocated(xm)) deallocate(xm)
        allocate(xm(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
+       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
+       if (allocated(xn)) deallocate(xn)
        allocate(xn(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
+       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
+       if (allocated(rmnc)) deallocate(rmnc)
        allocate(rmnc(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
+       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
+       if (allocated(zmns)) deallocate(zmns)
        allocate(zmns(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
+       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
        
        ! Handle the xm=0 modes:
        xm=0
@@ -286,7 +345,7 @@ contains
           zmns(imn) = z_temp*dnorm
        end do
        call system_clock(toc1)
-       print *,"  Time for Fourier transform:",real(toc1-tic1)/countrate
+       if (lscreen) print *,"  Time for Fourier transform:",real(toc1-tic1)/countrate
        
     case (5)
        ! EFIT
@@ -294,18 +353,30 @@ contains
        lasym = .true.
        nfp = nfp_imposed
        mnmax = efit_num_modes
+
+       if (allocated(xm)) deallocate(xm)
        allocate(xm(efit_num_modes),stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
+       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
+       if (allocated(xn)) deallocate(xn)
        allocate(xn(efit_num_modes),stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
+       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
+       if (allocated(rmnc)) deallocate(rmnc)
        allocate(rmnc(efit_num_modes),stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
+       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
+       if (allocated(zmns)) deallocate(zmns)
        allocate(zmns(efit_num_modes),stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
+       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
+       if (allocated(rmns)) deallocate(rmns)
        allocate(rmns(efit_num_modes),stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
+       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
+       if (allocated(zmnc)) deallocate(zmnc)
        allocate(zmnc(efit_num_modes),stat=iflag)
-       if (iflag .ne. 0) stop 'Allocation error!'
+       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
        call read_efit(efit_filename, efit_psiN, efit_num_modes, rmnc, zmns, rmns, zmnc)
        
        ! Set major radius equal to the zero-frequency component of R(theta)
@@ -342,12 +413,17 @@ contains
     nzetal_plasma = nzeta_plasma * nfp
     nzetal_coil   = nzeta_coil   * nfp
     
+    if (allocated(theta_plasma)) deallocate(theta_plasma)
     allocate(theta_plasma(ntheta_plasma),stat=iflag)
-    if (iflag .ne. 0) stop 'Allocation error!'
+    if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
+    if (allocated(zeta_plasma)) deallocate(zeta_plasma)
     allocate(zeta_plasma(nzeta_plasma),stat=iflag)
-    if (iflag .ne. 0) stop 'Allocation error!'
+    if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
+    if (allocated(zetal_plasma)) deallocate(zetal_plasma)
     allocate(zetal_plasma(nzetal_plasma),stat=iflag)
-    if (iflag .ne. 0) stop 'Allocation error!'
+    if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
     
     do i=1,ntheta_plasma
        theta_plasma(i) = twopi*(i-1.0_dp)/ntheta_plasma
@@ -362,14 +438,22 @@ contains
     end do
     
     ! First coordinate is the Cartesian component x, y, or z
+
+    if (allocated(r_plasma)) deallocate(r_plasma)
     allocate(r_plasma(3,ntheta_plasma,nzetal_plasma),stat=iflag)
-    if (iflag .ne. 0) stop 'Allocation error!'
+    if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
+    if (allocated(drdtheta_plasma)) deallocate(drdtheta_plasma)
     allocate(drdtheta_plasma(3,ntheta_plasma,nzetal_plasma),stat=iflag)
-    if (iflag .ne. 0) stop 'Allocation error!'
+    if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
+    if (allocated(drdzeta_plasma)) deallocate(drdzeta_plasma)
     allocate(drdzeta_plasma(3,ntheta_plasma,nzetal_plasma),stat=iflag)
-    if (iflag .ne. 0) stop 'Allocation error!'
+    if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+
+    if (allocated(normal_plasma)) deallocate(normal_plasma)
     allocate(normal_plasma(3,ntheta_plasma,nzetal_plasma),stat=iflag)
-    if (iflag .ne. 0) stop 'Allocation error!'
+    if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
     
     r_plasma=0
     drdtheta_plasma=0
@@ -425,8 +509,9 @@ contains
     normal_plasma(2,:,:) = drdzeta_plasma(3,:,:) * drdtheta_plasma(1,:,:) - drdtheta_plasma(3,:,:) * drdzeta_plasma(1,:,:)
     normal_plasma(3,:,:) = drdzeta_plasma(1,:,:) * drdtheta_plasma(2,:,:) - drdtheta_plasma(1,:,:) * drdzeta_plasma(2,:,:)
     
+    if (allocated(norm_normal_plasma)) deallocate(norm_normal_plasma)
     allocate(norm_normal_plasma(ntheta_plasma, nzeta_plasma),stat=iflag)
-    if (iflag .ne. 0) stop 'Allocation error!'
+    if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
     norm_normal_plasma = sqrt(normal_plasma(1,:,1:nzeta_plasma)**2 &
          + normal_plasma(2,:,1:nzeta_plasma)**2 &
          + normal_plasma(3,:,1:nzeta_plasma)**2)
@@ -449,26 +534,26 @@ contains
          * (r_plasma(3,1,:)-r_plasma(3,ntheta_plasma,:))) ! dZ
     volume_plasma = abs(volume_plasma * dzeta_plasma / 2) ! r_plasma includes all nfp periods already, so no factor of nfp needed.
     deallocate(major_R_squared)
-    print "(a,es10.3,a,es10.3,a)"," Plasma surface area:",area_plasma," m^2. Volume:",volume_plasma," m^3."
+    if (lscreen) print "(a,es10.3,a,es10.3,a)"," Plasma surface area:",area_plasma," m^2. Volume:",volume_plasma," m^3."
     
     select case (geometry_option_plasma)
     case (2,3,4)
        ! A VMEC wout file is available
-       print *,"Overriding net_poloidal_current_Amperes with value from the VMEC wout file."
+       if (lscreen) print *,"Overriding net_poloidal_current_Amperes with value from the VMEC wout file."
        ! VMEC stores the toroidal Boozer component B_zeta as "bvco", using the HALF mesh
        net_poloidal_current_Amperes = 2*pi/mu0*(1.5_dp*bvco(ns)-0.5_dp*bvco(ns-1))
        ! curpol is a number which multiplies the data in the bnorm file.
        curpol = (2*pi/nfp)*(1.5_dp*bsubvmnc(1,ns) - 0.5_dp*bsubvmnc(1,ns-1))
     case default
        if (abs(net_poloidal_current_Amperes-1)<1e-12) then
-          print *,"No VMEC file is available, and the default value of net_poloidal_current_Amperes (=1) will be used."
+          if (lscreen) print *,"No VMEC file is available, and the default value of net_poloidal_current_Amperes (=1) will be used."
        else
-          print *,"No VMEC file is available, so net_poloidal_current_Amperes will be taken from the bdistrib input file."
+          if (lscreen) print *,"No VMEC file is available, so net_poloidal_current_Amperes will be taken from the bdistrib input file."
        end if
     end select
     
     call system_clock(toc)
-    print *,"Done initializing plasma surface. Took ",real(toc-tic)/countrate," sec."
+    if (lscreen) print *,"Done initializing plasma surface. Took ",real(toc-tic)/countrate," sec."
 
   end subroutine init_plasma
 

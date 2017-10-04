@@ -20,50 +20,86 @@ subroutine svd_scan
   integer, dimension(:), allocatable :: IWORK
   character :: JOBZ
 
+  ! Adding some checks to release previously allocated variables.
+  ! This is because STELLOPT may call this function multiple times.
+  ! if (allocated()) deallocate()
 
-  deallocate(lambda)
+
+  if (allocated(lambda)) deallocate(lambda)
+  ! deallocate(lambda)
   ! Nescoil seems to require keeping at least 2 singular values in a svd scan. We will do the same to keep the number
   ! of solutions the same as nescoil.
   nlambda = num_basis_functions-1
   allocate(lambda(nlambda))
   lambda=0
 
+  if (allocated(solution)) deallocate(solution)
   allocate(solution(num_basis_functions), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 1!'
 
+  if (allocated(chi2_B)) deallocate(chi2_B)
   allocate(chi2_B(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(chi2_K(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(max_Bnormal(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(max_K(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(current_potential(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(single_valued_current_potential_thetazeta(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(this_current_potential(ntheta_coil,nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(single_valued_current_potential_mn(num_basis_functions,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(Bnormal_total(ntheta_plasma,nzeta_plasma,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(K2(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(KDifference_x(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(KDifference_y(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(KDifference_z(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(this_K2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 2!'
 
+  if (allocated(chi2_K)) deallocate(chi2_K)
+  allocate(chi2_K(nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 3!'
+
+  if (allocated(max_Bnormal)) deallocate(max_Bnormal)
+  allocate(max_Bnormal(nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 4!'
+
+  if (allocated(max_K)) deallocate(max_K)
+  allocate(max_K(nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 5!'
+
+  if (allocated(current_potential)) deallocate(current_potential)
+  allocate(current_potential(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 6!'
+
+  if (allocated(single_valued_current_potential_thetazeta)) deallocate(single_valued_current_potential_thetazeta)
+  allocate(single_valued_current_potential_thetazeta(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 7!'
+
+  if (allocated(this_current_potential)) deallocate(this_current_potential)
+  allocate(this_current_potential(ntheta_coil,nzeta_coil), stat=iflag)
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 8!'
+
+  if (allocated(single_valued_current_potential_mn)) deallocate(single_valued_current_potential_mn)
+  allocate(single_valued_current_potential_mn(num_basis_functions,nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 9!'
+
+  if (allocated(Bnormal_total)) deallocate(Bnormal_total)
+  allocate(Bnormal_total(ntheta_plasma,nzeta_plasma,nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 10!'
+
+  if (allocated(K2)) deallocate(K2)
+  allocate(K2(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 11!'
+
+  if (allocated(KDifference_x)) deallocate(KDifference_x)
+  allocate(KDifference_x(ntheta_coil*nzeta_coil), stat=iflag)
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 12!'
+
+  if (allocated(KDifference_y)) deallocate(KDifference_y)
+  allocate(KDifference_y(ntheta_coil*nzeta_coil), stat=iflag)
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 13!'
+
+  if (allocated(KDifference_z)) deallocate(KDifference_z)
+  allocate(KDifference_z(ntheta_coil*nzeta_coil), stat=iflag)
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 14!'
+
+  if (allocated(this_K2_times_N)) deallocate(this_K2_times_N)
+  allocate(this_K2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 15!'
+
+  if (allocated(svd_matrix)) deallocate(svd_matrix)
   allocate(svd_matrix(ntheta_plasma*nzeta_plasma, num_basis_functions), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 16!'
+
+  if (allocated(RHS)) deallocate(RHS)
   allocate(RHS(ntheta_plasma*nzeta_plasma), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 17!'
 
 
   print *,"Beginning SVD."
@@ -97,19 +133,28 @@ subroutine svd_scan
        3*min(M,N) + max(max(M,N),5*min(M,N)*min(M,N)+4*min(M,N)), &
        min(M,N)*(6+4*min(M,N))+max(M,N))
   
+  if (allocated(WORK)) deallocate(WORK)
   allocate(WORK(LWORK),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 18!'
+
+  if (allocated(IWORK)) deallocate(IWORK)
   allocate(IWORK(8*min(M,N)),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 19!'
   
   n_singular_values = min(M,N)
+
+  if (allocated(singular_values)) deallocate(singular_values)
   allocate(singular_values(n_singular_values),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'    
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 20!'    
+
+  if (allocated(U)) deallocate(U)
   allocate(U(M,N),stat=iflag) ! If all singular vectors were computed, U would be M*M. But here we only compute the first N singular vectors,
   ! so U is M*N.
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 21!'
+
+  if (allocated(VT)) deallocate(VT)
   allocate(VT(N,N),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 22!'
   
   ! Call LAPACK to do the SVD:
   ! Note that svd_matrix is destroyed by LAPACK!
@@ -135,8 +180,10 @@ subroutine svd_scan
   print *,"Took ",real(toc-tic)/countrate," sec."
 
   call system_clock(tic)
+
+  if (allocated(U_transpose_times_RHS)) deallocate(U_transpose_times_RHS)
   allocate(U_transpose_times_RHS(num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 23!'
   U_transpose_times_RHS = matmul(transpose(U),RHS)
   call system_clock(toc)
   print *,"matmul: ",real(toc-tic)/countrate," sec."

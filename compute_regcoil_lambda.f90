@@ -2,15 +2,27 @@ module compute_regcoil_lambda
 
 contains
  
-subroutine compute_lambda
+subroutine compute_lambda(lscreen_optin)
 
   use regcoil_variables, only: nlambda, lambda_min, lambda_max, lambda, general_option
   use stel_kinds
 
   implicit none
+  ! variables to handle printing to the screen
+  logical, optional :: lscreen_optin
+  logical :: lscreen
 
   integer :: j
 
+  if(present(lscreen_optin)) then 
+    lscreen = lscreen_optin
+  else
+    lscreen = .true.
+  endif
+
+  ! Adding a check to release previously allocated variable.
+  ! This is because STELLOPT may call this function multiple times.
+  if (allocated(lambda)) deallocate(lambda)
   allocate(lambda(nlambda))
   
   lambda(1) = 0
