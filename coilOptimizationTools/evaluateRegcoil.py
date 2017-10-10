@@ -75,8 +75,10 @@ class coilFourier:
     self.dchi2Bdomega = 0
     self.coil_volume = 0
     self.dcoil_volumedomega = 0
-    self.dcoil_plasma_distdomega = 0
-    self.coil_plasma_dist = 0
+    self.dcoil_plasma_dist_mindomega = 0
+    self.dcoil_plasma_dist_maxdomega = 0
+    self.coil_plasma_dist_min_lse = 0
+    self.coil_plasma_dist_max_lse = 0
     self.increased_target_current = False
     self.decreased_target_current = False
     self.current_factor = 0.1
@@ -122,8 +124,11 @@ class coilFourier:
   def set_dcoil_volumedomega(self,dcoil_volumedomega):
     self.dcoil_volumedomega = dcoil_volumedomega
 
-  def set_dcoil_plasma_distdomega(self,dcoil_plasma_distdomega):
-    self.dcoil_plasma_distdomega = dcoil_plasma_distdomega
+  def set_dcoil_plasma_dist_mindomega(self,dcoil_plasma_dist_mindomega):
+    self.dcoil_plasma_dist_mindomega = dcoil_plasma_dist_mindomega
+  
+  def set_dcoil_plasma_dist_maxdomega(self,dcoil_plasma_dist_maxdomega):
+    self.dcoil_plasma_dist_maxdomega = dcoil_plasma_dist_maxdomega
 
   def set_objective_function(self,new_objective_function):
     self.objective_function = new_objective_function
@@ -178,10 +183,12 @@ class coilFourier:
   def evaluateObjectiveFunction(self):
     print "chi2B: " + str(self.chi2B)
     print "coil_volume: " + str(self.coil_volume)
-    print "coil_plasma_dist: " + str(self.coil_plasma_dist)
+    print "coil_plasma_dist_min: " + str(self.coil_plasma_dist_min_lse)
+    print "spectral_norm: " + str(self.spectral_norm)
     print "norm(dchi2Bdomega): " + str(np.linalg.norm(self.dchi2Bdomega,2))
     print "norm(dcoil_volumedomega): " + str(np.linalg.norm(self.dcoil_volumedomega,2))
-    print "norm(dcoil_plasma_distdomega): " + str(np.linalg.norm(self.dcoil_plasma_distdomega,2))
+    print "norm(dcoil_plasma_dist_mindomega): " + str(np.linalg.norm(self.dcoil_plasma_dist_mindomega,2))
+    print "norm(dspectral_normdomegas): " + str(self.dspectral_normdomegas)
     if(self.objective_function_option==0):
       self.set_objective_function(self.chi2B - self.alpha*self.coil_volume)
       self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*self.dcoil_volumedomega)
@@ -189,12 +196,12 @@ class coilFourier:
       self.set_objective_function(self.chi2B - self.alpha*self.coil_volume**(1.0/3.0))
       self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega)
     elif(self.objective_function_option==2):
-      self.set_objective_function(self.chi2B - self.alpha*self.coil_plasma_dist)
-      self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*self.dcoil_plasma_distdomega)
+      self.set_objective_function(self.chi2B - self.alpha*self.coil_plasma_dist_min_lse)
+      self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*self.dcoil_plasma_dist_mindomega)
     elif(self.objective_function_option==3):
       self.compute_spectral_norm()
-      self.set_objective_function(self.chi2B - self.alpha*self.coil_plasma_dist - self.beta*self.coil_volume**(1.0/3.0) + self.gamma*self.spectral_norm)
-      self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*self.dcoil_plasma_distdomega - self.beta*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega + self.gamma*self.dspectral_normdomegas)
+      self.set_objective_function(self.chi2B - self.alpha*self.coil_plasma_dist_min_lse - self.beta*self.coil_volume**(1.0/3.0) + self.gamma*self.spectral_norm)
+      self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*self.dcoil_plasma_dist_mindomega - self.beta*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega + self.gamma*self.dspectral_normdomegas)
     else:
       print "Incorrect choice of objective_function_option!"
       sys.exit(0)
@@ -281,12 +288,13 @@ class coilFourier:
     if (exit_code == 0):
       self.set_dchi2Bdomega(f.variables["dchi2Bdomega"][()][-1])
       self.set_dcoil_volumedomega(f.variables["dvolume_coildomega"][()])
-      self.set_dcoil_plasma_distdomega(f.variables["dcoil_plasma_distdomega"][()])
-      
+      self.set_dcoil_plasma_dist_mindomega(f.variables["dcoil_plasma_dist_mindomega"][()])
+      self.set_dcoil_plasma_dist_maxdomega(f.variables["dcoil_plasma_dist_maxdomega"][()])
       self.chi2B = f.variables["chi2_B"][()][-1]
       self.coil_volume = f.variables["volume_coil"][()]
-      self.coil_plasma_dist = f.variables["coil_plasma_dist"][()]
-      
+      self.coil_plasma_dist_min_lse = f.variables["coil_plasma_dist_min_lse"][()]
+      self.coil_plasma_dist_max_lse = f.variables["coil_plasma_dist_max_lse"][()]
+
       self.evaluateObjectiveFunction()
     
       os.chdir('..')

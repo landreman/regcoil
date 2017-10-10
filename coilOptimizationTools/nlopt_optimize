@@ -31,7 +31,6 @@ def nlopt_optimize(regcoil_input_file):
   if (ftol_rel is None):
     ftol_rel = 1e-6
   
-#global nescinObject
   nescinObject = coilFourier(nmax,mmax,regcoil_input_file)
   nescinObject.set_Fourier_from_nescin(nescin_filename)
   global x0
@@ -45,11 +44,19 @@ def nlopt_optimize(regcoil_input_file):
   elif (algorithm == "nlopt.LD_MMA"):
     opt = nlopt.opt(nlopt.LD_MMA,nomega_sensitivity)
     opt.set_min_objective(lambda x,grad: nlopt_evaluate(x,grad,nescinObject))
-    opt.add_inequality_constraint(lambda x,grad: dist_constraint(x,grad,nescinObject,d_min),constraint_tol)
+    opt.add_inequality_constraint(lambda x,grad: dist_constraint_min(x,grad,nescinObject,d_min),constraint_tol)
+    opt.add_inequality_constraint(lambda x,grad: dist_constraint_max(x,grad,nescinObject,d_max),constraint_tol)
   elif (algorithm == "nlopt.LD_SLSQP"):
     opt = nlopt.opt(nlopt.LD_SLSQP,nomega_sensitivity)
     opt.set_min_objective(lambda x,grad: nlopt_evaluate(x,grad,nescinObject))
-    opt.add_inequality_constraint(lambda x,grad: dist_constraint(x,grad,nescinObject,d_min),constraint_tol)
+    opt.add_inequality_constraint(lambda x,grad: dist_constraint_min(x,grad,nescinObject,d_min),constraint_tol)
+    opt.add_inequality_constraint(lambda x,grad: dist_constraint_max(x,grad,nescinObject,d_max),constraint_tol)
+  elif (algorithm == "nlopt.LD_TNEWTON_PRECOND_RESTART"):
+    opt = nlopt.opt(nlopt.LD_TNEWTON_PRECOND_RESTART,nomega_sensitivity)
+    opt.set_min_objective(lambda x, grad: nlopt_evaluate(x,grad,nescinObject))
+  elif (algorithm == "nlopt.LD_VAR1"):
+    opt = nlopt.opt(nlopt.LD_VAR1,nomega_sensitivity)
+    opt.set_min_objective(lambda x, grad: nlopt_evaluate(x,grad,nescinObject))
   else:
     print "Incorrect argument for algorithm!"
     sys.exit(0)
@@ -87,14 +94,25 @@ def nlopt_evaluate(x,grad,nescinObject):
 # Nonlinear inequality constraint preventing coil winding surface from getting
 # within d_min of plasma surface
 # f_constraint \leq 0
-def dist_constraint(x,grad,nescinObject,d_min):
+def dist_constraint_min(x,grad,nescinObject,d_min):
   # evaluate function
   evaluateFunctionRegcoil(x, nescinObject)
   # Gradient of constraint
   if grad.size > 0:
-    grad[:] = -nescinObject.dcoil_plasma_distdomega
-  print "constraint function: " + str(d_min - nescinObject.coil_plasma_dist)
-  return (d_min - nescinObject.coil_plasma_dist)
+    grad[:] = -nescinObject.dcoil_plasma_dist_mindomega
+    print "norm(grad): " + str(np.linalg.norm(grad,2))
+  print "constraint function: " + str(d_min - nescinObject.coil_plasma_dist_min_lse)
+  return (d_min - nescinObject.coil_plasma_dist_min_lse)
+
+def dist_constraint_max(x,grad,nescinObject,d_max):
+  # evaluate function
+  evaluateFunctionRegcoil(x, nescinObject)
+  # Gradient of constraint
+  if grad.size > 0:
+    grad[:] = nescinObject.dcoil_plasma_dist_maxdomega
+    print "norm(grad): " + str(np.linalg.norm(grad,2))
+  print "constraint function: " + str(nescinObject.coil_plasma_dist_max_lse - d_max)
+  return (nescinObject.coil_plasma_dist_max_lse - d_max)
 
 if __name__ == "__main__":
   nlopt_optimize(sys.argv[1])

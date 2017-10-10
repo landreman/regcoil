@@ -132,10 +132,10 @@ def regcoilScanPlot4(inputFilename):
                 plotVariables.append(f.variables["lambda"][()][ilambda])
                 dplotVariabledomegas.append(f.variables["dlambdadomega"][()][ilambda,:])
               elif (plotType == 7):
-                plotVariables.append(f.variables["coil_plasma_dist_min_lse"][()])
+                plotVariables.append(f.variables["coil_plasma_dist_min"][()])
                 dplotVariabledomegas.append(f.variables["dcoil_plasma_dist_mindomega"][()][:])
               elif (plotType == 8):
-                plotVariables.append(f.variables["coil_plasma_dist_max_lse"][()])
+                plotVariables.append(f.variables["coil_plasma_dist_max"][()])
                 dplotVariabledomegas.append(f.variables["dcoil_plasma_dist_maxdomega"][()][:])
 
               omega = f.variables["omega_coil"][()]
@@ -147,7 +147,7 @@ def regcoilScanPlot4(inputFilename):
               sensitivity_symmetry_option = f.variables["sensitivity_symmetry_option"][()]
 
         dplotVariabledomegas = np.transpose(np.array(dplotVariabledomegas))
-
+      
         # Sort by scanVariable
         scanVariables = np.array(scanVariables)
         indices = np.argsort(scanVariables)
