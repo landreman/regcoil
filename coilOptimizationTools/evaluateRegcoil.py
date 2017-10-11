@@ -21,7 +21,6 @@ class coilFourier:
       current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=False)
       self.current_density_target = current_density_target
       self.current_density_target_init = current_density_target
-    alpha = readVariable("alpha","float",regcoil_input_file,required=True)
     spectral_norm_p = readVariable("spectral_norm_p","float",regcoil_input_file,required=False)
     spectral_norm_q = readVariable("spectral_norm_q","float",regcoil_input_file,required=False)
     self.spectral_norm_p = spectral_norm_p
@@ -30,12 +29,20 @@ class coilFourier:
       self.spectral_norm_p = 2
     if (self.spectral_norm_q==None):
       self.spectral_norm_q = 2
-    objective_function_option = readVariable("objective_function_option","int",regcoil_input_file,required=True)
-    if (objective_function_option > 2):
-      beta = readVariable("beta","float",regcoil_input_file,required=True)
-      gamma = readVariable("gamma","float",regcoil_input_file,required=True)
-      self.gamma = gamma
-      self.beta = beta
+
+    beta = readVariable("beta","float",regcoil_input_file,required=False)
+    gamma = readVariable("gamma","float",regcoil_input_file,required=False)
+    alpha = readVariable("alpha","float",regcoil_input_file,required=False)
+
+    self.gamma = gamma
+    self.beta = beta
+    self.alpha = alpha
+    if (gamma == None):
+      self.gamma = 0
+    if (beta == None):
+      self.beta = 0
+    if (alpha == None):
+      self.alpha = 0
     # Check parameters
     if (geometry_option_plasma < 2 or geometry_option_plasma > 4):
       print "Error! This script is only compatible with geometry_option_plasma=(3,4,5) at the moment."
@@ -44,8 +51,6 @@ class coilFourier:
       print "Error! This script is only compatible with geometry_option_coil=3 at the moment."
       sys.exit(0)
 
-    self.alpha = alpha
-    self.objective_function_option = objective_function_option
     self.nmax_sensitivity = nmax_sensitivity
     self.mmax_sensitivity = mmax_sensitivity
     self.nmax = nmax
@@ -75,8 +80,10 @@ class coilFourier:
     self.dchi2Bdomega = 0
     self.coil_volume = 0
     self.dcoil_volumedomega = 0
-    self.dcoil_plasma_distdomega = 0
-    self.coil_plasma_dist = 0
+    self.dcoil_plasma_dist_mindomega = 0
+    self.dcoil_plasma_dist_maxdomega = 0
+    self.coil_plasma_dist_min_lse = 0
+    self.coil_plasma_dist_max_lse = 0
     self.increased_target_current = False
     self.decreased_target_current = False
     self.current_factor = 0.1
@@ -122,11 +129,11 @@ class coilFourier:
   def set_dcoil_volumedomega(self,dcoil_volumedomega):
     self.dcoil_volumedomega = dcoil_volumedomega
 
-  def set_dcoil_plasma_distdomega(self,dcoil_plasma_distdomega):
-    self.dcoil_plasma_distdomega = dcoil_plasma_distdomega
-
-  def set_objective_function(self,new_objective_function):
-    self.objective_function = new_objective_function
+  def set_dcoil_plasma_dist_mindomega(self,dcoil_plasma_dist_mindomega):
+    self.dcoil_plasma_dist_mindomega = dcoil_plasma_dist_mindomega
+  
+  def set_dcoil_plasma_dist_maxdomega(self,dcoil_plasma_dist_maxdomega):
+    self.dcoil_plasma_dist_maxdomega = dcoil_plasma_dist_maxdomega
 
   def set_dobjective_functiondomegas(self,dobjective_functiondomegas_sensitivity):
     self.dobjective_functiondomegas_sensitivity = dobjective_functiondomegas_sensitivity
@@ -178,26 +185,15 @@ class coilFourier:
   def evaluateObjectiveFunction(self):
     print "chi2B: " + str(self.chi2B)
     print "coil_volume: " + str(self.coil_volume)
-    print "coil_plasma_dist: " + str(self.coil_plasma_dist)
+    print "coil_plasma_dist_min: " + str(self.coil_plasma_dist_min_lse)
+    print "spectral_norm: " + str(self.spectral_norm)
     print "norm(dchi2Bdomega): " + str(np.linalg.norm(self.dchi2Bdomega,2))
     print "norm(dcoil_volumedomega): " + str(np.linalg.norm(self.dcoil_volumedomega,2))
-    print "norm(dcoil_plasma_distdomega): " + str(np.linalg.norm(self.dcoil_plasma_distdomega,2))
-    if(self.objective_function_option==0):
-      self.set_objective_function(self.chi2B - self.alpha*self.coil_volume)
-      self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*self.dcoil_volumedomega)
-    elif(self.objective_function_option==1):
-      self.set_objective_function(self.chi2B - self.alpha*self.coil_volume**(1.0/3.0))
-      self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega)
-    elif(self.objective_function_option==2):
-      self.set_objective_function(self.chi2B - self.alpha*self.coil_plasma_dist)
-      self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*self.dcoil_plasma_distdomega)
-    elif(self.objective_function_option==3):
-      self.compute_spectral_norm()
-      self.set_objective_function(self.chi2B - self.alpha*self.coil_plasma_dist - self.beta*self.coil_volume**(1.0/3.0) + self.gamma*self.spectral_norm)
-      self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*self.dcoil_plasma_distdomega - self.beta*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega + self.gamma*self.dspectral_normdomegas)
-    else:
-      print "Incorrect choice of objective_function_option!"
-      sys.exit(0)
+    print "norm(dcoil_plasma_dist_mindomega): " + str(np.linalg.norm(self.dcoil_plasma_dist_mindomega,2))
+    print "norm(dspectral_normdomegas): " + str(self.dspectral_normdomegas)
+    self.compute_spectral_norm()
+    self.objective_function = self.chi2B - self.alpha*self.coil_plasma_dist_min_lse - self.beta*self.coil_volume**(1.0/3.0) + self.gamma*self.spectral_norm
+    self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*self.dcoil_plasma_dist_mindomega - self.beta*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega + self.gamma*self.dspectral_normdomegas)
 
   # This is a script to be called within a nonlinear optimization routine in order to evaluate
   # chi2 and its gradient with respect to the Fourier coefficients
@@ -281,12 +277,13 @@ class coilFourier:
     if (exit_code == 0):
       self.set_dchi2Bdomega(f.variables["dchi2Bdomega"][()][-1])
       self.set_dcoil_volumedomega(f.variables["dvolume_coildomega"][()])
-      self.set_dcoil_plasma_distdomega(f.variables["dcoil_plasma_distdomega"][()])
-      
+      self.set_dcoil_plasma_dist_mindomega(f.variables["dcoil_plasma_dist_mindomega"][()])
+      self.set_dcoil_plasma_dist_maxdomega(f.variables["dcoil_plasma_dist_maxdomega"][()])
       self.chi2B = f.variables["chi2_B"][()][-1]
       self.coil_volume = f.variables["volume_coil"][()]
-      self.coil_plasma_dist = f.variables["coil_plasma_dist"][()]
-      
+      self.coil_plasma_dist_min_lse = f.variables["coil_plasma_dist_min_lse"][()]
+      self.coil_plasma_dist_max_lse = f.variables["coil_plasma_dist_max_lse"][()]
+
       self.evaluateObjectiveFunction()
     
       os.chdir('..')

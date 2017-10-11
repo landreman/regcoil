@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-print "usage: plotObjectiveFunction regcoil_in.XXX"
+print "usage: plot1Doptimization.py regcoil_in.XXX whichM whichN whichOmega"
 
 import sys
 from regcoilScan import readVariable
@@ -8,12 +8,10 @@ from scipy.io import netcdf
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+from nescinUtilities import nescinReadValue
 
-def plotObjectiveFunction(inputFilename):
-
-  outputFilename = "regcoil_out" + inputFilename[10::] + ".nc"
+def plot1DOptimization(inputFilename,whichM,whichN,whichOmega):
   
-  general_option = readVariable("general_option","int",inputFilename,required=True)
   alpha = readVariable("alpha","float",inputFilename,required=False)
   beta = readVariable("beta","float",inputFilename,required=False)
   gamma = readVariable("gamma","float",inputFilename,required=False)
@@ -24,18 +22,19 @@ def plotObjectiveFunction(inputFilename):
   if (gamma == None):
     gamma = 0
 
+  outputFilename = "regcoil_out" + inputFilename[10::] + ".nc"
+
   directories = filter(os.path.isdir, os.listdir("."))
 
   chi2_Bs = []
   coil_volumes = []
   coil_plasma_dists = []
+  omegas = []
   evals = []
-  dobjective_functiondomegas = []
-  current_density_targets = []
-
   for directory in directories:
-    
+
       filename = directory+"/"+outputFilename
+      this_input = directory+"/"+inputFilename
       currFileName = directory+"/"+inputFilename
       if not os.path.isfile(filename):
           print "Directory "+directory+" does not have a "+outputFilename+" file (yet)."
@@ -55,54 +54,56 @@ def plotObjectiveFunction(inputFilename):
               continue
       print "Processing directory "+directory
       evals.append(float(directory[5::]))
+
       chi2_Bs.append(f.variables["chi2_B"][()][-1])
       coil_volumes.append(f.variables["volume_coil"][()])
       coil_plasma_dists.append(f.variables["coil_plasma_dist_min_lse"][()])
-      dchi2Bdomega = f.variables["dchi2Bdomega"][()][-1]
-      dvolume_coildomega = f.variables["dvolume_coildomega"][()]
-      dcoil_plasma_distdomega = f.variables["dcoil_plasma_dist_mindomega"][()]
       coil_volume = f.variables["volume_coil"][()]
-      dobjective_functiondomega = np.linalg.norm(dchi2Bdomega - alpha*dcoil_plasma_distdomega - beta*coil_volume**(-2.0/3.0)*dvolume_coildomega,2)
-      dobjective_functiondomegas.append(dobjective_functiondomega)
-      if (general_option > 3):
-        current_density_target = readVariable("current_density_target","float",currFileName,required=True)
-        current_density_targets.append(current_density_target)
+      nescinFilename = directory+"/"+readVariable("nescin_filename","string",this_input,required=True)
+      omega = nescinReadValue(nescinFilename, whichM, whichN, whichOmega)
+      omegas.append(omega)
 
+  evals = np.array(evals)
+  omegas = np.array(omegas)
   chi2_Bs = np.array(chi2_Bs)
-  coil_volumes = np.array(coil_volumes)
   coil_plasma_dists = np.array(coil_plasma_dists)
+  coil_volumes = np.array(coil_volumes)
 
   objective_functions = chi2_Bs - alpha*coil_plasma_dists - beta*coil_volumes**(1.0/3.0)
 
-  plt.figure(facecolor='white')
-  plt.semilogy(evals, chi2_Bs,'b.',label='chi2_B')
-  plt.semilogy(evals, coil_volumes,'g.',label='coil_volume')
-  plt.semilogy(evals, coil_plasma_dists,'r.',label='coil_plasma_dists')
-  plt.legend()
-  plt.xlabel('Function Evaluations')
-  plt.legend()
+  indices = np.argsort(evals)
+  evals = evals[indices]
+  print evals
+  objective_functions = objective_functions[indices]
+  omegas = omegas[indices]
+
+  final_omega = omegas[-1]
+  final_objective = objective_functions[-1]
+  init_omega = omegas[0]
+  init_objective = objective_functions[0]
+
+  indices = np.argsort(omegas)
+  omegas = omegas[indices]
+  objective_functions = objective_functions[indices]
+
+  min_index = np.argmin(objective_functions)
+  min_omega = omegas[min_index]
+  print "Minimum obtained at: " + str(min_omega)
 
   plt.figure(facecolor='white')
-  plt.plot(evals, objective_functions,'r.',label='objective_function')
+  plt.axvline(min_omega,label='Minimum',color='blue')
+  plt.plot(omegas, objective_functions,marker='.',color='black',linestyle='none')
+  plt.axvline(final_omega,label='Final eval',color='green')
+  plt.axvline(init_omega,label='Initial eval',color='red')
   plt.legend()
-  plt.xlabel('Function Evaluations')
-  plt.legend()
-
-  plt.figure(facecolor='white')
-  plt.semilogy(evals, dobjective_functiondomegas,'r.',label='2-norm of gradient')
-  plt.legend()
-  plt.xlabel('Function Evaluations')
-
-  if (general_option > 3):
-    plt.figure(facecolor='white')
-    plt.plot(evals, current_density_targets,'r.',label='current_density_target')
-    plt.legend()
-    plt.xlabel('Function Evaluations')
-
+  plt.xlabel(whichOmega + '_' + str(whichM) + '_' + str(whichN))
+  plt.ylabel('Objective function')
   plt.show()
 
 if __name__ == "__main__":
-  if len(sys.argv) != 2:
-    print "Error! You must specify 1 arguments: regcoil_in.XXX."
+  if len(sys.argv) != 5:
+    print "Error! You must specify 4 arguments: regcoil_in.XXX whichM whichN whichOmega."
     exit(1)
-  plotObjectiveFunction(sys.argv[1])
+  whichM = int(sys.argv[2])
+  whichN = int(sys.argv[3])
+  plot1DOptimization(sys.argv[1],whichM,whichN,sys.argv[4])
