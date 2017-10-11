@@ -63,6 +63,7 @@ def plotConstraintEquation(inputFilename,whichM, whichN, whichOmega):
 
   plt.figure(facecolor='white')
   plt.plot(omegas,constraint_equations,linestyle='none',marker='.',color='black')
+  plt.axhline(0)
   plt.xlabel(whichOmega + '_' + str(whichM) + '_' + str(whichN))
   plt.ylabel('Constraint equation (dmin)')
   plt.show()
