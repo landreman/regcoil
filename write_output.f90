@@ -139,7 +139,8 @@ subroutine write_output
      vn_principle_curvature_1 = "principle_curvature_1", &
      vn_principle_curvature_2 = "principle_curvature_2", &
      vn_mean_curvature = "mean_curvature", &
-     vn_gaussian_curvature = "gaussian_curvature"
+     vn_gaussian_curvature = "gaussian_curvature", &
+     vn_normal_dist = "normal_dist"
 
   ! Arrays with dimension 3
   character(len=*), parameter :: &
@@ -423,6 +424,7 @@ subroutine write_output
     call cdf_define(ncid, vn_principle_curvature_2, principle_curvature_2, dimname=ntheta_nzeta_coil_dim)
     call cdf_define(ncid, vn_mean_curvature, mean_curvature, dimname=ntheta_nzeta_coil_dim)
     call cdf_define(ncid, vn_gaussian_curvature, gaussian_curvature, dimname=ntheta_nzeta_coil_dim)
+    call cdf_define(ncid, vn_normal_dist,normal_dist, dimname = ntheta_nzeta_coil_dim)
   end if
 
   ! Arrays with dimension 3
@@ -639,7 +641,7 @@ subroutine write_output
     call cdf_write(ncid, vn_L_p_diagnostic_6, L_p_diagnostic_6(1:Nlambda,:))
   end if
   if (fixed_norm_sensitivity_option > 1 .and. exit_code == 0) then
-    call cdf_write(ncid, vn_dLSE_current_density_with_areadOmega, dLSE_current_density_with_areadOmega(:,1:Nlambda))
+    call cdf_write(ncid, vn_dLSE_current_density_with_areadOmega, dLSE_current_density_with_aread/Users/elizabethpaul/Documents/Research/regcoil_sensitivity/regcoil/write_output.f90Omega(:,1:Nlambda))
     call cdf_write(ncid, vn_dRMSKdomega, dRMSKdomega(:,1:Nlambda))
     call cdf_write(ncid, vn_q_tilde, q_tilde(:,1:Nlambda))
     call cdf_write(ncid, vn_dlambdadomega, dlambdadomega(:,1:Nlambda))
@@ -649,6 +651,7 @@ subroutine write_output
     call cdf_write(ncid, vn_principle_curvature_2, principle_curvature_2)
     call cdf_write(ncid, vn_mean_curvature, mean_curvature)
     call cdf_write(ncid, vn_gaussian_curvature, gaussian_curvature)
+    call cdf_write(ncid, vn_normal_dist, normal_dist)
   end if
 
   ! Arrays with dimension 3

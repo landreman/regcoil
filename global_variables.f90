@@ -137,6 +137,7 @@ module global_variables
   real(dp), dimension(:), allocatable :: dcoil_plasma_dist_mindomega, dcoil_plasma_dist_maxdomega
   real(dp) :: coil_plasma_dist_min, coil_plasma_dist_max
   real(dp) :: coil_plasma_dist_min_lse, coil_plasma_dist_max_lse
+  real(dp), dimension(:,:), allocatable :: normal_dist
 
   ! Curvature-related things
   integer :: compute_curvature = 0

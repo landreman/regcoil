@@ -15,9 +15,8 @@ subroutine init_sensitivity()
   real(dp), dimension(:,:,:,:), allocatable :: dist, identity
   integer :: izeta_plasma, itheta_plasma, izeta_coil, itheta_coil
   integer :: index_coil, l_coil, izetal_coil, index_plasma
-  real(dp), dimension(:,:), allocatable :: normal_dist, sum_exp_dist, normal_dist_lse
   real(dp), dimension(:,:,:,:,:), allocatable :: ddistdomega
-  real(dp), dimension(:,:,:), allocatable :: dnormal_distdomega, dsum_exp_distdomega
+  real(dp), dimension(:,:,:), allocatable :: dsum_exp_distdomega
   real(dp) :: coil_plasma_dist_min_term, coil_plasma_dist_max_term, sum_exp_dist_term
 
   ! For volume calculation
@@ -54,6 +53,7 @@ subroutine init_sensitivity()
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(domegadzdzeta(nomega_coil,ntheta_coil,nzetal_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
+
   allocate(dist(ntheta_coil,nzeta_coil,ntheta_plasma,nzeta_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dcoil_plasma_dist_mindomega(nomega_coil),stat=iflag)
@@ -62,13 +62,7 @@ subroutine init_sensitivity()
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(normal_dist(ntheta_coil,nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(normal_dist_lse(ntheta_coil,nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
   allocate(ddistdomega(ntheta_coil,nzeta_coil,ntheta_plasma,nzeta_plasma,nomega_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(sum_exp_dist(ntheta_coil,nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dnormal_distdomega(ntheta_coil,nzeta_coil,nomega_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dsum_exp_distdomega(ntheta_coil,nzeta_coil,nomega_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
@@ -303,7 +297,7 @@ subroutine init_sensitivity()
             + (r_coil(3,itheta_coil,izeta_coil)-r_plasma(3,itheta_plasma,izeta_plasma))*drdomega(3,index_coil,1,:))
         end do
       end do
-!      normal_dist(itheta_coil,izeta_coil) = minval(dist(itheta_coil,izeta_coil,:,:))
+      normal_dist(itheta_coil,izeta_coil) = minval(dist(itheta_coil,izeta_coil,:,:))
     end do
   end do
   !$OMP END DO

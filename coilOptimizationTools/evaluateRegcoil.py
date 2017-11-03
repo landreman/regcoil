@@ -33,16 +33,20 @@ class coilFourier:
     beta = readVariable("beta","float",regcoil_input_file,required=False)
     gamma = readVariable("gamma","float",regcoil_input_file,required=False)
     alpha = readVariable("alpha","float",regcoil_input_file,required=False)
-
+    scaleFactor = readVariable("scaleFactor","float",regcoil_input_file,required=False)
+    
     self.gamma = gamma
     self.beta = beta
     self.alpha = alpha
+    self.scaleFactor = scaleFactor
     if (gamma == None):
       self.gamma = 0
     if (beta == None):
       self.beta = 0
     if (alpha == None):
       self.alpha = 0
+    if (scaleFactor = None):
+      self.scaleFactor = 1.0
     # Check parameters
     if (geometry_option_plasma < 2 or geometry_option_plasma > 4):
       print "Error! This script is only compatible with geometry_option_plasma=(3,4,5) at the moment."
@@ -183,6 +187,7 @@ class coilFourier:
     self.dspectral_normdomegas = new_dspectral_normdomegas
   
   def evaluateObjectiveFunction(self):
+    self.compute_spectral_norm()
     print "chi2B: " + str(self.chi2B)
     print "coil_volume: " + str(self.coil_volume)
     print "coil_plasma_dist_min: " + str(self.coil_plasma_dist_min_lse)
@@ -190,10 +195,10 @@ class coilFourier:
     print "norm(dchi2Bdomega): " + str(np.linalg.norm(self.dchi2Bdomega,2))
     print "norm(dcoil_volumedomega): " + str(np.linalg.norm(self.dcoil_volumedomega,2))
     print "norm(dcoil_plasma_dist_mindomega): " + str(np.linalg.norm(self.dcoil_plasma_dist_mindomega,2))
-    print "norm(dspectral_normdomegas): " + str(self.dspectral_normdomegas)
-    self.compute_spectral_norm()
-    self.objective_function = self.chi2B - self.alpha*self.coil_plasma_dist_min_lse - self.beta*self.coil_volume**(1.0/3.0) + self.gamma*self.spectral_norm
-    self.set_dobjective_functiondomegas(self.dchi2Bdomega - self.alpha*self.dcoil_plasma_dist_mindomega - self.beta*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega + self.gamma*self.dspectral_normdomegas)
+    print "norm(dspectral_normdomegas): " + str(np.linalg.norm(self.dspectral_normdomegas,2))
+    
+    self.objective_function = self.scaleFactor*(self.chi2B - self.alpha*self.coil_plasma_dist_min_lse - self.beta*self.coil_volume**(1.0/3.0) + self.gamma*self.spectral_norm)
+    self.set_dobjective_functiondomegas(self.scaleFactor*(self.dchi2Bdomega - self.alpha*self.dcoil_plasma_dist_mindomega - self.beta*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega + self.gamma*self.dspectral_normdomegas))
 
   # This is a script to be called within a nonlinear optimization routine in order to evaluate
   # chi2 and its gradient with respect to the Fourier coefficients
