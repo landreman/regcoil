@@ -121,7 +121,7 @@ module global_variables
   real(dp), dimension(:,:,:), allocatable :: dddomega, dfxdomega, dfydomega, dfzdomega
   real(dp), dimension(:,:,:), allocatable :: dnorm_normaldomega, dgdomega, dinductancedomega
   real(dp), dimension(:,:,:), allocatable :: dnormxdomega, dnormydomega, dnormzdomega
-  real(dp), dimension(:,:), allocatable :: dchi2domega, dchi2Kdomega, dchi2Bdomega, dchi2Kdomega_withoutadjoint
+  real(dp), dimension(:,:), allocatable :: dchi2domega, dchi2Kdomega, dchi2Bdomega, dchi2Kdomega_withoutadjoint, dchi2Bdomega_withoutadjoint
   real(dp), dimension(:,:,:,:), allocatable :: drdomega
   real(dp), dimension(:,:,:), allocatable :: domegadxdtheta, domegadxdzeta, domegadydtheta, domegadydzeta
   real(dp), dimension(:,:,:), allocatable :: domegadzdtheta, domegadzdzeta

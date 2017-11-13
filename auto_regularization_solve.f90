@@ -323,8 +323,11 @@ subroutine auto_regularization_solve
      ! Done computing diagnostics.
      ! Now analyze the results to determine what to do next.
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-     last_above_target = (target_function(ilambda) > current_density_target)
+     if (target_option < 9) then
+        last_above_target = (target_function(ilambda) > current_density_target)
+     else
+        last_above_target = (target_function(ilambda) < current_density_target)
+     end if
      if (stage==1) initial_above_target = last_above_target
      if (stage==2 .and. (last_above_target .neqv. initial_above_target)) then
         ! If we've bracketed the target, move on to stage 3.
@@ -334,8 +337,8 @@ subroutine auto_regularization_solve
      if (stage==10 .and. last_above_target) then
         print *,"*******************************************************************************"
         print *,"*******************************************************************************"
-        print *,"Error! The current_density_target you have set is not achievable because"
-        print *,"it is too low."
+        print *,"Error! If target_option < 9, the current_density_target you have set is not    achievable because"
+        print *,"it is too low. If target_option == 9, the target is not achievable because it is too high."
         print *,"*******************************************************************************"
         print *,"*******************************************************************************"
         Nlambda = ilambda
@@ -345,8 +348,8 @@ subroutine auto_regularization_solve
      if (stage==11 .and. (.not. last_above_target)) then
         print *,"*******************************************************************************"
         print *,"*******************************************************************************"
-        print *,"Error! The current_density_target you have set is not achievable because"
-        print *,"it is too high."
+        print *,"Error! If target_option < 9, the current_density_target you have set is not "
+        print *,"achievable because it is too high. Otherwise it is too low."
         print *,"*******************************************************************************"
         print *,"*******************************************************************************"
         Nlambda = ilambda
@@ -436,6 +439,8 @@ contains
        target_function = LSE_current_density(jlambda)
     case (8)
        target_function = LSE_current_density_with_area(jlambda)
+    case (9)
+       target_function = chi2_B(jlambda)
     case default
        print *,"Invalid target_option: ",target_option
        stop

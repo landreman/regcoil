@@ -108,6 +108,9 @@ subroutine lse_sensitivity()
       dintKpdomega = sum(dtheta_coil*dzeta_coil*nfp*(target_option_p*norm_normal_coil*norm_K**(target_option_p-1)*dnorm_kdomega + dnorm_normaldomega(iomega,:,:)*norm_K**(target_option_p)))
       dtarget_optiondOmega(iomega,ilambda) = -(1/target_option_p)*L_p_norm_with_area(ilambda)*darea_coildomega(iomega)/area_coil + L_p_norm_with_area(ilambda)**(1-target_option_p)*dintKpdomega/(area_coil*target_option_p)
     end if
+    if (target_option == 9) then
+      dtarget_optiondOmega(iomega,ilambda) = dchi2Bdomega_withoutadjoint(iomega,ilambda)
+    end if
   end do
   !$OMP END DO
   !$OMP END PARALLEL
@@ -134,6 +137,9 @@ subroutine lse_sensitivity()
     if (target_option == 4) then
       dintKpdPhi = sum(dtheta_coil*dzeta_coil*nfp*norm_normal_coil*target_option_p*norm_K**(target_option_p-1)*dnorm_Kdphi)
       dtarget_optiondPhi(i_basis_function,ilambda) = (1/(target_option_p*area_coil)) * L_p_norm_with_area(ilambda)**(1-target_option_p)*dintKpdPhi
+    end if
+    if (target_option == 9) then
+      dtarget_optiondPhi(i_basis_function,ilambda) = dchi2Bdphi(ilambda,i_basis_function)
     end if
   end do
   !$OMP END DO

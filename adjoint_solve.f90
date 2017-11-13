@@ -47,6 +47,8 @@ subroutine adjoint_solve
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dchi2Bdomega(nomega_coil,nlambda),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(dchi2Bdomega_withoutadjoint(nomega_coil,nlambda),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dKDifferencedomega(3,ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(term1(ntheta_coil,nzeta_coil),stat=iflag)
@@ -191,7 +193,8 @@ subroutine adjoint_solve
     !$OMP DO PRIVATE(dBnormaldomega)
     do iomega = 1, nomega_coil
      dBnormaldomega = reshape(matmul(dgdomega(:,:,iomega),solution),(/ ntheta_plasma, nzeta_plasma /))/norm_normal_plasma + reshape(dhdomega(iomega,:),(/ ntheta_plasma, nzeta_plasma /))/norm_normal_plasma
-     dchi2Bdomega(iomega,ilambda) = 2*nfp*dtheta_plasma*dzeta_plasma*sum(Bnormal_total(:,:,ilambda)*dBnormaldomega*norm_normal_plasma)
+     dchi2Bdomega_withoutadjoint(iomega,ilambda) = 2*nfp*dtheta_plasma*dzeta_plasma*sum(Bnormal_total(:,:,ilambda)*dBnormaldomega*norm_normal_plasma)
+     dchi2Bdomega(iomega,ilambda) = dchi2Bdomega_withoutadjoint(iomega,ilambda)
     enddo
     !$OMP END DO
     !$OMP END PARALLEL
