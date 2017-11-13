@@ -45,7 +45,7 @@ class coilFourier:
       self.beta = 0
     if (alpha == None):
       self.alpha = 0
-    if (scaleFactor = None):
+    if (scaleFactor == None):
       self.scaleFactor = 1.0
     # Check parameters
     if (geometry_option_plasma < 2 or geometry_option_plasma > 4):
