@@ -21,6 +21,8 @@ class coilFourier:
       current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=False)
       self.current_density_target = current_density_target
       self.current_density_target_init = current_density_target
+      target_option = readVariable("target_option","int",regcoil_input_file,required=True)
+      self.target_option = target_option
     spectral_norm_p = readVariable("spectral_norm_p","float",regcoil_input_file,required=False)
     spectral_norm_q = readVariable("spectral_norm_q","float",regcoil_input_file,required=False)
     self.spectral_norm_p = spectral_norm_p
@@ -30,21 +32,30 @@ class coilFourier:
     if (self.spectral_norm_q==None):
       self.spectral_norm_q = 2
 
-    beta = readVariable("beta","float",regcoil_input_file,required=False)
-    gamma = readVariable("gamma","float",regcoil_input_file,required=False)
-    alpha = readVariable("alpha","float",regcoil_input_file,required=False)
+    alpha1 = readVariable("alpha1","float",regcoil_input_file,required=False)
+    alpha2 = readVariable("alpha2","float",regcoil_input_file,required=False)
+    alpha3 = readVariable("alpha3","float",regcoil_input_file,required=False)
+    alpha4 = readVariable("alpha4","float",regcoil_input_file,required=False)
+    alpha5 = readVariable("alpha5","float",regcoil_input_file,required=False)
+
     scaleFactor = readVariable("scaleFactor","float",regcoil_input_file,required=False)
     
-    self.gamma = gamma
-    self.beta = beta
-    self.alpha = alpha
+    self.alpha1 = alpha1
+    self.alpha2 = alpha2
+    self.alpha3 = alpha3
+    self.alpha4 = alpha4
+    self.alpha5 = alpha5
     self.scaleFactor = scaleFactor
-    if (gamma == None):
-      self.gamma = 0
-    if (beta == None):
-      self.beta = 0
-    if (alpha == None):
-      self.alpha = 0
+    if (alpha1 == None):
+      self.alpha1 = 0
+    if (alpha2 == None):
+      self.alpha2 = 0
+    if (alpha3 == None):
+      self.alpha3 = 0
+    if (alpha4 == None):
+      self.alpha4 = 0
+    if (alpha5 == None):
+      self.alpha5 = 0
     if (scaleFactor == None):
       self.scaleFactor = 1.0
     # Check parameters
@@ -81,7 +92,9 @@ class coilFourier:
     self.evaluated = False # has function been evaluated at current omegas_sensitivity?
     self.feval = 0 # Number of function evaluations
     self.chi2B = 0
+    self.chi2K = 0
     self.dchi2Bdomega = 0
+    self.dchi2Kdomega = 0
     self.coil_volume = 0
     self.dcoil_volumedomega = 0
     self.dcoil_plasma_dist_mindomega = 0
@@ -129,6 +142,9 @@ class coilFourier:
 
   def set_dchi2Bdomega(self,dchi2Bdomega):
     self.dchi2Bdomega = dchi2Bdomega
+  
+  def set_dchi2Kdomega(self,dchi2Kdomega):
+    self.dchi2Kdomega = dchi2Kdomega
 
   def set_dcoil_volumedomega(self,dcoil_volumedomega):
     self.dcoil_volumedomega = dcoil_volumedomega
@@ -188,17 +204,19 @@ class coilFourier:
   
   def evaluateObjectiveFunction(self):
     self.compute_spectral_norm()
+    print "chi2K: " + str(self.chi2K)
     print "chi2B: " + str(self.chi2B)
     print "coil_volume: " + str(self.coil_volume)
     print "coil_plasma_dist_min: " + str(self.coil_plasma_dist_min_lse)
     print "spectral_norm: " + str(self.spectral_norm)
+    print "norm(dchi2Kdomega): " + str(np.linalg.norm(self.dchi2Kdomega,2))
     print "norm(dchi2Bdomega): " + str(np.linalg.norm(self.dchi2Bdomega,2))
     print "norm(dcoil_volumedomega): " + str(np.linalg.norm(self.dcoil_volumedomega,2))
     print "norm(dcoil_plasma_dist_mindomega): " + str(np.linalg.norm(self.dcoil_plasma_dist_mindomega,2))
     print "norm(dspectral_normdomegas): " + str(np.linalg.norm(self.dspectral_normdomegas,2))
     
-    self.objective_function = self.scaleFactor*(self.chi2B - self.alpha*self.coil_plasma_dist_min_lse - self.beta*self.coil_volume**(1.0/3.0) + self.gamma*self.spectral_norm)
-    self.set_dobjective_functiondomegas(self.scaleFactor*(self.dchi2Bdomega - self.alpha*self.dcoil_plasma_dist_mindomega - self.beta*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega + self.gamma*self.dspectral_normdomegas))
+    self.objective_function = self.scaleFactor*(self.alpha4*self.chi2B - self.alpha3*self.coil_plasma_dist_min_lse - self.alpha1*self.coil_volume**(1.0/3.0) + self.alpha2*self.spectral_norm + self.alpha5*self.chi2K)
+    self.set_dobjective_functiondomegas(self.scaleFactor*(self.alpha4*self.dchi2Bdomega - self.alpha3*self.dcoil_plasma_dist_mindomega - self.alpha1*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega + self.alpha2*self.dspectral_normdomegas + self.alpha5*self.dchi2Kdomega))
 
   # This is a script to be called within a nonlinear optimization routine in order to evaluate
   # chi2 and its gradient with respect to the Fourier coefficients
@@ -281,6 +299,7 @@ class coilFourier:
     exit_code = f.variables["exit_code"][()]
     if (exit_code == 0):
       self.set_dchi2Bdomega(f.variables["dchi2Bdomega"][()][-1])
+      self.set_dchi2Kdomega(f.variables["dchi2Kdomega"][()][-1])
       self.set_dcoil_volumedomega(f.variables["dvolume_coildomega"][()])
       self.set_dcoil_plasma_dist_mindomega(f.variables["dcoil_plasma_dist_mindomega"][()])
       self.set_dcoil_plasma_dist_maxdomega(f.variables["dcoil_plasma_dist_maxdomega"][()])
@@ -321,28 +340,51 @@ class coilFourier:
         else:
           self.evaluateRegcoil(omegas_sensitivity_new)
       # exit_code == -2 or -3 should only happen with general_option > 3
-      elif (exit_code == -2): # current density too low
-        print "Current density too low."
-        # Decrease factor of increase/decrease
-        if (self.decreased_target_current): # previously tried decreasing target
-          self.current_factor = self.current_factor*0.5
-          print "current_factor is now: " + str(self.current_factor)
-        self.current_density_target = (1.0+self.current_factor)*self.current_density_target
-        print "Trying again with current_density_target = " + str(self.current_density_target)
-        os.chdir('..')
-        self.increased_target_current = True
-        self.evaluateRegcoil(omegas_sensitivity_new,self.current_density_target)
+      elif (exit_code == -2): # current density too low or chi2B too high
+        if (target_option < 9):
+          print "Current density too low."
+          # Decrease factor of increase/decrease
+          if (self.decreased_target_current): # previously tried decreasing target
+            self.current_factor = self.current_factor*0.5
+            print "current_factor is now: " + str(self.current_factor)
+          self.current_density_target = (1.0+self.current_factor)*self.current_density_target
+          print "Trying again with current_density_target = " + str(self.current_density_target)
+          os.chdir('..')
+          self.increased_target_current = True
+          self.evaluateRegcoil(omegas_sensitivity_new,self.current_density_target)
+        if (target_option == 9):
+          print "chi2B too high."
+          if (self.increased_target_current): # previously tried increasing
+            self.current_factor = self.current_factor*0.5
+            print "current_factor is now: " + str(self.current_factor)
+          self.current_density_target = (1.0-self.current_factor)*self.current_density_target
+          print "Trying again with current_density_target = " + str(self.current_density_target)
+          os.chdir('..')
+          self.decreased_target_current = True
+          self.evaluateRegcoil(omegas_sensitivity_new,self.current_density_target)
       elif (exit_code == -3): # current density too high
-        print "Current density too high."
-        # Target has been bracketed. Decrease interval.
-        if (self.increased_target_current):
-          self.current_factor = self.current_factor*0.5
-          print "current_factor is now: " + str(self.current_factor)
-        self.current_density_target = (1.0-self.current_factor)*self.current_density_target
-        print "Trying again with current_density_target = " + str(self.current_density_target)
-        os.chdir('..')
-        self.decreased_target_current = True
-        self.evaluateRegcoil(omegas_sensitivity_new,self.current_density_target)
+        if (target_option < 9):
+          print "Current density too high."
+          # Target has been bracketed. Decrease interval.
+          if (self.increased_target_current):
+            self.current_factor = self.current_factor*0.5
+            print "current_factor is now: " + str(self.current_factor)
+          self.current_density_target = (1.0-self.current_factor)*self.current_density_target
+          print "Trying again with current_density_target = " + str(self.current_density_target)
+          os.chdir('..')
+          self.decreased_target_current = True
+          self.evaluateRegcoil(omegas_sensitivity_new,self.current_density_target)
+        else:
+          print "chi2_B too low."
+          # Target has been bracketed. Decrease interval.
+          if (self.decreased_target_current):
+            self.current_factor = self.current_factor*0.5
+            print "current_factor is now: " + str(self.current_factor)
+          self.current_density_target = (1.0+self.current_factor)*self.current_density_target
+          print "Trying again with current_density_target = " + str(self.current_density_target)
+          os.chdir('..')
+          self.increased_target_current = True
+          self.evaluateRegcoil(omegas_sensitivity_new,self.current_density_target)
       else:
         sys.exit(0)
 
