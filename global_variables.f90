@@ -99,7 +99,7 @@ module global_variables
   real(dp), dimension(:), allocatable :: L_p_norm, L_p_norm_with_area, L_p_norm_option_3, L_p_norm_option_4
   real(dp), dimension(:), allocatable :: LSE_current_density, LSE_current_density_with_area
   integer, dimension(:), allocatable :: ps
-  real(dp), dimension(:,:), allocatable :: dLSE_current_density_with_areadOmega, dLSE_current_density_with_areadPhi
+  real(dp), dimension(:,:), allocatable :: dtarget_optiondOmega, dtarget_optiondPhi
   real(dp), dimension(:), allocatable :: rms_K
   integer :: fixed_norm_sensitivity_option = 1
   real(dp), dimension(:,:), allocatable :: dRMSKdomega

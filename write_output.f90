@@ -132,7 +132,7 @@ subroutine write_output
      vn_L_p_diagnostic_4 = "L_p_diagnostic_4", &
      vn_L_p_diagnostic_5 = "L_p_diagnostic_5", &
      vn_L_p_diagnostic_6 = "L_p_diagnostic_6", &
-     vn_dLSE_current_density_with_areadOmega = "dLSE_current_density_with_areadOmega", &
+     vn_dtarget_optiondOmega = "dtarget_optiondOmega", &
      vn_dRMSKdomega = "dRMSKdomega", &
      vn_q_tilde = "q_tilde", &
      vn_dlambdadomega = "dlambdadomega", &
@@ -414,7 +414,7 @@ subroutine write_output
       nlambda_np_dim)
   end if
   if (fixed_norm_sensitivity_option > 1 .and. exit_code == 0) then
-    call cdf_define(ncid, vn_dLSE_current_density_with_areadOmega, dLSE_current_density_with_areadOmega(:,1:Nlambda), dimname=nomega_nlambda_dim)
+    call cdf_define(ncid, vn_dtarget_optiondOmega, dtarget_optiondOmega(:,1:Nlambda), dimname=nomega_nlambda_dim)
     call cdf_define(ncid, vn_dRMSKdomega, dRMSKdomega(:,1:Nlambda),dimname=nomega_nlambda_dim)
     call cdf_define(ncid, vn_q_tilde, q_tilde(:,1:Nlambda),dimname=basis_nlambda_dim)
     call cdf_define(ncid, vn_dlambdadomega, dlambdadomega(:,1:Nlambda),dimname=nomega_nlambda_dim)
@@ -641,7 +641,7 @@ subroutine write_output
     call cdf_write(ncid, vn_L_p_diagnostic_6, L_p_diagnostic_6(1:Nlambda,:))
   end if
   if (fixed_norm_sensitivity_option > 1 .and. exit_code == 0) then
-    call cdf_write(ncid, vn_dLSE_current_density_with_areadOmega, dLSE_current_density_with_aread/Users/elizabethpaul/Documents/Research/regcoil_sensitivity/regcoil/write_output.f90Omega(:,1:Nlambda))
+    call cdf_write(ncid, vn_dtarget_optiondOmega, dtarget_optiondOmega(:,1:Nlambda))
     call cdf_write(ncid, vn_dRMSKdomega, dRMSKdomega(:,1:Nlambda))
     call cdf_write(ncid, vn_q_tilde, q_tilde(:,1:Nlambda))
     call cdf_write(ncid, vn_dlambdadomega, dlambdadomega(:,1:Nlambda))

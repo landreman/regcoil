@@ -1,32 +1,35 @@
-%regcoilFilenames = {'20160801-01-066-W7X-leastSquaresScan_mdspw3/nu128_nv128_mf3_nf3_nescoil/regcoil_out.w7x.nc'};
-%regcoilFilenames = {'20160801-01-078-W7X_REGCOIL_withBnorm_mpol32_ntor32_ntheta128_nzeta128_tightAlphaRange/regcoil_out.w7x.nc'};
-regcoilFilenames = {'20160801-01-038-NCSX_REGCOIL_withBnorm_mpol48_ntor48_ntheta128_nzeta128/regcoil_out.ncsx.nc'};
+% W7X_opt targetOption 4
+% regcoilFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt_targetop4/regcoil_out.w7x.nc'};
+% W7X_initial
+regcoilFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_initial/regcoil_out.w7x.nc'};
+nescinFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_initial/nescin.w7x_winding_surface_from_Drevlak_0'};
+% W7X_opt
+%regcoilFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt/regcoil_out.w7x.nc'};
+% nescinFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt/nescin.w7x_winding_surface_from_Drevlak_178'};
+% HSX_initial
+%regcoilFilenames =
+%{'/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/HSX_initial/regcoil_out.hsx.nc'};
+%nescinFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/HSX_initial/nescin.clone_actual_changesign_0'};
+% HSX_opt
+%regcoilFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/hsx_beta_1e-4/refinement/regcoil_out.hsx.nc'};
+%nescinFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/hsx_beta_1e-4/refinement/nescin_clone_actual.txt.changesign_416_79'};
+% W7X_opt
+ % ilambda = 12;
+% W7X_opt_targetOption4
+% ilambda = 9;
+% W7X_initial
+ilambda = 10;
+% HSX_initial
+% ilambda = 11;
+% HSX_opt
+%ilambda = 9;
 
-%nescinFilenames = {'W7X/nescin.d23p4_tm_with_winding_surface_from_Drevlak'};
-nescinFilenames = {'NCSX/nescin.li383_realWindingSurface'};
-%filenames = {'20160801-01-012-W7X_REGCOIL_noBnorm_mpol8_ntor8_ntheta64_nzeta64/regcoil_out.w7x.nc',...
-%             '20160801-01-012-W7X_REGCOIL_noBnorm_mpol8_ntor8_ntheta64_nzeta64/regcoil_out.w7x.nc'};
-%regcoilFilenames = {'20160801-01-079-W7X_REGCOIL_withBnorm_mpol32_ntor32_ntheta128_nzeta128_uniform_0.5m_offset/regcoil_out.w7x.nc',...
-%             '20160801-01-080-W7X_REGCOIL_withBnorm_mpol32_ntor32_ntheta128_nzeta128_uniform_0.5m_offset_eqarc/regcoil_out.w7x.nc'};
+thetaShift = 20;
 
-%nescinFilenames = {'/global/cscratch1/sd/landrema/20160801-01-regcoilPaper/W7X/nescin.d23p4_tm_uniform_0.5m_offset',...
-%                   '/global/cscratch1/sd/landrema/20160801-01-regcoilPaper/W7X/nescin.d23p4_tm_uniform_0.5m_offset_eqarc'};
+coilsPerHalfPeriod=5;
+numHalfPeriodsToPlot=1;
 
-%filename='/Users/mattland/Box Sync/work16/nescoutTo3DCoils/nescout.d23p4_tm_separation0.25_4x4';
-%filenames={'/Users/mattland/Box Sync/work16/nescoutTo3DCoils/nescout.d23p4_tm_separation0.5_4x4_eqarc',...
-%    '/Users/mattland/Box Sync/work16/nescoutTo3DCoils/nescout.d23p4_tm_separation0.5_4x4'};
-%filenames={'/Users/mattland/Box Sync/work16/nescoutTo3DCoils/nescout.d23p4_tm_separation0.5_4x4',...
-%    '/Users/mattland/Box Sync/work16/nescoutTo3DCoils/nescout.d23p4_tm_separation0.5_4x4_eqarc'};
-%filename='/Users/mattland/Box Sync/work16/nescoutTo3DCoils/nescout.d23p4_tm_separation0.75_4x4';
-
-% 20160730: This script has been updated to use the correct sign for the secular part of the current potential.
-
-ilambda = 69+1
-
-coilsPerHalfPeriod=3;
-numHalfPeriodsToPlot=3;
-
-coil_thickness = 0.05;
+coil_thickness = 0.06;
 
 colors = [1,0,0;
     1,0.7,0;
@@ -50,6 +53,13 @@ for whichFile = 1:1
     fprintf('chi2_B: %g,  chi2_K: %g\n',chi2_B(ilambda),chi2_K(ilambda))
     net_poloidal_current_Amperes = ncread(filename,'net_poloidal_current_Amperes');
     theta = ncread(filename,'theta_coil');
+    theta = circshift(theta,thetaShift);
+    for itheta=1:(length(theta)-1)
+       if (theta(itheta) > theta(itheta+1))
+           theta(itheta+1) = theta(itheta+1)+2*pi;
+       end
+    end
+
     nzeta = double(ncread(filename,'nzeta_coil'));
     nzetal=nzeta*nfp;
     zetal = linspace(0,2*pi,nzetal+1);
@@ -57,6 +67,7 @@ for whichFile = 1:1
     [zetal_2D, theta_2D] = meshgrid(zetal,theta);
     potential0 = ncread(filename,'current_potential');
     potential1 = potential0(:,:,ilambda);
+    potential1 = circshift(potential1,thetaShift,1);
     %size(potential0)
     %fprintf('Here comes current potential:\n')
     %potential0(:,:,ilambda)
@@ -114,7 +125,7 @@ for whichFile = 1:1
     %}
 
     %search_string = '----- Coil Surface';
-    search_string = '------ Current Surface:'
+    search_string = '------ Current Surface'
     while true
         line = fgetl(fid);
         if strncmp(line,search_string,numel(search_string))

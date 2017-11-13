@@ -116,11 +116,11 @@ def regcoilScanPlot4(inputFilename):
                 dplotVariabledomegas.append(dchi2domega)
                 plotVariables.append(chi2)
               elif (plotType == 2):
-                plotVariables.append(f.variables["chi2_B"][()])
-                dplotVariabledomegas.append(f.variables["dchi2Bdomega"][()])
+                plotVariables.append(f.variables["chi2_B"][()][ilambda])
+                dplotVariabledomegas.append(f.variables["dchi2Bdomega"][()][ilambda,:])
               elif (plotType == 3):
-                plotVariables.append(f.variables["chi2_K"][()])
-                dplotVariabledomegas.append(f.variables["dchi2Kdomega"][()])
+                plotVariables.append(f.variables["chi2_K"][()][ilambda])
+                dplotVariabledomegas.append(f.variables["dchi2Kdomega"][()][ilambda,:])
               elif (plotType == 4):
                 plotVariables.append(f.variables["volume_coil"][()])
                 dvolume_coildomega = f.variables["dvolume_coildomega"][()]
@@ -159,11 +159,12 @@ def regcoilScanPlot4(inputFilename):
           plotVariables = plotVariables[indices]
           dplotVariabledscanVariable = dplotVariabledomegas[:,indices]
         if (plotType == 2): # chi2_B
-          plotVariables = plotVariables[ilambda,indices]
-          dplotVariabledscanVariable = dplotVariabledomegas[:,ilambda,indices]
+          plotVariables = plotVariables[indices]
+          dplotVariabledscanVariable = dplotVariabledomegas[:,indices]
+          print dplotVariabledscanVariable.shape
         if (plotType == 3): # chi2_K
-          plotVariables = plotVariables[ilambda,indices]
-          dplotVariabledscanVariable = dplotVariabledomegas[:,ilambda,indices]
+          plotVariables = plotVariables[indices]
+          dplotVariabledscanVariable = dplotVariabledomegas[:,indices]
         if (plotType == 4): # Volume
           plotVariables = plotVariables[indices]
           dplotVariabledscanVariable = dplotVariabledomegas[:,indices]

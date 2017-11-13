@@ -1,44 +1,54 @@
-%regcoilFilenames = {'20160801-01-066-W7X-leastSquaresScan_mdspw3/nu128_nv128_mf3_nf3_nescoil/regcoil_out.w7x.nc'};
-%{
-regcoilFilenames = {...
-    '20160801-01-066-W7X-leastSquaresScan_mdspw3/nu128_nv128_mf3_nf3_nescoil/regcoil_out.w7x.nc',...
-    '20160801-01-078-W7X_REGCOIL_withBnorm_mpol32_ntor32_ntheta128_nzeta128_tightAlphaRange/regcoil_out.w7x.nc'};
 
-ilambdas = [1, 60+1]
-%}
-regcoilFilenames = {...
-    '20160801-01-066-W7X-leastSquaresScan_mdspw3/nu128_nv128_mf3_nf3_nescoil/regcoil_out.w7x.nc',...
-    '20160801-01-069-W7X_nescoil_svd_scan_mpol24_ntor24_ntheta128_nzeta128_mdspw3/regcoil_out.w7x.nc'};
 
-%ilambdas = [1, 1108+1]
-ilambdas = [1, 1109+1]
+% HSX
+%ilambdas = [11, 9];
+%coilsPerHalfPeriod=6;
+%numHalfPeriodsToPlot=1;
+% coil_thickness = 0.02;
+%regcoilFilenames = { ...
+   % '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/HSX_initial/regcoil_out.hsx.nc' ...
+   % '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/hsx_beta_1e-4/refinement/regcoil_out.hsx.nc'};
+%nescinFilenames = { ...
+   % '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/HSX_initial/nescin.clone_actual_changesign_0' ...
+   % '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/hsx_beta_1e-4/refinement/nescin_clone_actual.txt.changesign_416_79'};
 
-nescinFilenames = {'W7X/nescin.d23p4_tm_with_winding_surface_from_Drevlak',...
-                  'W7X/nescin.d23p4_tm_with_winding_surface_from_Drevlak'};
-%filenames = {'20160801-01-012-W7X_REGCOIL_noBnorm_mpol8_ntor8_ntheta64_nzeta64/regcoil_out.w7x.nc',...
-%             '20160801-01-012-W7X_REGCOIL_noBnorm_mpol8_ntor8_ntheta64_nzeta64/regcoil_out.w7x.nc'};
-%regcoilFilenames = {'20160801-01-079-W7X_REGCOIL_withBnorm_mpol32_ntor32_ntheta128_nzeta128_uniform_0.5m_offset/regcoil_out.w7x.nc',...
-%             '20160801-01-080-W7X_REGCOIL_withBnorm_mpol32_ntor32_ntheta128_nzeta128_uniform_0.5m_offset_eqarc/regcoil_out.w7x.nc'};
+% W7X
+% ilambdas = [10,9];
+% coilsPerHalfPeriod=5;
+% numHalfPeriodsToPlot=1;
+% coilThickness=0.06;
+% regcoilFilenames = { ...
+%        '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_initial/regcoil_out.w7x.nc' ...
+%        '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt_targetop4/regcoil_out.w7x.nc'};
+%    
+% nescinFilenames = {...
+%        '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_initial/nescin.w7x_winding_surface_from_Drevlak_0' ...
+%        '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt_targetop4/nescin.w7x_winding_surface_from_Drevlak_178'};
 
-%nescinFilenames = {'/global/cscratch1/sd/landrema/20160801-01-regcoilPaper/W7X/nescin.d23p4_tm_uniform_0.5m_offset',...
-%                   '/global/cscratch1/sd/landrema/20160801-01-regcoilPaper/W7X/nescin.d23p4_tm_uniform_0.5m_offset_eqarc'};
+% W7X - comparing w/ target_option = 4
+ilambdas = [10,8];
+coilsPerHalfPeriod=5;
+numHalfPeriodsToPlot=1;
+coilThickness=0.06;
 
-%filename='/Users/mattland/Box Sync/work16/nescoutTo3DCoils/nescout.d23p4_tm_separation0.25_4x4';
-%filenames={'/Users/mattland/Box Sync/work16/nescoutTo3DCoils/nescout.d23p4_tm_separation0.5_4x4_eqarc',...
-%    '/Users/mattland/Box Sync/work16/nescoutTo3DCoils/nescout.d23p4_tm_separation0.5_4x4'};
-%filenames={'/Users/mattland/Box Sync/work16/nescoutTo3DCoils/nescout.d23p4_tm_separation0.5_4x4',...
-%    '/Users/mattland/Box Sync/work16/nescoutTo3DCoils/nescout.d23p4_tm_separation0.5_4x4_eqarc'};
-%filename='/Users/mattland/Box Sync/work16/nescoutTo3DCoils/nescout.d23p4_tm_separation0.75_4x4';
+regcoilFilenames = { ...
+       '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt/regcoil_out.w7x.nc' ...
+       '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt_targetop4/p_2/regcoil_out.w7x.nc.2.7e6'};
+
+nescinFilenames = {...
+       '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt/nescin.w7x_winding_surface_from_Drevlak_178' ...
+       '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt/nescin.w7x_winding_surface_from_Drevlak_178'};
 
 % 20160730: This script has been updated to use the correct sign for the secular part of the current potential.
 
-coil_thickness = 0.05;
+
 
 colors = [1,0,0;
     1,0.7,0;
     0,0.8,0;
     0,0,1;
     1,0,1];
+
 
 ntheta=150;
 nzeta=160;
@@ -58,6 +68,12 @@ for whichFile = 1:2
     fprintf('chi2_B: %g,  chi2_K: %g\n',chi2_B(ilambda),chi2_K(ilambda))
     net_poloidal_current_Amperes = ncread(filename,'net_poloidal_current_Amperes');
     theta = ncread(filename,'theta_coil');
+    theta = circshift(theta,thetaShift);
+    for itheta=1:(length(theta)-1)
+       if (theta(itheta) > theta(itheta+1))
+           theta(itheta+1) = theta(itheta+1)+2*pi;
+       end
+    end
     nzeta = double(ncread(filename,'nzeta_coil'));
     nzetal=nzeta*nfp;
     zetal = linspace(0,2*pi,nzetal+1);
@@ -65,6 +81,7 @@ for whichFile = 1:2
     [zetal_2D, theta_2D] = meshgrid(zetal,theta);
     potential0 = ncread(filename,'current_potential');
     potential1 = potential0(:,:,ilambda);
+    potential1 = circshift(potential1,thetaShift,1);
     %size(potential0)
     %fprintf('Here comes current potential:\n')
     %potential0(:,:,ilambda)
@@ -122,7 +139,7 @@ for whichFile = 1:2
     %}
 
     %search_string = '----- Coil Surface';
-    search_string = '------ Current Surface:'
+    search_string = '------ Current Surface'
     while true
         line = fgetl(fid);
         if strncmp(line,search_string,numel(search_string))
@@ -182,7 +199,7 @@ for whichFile = 1:2
     % W7-X has 50 modular coils
     %contours = linspace(0,2*pi,51);
     %contours = linspace(-nfp,0,51); %This line works if the sign for the secular part of the current potential is wrong.
-    contours = linspace(0,nfp,51);
+    contours = linspace(0,nfp,1+coilsPerHalfPeriod*2*nfp);
     contours(end)= [];
     dc = contours(2)-contours(1);
     contours = contours + 0.5*dc;
@@ -197,22 +214,22 @@ for whichFile = 1:2
     set(gcf,'Position',[12         374        1248         313])
     %return
     
-    contours_theta = cell(5,1);
-    contours_zeta = cell(5,1);
-    contours_x = cell(5,1);
-    contours_y = cell(5,1);
-    contours_z = cell(5,1);
-    contours_dxdtheta = cell(5,1);
-    contours_dydtheta = cell(5,1);
-    contours_dzdtheta = cell(5,1);
-    contours_dxdzeta = cell(5,1);
-    contours_dydzeta = cell(5,1);
-    contours_dzdzeta = cell(5,1);
-    coils_x = cell(5,1);
-    coils_y = cell(5,1);
-    coils_z = cell(5,1);
-    for j=1:5
-        this_contour = contours(j+10);
+    contours_theta = cell(coilsPerHalfPeriod*numHalfPeriodsToPlot,1);
+    contours_zeta = cell(coilsPerHalfPeriod*numHalfPeriodsToPlot,1);
+    contours_x = cell(coilsPerHalfPeriod*numHalfPeriodsToPlot,1);
+    contours_y = cell(coilsPerHalfPeriod*numHalfPeriodsToPlot,1);
+    contours_z = cell(coilsPerHalfPeriod*numHalfPeriodsToPlot,1);
+    contours_dxdtheta = cell(coilsPerHalfPeriod*numHalfPeriodsToPlot,1);
+    contours_dydtheta = cell(coilsPerHalfPeriod*numHalfPeriodsToPlot,1);
+    contours_dzdtheta = cell(coilsPerHalfPeriod*numHalfPeriodsToPlot,1);
+    contours_dxdzeta = cell(coilsPerHalfPeriod*numHalfPeriodsToPlot,1);
+    contours_dydzeta = cell(coilsPerHalfPeriod*numHalfPeriodsToPlot,1);
+    contours_dzdzeta = cell(coilsPerHalfPeriod*numHalfPeriodsToPlot,1);
+    coils_x = cell(coilsPerHalfPeriod*numHalfPeriodsToPlot,1);
+    coils_y = cell(coilsPerHalfPeriod*numHalfPeriodsToPlot,1);
+    coils_z = cell(coilsPerHalfPeriod*numHalfPeriodsToPlot,1);
+    for j=1:coilsPerHalfPeriod*numHalfPeriodsToPlot
+        this_contour = contours(j+2*coilsPerHalfPeriod);
         C = contourc(zetal,theta,potential,[this_contour,this_contour]);
         N = C(2,1);
         if N ~= size(C,2)-1
@@ -267,7 +284,7 @@ for whichFile = 1:2
     dzdzeta = dzdzeta + nfp*xn_nescin(i)*zmns_nescin(i)*cos(angle);
         %}
         
-        for j=1:5
+        for j=1:coilsPerHalfPeriod*numHalfPeriodsToPlot
             angle = xm_nescin(i)*contours_theta{j} + xn_nescin(i)*contours_zeta{j}*nfp;
             angle2 = contours_zeta{j};
             
@@ -288,7 +305,7 @@ for whichFile = 1:2
         end
     end
     
-    for j=1:5
+    for j=1:coilsPerHalfPeriod*numHalfPeriodsToPlot
         % Compute normal direction:
         Nx = contours_dydzeta{j} .* contours_dzdtheta{j} - contours_dzdzeta{j} .* contours_dydtheta{j};
         Ny = contours_dzdzeta{j} .* contours_dxdtheta{j} - contours_dxdzeta{j} .* contours_dzdtheta{j};
@@ -343,7 +360,7 @@ for whichFile = 1:2
     axis vis3d
     hold on
     
-    for j=1:5
+    for j=1:coilsPerHalfPeriod*numHalfPeriodsToPlot
         plot3(contours_x{j},contours_y{j},contours_z{j},'r','LineWidth',2)
     end
     
@@ -357,7 +374,7 @@ for whichFile = 1:2
     
     figure(whichFile*10+3)
     clf
-    for j=1:5
+    for j=1:coilsPerHalfPeriod*numHalfPeriodsToPlot
         plot3(contours_x{j},contours_y{j},contours_z{j},'.-r','LineWidth',2,'MarkerSize',15)
         hold on
     end
@@ -380,8 +397,9 @@ for whichFile = 1:2
     set(gcf,'Color','w')
     ambientStrength = 0.5;
     diffuseStrength = 1;
-    for j=1:5
-        surf(-coils_x{j}+offset,-coils_y{j},coils_z{j},'EdgeColor','none','FaceColor',colors(j,:),'AmbientStrength',ambientStrength,'DiffuseStrength',diffuseStrength)
+    for j=1:coilsPerHalfPeriod*numHalfPeriodsToPlot
+        nextColor = mod(j-1,size(colors,1))+1;
+        surf(-coils_x{j}+offset,-coils_y{j},coils_z{j},'EdgeColor','none','FaceColor',colors(nextColor,:),'AmbientStrength',ambientStrength,'DiffuseStrength',diffuseStrength)
         hold on
         for k=1:4
             plot3(-coils_x{j}(:,k)+offset,-coils_y{j}(:,k),coils_z{j}(:,k),edgeColor,'LineWidth',1.3)

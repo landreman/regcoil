@@ -6,7 +6,7 @@ subroutine lse_sensitivity()
   implicit none
 
   integer :: ilambda, iomega, iflag, tic, toc, countrate, i_basis_function, izeta,itheta, tic_begin
-  real(dp) :: sum_exp, dsum_expdomega, max_KN, dsum_expdphi, dRMS_Kdphi, q_tilde_denom, q_tilde_num, max_val, arg
+  real(dp) :: sum_exp, dsum_expdomega, max_KN, dsum_expdphi, dRMS_Kdphi, q_tilde_denom, q_tilde_num, max_val, arg, dintKpdomega, dintKpdPhi
   real(dp), dimension(:), allocatable :: solution, RHS
   real(dp), dimension(:,:), allocatable :: dnorm_Kdomega, norm_K
   real(dp), dimension(:,:), allocatable :: dnorm_Kdphi
@@ -28,9 +28,9 @@ subroutine lse_sensitivity()
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(darea_coildomega(nomega_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dLSE_current_density_with_areadOmega(nomega_coil,nlambda))
+  allocate(dtarget_optiondOmega(nomega_coil,nlambda))
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dLSE_current_density_with_areadPhi(num_basis_functions,nlambda))
+  allocate(dtarget_optiondPhi(num_basis_functions,nlambda))
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dnorm_Kdomega(ntheta_coil,nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
@@ -86,7 +86,7 @@ subroutine lse_sensitivity()
   !$OMP MASTER
   print *,"  Number of OpenMP threads:",omp_get_num_threads()
   !$OMP END MASTER
-  !$OMP DO PRIVATE(dKDifferencedomega,dnorm_Kdomega,dsum_expdomega)
+  !$OMP DO PRIVATE(dKDifferencedomega,dnorm_Kdomega,dsum_expdomega,dintKpdomega)
   do iomega = 1, nomega_coil
     dKDifferencedomega(1,:) = dddomega(1,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfxdomega(iomega,:,:), solution)
     dKDifferencedomega(2,:) = dddomega(2,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfydomega(iomega,:,:), solution)
@@ -96,12 +96,18 @@ subroutine lse_sensitivity()
       + KDifference_z*dKDifferencedomega(3,:),(/ ntheta_coil, nzeta_coil/)) &
       - norm_K*dnorm_normaldomega(iomega,:,:)/norm_normal_coil
     darea_coildomega(iomega) = dtheta_coil*dzeta_coil*nfp*sum(dnorm_normaldomega(iomega,:,:))
-    dsum_expdomega = sum(dtheta_coil*dzeta_coil*nfp*exp(target_option_p*(norm_K-max_K(ilambda))) &
-      *(dnorm_normaldomega(iomega,:,:)/area_coil &
-      - norm_normal_coil*darea_coildomega(iomega)/(area_coil**2) &
-      + norm_normal_coil*dnorm_Kdomega*target_option_p/(area_coil)))
-    dLSE_current_density_with_areadOmega(iomega,ilambda) = (1/target_option_p) * &
-      dsum_expdomega/sum_exp
+    if (target_option == 8) then
+      dsum_expdomega = sum(dtheta_coil*dzeta_coil*nfp*exp(target_option_p*(norm_K-max_K(ilambda))) &
+        *(dnorm_normaldomega(iomega,:,:)/area_coil &
+        - norm_normal_coil*darea_coildomega(iomega)/(area_coil**2) &
+        + norm_normal_coil*dnorm_Kdomega*target_option_p/(area_coil)))
+      dtarget_optiondOmega(iomega,ilambda) = (1/target_option_p) * &
+        dsum_expdomega/sum_exp
+    end if
+    if (target_option == 4) then
+      dintKpdomega = sum(dtheta_coil*dzeta_coil*nfp*(target_option_p*norm_normal_coil*norm_K**(target_option_p-1)*dnorm_kdomega + dnorm_normaldomega(iomega,:,:)*norm_K**(target_option_p)))
+      dtarget_optiondOmega(iomega,ilambda) = -(1/target_option_p)*L_p_norm_with_area(ilambda)*darea_coildomega(iomega)/area_coil + L_p_norm_with_area(ilambda)**(1-target_option_p)*dintKpdomega/(area_coil*target_option_p)
+    end if
   end do
   !$OMP END DO
   !$OMP END PARALLEL
@@ -113,16 +119,22 @@ subroutine lse_sensitivity()
   !$OMP MASTER
   print *,"  Number of OpenMP threads:",omp_get_num_threads()
   !$OMP END MASTER
-  !$OMP DO PRIVATE(dnorm_Kdphi,dsum_expdphi)
+  !$OMP DO PRIVATE(dnorm_Kdphi,dsum_expdphi,dintKpdPhi)
   do i_basis_function=1,num_basis_functions
     dnorm_Kdphi = -1/((norm_normal_coil**2)*norm_k) &
       * reshape(KDifference_x*f_x(:,i_basis_function) + KDifference_y*f_y(:,i_basis_function) &
       + KDifference_z*f_z(:,i_basis_function), (/ ntheta_coil, nzeta_coil /))
-    dsum_expdphi = sum(dtheta_coil*dzeta_coil*norm_normal_coil*nfp/area_coil* &
-      exp(target_option_p*(norm_K - max_K(ilambda))) &
-      *target_option_p*dnorm_Kdphi)
-    dLSE_current_density_with_areadPhi(i_basis_function,ilambda) = (1/target_option_p) * &
-      dsum_expdphi/sum_exp
+    if (target_option == 8) then
+      dsum_expdphi = sum(dtheta_coil*dzeta_coil*norm_normal_coil*nfp/area_coil* &
+        exp(target_option_p*(norm_K - max_K(ilambda))) &
+        *target_option_p*dnorm_Kdphi)
+      dtarget_optiondPhi(i_basis_function,ilambda) = (1/target_option_p) * &
+        dsum_expdphi/sum_exp
+    end if
+    if (target_option == 4) then
+      dintKpdPhi = sum(dtheta_coil*dzeta_coil*nfp*norm_normal_coil*target_option_p*norm_K**(target_option_p-1)*dnorm_Kdphi)
+      dtarget_optiondPhi(i_basis_function,ilambda) = (1/(target_option_p*area_coil)) * L_p_norm_with_area(ilambda)**(1-target_option_p)*dintKpdPhi
+    end if
   end do
   !$OMP END DO
   !$OMP END PARALLEL
@@ -132,7 +144,7 @@ subroutine lse_sensitivity()
 
   call system_clock(tic)
   matrix = matrix_B + lambda(ilambda) * matrix_K
-  RHS = dLSE_current_density_with_areadPhi(:,ilambda)
+  RHS = dtarget_optiondPhi(:,ilambda)
 
   call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, IPIV, &
     RHS, num_basis_functions, WORK, LWORK, INFO)
@@ -154,31 +166,31 @@ subroutine lse_sensitivity()
   !$OMP DO PRIVATE(q_tilde_num)
   do iomega=1,nomega_coil
     q_tilde_num = dot_product(dFdomega(iomega,:), q_tilde(:,ilambda))
-    dlambdadomega(iomega,ilambda) = (1/q_tilde_denom)*(dLSE_current_density_with_areadOmega(iomega,ilambda) - q_tilde_num)
+    dlambdadomega(iomega,ilambda) = (1/q_tilde_denom)*(dtarget_optiondOmega(iomega,ilambda) - q_tilde_num)
     dchi2domega(iomega,ilambda) = dchi2domega(iomega,ilambda) + dlambdadomega(iomega,ilambda)*chi2_K(ilambda)
     if (sensitivity_option == 3) then
       dchi2Kdomega(iomega,ilambda) = dchi2Kdomega(iomega,ilambda) &
         - dot_product((matmul(matrix_K,solution) - RHS_K),q_K(:,ilambda))/q_tilde_denom &
-        * (dLSE_current_density_with_areadOmega(iomega,ilambda) - q_tilde_num)
+        * (dtarget_optiondOmega(iomega,ilambda) - q_tilde_num)
       dchi2Bdomega(iomega,ilambda) = dchi2Bdomega(iomega,ilambda) &
         - dot_product((matmul(matrix_K,solution) - RHS_K),q_B(:,ilambda))/q_tilde_denom &
-        * (dLSE_current_density_with_areadOmega(iomega,ilambda) - q_tilde_num)
+        * (dtarget_optiondOmega(iomega,ilambda) - q_tilde_num)
     end if
     if (sensitivity_option == 4) then
       dchi2Kdomega(iomega,ilambda) = dchi2Kdomega(iomega,ilambda) &
         - dot_product((matmul(matrix_K,solution) - RHS_K),q_K(:,ilambda))/q_tilde_denom &
-        * (dLSE_current_density_with_areadOmega(iomega,ilambda) - q_tilde_num)
+        * (dtarget_optiondOmega(iomega,ilambda) - q_tilde_num)
       dchi2Bdomega(iomega,ilambda) = dchi2Bdomega(iomega,ilambda) &
         - dot_product((matmul(matrix_K,solution) - RHS_K),-lambda(ilambda)*q_K(:,ilambda))/q_tilde_denom &
-        * (dLSE_current_density_with_areadOmega(iomega,ilambda) - q_tilde_num)
+        * (dtarget_optiondOmega(iomega,ilambda) - q_tilde_num)
     end if
     if (sensitivity_option == 5) then
       dchi2Bdomega(iomega,ilambda) = dchi2Bdomega(iomega,ilambda) &
         - dot_product((matmul(matrix_K,solution) - RHS_K),q_B(:,ilambda))/q_tilde_denom &
-        * (dLSE_current_density_with_areadOmega(iomega,ilambda) - q_tilde_num)
+        * (dtarget_optiondOmega(iomega,ilambda) - q_tilde_num)
       dchi2Kdomega(iomega,ilambda) = dchi2Kdomega(iomega,ilambda) &
         - dot_product((matmul(matrix_K,solution) - RHS_K),-q_B(:,ilambda)/lambda(ilambda))/q_tilde_denom &
-        * (dLSE_current_density_with_areadOmega(iomega,ilambda) - q_tilde_num)
+        * (dtarget_optiondOmega(iomega,ilambda) - q_tilde_num)
     end if
   end do
   !$OMP END DO
