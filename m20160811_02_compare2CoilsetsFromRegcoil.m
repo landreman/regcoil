@@ -31,9 +31,14 @@ coilsPerHalfPeriod=5;
 numHalfPeriodsToPlot=1;
 coilThickness=0.06;
 
+regcoil_out_filename = '/Users/elizabethpaul/Documents/Research/Fall_2017/20171113_W7X_targetoption4_surfaces/beta_0.1_gamma_0.3/regcoil_out.w7x.nc';
+nescin_fielename = '/Users/elizabethpaul/Documents/Research/Fall_2017/20171113_W7X_targetoption4_surfaces/beta_0.1_gamma_0.3/nescin.w7x_winding_surface_from_Drevlak_2056';
+
+
 regcoilFilenames = { ...
        '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt/regcoil_out.w7x.nc' ...
-       '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt_targetop4/p_2/regcoil_out.w7x.nc.2.7e6'};
+       
+       };
 
 nescinFilenames = {...
        '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt/nescin.w7x_winding_surface_from_Drevlak_178' ...

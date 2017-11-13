@@ -152,9 +152,9 @@ subroutine auto_regularization_solve
         ! Vary lambda by factors of 100 until we bracket the target current density.
         next_stage = 2
 
-        if (initial_above_target) then
+        if ((initial_above_target .and. (target_option < 9)) .or. ( (.not. initial_above_target) .and. target_option == 9 )) then
            ! If the current density from the first solve was too high, then increase lambda
-           lambda(ilambda) = lambda(ilambda-1) * 100
+            lambda(ilambda) = lambda(ilambda-1) * 100
         else
            ! If the current density from the first solve was too low, then decrease lambda
            lambda(ilambda) = lambda(ilambda-1) * 0.01
@@ -323,18 +323,16 @@ subroutine auto_regularization_solve
      ! Done computing diagnostics.
      ! Now analyze the results to determine what to do next.
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-     if (target_option < 9) then
-        last_above_target = (target_function(ilambda) > current_density_target)
-     else
-        last_above_target = (target_function(ilambda) < current_density_target)
-     end if
+     last_above_target = (target_function(ilambda) > current_density_target)
+
      if (stage==1) initial_above_target = last_above_target
      if (stage==2 .and. (last_above_target .neqv. initial_above_target)) then
         ! If we've bracketed the target, move on to stage 3.
         next_stage = 3  
         print *,"Target current density has been bracketed."
      end if
-     if (stage==10 .and. last_above_target) then
+      ! Lambda = infinity
+     if ((stage==10 .and. last_above_target .and. target_option < 9) .or. (stage ==10 .and. (.not. last_above_target) .and. target_option == 9)) then
         print *,"*******************************************************************************"
         print *,"*******************************************************************************"
         print *,"Error! If target_option < 9, the current_density_target you have set is not    achievable because"
@@ -345,7 +343,7 @@ subroutine auto_regularization_solve
         exit_code = -2
         exit
      end if
-     if (stage==11 .and. (.not. last_above_target)) then
+     if ((stage==11 .and. (.not. last_above_target) .and. target_option < 9) .or. (stage ==11 .and. last_above_target .and. target_option == 9)) then
         print *,"*******************************************************************************"
         print *,"*******************************************************************************"
         print *,"Error! If target_option < 9, the current_density_target you have set is not "
