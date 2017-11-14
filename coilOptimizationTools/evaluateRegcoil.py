@@ -304,6 +304,7 @@ class coilFourier:
       self.set_dcoil_plasma_dist_mindomega(f.variables["dcoil_plasma_dist_mindomega"][()])
       self.set_dcoil_plasma_dist_maxdomega(f.variables["dcoil_plasma_dist_maxdomega"][()])
       self.chi2B = f.variables["chi2_B"][()][-1]
+      self.chi2K = f.variables["chi2_K"][()][-1]
       self.coil_volume = f.variables["volume_coil"][()]
       self.coil_plasma_dist_min_lse = f.variables["coil_plasma_dist_min_lse"][()]
       self.coil_plasma_dist_max_lse = f.variables["coil_plasma_dist_max_lse"][()]
@@ -341,7 +342,7 @@ class coilFourier:
           self.evaluateRegcoil(omegas_sensitivity_new)
       # exit_code == -2 or -3 should only happen with general_option > 3
       elif (exit_code == -2): # current density too low or chi2B too high
-        if (target_option < 9):
+        if (self.target_option < 9):
           print "Current density too low."
           # Decrease factor of increase/decrease
           if (self.decreased_target_current): # previously tried decreasing target
@@ -352,7 +353,7 @@ class coilFourier:
           os.chdir('..')
           self.increased_target_current = True
           self.evaluateRegcoil(omegas_sensitivity_new,self.current_density_target)
-        if (target_option == 9):
+        if (self.target_option == 9):
           print "chi2B too high."
           if (self.increased_target_current): # previously tried increasing
             self.current_factor = self.current_factor*0.5
@@ -363,7 +364,7 @@ class coilFourier:
           self.decreased_target_current = True
           self.evaluateRegcoil(omegas_sensitivity_new,self.current_density_target)
       elif (exit_code == -3): # current density too high
-        if (target_option < 9):
+        if (self.target_option < 9):
           print "Current density too high."
           # Target has been bracketed. Decrease interval.
           if (self.increased_target_current):
