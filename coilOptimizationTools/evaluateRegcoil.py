@@ -93,8 +93,11 @@ class coilFourier:
     self.feval = 0 # Number of function evaluations
     self.chi2B = 0
     self.chi2K = 0
+    self.RMSK = 0
+    self.area_coil = 0
     self.dchi2Bdomega = 0
     self.dchi2Kdomega = 0
+    self.darea_coildomega = 0
     self.coil_volume = 0
     self.dcoil_volumedomega = 0
     self.dcoil_plasma_dist_mindomega = 0
@@ -145,6 +148,9 @@ class coilFourier:
   
   def set_dchi2Kdomega(self,dchi2Kdomega):
     self.dchi2Kdomega = dchi2Kdomega
+  
+  def set_darea_coildomega(self,darea_coildomega):
+    self.darea_coildomega = darea_coildomega
 
   def set_dcoil_volumedomega(self,dcoil_volumedomega):
     self.dcoil_volumedomega = dcoil_volumedomega
@@ -204,19 +210,23 @@ class coilFourier:
   
   def evaluateObjectiveFunction(self):
     self.compute_spectral_norm()
-    print "chi2K: " + str(self.chi2K)
+    RMSK = (self.chi2K/self.area_coil)**(0.5)
+    print "RMSK: " + str(RMSK)
     print "chi2B: " + str(self.chi2B)
     print "coil_volume: " + str(self.coil_volume)
     print "coil_plasma_dist_min: " + str(self.coil_plasma_dist_min_lse)
     print "spectral_norm: " + str(self.spectral_norm)
     print "norm(dchi2Kdomega): " + str(np.linalg.norm(self.dchi2Kdomega,2))
+    print "norm(darea_coildomega): " + str(np.linalg.norm(self.darea_coildomega,2))
+    dRMSKdomega = (0.5/RMSK)*(self.dchi2Kdomega/self.area_coil - self.chi2K*self.darea_coildomega/(self.area_coil**2))
+    print "norm(dRMSKdomega): " + str(np.linalg.norm(dRMSKdomega,2))
     print "norm(dchi2Bdomega): " + str(np.linalg.norm(self.dchi2Bdomega,2))
     print "norm(dcoil_volumedomega): " + str(np.linalg.norm(self.dcoil_volumedomega,2))
     print "norm(dcoil_plasma_dist_mindomega): " + str(np.linalg.norm(self.dcoil_plasma_dist_mindomega,2))
     print "norm(dspectral_normdomegas): " + str(np.linalg.norm(self.dspectral_normdomegas,2))
     
-    self.objective_function = self.scaleFactor*(self.alpha4*self.chi2B - self.alpha3*self.coil_plasma_dist_min_lse - self.alpha1*self.coil_volume**(1.0/3.0) + self.alpha2*self.spectral_norm + self.alpha5*self.chi2K)
-    self.set_dobjective_functiondomegas(self.scaleFactor*(self.alpha4*self.dchi2Bdomega - self.alpha3*self.dcoil_plasma_dist_mindomega - self.alpha1*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega + self.alpha2*self.dspectral_normdomegas + self.alpha5*self.dchi2Kdomega))
+    self.objective_function = self.scaleFactor*(self.alpha4*self.chi2B - self.alpha3*self.coil_plasma_dist_min_lse - self.alpha1*self.coil_volume**(1.0/3.0) + self.alpha2*self.spectral_norm + self.alpha5*self.RMSK)
+    self.set_dobjective_functiondomegas(self.scaleFactor*(self.alpha4*self.dchi2Bdomega - self.alpha3*self.dcoil_plasma_dist_mindomega - self.alpha1*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega + self.alpha2*self.dspectral_normdomegas + self.alpha5*dRMSKdomega))
 
   # This is a script to be called within a nonlinear optimization routine in order to evaluate
   # chi2 and its gradient with respect to the Fourier coefficients
@@ -300,6 +310,8 @@ class coilFourier:
     if (exit_code == 0):
       self.set_dchi2Bdomega(f.variables["dchi2Bdomega"][()][-1])
       self.set_dchi2Kdomega(f.variables["dchi2Kdomega"][()][-1])
+      self.set_darea_coildomega(f.variables["darea_coildomega"][()])
+      self.area_coil = f.variables["area_coil"][()]
       self.set_dcoil_volumedomega(f.variables["dvolume_coildomega"][()])
       self.set_dcoil_plasma_dist_mindomega(f.variables["dcoil_plasma_dist_mindomega"][()])
       self.set_dcoil_plasma_dist_maxdomega(f.variables["dcoil_plasma_dist_maxdomega"][()])
