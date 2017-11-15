@@ -13,36 +13,38 @@
    % '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/hsx_beta_1e-4/refinement/nescin_clone_actual.txt.changesign_416_79'};
 
 % W7X
-% ilambdas = [10,9];
-% coilsPerHalfPeriod=5;
-% numHalfPeriodsToPlot=1;
-% coilThickness=0.06;
-% regcoilFilenames = { ...
-%        '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_initial/regcoil_out.w7x.nc' ...
-%        '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt_targetop4/regcoil_out.w7x.nc'};
-%    
-% nescinFilenames = {...
-%        '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_initial/nescin.w7x_winding_surface_from_Drevlak_0' ...
-%        '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt_targetop4/nescin.w7x_winding_surface_from_Drevlak_178'};
-
-% W7X - comparing w/ target_option = 4
-ilambdas = [10,8];
+ilambdas = [8,8];
 coilsPerHalfPeriod=5;
 numHalfPeriodsToPlot=1;
 coilThickness=0.06;
-
-regcoil_out_filename = '/Users/elizabethpaul/Documents/Research/Fall_2017/20171113_W7X_targetoption4_surfaces/beta_0.1_gamma_0.3/regcoil_out.w7x.nc';
-nescin_fielename = '/Users/elizabethpaul/Documents/Research/Fall_2017/20171113_W7X_targetoption4_surfaces/beta_0.1_gamma_0.3/nescin.w7x_winding_surface_from_Drevlak_2056';
-
-
 regcoilFilenames = { ...
-       '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt/regcoil_out.w7x.nc' ...
+       '/Users/elizabethpaul/Documents/Research/Fall_2017/20171113_W7X_targetoption4_surfaces/W7X_init/target_2.41E6/regcoil_out.w7x.nc' ...
+       %'/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt_targetop4/regcoil_out.w7x.nc'};
+   '/Users/elizabethpaul/Documents/Research/Fall_2017/20171113_W7X_targetoption4_surfaces/beta_0.1_gamma_0.05/regcoil_out.w7x.nc'};
        
-       };
-
 nescinFilenames = {...
-       '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt/nescin.w7x_winding_surface_from_Drevlak_178' ...
-       '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt/nescin.w7x_winding_surface_from_Drevlak_178'};
+       '/Users/elizabethpaul/Documents/Research/Fall_2017/20171113_W7X_targetoption4_surfaces/W7X_init/target_2.41E6/nescin.w7x_winding_surface_from_Drevlak_0' ...
+      % '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt_targetop4/nescin.w7x_winding_surface_from_Drevlak_178'};
+    '/Users/elizabethpaul/Documents/Research/Fall_2017/20171113_W7X_targetoption4_surfaces/beta_0.1_gamma_0.05/nescin.w7x_winding_surface_from_Drevlak_5197'};
+      
+% W7X - comparing w/ target_option = 4
+% ilambdas = [10,8];
+% coilsPerHalfPeriod=5;
+% numHalfPeriodsToPlot=1;
+% coilThickness=0.06;
+% 
+% regcoil_out_filename = '/Users/elizabethpaul/Documents/Research/Fall_2017/20171113_W7X_targetoption4_surfaces/beta_0.1_gamma_0.3/regcoil_out.w7x.nc';
+% nescin_fielename = '/Users/elizabethpaul/Documents/Research/Fall_2017/20171113_W7X_targetoption4_surfaces/beta_0.1_gamma_0.3/nescin.w7x_winding_surface_from_Drevlak_2056';
+% 
+% 
+% regcoilFilenames = { ...
+%        '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt/regcoil_out.w7x.nc' ...
+%        
+%        };
+% 
+% nescinFilenames = {...
+%        '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt/nescin.w7x_winding_surface_from_Drevlak_178' ...
+%        '/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt/nescin.w7x_winding_surface_from_Drevlak_178'};
 
 % 20160730: This script has been updated to use the correct sign for the secular part of the current potential.
 

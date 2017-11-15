@@ -140,7 +140,8 @@ subroutine write_output
      vn_principle_curvature_2 = "principle_curvature_2", &
      vn_mean_curvature = "mean_curvature", &
      vn_gaussian_curvature = "gaussian_curvature", &
-     vn_normal_dist = "normal_dist"
+     vn_normal_dist = "normal_dist", &
+     vn_dLSE_current_density_with_areadOmega = "dLSE_current_density_with_areadOmega"
 
   ! Arrays with dimension 3
   character(len=*), parameter :: &
@@ -216,7 +217,9 @@ subroutine write_output
        nomega_nlambda_dim = (/ character(len=50) :: &
           'nomega_coil', 'nlambda' /), &
        ntheta_nzetal_coil_dim = (/ character(len=50) :: &
-          'ntheta_coil', 'nzetal_coil' /)
+          'ntheta_coil', 'nzetal_coil' /), &
+       nlambda_nomega_dim = (/ character(len=50) :: &
+          'nlambda', 'nomega_coil' /)
 
   ! Arrays with dimension 3:
   character(len=*), parameter, dimension(3) :: &
@@ -305,6 +308,7 @@ subroutine write_output
     call cdf_define(ncid, vn_coil_plasma_dist_lse_p, coil_plasma_dist_lse_p)
     call cdf_define(ncid, vn_coil_plasma_dist_min_lse, coil_plasma_dist_min_lse)
     call cdf_define(ncid, vn_coil_plasma_dist_max_lse, coil_plasma_dist_max_lse)
+
   end if
 
   call cdf_define(ncid, vn_compute_curvature, compute_curvature)
@@ -359,6 +363,7 @@ subroutine write_output
   end if
   if (fixed_norm_sensitivity_option > 1 .and. exit_code==0) then
     call cdf_define(ncid, vn_darea_coildomega, darea_coildomega,dimname=nomega_coil_dim)
+    call cdf_define(ncid, vn_dLSE_current_density_with_areadOmega, dLSE_current_density_with_areadOmega,dimname=nlambda_nomega_dim)
   end if
   if (sensitivity_option > 1) then
     call cdf_define(ncid, vn_dcoil_plasma_dist_mindomega, dcoil_plasma_dist_mindomega, dimname=nomega_coil_dim)
@@ -645,6 +650,7 @@ subroutine write_output
     call cdf_write(ncid, vn_dRMSKdomega, dRMSKdomega(:,1:Nlambda))
     call cdf_write(ncid, vn_q_tilde, q_tilde(:,1:Nlambda))
     call cdf_write(ncid, vn_dlambdadomega, dlambdadomega(:,1:Nlambda))
+    call cdf_write(ncid, vn_dLSE_current_density_with_areadOmega, dLSE_current_density_with_areadOmega(1:Nlambda,:))
   end if
   if (compute_curvature==1) then
     call cdf_write(ncid, vn_principle_curvature_1, principle_curvature_1)

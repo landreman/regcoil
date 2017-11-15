@@ -77,6 +77,7 @@ subroutine auto_regularization_solve
   allocate(LSE_current_density_with_area(nlambda),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
+
   allocate(rms_K(nlambda),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
@@ -295,6 +296,7 @@ subroutine auto_regularization_solve
     LSE_current_density_with_area(ilambda) = &
       (1/target_option_p)*log(sum(dtheta_coil*dzeta_coil*nfp/area_coil*exp(target_option_p &
       * (K2(:,:,ilambda)**(0.5) - max_K(ilambda))))) + max_K(ilambda)
+
 
     LSE_current_density(ilambda) = &
       (1/target_option_p) &

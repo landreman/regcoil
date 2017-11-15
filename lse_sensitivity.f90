@@ -56,6 +56,8 @@ subroutine lse_sensitivity()
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dKDifferencedomega(3,ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(dLSE_current_density_with_areadOmega(nlambda,nomega_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
 
   q_tilde = 0
 
@@ -111,6 +113,7 @@ subroutine lse_sensitivity()
     if (target_option == 9) then
       dtarget_optiondOmega(iomega,ilambda) = dchi2Bdomega_withoutadjoint(iomega,ilambda)
     end if
+    dLSE_current_density_with_areadOmega(iomega,ilambda) = -(1/target_option_p)*L_p_norm_with_area(ilambda)*darea_coildomega(iomega)/area_coil + L_p_norm_with_area(ilambda)**(1-target_option_p)*dintKpdomega/(area_coil*target_option_p)
   end do
   !$OMP END DO
   !$OMP END PARALLEL
