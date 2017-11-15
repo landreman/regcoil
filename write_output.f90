@@ -141,7 +141,7 @@ subroutine write_output
      vn_mean_curvature = "mean_curvature", &
      vn_gaussian_curvature = "gaussian_curvature", &
      vn_normal_dist = "normal_dist", &
-     vn_dLSE_current_density_with_areadomega = "dLSE_current_density_with_areadomega"
+     vn_dmax_kdomega = "dmax_kdomega"
 
   ! Arrays with dimension 3
   character(len=*), parameter :: &
@@ -363,7 +363,7 @@ subroutine write_output
   end if
   if (fixed_norm_sensitivity_option > 1 .and. exit_code==0) then
     call cdf_define(ncid, vn_darea_coildomega, darea_coildomega,dimname=nomega_coil_dim)
-    call cdf_define(ncid, vn_dLSE_current_density_with_areadOmega, dLSE_current_density_with_areadOmega,dimname=nlambda_nomega_dim)
+    call cdf_define(ncid, vn_dmax_kdomega, dmax_kdomega,dimname=nlambda_nomega_dim)
   end if
   if (sensitivity_option > 1) then
     call cdf_define(ncid, vn_dcoil_plasma_dist_mindomega, dcoil_plasma_dist_mindomega, dimname=nomega_coil_dim)
@@ -650,7 +650,7 @@ subroutine write_output
     call cdf_write(ncid, vn_dRMSKdomega, dRMSKdomega(:,1:Nlambda))
     call cdf_write(ncid, vn_q_tilde, q_tilde(:,1:Nlambda))
     call cdf_write(ncid, vn_dlambdadomega, dlambdadomega(:,1:Nlambda))
-    call cdf_write(ncid, vn_dLSE_current_density_with_areadOmega, dLSE_current_density_with_areadOmega(1:Nlambda,:))
+    call cdf_write(ncid, vn_dmax_kdomega, dmax_kdomega(1:Nlambda,:))
   end if
   if (compute_curvature==1) then
     call cdf_write(ncid, vn_principle_curvature_1, principle_curvature_1)

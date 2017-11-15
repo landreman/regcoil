@@ -6,7 +6,7 @@ subroutine lse_sensitivity()
   implicit none
 
   integer :: ilambda, iomega, iflag, tic, toc, countrate, i_basis_function, izeta,itheta, tic_begin
-  real(dp) :: sum_exp, dsum_expdomega, max_KN, dsum_expdphi, dRMS_Kdphi, q_tilde_denom, q_tilde_num, max_val, arg, dintKpdomega, dintKpdPhi
+  real(dp) :: sum_exp, dsum_expdomega, max_KN, dsum_expdphi, dRMS_Kdphi, q_tilde_denom, q_tilde_num, max_val, arg, dintKpdomega, dintKpdPhi, dsum_exp_max_kdomega, sum_exp_max_k
   real(dp), dimension(:), allocatable :: solution, RHS
   real(dp), dimension(:,:), allocatable :: dnorm_Kdomega, norm_K
   real(dp), dimension(:,:), allocatable :: dnorm_Kdphi
@@ -56,7 +56,7 @@ subroutine lse_sensitivity()
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dKDifferencedomega(3,ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dLSE_current_density_with_areadOmega(nlambda,nomega_coil),stat=iflag)
+  allocate(dmax_kdomega(nlambda,nomega_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
   q_tilde = 0
@@ -82,6 +82,7 @@ subroutine lse_sensitivity()
   norm_K = K2(:,:,ilambda)**(0.5)
 
   sum_exp = sum(norm_normal_coil*dtheta_coil*dzeta_coil*nfp/area_coil*exp(target_option_p*(norm_K-max_K(ilambda))))
+  sum_exp_max_K = sum(norm_normal_coil*dtheta_coil*dzeta_coil*nfp/area_coil*exp(max_k_p*(norm_K-max_K(ilambda))))
 
   call system_clock(tic, countrate)
   !$OMP PARALLEL
@@ -113,7 +114,11 @@ subroutine lse_sensitivity()
     if (target_option == 9) then
       dtarget_optiondOmega(iomega,ilambda) = dchi2Bdomega_withoutadjoint(iomega,ilambda)
     end if
-    dLSE_current_density_with_areadOmega(iomega,ilambda) = -(1/target_option_p)*L_p_norm_with_area(ilambda)*darea_coildomega(iomega)/area_coil + L_p_norm_with_area(ilambda)**(1-target_option_p)*dintKpdomega/(area_coil*target_option_p)
+    dsum_exp_max_kdomega = sum(dtheta_coil*dzeta_coil*nfp*exp(max_k_p*(norm_K-max_K(ilambda))) &
+      *(dnorm_normaldomega(iomega,:,:)/area_coil &
+      - norm_normal_coil*darea_coildomega(iomega)/(area_coil**2) &
+      + norm_normal_coil*dnorm_Kdomega*max_k_p/(area_coil)))
+    dmax_kdomega(ilambda,iomega) = (1/max_k_p) * dsum_exp_max_kdomega/sum_exp_max_k
   end do
   !$OMP END DO
   !$OMP END PARALLEL
