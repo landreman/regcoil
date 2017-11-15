@@ -141,7 +141,7 @@ subroutine write_output
      vn_mean_curvature = "mean_curvature", &
      vn_gaussian_curvature = "gaussian_curvature", &
      vn_normal_dist = "normal_dist", &
-     vn_dLSE_current_density_with_areadOmega = "dLSE_current_density_with_areadOmega"
+     vn_dLSE_current_density_with_areadomega = "dLSE_current_density_with_areadomega"
 
   ! Arrays with dimension 3
   character(len=*), parameter :: &
