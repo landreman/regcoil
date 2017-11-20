@@ -97,7 +97,7 @@ class coilFourier:
     self.feval = 0 # Number of function evaluations
     self.chi2B = 0
     self.chi2K = 0
-    self.RMSK = 0
+    self.rms_K = 0
     self.max_K = 0
     self.area_coil = 0
     self.dchi2Bdomega = 0
@@ -108,6 +108,7 @@ class coilFourier:
     self.dcoil_plasma_dist_mindomega = 0
     self.dcoil_plasma_dist_maxdomega = 0
     self.dmax_Kdomega = 0
+    self.drms_Kdomega = 0
     self.coil_plasma_dist_min_lse = 0
     self.coil_plasma_dist_max_lse = 0
     self.increased_target_current = False
@@ -151,6 +152,9 @@ class coilFourier:
 
   def set_dmax_Kdomega(self,dmax_Kdomega):
     self.dmax_Kdomega = dmax_Kdomega
+  
+  def set_drms_Kdomega(self,drms_Kdomega):
+    self.drms_Kdomega = drms_Kdomega
 
   def set_dchi2Bdomega(self,dchi2Bdomega):
     self.dchi2Bdomega = dchi2Bdomega
@@ -219,9 +223,8 @@ class coilFourier:
   
   def evaluateObjectiveFunction(self):
     self.compute_spectral_norm()
-    RMSK = (self.chi2K/self.area_coil)**(0.5)
-    print "max_K: " + str(self.max_K);
-    print "RMSK: " + str(RMSK)
+    print "max_K: " + str(self.max_K)
+    print "rms_K: " + str(self.rms_K)
     print "chi2B: " + str(self.chi2B)
     print "coil_volume: " + str(self.coil_volume)
     print "coil_plasma_dist_min: " + str(self.coil_plasma_dist_min_lse)
@@ -229,15 +232,14 @@ class coilFourier:
     print "norm(dmax_Kdomega): " + str(np.linalg.norm(self.dmax_Kdomega,2))
     print "norm(dchi2Kdomega): " + str(np.linalg.norm(self.dchi2Kdomega,2))
     print "norm(darea_coildomega): " + str(np.linalg.norm(self.darea_coildomega,2))
-    dRMSKdomega = (0.5/RMSK)*(self.dchi2Kdomega/self.area_coil - self.chi2K*self.darea_coildomega/(self.area_coil**2))
-    print "norm(dRMSKdomega): " + str(np.linalg.norm(dRMSKdomega,2))
+    print "norm(drms_Kdomega): " + str(np.linalg.norm(self.drms_Kdomega,2))
     print "norm(dchi2Bdomega): " + str(np.linalg.norm(self.dchi2Bdomega,2))
     print "norm(dcoil_volumedomega): " + str(np.linalg.norm(self.dcoil_volumedomega,2))
     print "norm(dcoil_plasma_dist_mindomega): " + str(np.linalg.norm(self.dcoil_plasma_dist_mindomega,2))
     print "norm(dspectral_normdomegas): " + str(np.linalg.norm(self.dspectral_normdomegas,2))
     
-    self.objective_function = self.scaleFactor*(self.alpha4*self.chi2B - self.alpha3*self.coil_plasma_dist_min_lse - self.alpha1*self.coil_volume**(1.0/3.0) + self.alpha2*self.spectral_norm + self.alpha5*self.RMSK + self.alpha6*self.max_K)
-    self.set_dobjective_functiondomegas(self.scaleFactor*(self.alpha4*self.dchi2Bdomega - self.alpha3*self.dcoil_plasma_dist_mindomega - self.alpha1*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega + self.alpha2*self.dspectral_normdomegas + self.alpha5*dRMSKdomega + self.alpha6*self.dmax_Kdomega))
+    self.objective_function = self.scaleFactor*(self.alpha4*self.chi2B - self.alpha3*self.coil_plasma_dist_min_lse - self.alpha1*self.coil_volume**(1.0/3.0) + self.alpha2*self.spectral_norm + self.alpha5*self.rms_K + self.alpha6*self.max_K)
+    self.set_dobjective_functiondomegas(self.scaleFactor*(self.alpha4*self.dchi2Bdomega - self.alpha3*self.dcoil_plasma_dist_mindomega - self.alpha1*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega + self.alpha2*self.dspectral_normdomegas + self.alpha5*self.drms_Kdomega + self.alpha6*self.dmax_Kdomega))
 
   # This is a script to be called within a nonlinear optimization routine in order to evaluate
   # chi2 and its gradient with respect to the Fourier coefficients
@@ -329,7 +331,10 @@ class coilFourier:
       self.chi2B = f.variables["chi2_B"][()][-1]
       self.chi2K = f.variables["chi2_K"][()][-1]
       self.max_K = f.variables["max_K"][()][-1]
-      self.set_dmax_Kdomega(f.variables["dLSE_current_density_with_areadomega"][()][:,-1])
+      self.rms_K = np.sqrt(self.chi2K/self.area_coil)
+      drms_Kdomega = 0.5*self.rms_K**(-1.0)*(self.dchi2Kdomega/self.area_coil - self.chi2K*self.darea_coildomega/self.area_coil**2)
+      self.set_drms_Kdomega(drms_Kdomega)
+      self.set_dmax_Kdomega(f.variables["dmax_kdomega"][()][:,-1])
       self.coil_volume = f.variables["volume_coil"][()]
       self.coil_plasma_dist_min_lse = f.variables["coil_plasma_dist_min_lse"][()]
       self.coil_plasma_dist_max_lse = f.variables["coil_plasma_dist_max_lse"][()]
