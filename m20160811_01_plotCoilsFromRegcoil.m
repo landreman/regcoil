@@ -1,37 +1,14 @@
-% W7X_opt targetOption 4
-% regcoilFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171113_W7X_targetoption4_surfaces/beta_0.1_gamma_0.3/regcoil_out.w7x.nc'};
-% nescinFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171113_W7X_targetoption4_surfaces/beta_0.1_gamma_0.3/nescin.w7x_winding_surface_from_Drevlak_2056'};
-% regcoilFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt_targetop4/regcoil_out.w7x.nc'};
-% W7X_initial
-% regcoilFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_initial/regcoil_out.w7x.nc'};
-% nescinFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_initial/nescin.w7x_winding_surface_from_Drevlak_0'};
-% W7X_opt
-%regcoilFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt/regcoil_out.w7x.nc'};
-% nescinFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/W7X_opt/nescin.w7x_winding_surface_from_Drevlak_178'};
-% HSX_initial
-%regcoilFilenames =
-%{'/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/HSX_initial/regcoil_out.hsx.nc'};
-%nescinFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/HSX_initial/nescin.clone_actual_changesign_0'};
-% HSX_opt
-%regcoilFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/hsx_beta_1e-4/refinement/regcoil_out.hsx.nc'};
-%nescinFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171105_surfacesForPaper/hsx_beta_1e-4/refinement/nescin_clone_actual.txt.changesign_416_79'};
-% W7X_opt
- % ilambda = 12;
- %W7X_opt_targetOption4
- %ilambda = 15;
-% W7X_initial
-% ilambda = 10;
-% HSX_initial
-% ilambda = 11;
-% HSX_opt
+% Averaged
+%regcoilFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171121_comparing_W7X_offset_and_actual/W7X_averaged/regcoil_out.w7x.nc'};
+%nescinFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171121_comparing_W7X_offset_and_actual/W7X_averaged/nescin.averaged'};
 %ilambda = 9;
-% W7X_init w/ target_option = 8
-% regcoilFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171113_W7X_targetoption4_surfaces/W7X_init/target_1e-2_chi2B/regcoil_out.w7x.nc'};nescin.w7x_winding_surface_from_Drevlak_5204
-% nescinFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171113_W7X_targetoption4_surfaces/W7X_init/target_1e-2_chi2B/nescin.w7x_winding_surface_from_Drevlak_0'};
-% ilambda = 8;
-% 
-regcoilFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171113_W7X_targetoption4_surfaces/beta_0.1_gamma_0.05/regcoil_out.w7x.nc'};
-nescinFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171113_W7X_targetoption4_surfaces/beta_0.1_gamma_0.05/nescin.w7x_winding_surface_from_Drevlak_5204'};
+% Offset
+% regcoilFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171121_comparing_W7X_offset_and_actual/W7X_offset/regcoil_out.w7x.nc'};
+% nescinFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171121_comparing_W7X_offset_and_actual/W7X_offset/nescin.w7x_winding_surface_from_Drevlak_5013_116'};
+% ilambda = 10;
+% Actual
+regcoilFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171121_comparing_W7X_offset_and_actual/W7X_init/regcoil_out.w7x.nc'};
+nescinFilenames = {'/Users/elizabethpaul/Documents/Research/Fall_2017/20171121_comparing_W7X_offset_and_actual/W7X_init/nescin.w7x_winding_surface_from_Drevlak_0'};
 ilambda = 8;
 
 thetaShift = 0;

@@ -104,7 +104,9 @@ def nlopt_optimize(regcoil_input_file):
     if (constraint_max == 1):
       opt.add_inequality_constraint(lambda x,grad: dist_constraint_max(x,grad,nescinObject,d_max),constraint_tol)
     if (constraint_max_K == 1):
-      opt.add_inequality_constraint(lambda x,grad: constraint_max_K(x,grad,nescinObject,max_K),constraint_tol)
+      opt.add_inequality_constraint(lambda x,grad: constraint_func_max_K(x,grad,nescinObject,max_K),constraint_tol)
+    if (constraint_rms_K == 1):
+      opt.add_inequality_constraint(lambda x,grad: constraint_func_rms_K(x,grad,nescinObject,rms_K),constraint_tol)
   elif (algorithm == "nlopt.LD_CCSAQ"):
     opt = nlopt.opt(nlopt.LD_CCSAQ,nomega_sensitivity)
     opt.set_min_objective(lambda x,grad: nlopt_evaluate(x,grad,nescinObject))

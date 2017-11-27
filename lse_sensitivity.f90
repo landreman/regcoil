@@ -115,9 +115,9 @@ subroutine lse_sensitivity()
       dtarget_optiondOmega(iomega,ilambda) = dchi2Bdomega_withoutadjoint(iomega,ilambda)
     end if
     dsum_exp_max_kdomega = sum(dtheta_coil*dzeta_coil*nfp*exp(max_k_p*(norm_K-max_K(ilambda))) &
-      *(dnorm_normaldomega(iomega,:,:)/area_coil &
-      - norm_normal_coil*darea_coildomega(iomega)/(area_coil**2) &
-      + norm_normal_coil*dnorm_Kdomega*max_k_p/(area_coil)))
+        *(dnorm_normaldomega(iomega,:,:)/area_coil &
+        - norm_normal_coil*darea_coildomega(iomega)/(area_coil**2) &
+        + norm_normal_coil*dnorm_Kdomega*target_option_p/(area_coil)))
     dmax_kdomega(ilambda,iomega) = (1/max_k_p) * dsum_exp_max_kdomega/sum_exp_max_k
   end do
   !$OMP END DO
