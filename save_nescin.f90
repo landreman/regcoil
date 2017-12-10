@@ -20,8 +20,8 @@ subroutine save_nescin()
 
   save_nescin_mnmax = (save_nescin_ntor+1) + (save_nescin_mpol)*(2*save_nescin_ntor+1)
 
-  ntheta_transform = ntheta_coil*2
-  nzetal_transform = nzetal_coil*2
+  ntheta_transform = ntheta_coil
+  nzetal_transform = nzetal_coil
 
   allocate(save_nescin_rmnc(save_nescin_mnmax),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'

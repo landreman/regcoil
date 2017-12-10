@@ -303,6 +303,9 @@ subroutine init_sensitivity()
   !$OMP END DO
   !$OMP END PARALLEL
 
+
+  print *,"mean(normal_dist): ", sum(normal_dist)/(ntheta_coil*nzeta_coil)
+
   coil_plasma_dist_min = minval(dist)
   coil_plasma_dist_max = maxval(dist)
 

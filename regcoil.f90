@@ -7,7 +7,7 @@
 
 program regcoil
 
-  use global_variables, only: totalTime, outputFilename, general_option, sensitivity_option, normal_displacement_option, fixed_norm_sensitivity_option, exit_code
+  use global_variables, only: totalTime, outputFilename, general_option, sensitivity_option, fixed_norm_sensitivity_option, exit_code
   use init_plasma_mod
 
   implicit none
@@ -60,13 +60,6 @@ program regcoil
   end select
 
   if (sensitivity_option > 1 .and. exit_code == 0) then
-    if (normal_displacement_option == 1) then
-      call normal_displacement()
-      print *,"Normal displacement calculations complete."
-    else if (normal_displacement_option == 2) then
-      call normal_displacement_svd()
-      print *,"Normal displacement calculations complete (with SVD)."
-    endif
     if (fixed_norm_sensitivity_option > 1) then
       call lse_sensitivity()
     end if

@@ -1,6 +1,6 @@
 subroutine read_nescin(nescin_filename, r, drdtheta, drdzeta, d2rdtheta2, d2rdthetadzeta, d2rdzeta2, ntheta, nzetal, theta, zetal, compute_2nd_derivs)
 
-  use global_variables, only: nfp, xm, xn, mnmax, rmnc_global => rmnc, zmns_global => zmns, rmns_global => rmns, zmnc_global => zmnc, compute_curvature
+  use global_variables, only: nfp, xm, xn, mnmax, rmnc_global => rmnc, zmns_global => zmns, rmns_global => rmns, zmnc_global => zmnc
   use safe_open_mod
   use stel_constants
   use stel_kinds
@@ -132,28 +132,6 @@ subroutine read_nescin(nescin_filename, r, drdtheta, drdzeta, d2rdtheta2, d2rdth
                 + rmns * (dsinangledzeta * sinangle2 + sinangle * dsinangle2dzeta)
            drdzeta(3,itheta,izeta) = drdzeta(3,itheta,izeta) + zmns * dsinangledzeta + zmnc * dcosangledzeta
 
-           if (compute_curvature==1) then
-              d2rdtheta2(1,itheta,izeta) = d2rdtheta2(1,itheta,izeta) + rmnc * d2cosangledtheta2 * cosangle2 + rmns * d2sinangledtheta2 * cosangle2
-              d2rdtheta2(2,itheta,izeta) = d2rdtheta2(2,itheta,izeta) + rmnc * d2cosangledtheta2 * sinangle2 + rmns * d2sinangledtheta2 * sinangle2
-              d2rdtheta2(3,itheta,izeta) = d2rdtheta2(3,itheta,izeta) + zmns * d2sinangledtheta2 + zmnc * d2cosangledtheta2
-
-              d2rdthetadzeta(1,itheta,izeta) = d2rdthetadzeta(1,itheta,izeta) + rmnc * (d2cosangledthetadzeta * cosangle2 + dcosangledtheta * dcosangle2dzeta) &
-                   + rmns * (d2sinangledthetadzeta * cosangle2 + dsinangledtheta * dcosangle2dzeta)
-              d2rdthetadzeta(2,itheta,izeta) = d2rdthetadzeta(2,itheta,izeta) + rmnc * (d2cosangledthetadzeta * sinangle2 + dcosangledtheta * dsinangle2dzeta) &
-                   + rmns * (d2sinangledthetadzeta * sinangle2 + dsinangledtheta * dsinangle2dzeta)
-              d2rdthetadzeta(3,itheta,izeta) = d2rdthetadzeta(3,itheta,izeta) + zmns * d2sinangledthetadzeta + zmnc * d2cosangledthetadzeta
-           
-              d2rdzeta2(1,itheta,izeta) = d2rdzeta2(1,itheta,izeta) + rmnc * (d2cosangledzeta2 * cosangle2 + dcosangledzeta * dcosangle2dzeta &
-                   + dcosangledzeta * dcosangle2dzeta + cosangle * d2cosangle2dzeta2) &
-                   + rmns * (d2sinangledzeta2 * cosangle2 + dsinangledzeta * dcosangle2dzeta &
-                   + dsinangledzeta * dcosangle2dzeta + sinangle * d2cosangle2dzeta2)
-              d2rdzeta2(2,itheta,izeta) = d2rdzeta2(2,itheta,izeta) + rmnc * (d2cosangledzeta2 * sinangle2 + dcosangledzeta * dsinangle2dzeta &
-                   + dcosangledzeta * dsinangle2dzeta + cosangle * d2sinangle2dzeta2) &
-                   + rmns * (d2sinangledzeta2 * sinangle2 + dsinangledzeta * dsinangle2dzeta &
-                   + dsinangledzeta * dsinangle2dzeta + sinangle * d2sinangle2dzeta2)
-              d2rdzeta2(3,itheta,izeta) = d2rdzeta2(3,itheta,izeta) + zmns * d2sinangledzeta2 + zmnc * d2cosangledzeta2
-
-           end if
         end do
      end do
   end do

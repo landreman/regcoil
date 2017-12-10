@@ -1,39 +1,43 @@
 % W7X 
-%ilambdas = [10,9];
-%ilambdas = [9,8];
 thetaShift = 5;
-ilambdas = [9,10];
-coilsPerHalfPeriod=5;
+ilambdas = [13,11];
+coilsPerHalfPeriod=6;
 numHalfPeriodsToPlot=1;
-coil_thickness=0.04;
+coil_thickness=0.01;
 
 regcoilFilenames = { ...
-'/Users/elizabethpaul/Documents/Research/Fall_2017/20171121_targetoption8_results/alpha1_1.3_alpha2_0.7_alpha4_0.5_alpha5_3e-7/initial/regcoil_out.w7x.nc' ...
-'/Users/elizabethpaul/Documents/Research/Fall_2017/20171121_targetoption8_results/alpha1_0.73_alpha2_0.2_alpha5_1.33e-6/final_5217/regcoil_out.w7x.nc' ...
+ '/Users/elizabethpaul/Documents/Research/Fall_2017/20171202_HSX_opt_surf/alpha1_3.13e-4_alpha5_3e-10/eval_0/regcoil_out.hsx.nc' ...
+ '/Users/elizabethpaul/Documents/Research/Fall_2017/20171202_HSX_opt_surf/alpha1_3.13e-4_alpha5_3e-10/regcoil_out.hsx.nc' ...
+%'/Users/elizabethpaul/Documents/Research/Fall_2017/20171121_targetoption8_results/alpha1_0.5_alpha2_0.24_alpha5_1.6e6/run_1/eval_0/regcoil_out.w7x.nc' ...
+%'/Users/elizabethpaul/Documents/Research/Fall_2017/20171121_targetoption8_results/alpha1_0.5_alpha2_0.24_alpha5_1.6e6/run_1/regcoil_out.w7x.nc' ...
 %'/Users/elizabethpaul/Documents/Research/Fall_2017/20171121_comparing_W7X_offset_and_actual/W7X_offset/regcoil_out.w7x.nc' ...
 %'/Users/elizabethpaul/Documents/Research/Fall_2017/20171121_comparing_W7X_offset_and_actual/W7X_averaged/regcoil_out.w7x.nc' ...      
 %'/Users/elizabethpaul/Documents/Research/Fall_2017/20171121_comparing_W7X_offset_and_actual/W7X_init/regcoil_out.w7x.nc' ...
 };
 
 nescinFilenames = {...
-'/Users/elizabethpaul/Documents/Research/Fall_2017/20171121_targetoption8_results/alpha1_1.3_alpha2_0.7_alpha4_0.5_alpha5_3e-7/initial/nescin.w7x_winding_surface_from_Drevlak_0' ...
-'/Users/elizabethpaul/Documents/Research/Fall_2017/20171121_targetoption8_results/alpha1_0.73_alpha2_0.2_alpha5_1.33e-6/final_5217/nescin.w7x_winding_surface_from_Drevlak_5217' ...
+'/Users/elizabethpaul/Documents/Research/Fall_2017/20171202_HSX_opt_surf/alpha1_3.13e-4_alpha5_3e-10/nescin_clone_actual.txt.changesign' ...
+'/Users/elizabethpaul/Documents/Research/Fall_2017/20171202_HSX_opt_surf/alpha1_3.13e-4_alpha5_3e-10/nescin_clone_actual.txt.changesign_399' ...
+%'/Users/elizabethpaul/Documents/Research/Fall_2017/20171121_targetoption8_results/alpha1_0.5_alpha2_0.24_alpha5_1.6e6/run_1/eval_0/nescin.w7x_winding_surface_from_Drevlak_0' ...
+%'/Users/elizabethpaul/Documents/Research/Fall_2017/20171121_targetoption8_results/alpha1_0.5_alpha2_0.24_alpha5_1.6e6/run_1/nescin.w7x_winding_surface_from_Drevlak_3165' ...
 
     %'/Users/elizabethpaul/Documents/Research/Fall_2017/20171121_comparing_W7X_offset_and_actual/W7X_offset/nescin.w7x_winding_surface_from_Drevlak_5013_116'
 %'/Users/elizabethpaul/Documents/Research/Fall_2017/20171121_comparing_W7X_offset_and_actual/W7X_averaged/nescin.averaged' ...
 %'/Users/elizabethpaul/Documents/Research/Fall_2017/20171121_comparing_W7X_offset_and_actual/W7X_init/nescin.w7x_winding_surface_from_Drevlak_0' ...
 };
+ncFile = '/Users/elizabethpaul/Documents/Research/Fall_2017/20171202_HSX_opt_surf/alpha1_3.13e-4_alpha5_3e-10/wout_hsxt.nc';
 
-% 20160730: This script has been updated to use the correct sign for the secular part of the current potential.
+% colors = [1,0,0;
+%     1,0.7,0;
+%     0,0.8,0;
+%     0,0,1;
+%     1,0,1];
 
-
-
-colors = [1,0,0;
-    1,0.7,0;
-    0,0.8,0;
+colors = [0,0,1;
+   0,0,1;
     0,0,1;
-    1,0,1];
-
+    0,0,1;
+    0,0,1];
 
 ntheta=150;
 nzeta=160;
@@ -67,16 +71,8 @@ for whichFile = 1:2
     potential0 = ncread(filename,'current_potential');
     potential1 = potential0(:,:,ilambda);
     potential1 = circshift(potential1,thetaShift,1);
-    %size(potential0)
-    %fprintf('Here comes current potential:\n')
-    %potential0(:,:,ilambda)
     potential = kron(ones(1,nfp),potential1) + kron(((1:nfp)-1)*net_poloidal_current_Amperes/nfp,ones(numel(theta),nzeta));
     potential = potential / net_poloidal_current_Amperes * nfp;
-    %fprintf('Here comes final potential:\n')
-    %potential
-    %fprintf('Here comes size(potential):\n')
-    %size(potential)
-    %return
     fprintf('min/max of potential1: %g / %g\n',min(min(potential1)), max(max(potential1)))
     fprintf('min/max of potential:  %g / %g\n',min(min(potential)), max(max(potential)))
 
@@ -84,46 +80,7 @@ for whichFile = 1:2
     filename = nescinFilenames{whichFile};
     fprintf(['Reading ',filename,'\n'])
     fid = fopen(filename,'r');
-    %{
-    line = fgetl(fid);  % Grid spatial dimensions
-    line = fgetl(fid);  % nu,nv,...
-    line = fgetl(fid);  %  256 64 256 64 64 10 F
-    line = fgetl(fid);  % <blank>
-    line = fgetl(fid);  % Fourier Dimensions
-    line = fgetl(fid);  % mf, nf, md, nd
-    line = fgetl(fid);  % 4 4 24 20
-    data = sscanf(line,'%d %d %d %d');
-    mf=data(1);
-    nf=data(2);
-    line = fgetl(fid); % <blank>
-    line = fgetl(fid); % Plasma information from VMEC
-    line = fgetl(fid); % np, iota_edge, phip_edge, curpol
-    line = fgetl(fid); % <values>
-    line
-    data = sscanf(line,'%d %g %g %g');
-    nfp=data(1);
-    iota_edge=data(2);
-    phip_edge = data(3);
-    curpol = data(4);
-    fprintf('Read nfp=%d\n',nfp)
-    line = fgetl(fid); % <blank>
-    line = fgetl(fid); % Current controls
-    line = fgetl(fid); % cut, cup, ibex
-    line = fgetl(fid); % <values>
-    data = sscanf(line,'%g %g %g');
-    cut=data(1);
-    cup=data(2);
-    %}
-    %{
-    nzetal=nzeta*nfp;
-    theta = linspace(0,2*pi,ntheta+1);
-    theta(end)=[];
-    zetal = linspace(0,2*pi,nzetal+1);
-    zetal(end)=[];
-    [zetal_2D, theta_2D] = meshgrid(zetal,theta);
-    %}
-
-    %search_string = '----- Coil Surface';
+    
     search_string = '------ Current Surface'
     while true
         line = fgetl(fid);
@@ -150,29 +107,6 @@ for whichFile = 1:2
         zmns_nescin(i) = data(4);
     end
 
-    %{
-    % Build current potential
-    v = zetal_2D*nfp/(2*pi);
-    u = theta_2D/(2*pi);
-    It = cut;
-    Ip = cup*nfp;
-    %potential = -Ip*v/nfp - It*u; %The signs are wrong here!!
-    potential = Ip*v/nfp + It*u;
-    search_string = '---- Phi(m,n) for least squares ---';
-    while true
-        line = fgetl(fid);
-        if strncmp(line,search_string,numel(search_string))
-            break
-        end
-    end
-    for m = 0:mf
-        for n = (-nf):nf
-            line = fgetl(fid);
-            data = sscanf(line,'%d %d %g');
-            potential = potential + data(3)*sin(2*pi*(m*u+n*v));
-        end
-    end
-    %}
     fclose(fid);
     % Done reading nescin file.
     fprintf(['Done reading ',filename,'\n'])
@@ -392,14 +326,56 @@ for whichFile = 1:2
     end
 end
 
+
+% Now load magnetic surfaces
+
+xm = double(ncread(ncFile,'xm'));
+xn = double(ncread(ncFile,'xn'));
+mnmax = double(ncread(ncFile,'mnmax'));
+rmnc = ncread(ncFile,'rmnc');
+zmns = ncread(ncFile,'zmns');
+iota = ncread(ncFile,'iotaf');
+ns = double(ncread(ncFile,'ns'));
+surfaces = [1];
+zeta_mins = 0;
+zeta_fractions = 0.17;
+
+nTheta=60;
+nZeta=400;
+
+theta1D=0:(2*pi/(nTheta-1)):(2*pi);
+zeta1D=0:(2*pi/(nZeta-1)):(2*pi);
+% Shift so seam is hidden:
+theta1D = theta1D - pi/2;
+[zeta2D,theta2D]=meshgrid(zeta1D,theta1D);
+
+for which_surf = 1:numel(surfaces)
+    isurf = round(surfaces(which_surf)*(ns-1));
+    R=zeros(size(zeta2D));
+    Z=zeros(size(zeta2D));
+    zeta_toUse = zeta_mins(which_surf) + zeta2D*zeta_fractions(which_surf);
+    if which_surf==1
+        % Shift so seam is hidden.
+        zeta_toUse = zeta_toUse + 7.3*pi/5;
+    end
+    for i=1:mnmax
+        angle=xm(i)*theta2D-xn(i)*zeta_toUse;
+        R=R+rmnc(i,isurf)*cos(angle);
+        Z=Z+zmns(i,isurf)*sin(angle);
+    end
+    
+    X=R.*cos(zeta_toUse);
+    Y=R.*sin(zeta_toUse);
+    surf(X,Y,Z,'EdgeColor','none','FaceColor',surfaceColors(which_surf,:),'FaceLighting','gouraud')
+    plot3(X(:,end),Y(:,end),Z(:,end),'Color',[0.8,0,0],'LineWidth',2)
+    
+end
+
 daspect([1,1,1])
 axis vis3d
 axis off
-%light
-%campos([-1.4267   18.9647   29.7379])
 campos([-2.3196   24.0172  -17.4164])
 camlight
-%lighting gouraud
 camva(6)
 
 %annotation(gcf,'textbox',[0.19 0.85 0.5 0.03],'String','(d)','FontSize',18,'FitBoxToText','off','LineStyle','none');

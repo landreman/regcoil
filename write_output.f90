@@ -42,7 +42,6 @@ subroutine write_output
        vn_exit_code = "exit_code", &
        vn_chi2_B_target = "chi2_B_target", &
        vn_sensitivity_option = "sensitivity_option", &
-       vn_normal_displacement_option = "normal_displacement_option", &
        vn_nmax_sensitivity = "nmax_sensitivity", &
        vn_mmax_sensitivity = "mmax_sensitivity", &
        vn_mnmax_sensitivity = "mnmax_sensitivity", &
@@ -61,10 +60,7 @@ subroutine write_output
        vn_coil_plasma_dist_max = "coil_plasma_dist_max", &
        vn_coil_plasma_dist_min_lse = "coil_plasma_dist_min_lse", &
        vn_coil_plasma_dist_max_lse = "coil_plasma_dist_max_lse", &
-       vn_coil_plasma_dist_lse_p = "coil_plasma_dist_lse_p", &
-       vn_compute_curvature = "compute_curvature", &
-       vn_max_curvature_1 = "max_curvature_1", &
-       vn_max_curvature_2 = "max_curvature_2"
+       vn_coil_plasma_dist_lse_p = "coil_plasma_dist_lse_p"
 
   ! Arrays with dimension 1
   character(len=*), parameter :: &
@@ -136,10 +132,6 @@ subroutine write_output
      vn_dRMSKdomega = "dRMSKdomega", &
      vn_q_tilde = "q_tilde", &
      vn_dlambdadomega = "dlambdadomega", &
-     vn_principle_curvature_1 = "principle_curvature_1", &
-     vn_principle_curvature_2 = "principle_curvature_2", &
-     vn_mean_curvature = "mean_curvature", &
-     vn_gaussian_curvature = "gaussian_curvature", &
      vn_normal_dist = "normal_dist", &
      vn_dmax_kdomega = "dmax_kdomega"
 
@@ -282,7 +274,6 @@ subroutine write_output
   call cdf_define(ncid, vn_exit_code, exit_code)
   if (general_option==4 .or. general_option==5) call cdf_define(ncid, vn_chi2_B_target, chi2_B_target)
   call cdf_define(ncid, vn_sensitivity_option, sensitivity_option)
-  call cdf_define(ncid, vn_normal_displacement_option, normal_displacement_option)
   if (sensitivity_option > 1) then
     call cdf_define(ncid, vn_mmax_sensitivity, mmax_sensitivity)
     call cdf_define(ncid, vn_nmax_sensitivity, nmax_sensitivity)
@@ -309,12 +300,6 @@ subroutine write_output
     call cdf_define(ncid, vn_coil_plasma_dist_min_lse, coil_plasma_dist_min_lse)
     call cdf_define(ncid, vn_coil_plasma_dist_max_lse, coil_plasma_dist_max_lse)
 
-  end if
-
-  call cdf_define(ncid, vn_compute_curvature, compute_curvature)
-  if (compute_curvature == 1) then
-    call cdf_define(ncid, vn_max_curvature_1, max_curvature_1)
-    call cdf_define(ncid, vn_max_curvature_2, max_curvature_2)
   end if
 
   ! Arrays with dimension 1
@@ -424,13 +409,6 @@ subroutine write_output
     call cdf_define(ncid, vn_q_tilde, q_tilde(:,1:Nlambda),dimname=basis_nlambda_dim)
     call cdf_define(ncid, vn_dlambdadomega, dlambdadomega(:,1:Nlambda),dimname=nomega_nlambda_dim)
   end if
-  if (compute_curvature==1) then
-    call cdf_define(ncid, vn_principle_curvature_1, principle_curvature_1, dimname=ntheta_nzeta_coil_dim)
-    call cdf_define(ncid, vn_principle_curvature_2, principle_curvature_2, dimname=ntheta_nzeta_coil_dim)
-    call cdf_define(ncid, vn_mean_curvature, mean_curvature, dimname=ntheta_nzeta_coil_dim)
-    call cdf_define(ncid, vn_gaussian_curvature, gaussian_curvature, dimname=ntheta_nzeta_coil_dim)
-    call cdf_define(ncid, vn_normal_dist,normal_dist, dimname = ntheta_nzeta_coil_dim)
-  end if
 
   ! Arrays with dimension 3
 
@@ -512,7 +490,6 @@ subroutine write_output
   call cdf_write(ncid, vn_exit_code, exit_code)
   if (general_option==4 .or. general_option==5) call cdf_write(ncid, vn_chi2_B_target, chi2_B_target)
   call cdf_write(ncid, vn_sensitivity_option, sensitivity_option)
-  call cdf_write(ncid, vn_normal_displacement_option, normal_displacement_option)
   if (sensitivity_option > 1) then
     call cdf_write(ncid, vn_mmax_sensitivity, mmax_sensitivity)
     call cdf_write(ncid, vn_nmax_sensitivity, nmax_sensitivity)
@@ -537,11 +514,6 @@ subroutine write_output
     call cdf_write(ncid, vn_coil_plasma_dist_lse_p, coil_plasma_dist_lse_p)
     call cdf_write(ncid, vn_coil_plasma_dist_min_lse, coil_plasma_dist_min_lse)
     call cdf_write(ncid, vn_coil_plasma_dist_max_lse, coil_plasma_dist_max_lse)
-  end if
-  call cdf_write(ncid, vn_compute_curvature, compute_curvature)
-  if (compute_curvature == 1) then
-    call cdf_write(ncid, vn_max_curvature_1, max_curvature_1)
-    call cdf_write(ncid, vn_max_curvature_2, max_curvature_2)
   end if
 
   ! Arrays with dimension 1
@@ -651,13 +623,6 @@ subroutine write_output
     call cdf_write(ncid, vn_q_tilde, q_tilde(:,1:Nlambda))
     call cdf_write(ncid, vn_dlambdadomega, dlambdadomega(:,1:Nlambda))
     call cdf_write(ncid, vn_dmax_kdomega, dmax_kdomega(1:Nlambda,:))
-  end if
-  if (compute_curvature==1) then
-    call cdf_write(ncid, vn_principle_curvature_1, principle_curvature_1)
-    call cdf_write(ncid, vn_principle_curvature_2, principle_curvature_2)
-    call cdf_write(ncid, vn_mean_curvature, mean_curvature)
-    call cdf_write(ncid, vn_gaussian_curvature, gaussian_curvature)
-    call cdf_write(ncid, vn_normal_dist, normal_dist)
   end if
 
   ! Arrays with dimension 3

@@ -107,7 +107,6 @@ module global_variables
   real(dp), dimension(:,:), allocatable :: q_tilde, dlambdadomega
 
   ! Needed for sensitivity calculation
-  integer :: normal_displacement_option = 0
   integer :: sensitivity_option = 1
   integer :: sensitivity_symmetry_option = 1
   integer :: nmax_sensitivity = 0
@@ -140,13 +139,6 @@ module global_variables
   real(dp), dimension(:,:), allocatable :: normal_dist
   real(dp), dimension(:,:), allocatable :: dmax_kdomega
   real(dp) :: max_k_p
-
-  ! Curvature-related things
-  integer :: compute_curvature = 0
-  real(dp), dimension(:,:,:), allocatable :: d2r_coildtheta2, d2r_coildthetadzeta, d2r_coildzeta2
-  real(dp), dimension(:,:), allocatable :: principle_curvature_1, principle_curvature_2
-  real(dp) :: max_curvature_1, max_curvature_2
-  real(dp), dimension(:,:), allocatable :: mean_curvature, gaussian_curvature
 
 end module global_variables
 

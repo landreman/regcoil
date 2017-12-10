@@ -33,6 +33,8 @@ subroutine adjoint_solve
     maxLambda = NLambda
   end if
 
+  allocate(dRMSKdomega(nomega_coil,nlambda),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
   allocate(KDifference_x(ntheta_coil*nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(KDifference_y(ntheta_coil*nzeta_coil), stat=iflag)
@@ -254,7 +256,7 @@ subroutine adjoint_solve
       call system_clock(toc)
       print *,"dchi2K and dchi2B in solve:",real(toc-tic)/countrate," sec."
     endif
-
+    dRMSKdomega(iomega,ilambda)= 0.5*(chi2_K(ilambda)/area_coil)**(-0.5)*(dchi2Kdomega(iomega,ilambda)/area_coil - chi2_K(ilambda)*darea_coildomega(iomega)/area_coil**2)
   end do
 
   deallocate(term1)
