@@ -176,9 +176,12 @@ def regcoilScanPlot4(inputFilename):
           dplotVariabledscanVariable = dplotVariabledomegas[:,indices]
         if (plotType == 7): # coil_plasma_dist_min
           plotVariables = plotVariables[indices]
+          print "dplotVariabledomegas.shape"
+          print dplotVariabledomegas.shape
           dplotVariabledscanVariable = dplotVariabledomegas[:,indices]
         if (plotType == 8): # coil_plasma_dist_max
           plotVariables = plotVariables[indices]
+          print dplotVariabledscanVariable.shape
           dplotVariabledscanVariable = dplotVariabledomegas[:,indices]
 
       # Compute omega index corresponding to mode used for geometry scan

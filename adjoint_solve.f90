@@ -256,7 +256,9 @@ subroutine adjoint_solve
       call system_clock(toc)
       print *,"dchi2K and dchi2B in solve:",real(toc-tic)/countrate," sec."
     endif
-    dRMSKdomega(iomega,ilambda)= 0.5*(chi2_K(ilambda)/area_coil)**(-0.5)*(dchi2Kdomega(iomega,ilambda)/area_coil - chi2_K(ilambda)*darea_coildomega(iomega)/area_coil**2)
+    if (sensitivity_option > 2) then
+      dRMSKdomega(iomega,ilambda)= 0.5*(chi2_K(ilambda)/area_coil)**(-0.5)*(dchi2Kdomega(iomega,ilambda)/area_coil - chi2_K(ilambda)*darea_coildomega(iomega)/area_coil**2)
+    end if
   end do
 
   deallocate(term1)

@@ -617,9 +617,11 @@ subroutine write_output
     call cdf_write(ncid, vn_L_p_diagnostic_5, L_p_diagnostic_5(1:Nlambda,:))
     call cdf_write(ncid, vn_L_p_diagnostic_6, L_p_diagnostic_6(1:Nlambda,:))
   end if
+  if (sensitivity_option > 2) then
+    call cdf_write(ncid, vn_dRMSKdomega, dRMSKdomega(:,1:Nlambda))
+  end if
   if (fixed_norm_sensitivity_option > 1 .and. exit_code == 0) then
     call cdf_write(ncid, vn_dtarget_optiondOmega, dtarget_optiondOmega(:,1:Nlambda))
-    call cdf_write(ncid, vn_dRMSKdomega, dRMSKdomega(:,1:Nlambda))
     call cdf_write(ncid, vn_q_tilde, q_tilde(:,1:Nlambda))
     call cdf_write(ncid, vn_dlambdadomega, dlambdadomega(:,1:Nlambda))
     call cdf_write(ncid, vn_dmax_kdomega, dmax_kdomega(1:Nlambda,:))
