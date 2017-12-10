@@ -29,6 +29,8 @@ subroutine init_sensitivity()
   call init_Fourier_modes_sensitivity(mmax_sensitivity, nmax_sensitivity, mnmax_sensitivity, nomega_coil, &
     xm_sensitivity, xn_sensitivity, omega_coil,sensitivity_symmetry_option)
 
+  allocate(darea_coildomega(nomega_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
   allocate(drdomega(3,ntheta_coil*nzeta_coil,nfp,nomega_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dnorm_normaldomega(nomega_coil,ntheta_coil,nzeta_coil),stat=iflag)
@@ -225,54 +227,6 @@ subroutine init_sensitivity()
   print *,"Coil volume computation:",real(toc-tic)/countrate," sec."
   deallocate(dR_squared_domega_half_grid)
 
-!  coil_plasma_dist_min = minval(normal_dist)
-!  coil_plasma_dist_max = maxval(normal_dist)
-!
-!  call system_clock(toc)
-!  print *,"Coil-plasma distance loop 1:",real(toc-tic)/countrate," sec."
-!
-!  call system_clock(tic)
-!
-!  ! Compute LSE normal coil-plasma distance
-!  sum_exp_dist = 0
-!  dsum_exp_distdomega = 0
-!  coil_plasma_dist_min_lse = 0
-!  coil_plasma_dist_max_lse = 0
-!  !$OMP PARALLEL
-!  !$OMP MASTER
-!  print *,"  Number of OpenMP threads:",omp_get_num_threads()
-!  !$OMP END MASTER
-!  !$OMP DO PRIVATE(izeta_coil,itheta_plasma,izeta_plasma,sum_exp_dist_term)
-!  do itheta_coil = 1, ntheta_coil
-!    do izeta_coil = 1, nzeta_coil
-!      do itheta_plasma = 1, ntheta_plasma
-!        do izeta_plasma = 1, nzeta_plasma
-!          sum_exp_dist_term = exp(-coil_plasma_dist_lse_p*(dist(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma)-normal_dist(itheta_coil,izeta_coil)))
-!
-!          if ((sum_exp_dist_term /= sum_exp_dist_term) .or. (abs(sum_exp_dist_term) > huge(sum_exp_dist_term))) then
-!            sum_exp_dist_term = 0
-!          end if
-!          sum_exp_dist(itheta_coil,izeta_coil) = sum_exp_dist(itheta_coil,izeta_coil) &
-!            + sum_exp_dist_term
-!          dsum_exp_distdomega(itheta_coil,izeta_coil,:) = &
-!            dsum_exp_distdomega(itheta_coil,izeta_coil,:) &
-!            + ddistdomega(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma,:) &
-!            * sum_exp_dist_term
-!        end do
-!      end do
-!      normal_dist_lse(itheta_coil,izeta_coil) = -(1/coil_plasma_dist_lse_p)*log(sum_exp_dist(itheta_coil,izeta_coil)) + normal_dist(itheta_coil,izeta_coil)
-!      dnormal_distdomega(itheta_coil,izeta_coil,:) = &
-!        dsum_exp_distdomega(itheta_coil,izeta_coil,:)/sum_exp_dist(itheta_coil,izeta_coil)
-!    end do
-!  end do
-!  !$OMP END DO
-!  !$OMP END PARALLEL
-!
-!  call system_clock(toc)
-!  print *,"Loop 2:",real(toc-tic)/countrate," sec."
-!  allocate(identity(ntheta_coil,nzeta_coil,ntheta_plasma,nzeta_plasma),stat=iflag)
-!  identity = 1
-
   call system_clock(tic,countrate)
 
   ! Compute coil-plasma distance using log-sum-exp norm
@@ -302,8 +256,6 @@ subroutine init_sensitivity()
   end do
   !$OMP END DO
   !$OMP END PARALLEL
-
-
   print *,"mean(normal_dist): ", sum(normal_dist)/(ntheta_coil*nzeta_coil)
 
   coil_plasma_dist_min = minval(dist)
@@ -320,10 +272,8 @@ subroutine init_sensitivity()
           sum_exp_min = sum_exp_min + exp(-coil_plasma_dist_lse_p*(dist(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma)-coil_plasma_dist_min))
           sum_exp_max = sum_exp_max + exp(coil_plasma_dist_lse_p*(dist(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma)-coil_plasma_dist_max))
 
-          do iomega = 1, nomega_coil
-            dcoil_plasma_dist_mindomega(iomega) = dcoil_plasma_dist_mindomega(iomega) + ddistdomega(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma,iomega)*exp(-coil_plasma_dist_lse_p*(dist(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma)-coil_plasma_dist_min))
-            dcoil_plasma_dist_maxdomega(iomega) = dcoil_plasma_dist_maxdomega(iomega) + ddistdomega(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma,iomega)*exp(coil_plasma_dist_lse_p*(dist(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma)-coil_plasma_dist_max))
-          end do
+          dcoil_plasma_dist_mindomega = dcoil_plasma_dist_mindomega + ddistdomega(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma,:)*exp(-coil_plasma_dist_lse_p*(dist(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma)-coil_plasma_dist_min))
+          dcoil_plasma_dist_maxdomega = dcoil_plasma_dist_maxdomega + ddistdomega(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma,:)*exp(coil_plasma_dist_lse_p*(dist(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma)-coil_plasma_dist_max))
 
         end do
       end do
@@ -336,8 +286,6 @@ subroutine init_sensitivity()
 
   coil_plasma_dist_max_lse =  (1/coil_plasma_dist_lse_p)*log(sum_exp_max) + maxval(dist)
 
-
-
   print *,"Max coil-plamsa dist: ", coil_plasma_dist_max
   print *,"Max coil-plasma dist (LSE): ", coil_plasma_dist_max_lse
   print *,"Min coil-plasma dist: ", coil_plasma_dist_min
@@ -346,47 +294,6 @@ subroutine init_sensitivity()
   print *,"Coil-plasma dist computation Loop 3:",real(toc-tic)/countrate," sec."
 
   call system_clock(tic)
-
-!  call system_clock(tic)
-!
-!  coil_plasma_dist_min_lse = 0
-!  coil_plasma_dist_max_lse = 0
-!  dcoil_plasma_dist_mindomega = 0
-!  dcoil_plasma_dist_maxdomega = 0
-!  do itheta_coil =1,ntheta_coil
-!    do izeta_coil = 1,nzeta_coil
-!      coil_plasma_dist_min_term = exp(-coil_plasma_dist_lse_p*(normal_dist_lse(itheta_coil,izeta_coil)-minval(normal_dist_lse)))
-!      if ((coil_plasma_dist_min_term /= coil_plasma_dist_min_term) .or. abs(coil_plasma_dist_min_term) > huge(coil_plasma_dist_min_term)) then
-!        coil_plasma_dist_min_term = 0
-!      end if
-!      coil_plasma_dist_min_lse  = coil_plasma_dist_min_lse + coil_plasma_dist_min_term
-!
-!      coil_plasma_dist_max_term = exp(coil_plasma_dist_lse_p*(normal_dist_lse(itheta_coil,izeta_coil)-maxval(normal_dist_lse)))
-!      if ((coil_plasma_dist_max_term /= coil_plasma_dist_max_term) .or. (abs(coil_plasma_dist_max_term) > huge(coil_plasma_dist_max_term))) then
-!        coil_plasma_dist_max_term = 0
-!      end if
-!      coil_plasma_dist_max_lse = coil_plasma_dist_max_lse + coil_plasma_dist_max_term
-!
-!      dcoil_plasma_dist_mindomega = dcoil_plasma_dist_mindomega &
-!        + dnormal_distdomega(itheta_coil,izeta_coil,:) &
-!        * coil_plasma_dist_min_term
-!
-!      dcoil_plasma_dist_maxdomega = dcoil_plasma_dist_maxdomega &
-!        + dnormal_distdomega(itheta_coil,izeta_coil,:) &
-!        * coil_plasma_dist_max_term
-!    end do
-!  end do
-!  sum_exp_min = coil_plasma_dist_min_lse
-!  sum_exp_max = coil_plasma_dist_max_lse
-!
-!  coil_plasma_dist_min_lse = -(1/coil_plasma_dist_lse_p) &
-!    *log(coil_plasma_dist_min_lse) + minval(normal_dist_lse)
-!
-!  coil_plasma_dist_max_lse = &
-!    (1/coil_plasma_dist_lse_p)*log(coil_plasma_dist_max_lse) + maxval(normal_dist_lse)
-!
-!  dcoil_plasma_dist_mindomega = dcoil_plasma_dist_mindomega/sum_exp_min
-!  dcoil_plasma_dist_maxdomega = dcoil_plasma_dist_maxdomega/sum_exp_max
 
   do izeta_coil = 1, nzeta_coil
     do itheta_coil = 1, ntheta_coil
@@ -410,6 +317,10 @@ subroutine init_sensitivity()
   enddo
   call system_clock(toc)
   print *,"d sensitivity loop: ",real(toc-tic)/countrate," sec."
+
+  do iomega = 1, nomega_coil
+    darea_coildomega(iomega) = dtheta_coil*dzeta_coil*nfp*sum(dnorm_normaldomega(iomega,:,:))
+  end do
 
   print *,"Init sensitivity complete."
 

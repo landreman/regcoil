@@ -26,8 +26,6 @@ subroutine lse_sensitivity()
 
   allocate(dRMSKdomega(nomega_coil,nlambda),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(darea_coildomega(nomega_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dtarget_optiondOmega(nomega_coil,nlambda))
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dtarget_optiondPhi(num_basis_functions,nlambda))
@@ -98,7 +96,6 @@ subroutine lse_sensitivity()
       * reshape(KDifference_x*dKDifferencedomega(1,:) + KDifference_y*dKDifferencedomega(2,:) &
       + KDifference_z*dKDifferencedomega(3,:),(/ ntheta_coil, nzeta_coil/)) &
       - norm_K*dnorm_normaldomega(iomega,:,:)/norm_normal_coil
-    darea_coildomega(iomega) = dtheta_coil*dzeta_coil*nfp*sum(dnorm_normaldomega(iomega,:,:))
     if (target_option == 8) then
       dsum_expdomega = sum(dtheta_coil*dzeta_coil*nfp*exp(target_option_p*(norm_K-max_K(ilambda))) &
         *(dnorm_normaldomega(iomega,:,:)/area_coil &
