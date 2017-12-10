@@ -265,6 +265,12 @@ subroutine init_sensitivity()
   sum_exp_max = 0
   dcoil_plasma_dist_maxdomega = 0
   dcoil_plasma_dist_mindomega = 0
+
+  !$OMP PARALLEL
+  !$OMP MASTER
+  print *,"  Number of OpenMP threads:",omp_get_num_threads()
+  !$OMP END MASTER
+  !$OMP DO PRIVATE(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma,sum_exp_min,sum_exp_max,dcoil_plasma_dist_mindomega,dcoil_plasma_dist_maxdomega)
   do itheta_coil = 1, ntheta_coil
     do izeta_coil = 1, nzeta_coil
       do itheta_plasma = 1, ntheta_plasma
@@ -274,11 +280,12 @@ subroutine init_sensitivity()
 
           dcoil_plasma_dist_mindomega = dcoil_plasma_dist_mindomega + ddistdomega(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma,:)*exp(-coil_plasma_dist_lse_p*(dist(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma)-coil_plasma_dist_min))
           dcoil_plasma_dist_maxdomega = dcoil_plasma_dist_maxdomega + ddistdomega(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma,:)*exp(coil_plasma_dist_lse_p*(dist(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma)-coil_plasma_dist_max))
-
         end do
       end do
     end do
   end do
+  !$OMP END DO
+  !$OMP END PARALLEL
   dcoil_plasma_dist_mindomega = dcoil_plasma_dist_mindomega/sum_exp_min
   dcoil_plasma_dist_maxdomega = dcoil_plasma_dist_maxdomega/sum_exp_max
 
