@@ -37,7 +37,7 @@ for whichFile = 1:1
     nfp = double(ncread(filename,'nfp'));
     chi2_B = ncread(filename,'chi2_B');
     chi2_K = ncread(filename,'chi2_K');
-    fprintf('chi2_B: %g,  chi2_K: %g\n',chi2_B(ilambda),chi2_K(ilambda))
+    fprintf('chi2_B: %g,  chi2_K: %g\n',chi2_B(end),chi2_K(end))
     net_poloidal_current_Amperes = ncread(filename,'net_poloidal_current_Amperes');
     theta = ncread(filename,'theta_coil');
     theta = circshift(theta,thetaShift);

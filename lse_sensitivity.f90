@@ -24,8 +24,6 @@ subroutine lse_sensitivity()
   allocate(IPIV(num_basis_functions), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
-  allocate(dRMSKdomega(nomega_coil,nlambda),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dtarget_optiondOmega(nomega_coil,nlambda))
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dtarget_optiondPhi(num_basis_functions,nlambda))

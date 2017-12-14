@@ -133,7 +133,7 @@ module global_variables
   integer :: save_nescin_mpol = 12, save_nescin_ntor = 12
   integer :: minLambda, maxLambda
   real(dp), dimension(:), allocatable :: dvolume_coildomega
-  real(dp), dimension(:), allocatable :: dcoil_plasma_dist_mindomega, dcoil_plasma_dist_maxdomega
+  real(dp), dimension(:), allocatable :: dcoil_plasma_dist_mindomega
   real(dp) :: coil_plasma_dist_min, coil_plasma_dist_max
   real(dp) :: coil_plasma_dist_min_lse, coil_plasma_dist_max_lse
   real(dp), dimension(:,:), allocatable :: normal_dist

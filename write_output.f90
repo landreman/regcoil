@@ -93,8 +93,7 @@ subroutine write_output
        vn_LSE_current_density_with_area = "LSE_current_density_with_area", &
        vn_ps = "ps", &
        vn_darea_coildomega = "darea_coildomega", &
-       vn_dcoil_plasma_dist_mindomega = "dcoil_plasma_dist_mindomega", &
-       vn_dcoil_plasma_dist_maxdomega = "dcoil_plasma_dist_maxdomega"
+       vn_dcoil_plasma_dist_mindomega = "dcoil_plasma_dist_mindomega"
 
   ! Arrays with dimension 2
   character(len=*), parameter :: &
@@ -346,13 +345,14 @@ subroutine write_output
   if (L_p_diagnostic_option > 1) then
     call cdf_define(ncid, vn_ps, ps, dimname=np_dim)
   end if
-  if (fixed_norm_sensitivity_option > 1 .and. exit_code==0) then
+  if (sensitivity_option > 1) then
     call cdf_define(ncid, vn_darea_coildomega, darea_coildomega,dimname=nomega_coil_dim)
+  end if
+  if (fixed_norm_sensitivity_option > 1 .and. exit_code==0) then
     call cdf_define(ncid, vn_dmax_kdomega, dmax_kdomega,dimname=nlambda_nomega_dim)
   end if
   if (sensitivity_option > 1) then
     call cdf_define(ncid, vn_dcoil_plasma_dist_mindomega, dcoil_plasma_dist_mindomega, dimname=nomega_coil_dim)
-    call cdf_define(ncid, vn_dcoil_plasma_dist_maxdomega, dcoil_plasma_dist_maxdomega, dimname=nomega_coil_dim)
   end if
 
   ! Arrays with dimension 2
@@ -403,9 +403,11 @@ subroutine write_output
     call cdf_define(ncid, vn_L_P_diagnostic_6, L_p_diagnostic_6(1:Nlambda,:),dimname= &
       nlambda_np_dim)
   end if
+  if (sensitivity_option > 2) then
+    call cdf_define(ncid, vn_dRMSKdomega, dRMSKdomega(:,1:Nlambda),dimname=nomega_nlambda_dim)
+  end if
   if (fixed_norm_sensitivity_option > 1 .and. exit_code == 0) then
     call cdf_define(ncid, vn_dtarget_optiondOmega, dtarget_optiondOmega(:,1:Nlambda), dimname=nomega_nlambda_dim)
-    call cdf_define(ncid, vn_dRMSKdomega, dRMSKdomega(:,1:Nlambda),dimname=nomega_nlambda_dim)
     call cdf_define(ncid, vn_q_tilde, q_tilde(:,1:Nlambda),dimname=basis_nlambda_dim)
     call cdf_define(ncid, vn_dlambdadomega, dlambdadomega(:,1:Nlambda),dimname=nomega_nlambda_dim)
   end if
@@ -561,12 +563,11 @@ subroutine write_output
   if (L_p_diagnostic_option > 1) then
     call cdf_write(ncid, vn_ps, ps)
   end if
-  if (fixed_norm_sensitivity_option > 1 .and. exit_code==0) then
+  if (sensitivity_option > 1) then
     call cdf_write(ncid, vn_darea_coildomega, darea_coildomega)
   end if
   if (sensitivity_option > 1) then
     call cdf_write(ncid, vn_dcoil_plasma_dist_mindomega, dcoil_plasma_dist_mindomega)
-    call cdf_write(ncid, vn_dcoil_plasma_dist_maxdomega, dcoil_plasma_dist_maxdomega)
   end if
 
   ! Arrays with dimension 2
