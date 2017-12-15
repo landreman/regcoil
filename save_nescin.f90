@@ -96,7 +96,7 @@ subroutine save_nescin()
   write(out_unit,*) ""
   write(out_unit,*) ""
   do imn=1,save_nescin_mnmax
-    write(out_unit,*) tab,save_nescin_xm(imn),tab,save_nescin_xn(imn),tab,save_nescin_rmnc(imn),tab,save_nescin_zmns(imn),0,0
+    write(out_unit,"(I4,I4,ES10.2,ES10.2,ES10.2,ES10.2,ES10.2)") save_nescin_xm(imn),save_nescin_xn(imn),save_nescin_rmnc(imn),save_nescin_zmns(imn),0.0,0.0
   end do
   close(out_unit)
 
