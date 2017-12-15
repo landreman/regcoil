@@ -20,6 +20,7 @@ subroutine save_nescin()
 
   save_nescin_mnmax = (save_nescin_ntor+1) + (save_nescin_mpol)*(2*save_nescin_ntor+1)
 
+  ! Eventually this should be changed - increase res. and interpolate w/ splines
   ntheta_transform = ntheta_coil
   nzetal_transform = nzetal_coil
 
@@ -40,11 +41,11 @@ subroutine save_nescin()
   allocate(zetal_transform(nzetal_transform),stat=iflag)
 
   do itheta=1,ntheta_transform
-    theta_transform(itheta) = (itheta-1.0_dp)/ntheta_transform
+    theta_transform(itheta) = 2*pi*(itheta-1.0_dp)/ntheta_transform
   end do
 
   do izeta = 1,nzetal_transform
-    zetal_transform(izeta) = (izeta-1.0_dp)/nzetal_transform
+    zetal_transform(izeta) = 2*pi*(izeta-1.0_dp)/nzetal_transform
   end do
 
   ! Initialize m = 0 modes
