@@ -106,7 +106,6 @@ class coilFourier:
     self.coil_volume = 0
     self.dcoil_volumedomega = 0
     self.dcoil_plasma_dist_mindomega = 0
-    self.dcoil_plasma_dist_maxdomega = 0
     self.dmax_Kdomega = 0
     self.drms_Kdomega = 0
     self.coil_plasma_dist_min_lse = 0
@@ -171,9 +170,6 @@ class coilFourier:
   def set_dcoil_plasma_dist_mindomega(self,dcoil_plasma_dist_mindomega):
     self.dcoil_plasma_dist_mindomega = dcoil_plasma_dist_mindomega
   
-  def set_dcoil_plasma_dist_maxdomega(self,dcoil_plasma_dist_maxdomega):
-    self.dcoil_plasma_dist_maxdomega = dcoil_plasma_dist_maxdomega
-
   def set_dobjective_functiondomegas(self,dobjective_functiondomegas_sensitivity):
     self.dobjective_functiondomegas_sensitivity = dobjective_functiondomegas_sensitivity
   
@@ -327,7 +323,6 @@ class coilFourier:
       self.area_coil = f.variables["area_coil"][()]
       self.set_dcoil_volumedomega(f.variables["dvolume_coildomega"][()])
       self.set_dcoil_plasma_dist_mindomega(f.variables["dcoil_plasma_dist_mindomega"][()])
-      self.set_dcoil_plasma_dist_maxdomega(f.variables["dcoil_plasma_dist_maxdomega"][()])
       self.chi2B = f.variables["chi2_B"][()][-1]
       self.chi2K = f.variables["chi2_K"][()][-1]
       self.max_K = f.variables["max_K"][()][-1]
