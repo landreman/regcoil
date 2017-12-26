@@ -281,7 +281,7 @@ fig.patch.set_facecolor('white')
 
 # Set up contours at appropriate levels
 x = net_poloidal_current_Amperes/nfp
-contours = np.linspace(-0.5*x,1.5*x,coilsPerHalfPeriod*2*3,endpoint=False)
+contours = np.linspace(-0.5*x,1.5*x,coilsPerHalfPeriod*2*2,endpoint=False)
 d = contours[1]-contours[0]
 contours = contours + d/2
 
