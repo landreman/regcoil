@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 print "usage: regcoilPlot regcoil_out.XXX.nc"
 
+# coilsPerHalfPeriod is used only to choose the number of contours to plot for the total current potential:
+coilsPerHalfPeriod = 3
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 #from matplotlib import cm
@@ -50,6 +53,7 @@ current_potential = f.variables['current_potential'][()]
 Bnormal_from_plasma_current = f.variables['Bnormal_from_plasma_current'][()]
 Bnormal_from_net_coil_currents = f.variables['Bnormal_from_net_coil_currents'][()]
 Bnormal_total = f.variables['Bnormal_total'][()]
+net_poloidal_current_Amperes = f.variables['net_poloidal_current_Amperes'][()]
 # = f.variables[''][()]
 
 # lambda used to be called alpha, so try both names for backward-compatibility.
@@ -275,9 +279,21 @@ figureNum += 1
 fig = plt.figure(figureNum)
 fig.patch.set_facecolor('white')
 
+# Set up contours at appropriate levels
+x = net_poloidal_current_Amperes/nfp
+contours = np.linspace(-0.5*x,1.5*x,coilsPerHalfPeriod*2*3,endpoint=False)
+d = contours[1]-contours[0]
+contours = contours + d/2
+
+zeta_coil_extended = np.concatenate((zeta_coil,[2*np.pi/nfp]))
+theta_coil_extended = np.concatenate((theta_coil,[2*np.pi]))
+
 for whichPlot in range(numPlots):
     plt.subplot(numRows,numCols,whichPlot+1)
-    plt.contourf(zeta_coil, theta_coil, np.transpose(current_potential[ilambda_to_plot[whichPlot]-1,:,:]), numContours)
+    data = np.transpose(current_potential[ilambda_to_plot[whichPlot]-1,:,:])
+    data_extended = np.concatenate((data,data[0:1,:]),axis=0) # Add the repeated point in theta
+    data_extended = np.concatenate((data_extended,data_extended[:,0:1]+x),axis=1) # Add the repeated point in zeta
+    plt.contourf(zeta_coil_extended, theta_coil_extended, data_extended, contours)
     plt.colorbar()
     plt.xlabel('zeta',fontsize='x-small')
     plt.ylabel('theta',fontsize='x-small')
