@@ -41,7 +41,7 @@ subroutine write_output
        vn_net_toroidal_current_Amperes = "net_toroidal_current_Amperes", &
        vn_curpol = "curpol", &
        vn_nlambda = "nlambda", &
-       vn_totalTime = "totalTime", &
+       vn_total_time = "total_time", &
        vn_exit_code = "exit_code", &
        vn_chi2_B_target = "chi2_B_target"
 
@@ -126,6 +126,12 @@ subroutine write_output
        ntheta_nzeta_coil_nlambda_dim = (/ character(len=50) :: 'ntheta_coil','nzeta_coil','nlambda'/), &
        ntheta_nzeta_plasma_nlambda_dim = (/ character(len=50) :: 'ntheta_plasma','nzeta_plasma','nlambda'/)
 
+
+  character(len=*), parameter :: input_parameter_text = ' See the user manual documentation for the input parameter of the same name.'
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
   call cdf_open(ncid,outputFilename,'w',ierr)
   IF (ierr .ne. 0) then
      print *,"Error opening output file ",outputFilename
@@ -135,60 +141,162 @@ subroutine write_output
   ! Scalars
 
   call cdf_define(ncid, vn_nfp, nfp)
+  call cdf_setatt(ncid, vn_nfp, 'Number of field periods, i.e. the number of identical toroidal segments, 5 for W7-X, 4 for HSX, etc. ' // &
+       'Equivalent to the VMEC variable of the same name.' // input_parameter_text)
+
   call cdf_define(ncid, vn_geometry_option_plasma, geometry_option_plasma)
+  call cdf_setatt(ncid, vn_geometry_option_plasma, 'Method used to define the geometry of the plasma surface.' // input_parameter_text)
+
   call cdf_define(ncid, vn_geometry_option_coil, geometry_option_coil)
+  call cdf_setatt(ncid, vn_geometry_option_coil, 'Method used to define the geometry of the coil winding surface.' // input_parameter_text)
+
   call cdf_define(ncid, vn_ntheta_plasma, ntheta_plasma)
+  call cdf_setatt(ncid, vn_ntheta_plasma, 'Number of grid points used in the poloidal angle theta on the plasma surface.' // input_parameter_text)
+
   call cdf_define(ncid, vn_nzeta_plasma, nzeta_plasma)
+  call cdf_setatt(ncid, vn_nzeta_plasma, 'Number of grid points used in the toridal angle zeta per identical toroidal period, on the plasma surface.' // input_parameter_text)
+
   call cdf_define(ncid, vn_nzetal_plasma, nzetal_plasma)
+  call cdf_setatt(ncid, vn_nzetal_plasma, 'Number of grid points used in the toridal angle, including all the nfp identical toroidal periods, on the plasma surface.')
+
   call cdf_define(ncid, vn_ntheta_coil, ntheta_coil)
+  call cdf_setatt(ncid, vn_ntheta_coil, 'Number of grid points used in the poloidal angle theta on the coil surface.' // input_parameter_text)
+
   call cdf_define(ncid, vn_nzeta_coil, nzeta_coil)
+  call cdf_setatt(ncid, vn_nzeta_coil, 'Number of grid points used in the toridal angle zeta per identical toroidal period, on the coil surface.' // input_parameter_text)
+
   call cdf_define(ncid, vn_nzetal_coil, nzetal_coil)
+  call cdf_setatt(ncid, vn_nzetal_coil, 'Number of grid points used in the toridal angle, including all the nfp identical toroidal periods, on the coil surface.')
+
   call cdf_define(ncid, vn_a_plasma, a_plasma)
   call cdf_define(ncid, vn_a_coil, a_coil)
   call cdf_define(ncid, vn_R0_plasma, R0_plasma)
   call cdf_define(ncid, vn_R0_coil, R0_coil)
+
   call cdf_define(ncid, vn_mpol_coil, mpol_coil)
+  call cdf_setatt(ncid, vn_mpol_coil, 'The maximum poloidal mode number retained in the current potential.' // input_parameter_text)
+
   call cdf_define(ncid, vn_ntor_coil, ntor_coil)
+  call cdf_setatt(ncid, vn_ntor_coil, 'ntor_coil * nfp is the maximum toroidal mode number retained in the current potential.' // input_parameter_text)
+
   call cdf_define(ncid, vn_mnmax_coil, mnmax_coil)
+  call cdf_setatt(ncid, vn_mnmax_coil, 'Number of unique (m,n) pairs for the Fourier modes retained in the single-valued part of the current potential. ' // &
+       'Equal to mpol_coil*(ntor_coil*2+1) + ntor_coil.')
+
   call cdf_define(ncid, vn_num_basis_functions, num_basis_functions)
+  call cdf_setatt(ncid, vn_num_basis_functions, 'Number of cos(m*theta-n*zeta) and/or sin(m*theta-n*zeta) Fourier modes retained ' // &
+       'in the single-valued part of the current potential. Equal to mnmax_coil * 1 or 2, depending on symmetry_option.')
+
   call cdf_define(ncid, vn_symmetry_option, symmetry_option)
+  call cdf_setatt(ncid, vn_symmetry_option, '1 = The single-valued part of the current potential was forced to be stellarator-symmetric. ' // &
+       '2 = The single-valued part of the current potential was forced to be stellarator-antisymmetric. ' // &
+       '3 = The single-valued part of the current potential was allowed to have both stellarator-symmetric and antisymmetric components')
+
   call cdf_define(ncid, vn_area_plasma, area_plasma)
+  call cdf_setatt(ncid, vn_area_plasma, 'Area of the plasma surface in meters^2')
+
   call cdf_define(ncid, vn_area_coil, area_coil)
+  call cdf_setatt(ncid, vn_area_coil, 'Area of the coil winding surface in meters^2')
+
   call cdf_define(ncid, vn_volume_plasma, volume_plasma)
+  call cdf_setatt(ncid, vn_volume_plasma, 'Volume of the plasma surface in meters^3')
+
   call cdf_define(ncid, vn_volume_coil, volume_coil)
+  call cdf_setatt(ncid, vn_volume_coil, 'Volume of the coil winding surface in meters^3')
+
   call cdf_define(ncid, vn_net_poloidal_current_Amperes, net_poloidal_current_Amperes)
+  call cdf_setatt(ncid, vn_net_poloidal_current_Amperes, 'Net current (in Amperes) that flows on the coil winding surface in the poloidal direction. ' // &
+       'This quantity corresponds to G in the 2017 Nuclear Fusion paper. For modular coils (as opposed to helical or wavy-PF coils), ' // &
+       'this quantity is then the sum of the currents in all the modular coils.')
+
   call cdf_define(ncid, vn_net_toroidal_current_Amperes, net_toroidal_current_Amperes)
+  call cdf_setatt(ncid, vn_net_toroidal_current_Amperes, 'Net current (in Amperes) that flows on the coil winding surface in the toroidal direction. ' // &
+       'This quantity corresponds to I in the 2017 Nuclear Fusion paper. For modular coils, this quantity is 0.')
+
   call cdf_define(ncid, vn_curpol, curpol)
+
   call cdf_define(ncid, vn_nlambda, nlambda)
-  call cdf_define(ncid, vn_totalTime, totalTime)
+  call cdf_setatt(ncid, vn_nlambda, 'Number of values of the regularization parameter lambda examined.')
+
+  call cdf_define(ncid, vn_total_time, total_time)
+  call cdf_setatt(ncid, vn_total_time, 'Total time it took regcoil to run, in seconds.')
+
   call cdf_define(ncid, vn_exit_code, exit_code)
-  if (general_option==4 .or. general_option==5) call cdf_define(ncid, vn_chi2_B_target, chi2_B_target)
+  call cdf_setatt(ncid, vn_exit_code, "Only meaningful when general_option = 4 or 5 so a lambda search is performed. " // &
+       "exit_code = 0 means the lambda search was successful. " // &
+       "exit_code = -1 means the lambda search did not converge to the requested tolerance within nlambda iterations. " // &
+       "exit_code = -2 means the current_density_target you have set is not achievable because it is too low. " // &
+       "exit_code = -3 means the current_density_target you have set is not achievable because it is too high.")
+
+  if (general_option==4 .or. general_option==5) then
+     call cdf_define(ncid, vn_chi2_B_target, chi2_B_target)
+     call cdf_setatt(ncid, vn_chi2_B_target, 'The value of chi^2_B at the final value of regularization parameter lambda resulting from the lambda search. ' // &
+          'Units = Tesla^2 meters^2.')
+  end if
 
   ! Arrays with dimension 1
 
   call cdf_define(ncid, vn_theta_plasma, theta_plasma, dimname=ntheta_plasma_dim)
+  call cdf_setatt(ncid, vn_theta_plasma, 'Grid points of the poloidal angle on the plasma surface.')
+
   call cdf_define(ncid, vn_zeta_plasma, zeta_plasma, dimname=nzeta_plasma_dim)
+  call cdf_setatt(ncid, vn_theta_plasma, 'Grid points of the toroidal angle on the plasma surface. ' // &
+       'Only the first of the nfp identical toroidal periods is included')
+
   call cdf_define(ncid, vn_zetal_plasma, zetal_plasma, dimname=nzetal_plasma_dim)
+  call cdf_setatt(ncid, vn_theta_plasma, 'Grid points of the toroidal angle on the plasma surface, including all nfp toroidal periods.')
+
   call cdf_define(ncid, vn_theta_coil, theta_coil, dimname=ntheta_coil_dim)
+  call cdf_setatt(ncid, vn_theta_coil, 'Grid points of the poloidal angle on the coil surface.')
+
   call cdf_define(ncid, vn_zeta_coil, zeta_coil, dimname=nzeta_coil_dim)
+  call cdf_setatt(ncid, vn_theta_coil, 'Grid points of the toroidal angle on the coil surface. ' // &
+       'Only the first of the nfp identical toroidal periods is included')
+
   call cdf_define(ncid, vn_zetal_coil, zetal_coil, dimname=nzetal_coil_dim)
+  call cdf_setatt(ncid, vn_theta_coil, 'Grid points of the toroidal angle on the coil surface, including all nfp toroidal periods.')
+
   call cdf_define(ncid, vn_xm_coil, xm_coil, dimname=mnmax_coil_dim)
   call cdf_define(ncid, vn_xn_coil, xn_coil, dimname=mnmax_coil_dim)
   call cdf_define(ncid, vn_h, h, dimname=nthetanzeta_plasma_dim)
   call cdf_define(ncid, vn_RHS_B, RHS_B, dimname=num_basis_functions_dim)
   call cdf_define(ncid, vn_RHS_K, RHS_K, dimname=num_basis_functions_dim)
+
   call cdf_define(ncid, vn_lambda, lambda(1:Nlambda), dimname=nlambda_dim)
+  call cdf_setatt(ncid, vn_lambda, 'Values of the regularization parameter that were used, in SI units (Tesla^2 meter^2 / Ampere^2)')
+
   call cdf_define(ncid, vn_chi2_B, chi2_B(1:Nlambda), dimname=nlambda_dim)
+  call cdf_setatt(ncid, vn_chi2_B, 'Values of chi^2_B (the area integral over the plasma surface of |B_normal|^2) that resulted for each value of lambda, in SI units (Tesla^2 meter^2)')
+
   call cdf_define(ncid, vn_chi2_K, chi2_K(1:Nlambda), dimname=nlambda_dim)
+  call cdf_setatt(ncid, vn_chi2_K, 'Values of chi^2_K (the area integral over the coil winding surface of current density squared) that resulted for each value of lambda, in SI units (Ampere^2)')
+
   call cdf_define(ncid, vn_max_Bnormal, max_Bnormal(1:Nlambda), dimname=nlambda_dim)
+  call cdf_setatt(ncid, vn_max_Bnormal, 'Maximum (over the plasma surface) magnetic field normal to the target plasma shape that resulted for each value of lambda, in Tesla.')
+
   call cdf_define(ncid, vn_max_K, max_K(1:Nlambda), dimname=nlambda_dim) ! We only write elements 1:Nlambda in case of a lambda search.
+  call cdf_setatt(ncid, vn_max_K, 'Maximum (over the coil surface) current density that resulted for each value of lambda, in Amperes/meter.')
 
   ! Arrays with dimension 2
 
   call cdf_define(ncid, vn_norm_normal_plasma,  norm_normal_plasma,  dimname=ntheta_nzeta_plasma_dim)
+  call cdf_setatt(ncid, vn_norm_normal_plasma, '|N|, where N = (d r / d zeta) cross (d r / d theta) is a non-unit-length normal vector ' // &
+       'and r is the posiiton vector, for the plasma surface. This quantity is the Jacobian appearing in area integrals: ' // &
+       'int d^2a = int dtheta int dzeta |N|. Units = meters^2.')
+
   call cdf_define(ncid, vn_norm_normal_coil,  norm_normal_coil,  dimname=ntheta_nzeta_coil_dim)
+  call cdf_setatt(ncid, vn_norm_normal_coil, '|N|, where N = (d r / d zeta) cross (d r / d theta) is a non-unit-length normal vector ' // &
+       'and r is the posiiton vector, for the coil surface. This quantity is the Jacobian appearing in area integrals: ' // &
+       'int d^2a = int dtheta int dzeta |N|. Units = meters^2.')
+
   call cdf_define(ncid, vn_Bnormal_from_plasma_current, Bnormal_from_plasma_current, dimname=ntheta_nzeta_plasma_dim)
+  call cdf_setatt(ncid, vn_Bnormal_from_plasma_current, 'Contribution to the magnetic field normal to the plasma surface from currents inside the plasma. ' // &
+       'This is the quantity named B_{normal}^{plasma} in the 2017 Nuclear Fusion paper. Units = Tesla.')
+
   call cdf_define(ncid, vn_Bnormal_from_net_coil_currents, Bnormal_from_net_coil_currents, dimname=ntheta_nzeta_plasma_dim)
+  call cdf_setatt(ncid, vn_Bnormal_from_plasma_current, 'Contribution to the magnetic field normal to the plasma surface from the secular (nonperiodic) ' // &
+       'part of the current potential. This is the quantity named B_{normal}^{GI} in the 2017 Nuclear Fusion paper. Units = Tesla.')
+
   if (save_level<1) then
      call cdf_define(ncid, vn_inductance, inductance, dimname=nthetanzeta_plasma_nthetanzeta_coil_dim)
   end if
@@ -203,7 +311,12 @@ subroutine write_output
   ! Arrays with dimension 3
 
   call cdf_define(ncid, vn_r_plasma,  r_plasma,  dimname=xyz_ntheta_nzetal_plasma_dim)
+  call cdf_setatt(ncid, vn_r_plasma, 'Position vector describing the plasma boundary surface, in Cartesian components, with units of meters. ' // &
+       'The dimension of size 3 corresponds to the (x,y,z) components.')
+
   call cdf_define(ncid, vn_r_coil,  r_coil,  dimname=xyz_ntheta_nzetal_coil_dim)
+  call cdf_setatt(ncid, vn_r_coil,  'Position vector describing the plasma boundary surface, in Cartesian components, with units of meters. ' // &
+       'The dimension of size 3 corresponds to the (x,y,z) components.')
 
   if (save_level < 3) then
      call cdf_define(ncid, vn_drdtheta_plasma,  drdtheta_plasma,  dimname=xyz_ntheta_nzetal_plasma_dim)
@@ -219,9 +332,20 @@ subroutine write_output
 
   call cdf_define(ncid, vn_single_valued_current_potential_thetazeta, single_valued_current_potential_thetazeta(:,:,1:Nlambda), &
        dimname=ntheta_nzeta_coil_nlambda_dim)
+  call cdf_setatt(ncid, vn_K2, 'Periodic (single-valued) term in the current potential on the coil winding surface, in units of Amperes, ' // &
+       'for each value of the regularization parameter lambda considered.')
+
   call cdf_define(ncid, vn_current_potential, current_potential(:,:,1:Nlambda), dimname=ntheta_nzeta_coil_nlambda_dim)
+  call cdf_setatt(ncid, vn_K2, 'Total (multiple-valued) current potential on the coil winding surface, in units of Amperes, ' // &
+       'for each value of the regularization parameter lambda considered.')
+
   call cdf_define(ncid, vn_Bnormal_total, Bnormal_total(:,:,1:Nlambda), dimname=ntheta_nzeta_plasma_nlambda_dim)
+  call cdf_setatt(ncid, vn_Bnormal_total, 'Residual magnetic field normal to the plasma surface, in units of Tesla, ' // &
+       'for each value of the regularization parameter lambda considered.')
+
   call cdf_define(ncid, vn_K2, K2(:,:,1:Nlambda), dimname=ntheta_nzeta_coil_nlambda_dim)
+  call cdf_setatt(ncid, vn_K2, 'Squared current density on the coil winding surface, in units of Amperes^2/meter^2, ' // &
+       'for each value of the regularization parameter lambda considered.')
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
   ! Done with cdf_define calls. Now write the data.
@@ -255,7 +379,7 @@ subroutine write_output
   call cdf_write(ncid, vn_net_toroidal_current_Amperes, net_toroidal_current_Amperes)
   call cdf_write(ncid, vn_curpol, curpol)
   call cdf_write(ncid, vn_nlambda, nlambda)
-  call cdf_write(ncid, vn_totalTime, totalTime)
+  call cdf_write(ncid, vn_total_time, total_time)
   call cdf_write(ncid, vn_exit_code, exit_code)
   if (general_option==4 .or. general_option==5) call cdf_write(ncid, vn_chi2_B_target, chi2_B_target)
 

@@ -36,6 +36,25 @@ The plotting and testing functions use \python,
 {\ttfamily numpy}, and {\ttfamily scipy}.
 The plotting routines \regcoilPlot~and {\ttfamily compareRegcoil} use {\ttfamily matplotlib}.
 
+\section{Cloning the repository}
+
+The source code for \regcoil~is hosted in a {\ttfamily git} repository at
+\url{https://github.com/landreman/regcoil}.
+You obtain the \regcoil~source code by cloning the repository. This requires several steps.
+
+\begin{enumerate}
+\item Create an account on \url{github.com}, and sign in to {\ttfamily github}.
+\item Click the icon on the top right to see the drop-down menu of account options, and select the ``Settings'' page.
+\item Click on ``SSH and GPG keys'' on the left, and add an SSH key for the computer you wish to use. To do this, you may wish to read see the ``generating SSH keys'' guide which is linked to from that page: \url{https://help.github.com/articles/connecting-to-github-with-ssh/}
+\item From a terminal command line in the computer you wish to use, enter\\
+{\ttfamily git clone git@github.com:landreman/regcoil.git}\\
+ to download the repository.
+\end{enumerate}
+
+Any time after you have cloned the repository in this way, you can download future updates to the code by entering {\ttfamily git pull} from any subdirectory within your local copy.
+
+
+
 \section{Parallelization}
 
 The code does not use {\ttfamily MPI}, and so it runs on a single computing node.  However, it is possible to use multiple threads
@@ -104,6 +123,22 @@ Once a suitable current potential has been computed with \regcoil, you can `cut'
 using the python script {\ttfamily cutCoilsFromRegcoil}. You can run this script with no arguments
 to see a list of the input parameters. This script will generate a coils file suitable for input to the
 {\ttfamily makegrid} code (distributed with \vmec), which in turn generates an mgrid file used as input for free-boundary \vmec.
+
+\section{Output quantities}
+
+The output variables are documented using metadata (the `{\ttfamily long\_name}' attribute)
+in the netCDF output files {\ttfamily regcoil\_out.<extension>.nc}.
+To view the available output variables, their annotations, and their values, you can run
+{\ttfamily ncdump regcoil\_out.<extension>.nc | less} from the command line.
+Some of the most commonly used output quantities which can be found in the netCDF file are 
+{\ttfamily lambda},
+{\ttfamily chi2\_B},
+{\ttfamily chi2\_K},
+{\ttfamily max\_Bnormal},
+{\ttfamily max\_K},
+{\ttfamily chi2\_B\_target},
+and
+{\ttfamily current\_potential}.
 
 \section{Questions, Bugs, and Feedback}
 

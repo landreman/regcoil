@@ -63,7 +63,7 @@ module regcoil_variables
   integer :: nfp_imposed = 1
 
   integer :: symmetry_option = 1
-  real(dp) :: totalTime
+  real(dp) :: total_time
 
   integer :: efit_num_modes = 10
   real(dp) :: efit_psiN = 0.98

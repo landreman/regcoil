@@ -2,6 +2,7 @@
 
 program regcoil
 
+<<<<<<< HEAD
   use regcoil_variables, only: totalTime, outputFilename, general_option
   use init_regcoil_plasma
   use regcoil_input_mod
@@ -12,6 +13,10 @@ program regcoil
   use build_regcoil_matrices
   use regcoil_auto_regularization_solve
   use write_regcoil_output
+=======
+  use global_variables, only: total_time, outputFilename, general_option
+  use init_plasma_mod
+>>>>>>> 5dc77ee6d32e1e0a0b643dd63edb6c91b610f3e4
 
   implicit none
 
@@ -48,11 +53,11 @@ program regcoil
   end select
 
   call system_clock(toc)
-  totalTime = real(toc-tic)/countrate
+  total_time = real(toc-tic)/countrate
 
   call write_output()
  
-  print *,"REGCOIL complete. Total time=",totalTime,"sec."
+  print *,"REGCOIL complete. Total time=",total_time,"sec."
   print *,"You can run regcoilPlot ",trim(outputFilename)," to plot results."
 
 end program regcoil
