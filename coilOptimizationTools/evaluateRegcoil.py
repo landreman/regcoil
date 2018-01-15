@@ -32,34 +32,34 @@ class coilFourier:
     if (self.spectral_norm_q==None):
       self.spectral_norm_q = 2
 
-    alpha1 = readVariable("alpha1","float",regcoil_input_file,required=False)
-    alpha2 = readVariable("alpha2","float",regcoil_input_file,required=False)
-    alpha3 = readVariable("alpha3","float",regcoil_input_file,required=False)
-    alpha4 = readVariable("alpha4","float",regcoil_input_file,required=False)
-    alpha5 = readVariable("alpha5","float",regcoil_input_file,required=False)
-    alpha6 = readVariable("alpha6","float",regcoil_input_file,required=False)
+    alphaV = readVariable("alphaV","float",regcoil_input_file,required=False)
+    alphaS = readVariable("alphaS","float",regcoil_input_file,required=False)
+    alphaD = readVariable("alphaD","float",regcoil_input_file,required=False)
+    alphaB = readVariable("alphaB","float",regcoil_input_file,required=False)
+    alphaK = readVariable("alphaK","float",regcoil_input_file,required=False)
+    alphaMaxK = readVariable("alphaMaxK","float",regcoil_input_file,required=False)
 
     scaleFactor = readVariable("scaleFactor","float",regcoil_input_file,required=False)
     
-    self.alpha1 = alpha1
-    self.alpha2 = alpha2
-    self.alpha3 = alpha3
-    self.alpha4 = alpha4
-    self.alpha5 = alpha5
-    self.alpha6 = alpha6
+    self.alphaV = alphaV
+    self.alphaS = alphaS
+    self.alphaD = alphaD
+    self.alphaB = alphaB
+    self.alphaK = alphaK
+    self.alphaMaxK = alphaMaxK
     self.scaleFactor = scaleFactor
-    if (alpha1 == None):
-      self.alpha1 = 0
-    if (alpha2 == None):
-      self.alpha2 = 0
-    if (alpha3 == None):
-      self.alpha3 = 0
-    if (alpha4 == None):
-      self.alpha4 = 0
-    if (alpha5 == None):
-      self.alpha5 = 0
-    if (alpha6 == None):
-      self.alpha6 = 0
+    if (alphaV == None):
+      self.alphaV = 0
+    if (alphaS == None):
+      self.alphaS = 0
+    if (alphaD == None):
+      self.alphaD = 0
+    if (alphaB == None):
+      self.alphaB = 0
+    if (alphaK == None):
+      self.alphaK = 0
+    if (alphaMaxK == None):
+      self.alphaMaxK = 0
     if (scaleFactor == None):
       self.scaleFactor = 1.0
     # Check parameters
@@ -234,8 +234,8 @@ class coilFourier:
     print "norm(dcoil_plasma_dist_mindomega): " + str(np.linalg.norm(self.dcoil_plasma_dist_mindomega,2))
     print "norm(dspectral_normdomegas): " + str(np.linalg.norm(self.dspectral_normdomegas,2))
     
-    self.objective_function = self.scaleFactor*(self.alpha4*self.chi2B - self.alpha3*self.coil_plasma_dist_min_lse - self.alpha1*self.coil_volume**(1.0/3.0) + self.alpha2*self.spectral_norm + self.alpha5*self.rms_K + self.alpha6*self.max_K)
-    self.set_dobjective_functiondomegas(self.scaleFactor*(self.alpha4*self.dchi2Bdomega - self.alpha3*self.dcoil_plasma_dist_mindomega - self.alpha1*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega + self.alpha2*self.dspectral_normdomegas + self.alpha5*self.drms_Kdomega + self.alpha6*self.dmax_Kdomega))
+    self.objective_function = self.scaleFactor*(self.alphaB*self.chi2B - self.alphaD*self.coil_plasma_dist_min_lse - self.alphaV*self.coil_volume**(1.0/3.0) + self.alphaS*self.spectral_norm + self.alphaK*self.rms_K + self.alphaMaxK*self.max_K)
+    self.set_dobjective_functiondomegas(self.scaleFactor*(self.alphaB*self.dchi2Bdomega - self.alphaD*self.dcoil_plasma_dist_mindomega - self.alphaV*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega + self.alphaS*self.dspectral_normdomegas + self.alphaK*self.drms_Kdomega + self.alphaMaxK*self.dmax_Kdomega))
 
   # This is a script to be called within a nonlinear optimization routine in order to evaluate
   # chi2 and its gradient with respect to the Fourier coefficients

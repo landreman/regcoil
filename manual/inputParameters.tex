@@ -627,13 +627,21 @@ but it is available for completeness.\\
 {When \parlink{sensitivity\_option} $> 1$.}
 {If \parlink{sensitivity\_option} $>1$, the sensitivity of the log-sum-exponent approximation to the coil-plasma distance will be computed. The value of \parlink{coil\_plasma\_dist\_lse\_p} determines the scaling, $p$, in the exponent for this form of the distance.
 \begin{gather}
-\min d = - \frac{1}{p} \log \left( \sum_{i_{\theta'}} \sum_{i_{\zeta'}} \sum_{i_{\theta}} \sum_{i_{\zeta}} \exp \left( - p \sqrt{ \bm{r}' - \bm{r})^2} \right) \right)
+\min d = - \frac{1}{p} \log \left( \frac{ \int_{\text{coil}} d^2 A \, \int_{\text{plasma}} d^2 A \, \exp \left( - p \sqrt{ (\bm{r}_{\text{coil}} - \bm{r}_{\text{plasma}})^2 } \right) }{A_{\text{coil}} A_{\text{plasma}}} \right)
 \end{gather}
 }
 
 \myhrule
 
 \section{Coil-winding Surface Optimization Parameters}
+
+\myhrule
+
+The parameters related to winding surface optimization are defined in the \texttt{regcoilOptimize} namelist of the input file. 
+
+\myhrule
+
+\subsection{Scipy Optimize}
 
 \myhrule
 
@@ -694,11 +702,196 @@ but it is available for completeness.\\
 
 \myhrule
 
-\param{}
+\subsection{NLOPT Optimize}
+The following objective function is used when \texttt{nlopt\_optimize} is called.
+\begin{gather}
+f = \texttt{nlopt\_optimize} \left( -\alpha_V V_{\text{coil}} + \alpha_S S_p - \alpha_D d_{\text{min}} + \alpha_B \chi^2_B + \alpha_K \norm{\bm{K}}_2 + \alpha_{\max K} \max{K} \right)
+\end{gather}
+Here $S_p$ is the spectral width,
+\begin{gather}
+S_p = \sum_{m,n} m^p \left( \left(r_{mn}^c\right)^2 + \left(z_{mn}^s\right)^2 \right),
+\label{spectral_width}
+\end{gather}
+$d_{\text{min}}$ is the minimum coil-plasma distance,
+\begin{gather}
+d_{\text{min}} = \min \left( \sqrt{ \left(\bm{r}_{\text{coil}} - \bm{r}_{\text{plasma}} \right)^2 } \right),
+\end{gather}
+and $\norm{\bm{K}}_2$ is the root-mean-squared current density,
+\begin{gather}
+\norm{\bm{K}}_2 = \sqrt{\chi^2_K/A_{\text{coil}}}.
+\end{gather}
+The coefficients in $f$ are defined by the user. 
 
+\myhrule
 
+\param{alphaV}
+{float}
+{0}
+{When \texttt{nlopt\_optimize} is being called.}
+{Scaling factor for $V_{\text{coil}}$ in the objective function.}
 
+\myhrule
 
+\param{alphaS}
+{float}
+{0}
+{When \texttt{nlopt\_optimize} is being called.}
+{Scaling factor for $S_p$ in the objective function.}
 
+\myhrule
 
+\param{alphaD}
+{float}
+{0}
+{When \texttt{nlopt\_optimize} is being called.}
+{Scaling factor for $d_{\text{min}}$ in the objective function.}
+
+\myhrule
+
+\param{alphaB}
+{float}
+{0}
+{When \texttt{nlopt\_optimize} is being called.}
+{Scaling factor for $\chi^2_B$ in the objective function.}
+
+\myhrule
+
+\param{alphaK}
+{float}
+{0}
+{When \texttt{nlopt\_optimize} is being called.}
+{Scaling factor for $\norm{\bm{K}}_2$ in the objective function.}
+
+\myhrule
+
+\param{alphaMaxK}
+{float}
+{0}
+{When \texttt{nlopt\_optimize} is being called.}
+{Scaling factor for $\max{K}$ in the objective function.}
+
+\myhrule
+
+\param{scaleFactor}
+{float}
+{1}
+{When \texttt{nlopt\_optimize} is being called.}
+{Scaling factor for objective function.}
+
+\myhrule
+
+\param{constraint\_min}
+{integer}
+{0}
+{When \texttt{nlopt\_optimize} is being called.}
+{\texttt{constraint\_min} = 0: No constraint on a minimum coil-plasma distance is enforced. \\
+ \texttt{constraint\_min} = 1: Minimum coil-plasma distance is constrained to be $\leq$ \texttt{d\_min}. }
+ 
+\myhrule
+
+\param{d\_min}
+{float}
+{0.2}
+{When \texttt{nlopt\_optimize} is being called and \texttt{contraint\_min} = 1.}
+{Minimum coil-plasma allowed for optimized winding surface.}
+ 
+ \myhrule
+ 
+\param{constraint\_max\_K}
+{integer}
+{0}
+{When \texttt{nlopt\_optimize} is being called.}
+{\texttt{constraint\_max\_K} = 0: No constraint on $\max K$. \\
+ \texttt{constraint\_max\_K} = 1: Maximum current density is constraint to be $\leq$ \texttt{max\_K}}
+ 
+\myhrule
+
+\param{max\_K}
+{float}
+{7.1e6}
+{When \texttt{nlopt\_optimize} is being called and \texttt{contraint\_max\_K} = 1.}
+{Maximum current density allowed during winding surface optimization. }
+
+\myhrule
+
+\param{constraint\_rms\_K}
+{integer}
+{0}
+{When \texttt{nlopt\_optimize} is being called.}
+{\texttt{constraint\_rms\_K} = 0: No constraint on $\norm{K}_2$. \\
+ \texttt{constraint\_rms\_K} = 1: Maximum current density is constraint to be $\leq$ \texttt{rms\_K}}
+ 
+\myhrule
+
+\param{rms\_K}
+{float}
+{2.36e6}
+{When \texttt{nlopt\_optimize} is being called and \texttt{contraint\_rms\_K} = 1.}
+{Maximum current density allowed during winding surface optimization. }
+
+\myhrule
+
+\param{nlopt\_method}
+{string}
+{none}
+{When \texttt{nlopt\_optimize} is being called. }
+{Algorithm used for gradient based winding surface optimization. The following options are supported.
+\begin{itemize}
+\item \texttt{nlopt.G\_MLSL\_LDS}
+\item \texttt{nlopt.LD\_LBFGS}
+\item \texttt{nlopt.LD\_MMA}
+\item \texttt{nlopt.LD\_SLSQP} 
+\item \texttt{nlopt.LD\_CCSAQ}
+\item \texttt{nlopt.LD\_TNEWTON\_PRECOND\_RESTART}
+\item \texttt{nlopt.LD\_VAR1}
+\end{itemize}
+}
+
+\myhrule
+
+\param{omega\_min}
+{float}
+{-7}
+{When \texttt{nlopt\_optimize} is being called. }
+{Minimum value for $r_{mn}^c$ or $z_{mn}^s$ allowed for winding surface optimization.}
+
+\myhrule
+
+\param{omega\_max}
+{float}
+{7}
+{When \texttt{nlopt\_optimize} is being called. }
+{Maximum value for $r_{mn}^c$ or $z_{mn}^s$ allowed for winding surface optimization.}
+
+\myhrule
+
+\param{constraint\_tol}
+{float}
+{1e-6}
+{When \texttt{nlopt\_optimize} is being called and \texttt{constraint\_min} =1 or \texttt{constraint\_max\_K} = 1 or \texttt{constraint\_rms\_K}.}
+{Tolerance allowed for constraint equation to be satisfied.}
+
+\myhrule
+
+\param{ftol\_tol}
+{float}
+{1e-6}
+{When \texttt{nlopt\_optimize} is being called.}
+{Optimization will stop when the change in the objective function $f$ is less than \texttt{ftol\_tol} in successive steps.}
+
+\myhrule
+
+\param{nmax}
+{integer}
+{none}
+{When \texttt{nlopt\_optimize} is being called.}
+{Maximum $n$ value for winding surface Fourier modes in \texttt{nescin\_filename}.}
+
+\myhrule
+
+\param{mmax}
+{integer}
+{none}
+{When \texttt{nlopt\_optimize} is being called.}
+{Maximum $m$ value for winding surface Fourier modes in \texttt{nescin\_filename}.}
 

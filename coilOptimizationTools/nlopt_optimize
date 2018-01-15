@@ -27,9 +27,6 @@ def nlopt_optimize(regcoil_input_file):
   constraint_min = readVariable("constraint_min","int",regcoil_input_file,required=False)
   if (constraint_min is None):
     constraint_min = 0
-  constraint_max = readVariable("constraint_max","int",regcoil_input_file,required=False)
-  if (constraint_max is None):
-    constraint_max = 0
   constraint_max_K = readVariable("constraint_max_K","int",regcoil_input_file,required=False)
   if (constraint_max_K is None):
     constraint_max_K = 0
@@ -43,9 +40,6 @@ def nlopt_optimize(regcoil_input_file):
   d_min = readVariable("d_min","float",regcoil_input_file,required=False)
   if (d_min is None):
     d_min = 0.2
-  d_max = readVariable("d_max","float",regcoil_input_file,required=False)
-  if (d_max is None):
-    d_max = 2.0
   ftol_rel = readVariable("ftol_rel","float",regcoil_input_file,required=False)
   if (ftol_rel is None):
     ftol_rel = 1e-6
@@ -94,8 +88,6 @@ def nlopt_optimize(regcoil_input_file):
     opt.set_min_objective(lambda x,grad: nlopt_evaluate(x,grad,nescinObject))
     if (constraint_min == 1):
       opt.add_inequality_constraint(lambda x,grad: dist_constraint_min(x,grad,nescinObject,d_min),constraint_tol)
-    if (constraint_max == 1):
-      opt.add_inequality_constraint(lambda x,grad: dist_constraint_max(x,grad,nescinObject,d_max),constraint_tol)
     if (constraint_max_K == 1):
       opt.add_inequality_constraint(lambda x,grad: constraint_max_K(x,grad,nescinObject,max_K),constraint_tol)
   elif (algorithm == "nlopt.LD_SLSQP"):
@@ -103,8 +95,6 @@ def nlopt_optimize(regcoil_input_file):
     opt.set_min_objective(lambda x,grad: nlopt_evaluate(x,grad,nescinObject))
     if (constraint_min == 1):
       opt.add_inequality_constraint(lambda x,grad: dist_constraint_min(x,grad,nescinObject,d_min),constraint_tol)
-    if (constraint_max == 1):
-      opt.add_inequality_constraint(lambda x,grad: dist_constraint_max(x,grad,nescinObject,d_max),constraint_tol)
     if (constraint_max_K == 1):
       opt.add_inequality_constraint(lambda x,grad: constraint_func_max_K(x,grad,nescinObject,max_K),constraint_tol)
     if (constraint_rms_K == 1):
@@ -114,8 +104,6 @@ def nlopt_optimize(regcoil_input_file):
     opt.set_min_objective(lambda x,grad: nlopt_evaluate(x,grad,nescinObject))
     if (constraint_min == 1):
       opt.add_inequality_constraint(lambda x,grad: dist_constraint_min(x,grad,nescinObject,d_min),constraint_tol)
-    if (constraint_max == 1):
-      opt.add_inequality_constraint(lambda x,grad: dist_constraint_max(x,grad,nescinObject,d_max),constraint_tol)
     if (constraint_max_K == 1):
       opt.add_inequality_constraint(lambda x,grad: constraint_func_max_K(x,grad,nescinObject,max_K),constraint_tol)
     if (constraint_rms_K == 1):
@@ -178,16 +166,6 @@ def dist_constraint_min(x,grad,nescinObject,d_min):
     print "min constraint norm(grad): " + str(np.linalg.norm(grad,2))
   print "min constraint function: " + str(d_min - nescinObject.coil_plasma_dist_min_lse)
   return (d_min - nescinObject.coil_plasma_dist_min_lse)
-
-def dist_constraint_max(x,grad,nescinObject,d_max):
-  # evaluate function
-  evaluateFunctionRegcoil(x, nescinObject)
-  # Gradient of constraint
-  if grad.size > 0:
-    grad[:] = nescinObject.dcoil_plasma_dist_maxdomega
-    print "max constraint norm(grad): " + str(np.linalg.norm(grad,2))
-  print "max constraint function: " + str(nescinObject.coil_plasma_dist_max_lse - d_max)
-  return (nescinObject.coil_plasma_dist_max_lse - d_max)
 
 def constraint_func_max_K(x,grad,nescinObject,max_K):
   evaluateFunctionRegcoil(x,nescinObject)
