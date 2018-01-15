@@ -22,10 +22,8 @@ subroutine init_sensitivity()
   real(dp), dimension(:,:,:), allocatable :: dmajor_R_squareddomega
 
   ! For coil-plasma dist calculation
-  real(dp), dimension(:,:), allocatable :: dist_for_exp,ones
-  real(dp), dimension(:), allocatable :: dsum_exp_min_plasmadomega
-  real(dp), dimension(:,:,:), allocatable :: dnormal_distdomega
-  real(dp) :: sum_exp_min_plasma, sum_exp_min_coil
+  real(dp), dimension(:), allocatable :: dsum_exp_mindomega
+  real(dp), dimension(:,:,:,:), allocatable :: dist,ones,normal_coil_fourd,normal_plasma_fourd
 
   ! Initialize Fourier arrays - need to include m = 0, n = 0 mode
   call init_Fourier_modes_sensitivity(mmax_sensitivity, nmax_sensitivity, mnmax_sensitivity, nomega_coil, &
@@ -248,82 +246,72 @@ subroutine init_sensitivity()
   call system_clock(tic,countrate)
   print *,"Beginning calculations of d_min."
 
-  allocate(normal_dist(ntheta_coil,nzeta_coil),stat=iflag)
+  allocate(dist(ntheta_coil,nzeta_coil,ntheta_plasma,nzeta_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-
-  do itheta_coil = 1, ntheta_coil
-    do izeta_coil = 1, nzeta_coil
-      normal_dist(itheta_coil,izeta_coil) = sqrt(minval((r_coil(1,itheta_coil,izeta_coil)-r_plasma(1,:,:))**2 &
-        + (r_coil(2,itheta_coil,izeta_coil)-r_plasma(2,:,:))**2 &
-        + (r_coil(3,itheta_coil,izeta_coil)-r_plasma(3,:,:))**2))
-    end do
-  end do
-  print *,"mean(normal_dist): ", 4*pi*pi*sum(nfp*norm_normal_coil*normal_dist)/(area_coil*ntheta_coil*nzetal_coil)
-
-  coil_plasma_dist_min = minval(normal_dist)
-
-  allocate(dist_for_exp(ntheta_plasma,nzeta_plasma),stat=iflag)
+  allocate(normal_coil_fourd(ntheta_coil,nzeta_coil,ntheta_plasma,nzeta_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(ones(ntheta_plasma,nzeta_plasma),stat=iflag)
+  allocate(normal_plasma_fourd(ntheta_coil,nzeta_coil,ntheta_plasma,nzeta_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dnormal_distdomega(ntheta_coil,nzeta_coil,nomega_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dsum_exp_min_plasmadomega(nomega_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  ones = 1
-
-  do itheta_coil = 1, ntheta_coil
-    do izeta_coil = 1, nzeta_coil
-      index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
-      dist_for_exp = &
-        sqrt((r_coil(1,itheta_coil,izeta_coil)-r_plasma(1,:,:))**2 + &
-        (r_coil(2,itheta_coil,izeta_coil)-r_plasma(2,:,:))**2 + &
-        (r_coil(3,itheta_coil,izeta_coil)-r_plasma(3,:,:))**2) &
-        - normal_dist(itheta_coil,izeta_coil)*ones
-      sum_exp_min_plasma = sum(norm_normal_plasma*exp(-coil_plasma_dist_lse_p*dist_for_exp))
-      do iomega = 1, nomega_coil
-        dsum_exp_min_plasmadomega(iomega) = sum(norm_normal_plasma* &
-           (drdomega(1,index_coil,1,iomega)*(r_coil(1,itheta_coil,izeta_coil)*ones-r_plasma(1,:,:)) &
-          + drdomega(2,index_coil,1,iomega)*(r_coil(2,itheta_coil,izeta_coil)*ones-r_plasma(2,:,:)) &
-          + drdomega(3,index_coil,1,iomega)*(r_coil(3,itheta_coil,izeta_coil)*ones-r_plasma(3,:,:))) &
-          * exp(-coil_plasma_dist_lse_p*dist_for_exp)/ &
-          sqrt((r_coil(1,itheta_coil,izeta_coil)*ones-r_plasma(1,:,:))**2 + &
-          (r_coil(2,itheta_coil,izeta_coil)*ones-r_plasma(2,:,:))**2 + &
-          (r_coil(3,itheta_coil,izeta_coil)*ones-r_plasma(3,:,:))**2))
-      end do
-      dnormal_distdomega(itheta_coil,izeta_coil,:) = dsum_exp_min_plasmadomega/sum_exp_min_plasma
-    end do
-  end do
-
-  deallocate(dist_for_exp)
-  deallocate(ones)
-
-  allocate(dist_for_exp(ntheta_coil,nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(ones(ntheta_coil,nzeta_coil),stat=iflag)
+  allocate(ones(ntheta_coil,nzeta_coil,ntheta_plasma,nzeta_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dcoil_plasma_dist_mindomega(nomega_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
+  allocate(dsum_exp_mindomega(nomega_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error!'
 
   ones = 1
-  dist_for_exp = normal_dist - ones*coil_plasma_dist_min
 
-  coil_plasma_dist_min_lse = (-1/coil_plasma_dist_lse_p)*log(sum(norm_normal_coil* &
-    exp(-coil_plasma_dist_lse_p*dist_for_exp))/(area_coil/nfp)) + coil_plasma_dist_min
-
-  sum_exp_min_coil = sum(norm_normal_coil*exp(-coil_plasma_dist_lse_p*dist_for_exp))
-
-  do iomega=1,nomega_coil
-    dcoil_plasma_dist_mindomega(iomega) = (-1/coil_plasma_dist_lse_p)*sum(norm_normal_coil* &
-       (dnorm_normaldomega(iomega,:,:)/norm_normal_coil &
-      - coil_plasma_dist_lse_p*dnormal_distdomega(:,:,iomega)) &
-      *exp(-coil_plasma_dist_lse_p*dist_for_exp))/sum_exp_min_coil &
-      + (1/coil_plasma_dist_lse_p)*darea_coildomega(iomega)/nfp
+  do itheta_coil = 1,ntheta_coil
+    do izeta_coil = 1,nzeta_coil
+      do itheta_plasma = 1,ntheta_plasma
+        do izeta_plasma = 1,nzeta_plasma
+          dist(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma) = &
+         sqrt((r_coil(1,itheta_coil,izeta_coil)-r_plasma(1,itheta_plasma,izeta_plasma))**2 &
+            + (r_coil(2,itheta_coil,izeta_coil)-r_plasma(2,itheta_plasma,izeta_plasma))**2 &
+            + (r_coil(3,itheta_coil,izeta_coil)-r_plasma(3,itheta_plasma,izeta_plasma))**2)
+        end do
+      end do
+      normal_coil_fourd(itheta_coil,izeta_coil,:,:) = norm_normal_coil(itheta_coil,izeta_coil)
+    end do
   end do
 
-  print *,"Min coil-plasma dist: ", coil_plasma_dist_min
-  print *,"Min coil-plasma dist (LSE): ", coil_plasma_dist_min_lse
+  do itheta_plasma=1,ntheta_plasma
+    do izeta_plasma=1,nzeta_plasma
+      normal_plasma_fourd(:,:,itheta_plasma,izeta_plasma) = norm_normal_plasma(itheta_plasma,izeta_plasma)
+    end do
+  end do
+
+  coil_plasma_dist_min = minval(dist)
+
+  sum_exp_min = sum(normal_plasma_fourd*normal_coil_fourd*exp(-coil_plasma_dist_lse_p* &
+    (dist-coil_plasma_dist_min*ones)))
+  coil_plasma_dist_min_lse = -log(sum_exp_min/(sum(normal_plasma_fourd*normal_coil_fourd)))/coil_plasma_dist_lse_p &
+    + coil_plasma_dist_min
+
+  print *,"coil_plasma_dist_min: ", coil_plasma_dist_min
+  print *,"coil_plasma_dist_min_lse: ", coil_plasma_dist_min_lse
+
+  dcoil_plasma_dist_mindomega = 0
+  dsum_exp_mindomega = 0
+  do itheta_coil=1,ntheta_coil
+    do izeta_coil=1,nzeta_coil
+      index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
+      do itheta_plasma=1,ntheta_plasma
+        do izeta_plasma=1,nzeta_plasma
+          dsum_exp_mindomega = dsum_exp_mindomega + &
+            norm_normal_plasma(itheta_plasma,izeta_plasma)*norm_normal_coil(itheta_coil,izeta_coil)* &
+            (dnorm_normaldomega(:,itheta_coil,izeta_coil)/norm_normal_coil(itheta_coil,izeta_coil) &
+          - coil_plasma_dist_lse_p*(drdomega(1,index_coil,1,:)*(r_coil(1,itheta_coil,izeta_coil)-r_plasma(1,itheta_plasma,izeta_plasma)) &
+          + drdomega(2,index_coil,1,:)*(r_coil(2,itheta_coil,izeta_coil)-r_plasma(2,itheta_plasma,izeta_plasma)) &
+          + drdomega(3,index_coil,1,:)*(r_coil(3,itheta_coil,izeta_coil)-r_plasma(3,itheta_plasma,izeta_plasma)))/dist(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma))* &
+            exp(-coil_plasma_dist_lse_p*(dist(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma)-coil_plasma_dist_min))
+        end do
+      end do
+    end do
+  end do
+
+  dcoil_plasma_dist_mindomega = -dsum_exp_mindomega/(sum_exp_min*coil_plasma_dist_lse_p) &
+    + darea_coildomega/(sum(norm_normal_plasma)*area_coil*coil_plasma_dist_lse_p)
 
   call system_clock(toc)
   print *,"Coil-plasma distance calculation:",real(toc-tic)/countrate," sec."

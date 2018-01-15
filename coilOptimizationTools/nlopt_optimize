@@ -61,6 +61,8 @@ def nlopt_optimize(regcoil_input_file):
   global x0
   x0 = nescinObject.omegas_sensitivity.copy()
   nomega_sensitivity = len(x0)
+  print "min(omegas) = " + str(min(x0))
+  print "max(omegas) = " + str(max(x0))
 
   algorithm = readVariable("nlopt_method","string",regcoil_input_file,required=True)
   if (algorithm == "nlopt.G_MLSL_LDS"):
