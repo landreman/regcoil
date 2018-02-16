@@ -549,11 +549,8 @@ contains
        if (abs(net_poloidal_current_Amperes-1)<1e-12) then
           if (lscreen) print *,"No VMEC file is available, and the default value of net_poloidal_current_Amperes (=1) will be used."
        else
-<<<<<<< HEAD:init_regcoil_plasma.f90
           if (lscreen) print *,"No VMEC file is available, so net_poloidal_current_Amperes will be taken from the bdistrib input file."
-=======
-          print *,"No VMEC file is available, so net_poloidal_current_Amperes will be taken from the regcoil input file."
->>>>>>> 5dc77ee6d32e1e0a0b643dd63edb6c91b610f3e4:init_plasma_mod.f90
+          !print *,"No VMEC file is available, so net_poloidal_current_Amperes will be taken from the regcoil input file."
        end if
     end select
     

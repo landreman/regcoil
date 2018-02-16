@@ -35,10 +35,14 @@ else ifeq ($(HOSTNAME),cori)
 	# For batch systems, set the following variable to the command used to run jobs. This variable is used by 'make test'.
 	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -n 1 -c 32
 else ifeq ($(HOSTNAME),PPPL)
+	MPIHOME = /usr/pppl/gcc/6.1-pkgs/openmpi-1.10.3
+	NETCDF_HOME = $(NETCDFHOME)
 	FC = $(MPIHOME)/bin/mpif90
 	#EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none -cpp
-	EXTRA_COMPILE_FLAGS = -fopenmp -I$(NETCDF_HOME)/include -I/usr/pppl/gcc/4.6-pkgs/openblas-48f06dd/include -ffree-line-length-none
-	EXTRA_LINK_FLAGS =  -fopenmp -L$(NETCDF_HOME)/lib -lnetcdff  -lnetcdf -L/usr/pppl/gcc/4.6-pkgs/openblas-48f06dd/lib -lopenblas
+	#EXTRA_COMPILE_FLAGS = -fopenmp -I$(NETCDF_HOME)/include -I/usr/pppl/gcc/4.6-pkgs/openblas-48f06dd/include -ffree-line-length-none
+	#EXTRA_LINK_FLAGS =  -fopenmp -L$(NETCDF_HOME)/lib -lnetcdff  -lnetcdf -L/usr/pppl/gcc/4.6-pkgs/openblas-48f06dd/lib -lopenblas
+	EXTRA_COMPILE_FLAGS = -fopenmp -I$(NETCDF_HOME)/include -I/usr/pppl/gcc/6.1-pkgs/openblas-0.2.19/include -ffree-line-length-none
+	EXTRA_LINK_FLAGS =  -fopenmp -L$(NETCDF_HOME)/lib -lnetcdff  -lnetcdf -L/usr/pppl/gcc/6.1-pkgs/openblas-0.2.19/lib -lopenblas
 
 	# For batch systems, set the following variable to the command used to run jobs. This variable is used by 'make test'.
 	REGCOIL_COMMAND_TO_SUBMIT_JOB =
