@@ -18,7 +18,7 @@ module regcoil_input_mod
   integer :: fileUnit, didFileAccessWork, i
   integer, parameter :: uninitialized = -9999
 
-  namelist / regcoil / ntheta_plasma, nzeta_plasma, ntheta_coil, nzeta_coil, &
+  namelist / regcoil_nml / ntheta_plasma, nzeta_plasma, ntheta_coil, nzeta_coil, &
        geometry_option_plasma, geometry_option_coil, &
        R0_plasma, R0_coil, a_plasma, a_coil, &
        separation, wout_filename, &
@@ -58,7 +58,7 @@ subroutine read_regcoil_cmd_input
      print *,"Error opening input file ", trim(inputFilename)
      stop
   else
-     read(fileUnit, nml=regcoil, iostat=didFileAccessWork)
+     read(fileUnit, nml=regcoil_nml, iostat=didFileAccessWork)
      if (didFileAccessWork /= 0) then
         print *,"Error!  I was able to open the file ", trim(inputFilename), &
                " but not read data from the regcoil namelist in it."
@@ -109,7 +109,7 @@ end subroutine read_regcoil_cmd_input
 !  end if
 !  call safe_open(iunit,istat,'input.'//trim(filename),'old','formatted')
 !  if (istat /= 0) return
-!  read(iunit, nml=regcoil, iostat=istat)
+!  read(iunit, nml=regcoil_nml, iostat=istat)
 !  if (istat /= 0) return
 !  close(iunit)
 !
@@ -125,7 +125,7 @@ subroutine read_regcoil_input(iunit, istat)
  
   print "(a,i4)","   iunit =",iunit
   print "(a,i4)","   istat =",istat
-  read(iunit, nml=regcoil, iostat=istat)
+  read(iunit, nml=regcoil_nml, iostat=istat)
   print "(a,i4)","   iunit =",iunit
   print "(a,i4)","   istat =",istat
 !  if (istat /= 0) then

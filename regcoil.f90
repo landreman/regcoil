@@ -2,9 +2,7 @@
 
 program regcoil_main
 
-!<<<<<<< HEAD
-!  use regcoil_variables, only: totalTime, outputFilename, general_option
-  use regcoil_variables, only: outputFilename, general_option
+  use regcoil_variables, only: total_time, outputFilename, general_option
   use init_regcoil_plasma
   use regcoil_input_mod
   use validate_regcoil_input
@@ -14,10 +12,6 @@ program regcoil_main
   use build_regcoil_matrices
   use regcoil_auto_regularization_solve
   use write_regcoil_output
-!=======
-!  use global_variables, only: total_time, outputFilename, general_option
-!  use init_plasma_mod
-!>>>>>>> 5dc77ee6d32e1e0a0b643dd63edb6c91b610f3e4
 
   implicit none
 
