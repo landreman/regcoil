@@ -1,6 +1,11 @@
-subroutine auto_regularization_solve
+module regcoil_auto_regularization_solve
 
-  use global_variables
+
+contains
+
+subroutine auto_regularization_solve(lscreen_optin)
+
+  use regcoil_variables
   use stel_constants
   use stel_kinds
 
@@ -23,54 +28,106 @@ subroutine auto_regularization_solve
   real(dp), dimension(:), allocatable :: WORK
   integer, dimension(:), allocatable :: IPIV
 
-  allocate(matrix(num_basis_functions, num_basis_functions), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(RHS(num_basis_functions), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(solution(num_basis_functions), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(WORK(1), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(IPIV(num_basis_functions), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  ! variables to handle printing to the screen
+  logical, optional :: lscreen_optin
+  logical :: lscreen
 
+  if(present(lscreen_optin)) then 
+    lscreen = lscreen_optin
+  else
+    lscreen = .true.
+  endif
+
+  ! Adding some checks to release previously allocated variables.
+  ! This is because STELLOPT may call this function multiple times.
+  ! if (allocated()) deallocate()
+
+  if (allocated(matrix)) deallocate(matrix)
+  allocate(matrix(num_basis_functions, num_basis_functions), stat=iflag)
+  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 1!'
+
+  if (allocated(RHS)) deallocate(RHS)
+  allocate(RHS(num_basis_functions), stat=iflag)
+  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 2!'
+
+  if (allocated(solution)) deallocate(solution)
+  allocate(solution(num_basis_functions), stat=iflag)
+  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 3!'
+
+  if (allocated(WORK)) deallocate(WORK)
+  allocate(WORK(1), stat=iflag)
+  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 4!'
+
+  if (allocated(IPIV)) deallocate(IPIV)
+  allocate(IPIV(num_basis_functions), stat=iflag)
+  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 5!'
+
+  if (allocated(chi2_B)) deallocate(chi2_B)
   allocate(chi2_B(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 6!'
+
+  if (allocated(chi2_K)) deallocate(chi2_K)
   allocate(chi2_K(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 7!'
+
+  if (allocated(max_Bnormal)) deallocate(max_Bnormal)
   allocate(max_Bnormal(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 8!'
+
+  if (allocated(max_K)) deallocate(max_K)
   allocate(max_K(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 9!'
+
+  if (allocated(current_potential)) deallocate(current_potential)
   allocate(current_potential(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 10!'
+
+  if (allocated(single_valued_current_potential_thetazeta)) &
+        deallocate(single_valued_current_potential_thetazeta)
   allocate(single_valued_current_potential_thetazeta(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 11!'
+
+  if (allocated(this_current_potential)) deallocate(this_current_potential)
   allocate(this_current_potential(ntheta_coil,nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 12!'
+
+  if (allocated(single_valued_current_potential_mn)) &
+        deallocate(single_valued_current_potential_mn)
   allocate(single_valued_current_potential_mn(num_basis_functions,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 13!'
+
+  if (allocated(Bnormal_total)) deallocate(Bnormal_total)
   allocate(Bnormal_total(ntheta_plasma,nzeta_plasma,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 14!'
+
+  if (allocated(K2)) deallocate(K2)
   allocate(K2(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 15!'
+
+  if (allocated(KDifference_x)) deallocate(KDifference_x)
   allocate(KDifference_x(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 16!'
+
+  if (allocated(KDifference_y)) deallocate(KDifference_y)
   allocate(KDifference_y(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 17!'
+
+  if (allocated(KDifference_z)) deallocate(KDifference_z)
   allocate(KDifference_z(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 18!'
+
+  if (allocated(this_K2_times_N)) deallocate(this_K2_times_N)
   allocate(this_K2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 19!'
 
 
   ! Call LAPACK's DSYSV in query mode to determine the optimal size of the work array
   call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, IPIV, RHS, num_basis_functions, WORK, -1, INFO)
   LWORK = WORK(1)
-  print *,"Optimal LWORK:",LWORK
+  if (lscreen) print *,"Optimal LWORK:",LWORK
   deallocate(WORK)
   allocate(WORK(LWORK), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'  
+  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 20!'  
 
   factor_zeta  = net_poloidal_current_Amperes / twopi
   factor_theta = net_toroidal_current_Amperes / twopi
@@ -178,7 +235,7 @@ subroutine auto_regularization_solve
         stop
      end select
 
-     print "(a,es10.3,a,i3,a,i3,a)"," Solving system for lambda=",lambda(ilambda)," (",ilambda," of at most ",nlambda,")"
+     if (lscreen) print "(a,es10.3,a,i3,a,i3,a)"," Solving system for lambda=",lambda(ilambda)," (",ilambda," of at most ",nlambda,")"
      call system_clock(tic,countrate)
 
      ! Done choosing the next lambda. Now comes the main solve.
@@ -193,7 +250,7 @@ subroutine auto_regularization_solve
      end if
 
      call system_clock(toc)
-     print *,"  Additions: ",real(toc-tic)/countrate," sec."
+     if (lscreen) print *,"  Additions: ",real(toc-tic)/countrate," sec."
      call system_clock(tic)
 
      ! Compute solution = matrix \ RHS.
@@ -207,7 +264,7 @@ subroutine auto_regularization_solve
      solution = RHS
 
      call system_clock(toc)
-     print *,"  DSYSV: ",real(toc-tic)/countrate," sec."
+     if (lscreen) print *,"  DSYSV: ",real(toc-tic)/countrate," sec."
      call system_clock(tic)
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -243,9 +300,9 @@ subroutine auto_regularization_solve
           * sum(Bnormal_total(:,:,ilambda) * Bnormal_total(:,:,ilambda) * norm_normal_plasma)
 
      call system_clock(toc)
-     print *,"  Diagnostics: ",real(toc-tic)/countrate," sec."
-     print "(a,es10.3,a,es10.3)","   chi2_B:",chi2_B(ilambda),",  chi2_K:",chi2_K(ilambda)
-     print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda),",  rms K:",sqrt(chi2_K(ilambda)/area_coil)
+     if (lscreen) print *,"  Diagnostics: ",real(toc-tic)/countrate," sec."
+     if (lscreen) print "(a,es10.3,a,es10.3)","   chi2_B:",chi2_B(ilambda),",  chi2_K:",chi2_K(ilambda)
+     if (lscreen) print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda),",  rms K:",sqrt(chi2_K(ilambda)/area_coil)
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! Done computing diagnostics.
@@ -257,7 +314,7 @@ subroutine auto_regularization_solve
      if (stage==2 .and. (last_above_target .neqv. initial_above_target)) then
         ! If we've bracketed the target, move on to stage 3.
         next_stage = 3  
-        print *,"Target current density has been bracketed."
+        if (lscreen) print *,"Target current density has been bracketed."
      end if
      if (stage==10 .and. last_above_target) then
         print *,"*******************************************************************************"
@@ -314,7 +371,7 @@ subroutine auto_regularization_solve
         Brendt_xm = 0.5*(Brendt_c - Brendt_b)
         if (abs(Brendt_xm) <= Brendt_tol1 .or. (Brendt_fb==0)) then
            ! We met the requested tolerance
-           print *,"Requested tolerance has been met."
+           if (lscreen) print *,"Requested tolerance has been met."
            exit_code=0
            Nlambda = ilambda
            exit
@@ -519,3 +576,5 @@ end subroutine auto_regularization_solve
 !!$*>               has been completed, but the block diagonal matrix D is
 !!$*>               exactly singular, so the solution could not be computed.
 !!$*> \endverbatim
+
+end module regcoil_auto_regularization_solve

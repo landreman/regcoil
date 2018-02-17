@@ -1,6 +1,6 @@
 subroutine read_input
 
-  use global_variables
+  use regcoil_variables
 
   implicit none
 
@@ -9,7 +9,7 @@ subroutine read_input
   integer :: fileUnit, didFileAccessWork, i
   integer, parameter :: uninitialized = -9999
 
-  namelist / regcoil / ntheta_plasma, nzeta_plasma, ntheta_coil, nzeta_coil, &
+  namelist / regcoil_nml / ntheta_plasma, nzeta_plasma, ntheta_coil, nzeta_coil, &
        geometry_option_plasma, geometry_option_coil, &
        R0_plasma, R0_coil, a_plasma, a_coil, &
        separation, wout_filename, &
@@ -43,7 +43,7 @@ subroutine read_input
      print *,"Error opening input file ", trim(inputFilename)
      stop
   else
-     read(fileUnit, nml=regcoil, iostat=didFileAccessWork)
+     read(fileUnit, nml=regcoil_nml, iostat=didFileAccessWork)
      if (didFileAccessWork /= 0) then
         print *,"Error!  I was able to open the file ", trim(inputFilename), &
                " but not read data from the regcoil namelist in it."

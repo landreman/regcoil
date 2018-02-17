@@ -1,6 +1,9 @@
+module  write_regcoil_output
+
+contains
 subroutine write_output
 
-  use global_variables
+  use regcoil_variables
   use ezcdf
 
   implicit none
@@ -441,3 +444,5 @@ subroutine write_output
   call cdf_close(ncid)
 
 end subroutine write_output
+
+end module  write_regcoil_output

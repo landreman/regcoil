@@ -10,10 +10,11 @@ module init_surface_mod
     subroutine init_surface(ntheta, nzeta, nzetal, theta, zeta, zetal, &
          r, drdtheta, drdzeta, &
          normal, norm_normal, area, &
-         geometry_option, R_specified, a, separation, dtheta, dzeta, nescin_filename, which_surface)
+         geometry_option, R_specified, a, separation, dtheta, dzeta, &
+         nescin_filename, which_surface, lscreen_optin)
 
       use compute_offset_surface_mod
-      use global_variables, only: R0_plasma, nfp, volume_coil
+      use regcoil_variables, only: R0_plasma, nfp, volume_coil
       use stel_kinds
       use stel_constants
       use omp_lib
@@ -35,10 +36,30 @@ module init_surface_mod
       integer :: i, itheta, izeta
       real(dp) :: x_new, y_new, z_new, x_old, y_old, z_old, delta_theta, delta_zeta, temp
 
+      ! variables to handle printing to the screen
+      logical, optional :: lscreen_optin
+      logical :: lscreen
+    
+      if(present(lscreen_optin)) then 
+        lscreen = lscreen_optin
+      else
+        lscreen = .true.
+      endif
+    
+      ! Adding some checks to release previously allocated variables.
+      ! This is because STELLOPT may call this function multiple times.
+      ! if (allocated()) deallocate()
+ 
+
+      if (allocated(theta)) deallocate(theta)
       allocate(theta(ntheta),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error! init_surface_mod 1'
+
+      if (allocated(zeta)) deallocate(zeta)
       allocate(zeta(nzeta),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error! init_surface_mod 2'
+
+      if (allocated(zetal)) deallocate(zetal)
       allocate(zetal(nzetal),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error! init_surface_mod 3'
 
@@ -59,12 +80,19 @@ module init_surface_mod
 
 
       ! First dimension is the Cartesian component x, y, or z.
+      if (allocated(r)) deallocate(r)
       allocate(r(3,ntheta,nzetal),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error! init_surface_mod 4'
+
+      if (allocated(drdtheta)) deallocate(drdtheta)
       allocate(drdtheta(3,ntheta,nzetal),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error! init_surface_mod 5'
+
+      if (allocated(drdzeta)) deallocate(drdzeta)
       allocate(drdzeta(3,ntheta,nzetal),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error! init_surface_mod 6'
+
+      if (allocated(normal)) deallocate(normal)
       allocate(normal(3,ntheta,nzetal),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error! init_surface_mod 7'
 
@@ -73,10 +101,13 @@ module init_surface_mod
       drdzeta = 0
 
       ! We do not use the 2nd derivatives presently, but these placeholders are here in case we need them in the future:
+!!$      if (allocated(d2rdtheta2)) deallocate(d2rdtheta2)
 !!$      allocate(d2rdtheta2(3,ntheta,nzetal),stat=iflag)
 !!$      if (iflag .ne. 0) stop 'Allocation error! init_surface_mod 8'
+!!$      if (allocated(d2rdthetadzeta)) deallocate(d2rdthetadzeta)
 !!$      allocate(d2rdthetadzeta(3,ntheta,nzetal),stat=iflag)
 !!$      if (iflag .ne. 0) stop 'Allocation error! init_surface_mod 9'
+!!$      if (allocated(d2rdzeta2)) deallocate(d2rdzeta2)
 !!$      allocate(d2rdzeta2(3,ntheta,nzetal),stat=iflag)
 !!$      if (iflag .ne. 0) stop 'Allocation error! init_surface_mod 10'
 !!$
@@ -85,7 +116,7 @@ module init_surface_mod
 !!$      d2rdzeta2 = 0
 
       if (geometry_option==3 .or. geometry_option == 4) then
-         print *,"  Reading coil surface from nescin file ",trim(nescin_filename)
+         if (lscreen) print *,"  Reading coil surface from nescin file ",trim(nescin_filename)
 
          call read_nescin(nescin_filename, r, drdtheta, drdzeta, d2rdtheta2, d2rdthetadzeta, d2rdzeta2, &
               ntheta, nzetal, theta, zetal, .false.)
@@ -96,7 +127,7 @@ module init_surface_mod
       case (0,1)
          ! Torus with circular cross-section
 
-         print *,"  Building a plain circular torus."
+         if (lscreen) print *,"  Building a plain circular torus."
 
          if (geometry_option==0) then
             R0_to_use = R0_plasma
@@ -157,9 +188,10 @@ module init_surface_mod
 !!$         end if
 
          if (geometry_option==2) then
+            ! if (lscreen) print "(a,f10.4,a)","   Constructing a surface offset from the plasma by ",separation," meters."
             print "(a,f10.4,a)","   Constructing a surface offset from the plasma by ",separation," meters."
          else
-            print "(a,f10.4,a)","   Constructing a surface offset from the nescin surface by ",separation," meters."
+            if (lscreen) print "(a,f10.4,a)","   Constructing a surface offset from the nescin surface by ",separation," meters."
          end if
 
          ! Finite differences to use:
@@ -176,7 +208,7 @@ module init_surface_mod
          !$OMP PARALLEL
 
          !$OMP MASTER
-         print *,"  Number of OpenMP threads:",omp_get_num_threads()
+         if (lscreen) print *,"  Number of OpenMP threads:",omp_get_num_threads()
          !$OMP END MASTER
 
          !$OMP DO PRIVATE(x_new,y_new,z_new,x_old,y_old,z_old)
@@ -222,6 +254,7 @@ module init_surface_mod
       normal(2,:,:) = drdzeta(3,:,:) * drdtheta(1,:,:) - drdtheta(3,:,:) * drdzeta(1,:,:)
       normal(3,:,:) = drdzeta(1,:,:) * drdtheta(2,:,:) - drdtheta(1,:,:) * drdzeta(2,:,:)
 
+      if (allocated(norm_normal)) deallocate(norm_normal)
       allocate(norm_normal(ntheta, nzeta),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error! init_surface_mod 11'
       norm_normal = sqrt(normal(1,:,1:nzeta)**2 + normal(2,:,1:nzeta)**2 + normal(3,:,1:nzeta)**2)
@@ -241,7 +274,7 @@ module init_surface_mod
            * (r(3,1,:)-r(3,ntheta,:))) ! dZ
       volume_coil = abs(volume_coil * dzeta / 2) ! r includes all nfp periods already, so no factor of nfp needed.
       deallocate(major_R_squared)
-      print "(a,es10.3,a,es10.3,a)"," Coil surface area:",area," m^2. Volume:",volume_coil," m^3."
+      if (lscreen) print "(a,es10.3,a,es10.3,a)"," Coil surface area:",area," m^2. Volume:",volume_coil," m^3."
 
     end subroutine init_surface
 

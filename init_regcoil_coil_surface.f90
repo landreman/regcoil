@@ -1,6 +1,10 @@
-subroutine init_coil_surface
+module init_regcoil_coil_surface
 
-  use global_variables
+contains
+ 
+subroutine init_coil_surface(lscreen_optin)
+
+  use regcoil_variables
   use init_surface_mod
 
   implicit none
@@ -8,16 +12,27 @@ subroutine init_coil_surface
   integer :: tic, toc, countrate
   integer :: which_surface
 
+  ! variables to handle printing to the screen
+  logical, optional :: lscreen_optin
+  logical :: lscreen
+
+  if(present(lscreen_optin)) then 
+    lscreen = lscreen_optin
+  else
+    lscreen = .true.
+  endif
+
   call system_clock(tic,countrate)
-  print *,"Initializing coil surface."
+  !print "(a,l8)", "lscreen=",lscreen
+  if (lscreen) print *,"Initializing coil surface."
   which_surface = 1
   call init_surface(ntheta_coil, nzeta_coil, nzetal_coil, theta_coil, zeta_coil, zetal_coil, &
        r_coil, drdtheta_coil, drdzeta_coil, &
        normal_coil, norm_normal_coil, area_coil, &
        geometry_option_coil, R0_coil, a_coil, separation, dtheta_coil, dzeta_coil, &
-       nescin_filename, which_surface)
+       nescin_filename, which_surface, lscreen)
   call system_clock(toc)
-  print *,"Done initializing coil surface. Took ",real(toc-tic)/countrate," sec."
+  if (lscreen) print *,"Done initializing coil surface. Took ",real(toc-tic)/countrate," sec."
 
 !!$  call system_clock(tic)
 !!$  print *,"Initializing outer surface."
@@ -33,3 +48,5 @@ subroutine init_coil_surface
   
 
 end subroutine init_coil_surface
+
+end module init_regcoil_coil_surface

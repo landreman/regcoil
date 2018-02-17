@@ -1,6 +1,6 @@
 subroutine compute_diagnostics_for_nescout_potential
 
-  use global_variables
+  use regcoil_variables
   use safe_open_mod
   use stel_constants
   use stel_kinds
@@ -22,43 +22,78 @@ subroutine compute_diagnostics_for_nescout_potential
   character(*), parameter :: matchString_phi = "---- Phi(m,n) for"
   character(*), parameter :: matchString_phi2 = "---- end Phi(m,n)"
 
+  ! Adding some checks to release previously allocated variables.
+  ! This is because STELLOPT may call this function multiple times.
+  ! if (allocated()) deallocate()
 
-
+  if (allocated(matrix)) deallocate(matrix)
   allocate(matrix(num_basis_functions, num_basis_functions), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(RHS(num_basis_functions), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(solution(num_basis_functions), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'cdfnp Allocation error!'
 
+  if (allocated(RHS)) deallocate(RHS)
+  allocate(RHS(num_basis_functions), stat=iflag)
+  if (iflag .ne. 0) stop 'cdfnp Allocation error!'
+
+  if (allocated(solution)) deallocate(solution)
+  allocate(solution(num_basis_functions), stat=iflag)
+  if (iflag .ne. 0) stop 'cdfnp Allocation error!'
+
+  if (allocated(chi2_B)) deallocate(chi2_B)
   allocate(chi2_B(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'cdfnp Allocation error!'
+
+  if (allocated(chi2_K)) deallocate(chi2_K)
   allocate(chi2_K(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'cdfnp Allocation error!'
+
+  if (allocated(max_Bnormal)) deallocate(max_Bnormal)
   allocate(max_Bnormal(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'cdfnp Allocation error!'
+
+  if (allocated(max_K)) deallocate(max_K)
   allocate(max_K(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'cdfnp Allocation error!'
+
+  if (allocated(current_potential)) deallocate(current_potential)
   allocate(current_potential(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'cdfnp Allocation error!'
+
+  if (allocated(single_valued_current_potential_thetazeta)) &
+        deallocate(single_valued_current_potential_thetazeta)
   allocate(single_valued_current_potential_thetazeta(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'cdfnp Allocation error!'
+
+  if (allocated(this_current_potential)) deallocate(this_current_potential)
   allocate(this_current_potential(ntheta_coil,nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'cdfnp Allocation error!'
+
+  if (allocated(single_valued_current_potential_mn)) deallocate(single_valued_current_potential_mn)
   allocate(single_valued_current_potential_mn(num_basis_functions,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'cdfnp Allocation error!'
+
+  if (allocated(Bnormal_total)) deallocate(Bnormal_total)
   allocate(Bnormal_total(ntheta_plasma,nzeta_plasma,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'cdfnp Allocation error!'
+
+  if (allocated(K2)) deallocate(K2)
   allocate(K2(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'cdfnp Allocation error!'
+
+  if (allocated(KDifference_x)) deallocate(KDifference_x)
   allocate(KDifference_x(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'cdfnp Allocation error!'
+
+  if (allocated(KDifference_y)) deallocate(KDifference_y)
   allocate(KDifference_y(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'cdfnp Allocation error!'
+
+  if (allocated(KDifference_z)) deallocate(KDifference_z)
   allocate(KDifference_z(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'cdfnp Allocation error!'
+
+  if (allocated(this_K2_times_N)) deallocate(this_K2_times_N)
   allocate(this_K2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (iflag .ne. 0) stop 'cdfnp Allocation error!'
 
   factor_zeta  = net_poloidal_current_Amperes / twopi
   factor_theta = net_toroidal_current_Amperes / twopi

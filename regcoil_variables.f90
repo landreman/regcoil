@@ -1,4 +1,4 @@
-module global_variables
+module regcoil_variables
 
   use stel_kinds
 
@@ -87,5 +87,5 @@ module global_variables
   integer :: exit_code = 0
   real(dp) :: chi2_B_target = 0
 
-end module global_variables
+end module regcoil_variables
 

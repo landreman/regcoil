@@ -44,7 +44,7 @@ contains
     if (fzeroFlag == 4) then
        stop "ERROR: fzero returned error 4: no sign change in residual"
     else if (fzeroFlag > 2) then
-       print *,"WARNING: fzero returned an error code:",fzeroFlag
+       print *,"WARNING in cosm: fzero returned an error code:",fzeroFlag
     end if
     
     call expand_plasma_surface(theta_rootSolve, zeta_plasma_rootSolveSolution, separation, x_offsetSurface, y_offsetSurface, z_offsetSurface)
@@ -54,7 +54,7 @@ contains
   
     function fzero_residual(zeta_plasma_test)
     
-      use global_variables, only: nfp
+      use regcoil_variables, only: nfp
       use stel_constants
       
       implicit none
