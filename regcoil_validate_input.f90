@@ -1,4 +1,4 @@
-module validate_regcoil_input
+module regcoil_validate_input
 
 contains
 
@@ -163,4 +163,4 @@ subroutine validate_input
 
 end subroutine validate_input
 
-end module validate_regcoil_input
+end module regcoil_validate_input

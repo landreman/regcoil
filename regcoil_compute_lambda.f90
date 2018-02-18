@@ -1,4 +1,4 @@
-module compute_regcoil_lambda
+module regcoil_compute_lambda
 
 contains
  
@@ -37,4 +37,4 @@ subroutine compute_lambda(lscreen_optin)
 
 end subroutine compute_lambda
 
-end module compute_regcoil_lambda
+end module regcoil_compute_lambda
