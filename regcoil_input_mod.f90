@@ -117,7 +117,7 @@ end subroutine read_regcoil_cmd_input
 
 ! This routine is called from external programs (i.e. STELLOPT) to read the
 ! REGCOIL namelist from a file associated with iunit.
-subroutine read_regcoil_input(iunit, istat)
+subroutine regcoil_read_input(iunit, istat)
   integer, intent(out) :: istat
   integer, intent(in) :: iunit
 
@@ -158,10 +158,10 @@ subroutine read_regcoil_input(iunit, istat)
   end select
 
 
-end subroutine read_regcoil_input
+end subroutine regcoil_read_input
 
 
-subroutine write_regcoil_input(proc_string,iunit,istat)
+subroutine regcoil_write_input(proc_string,iunit,istat)
   !-----------------------------------------------------------------------
   !     Local Variables
   !        ier         Error flag
@@ -204,6 +204,6 @@ subroutine write_regcoil_input(proc_string,iunit,istat)
   write(iunit, '(A)') '/'
 !  write(iunit, '(A)') ''
   return
-end subroutine write_regcoil_input
+end subroutine regcoil_write_input
 
 end module regcoil_input_mod

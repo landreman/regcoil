@@ -3,15 +3,15 @@
 program regcoil_main
 
   use regcoil_variables, only: total_time, outputFilename, general_option
-  use init_regcoil_plasma
+  use regcoil_init_plasma
   use regcoil_input_mod
-  use validate_regcoil_input
-  use compute_regcoil_lambda
-  use init_regcoil_coil_surface
-  use read_regcoil_bnorm
-  use build_regcoil_matrices
+  use regcoil_validate_input
+  use regcoil_compute_lambda
+  use regcoil_init_coil_surface
+  use regcoil_read_bnorm
+  use regcoil_build_matrices
   use regcoil_auto_regularization_solve
-  use write_regcoil_output
+  use regcoil_write_output
 
   implicit none
 

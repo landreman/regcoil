@@ -1,4 +1,4 @@
-module read_regcoil_bnorm
+module regcoil_read_bnorm
 
 contains
 
@@ -34,7 +34,7 @@ subroutine read_bnorm(lscreen_optin)
 
   if (allocated(Bnormal_from_plasma_current)) deallocate(Bnormal_from_plasma_current)
   allocate(Bnormal_from_plasma_current(ntheta_plasma,nzeta_plasma),stat=iflag)
-  if (iflag .ne. 0) stop 'read_regcoil_bnorm Allocation error!'
+  if (iflag .ne. 0) stop 'regcoil_read_bnorm Allocation error!'
 
   Bnormal_from_plasma_current = 0
 
@@ -96,4 +96,4 @@ subroutine read_bnorm(lscreen_optin)
 
 end subroutine  read_bnorm
 
-end module read_regcoil_bnorm
+end module regcoil_read_bnorm

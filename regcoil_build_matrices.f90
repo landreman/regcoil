@@ -1,4 +1,4 @@
-module build_regcoil_matrices
+module regcoil_build_matrices
 
 contains
 
@@ -597,5 +597,5 @@ end subroutine build_matrices
 !!$*> \endverbatim
 
 
-end module build_regcoil_matrices
+end module regcoil_build_matrices
 
