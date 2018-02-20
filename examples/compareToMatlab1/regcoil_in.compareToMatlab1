@@ -1,6 +1,6 @@
 ! For documentation of these input parameters and their default values, see the README.
 
-&regcoil
+&regcoil_nml
   nlambda = 5
   lambda_min = 1e-30
   lambda_max = 1
