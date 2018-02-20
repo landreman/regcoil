@@ -10,7 +10,7 @@ def readOutputFile():
         
     from scipy.io import netcdf
     try:
-        f = netcdf.netcdf_file(outputFilename,'r',mmap=False)
+        f = netcdf.netcdf_file(outputFilename,'r')
     except:
         print "ERROR! Unable to read netCDF output file "+outputFilename
         raise
