@@ -1,4 +1,4 @@
-module  write_regcoil_output
+module  regcoil_write_output
 
 contains
 subroutine write_output
@@ -445,4 +445,4 @@ subroutine write_output
 
 end subroutine write_output
 
-end module  write_regcoil_output
+end module  regcoil_write_output

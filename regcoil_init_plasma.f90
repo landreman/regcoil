@@ -1,4 +1,4 @@
-module init_regcoil_plasma
+module regcoil_init_plasma
 
 
   use stel_kinds
@@ -63,19 +63,19 @@ contains
        
        if (allocated(xm)) deallocate(xm)
        allocate(xm(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+       if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
        if (allocated(xn)) deallocate(xn)
        allocate(xn(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+       if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
        if (allocated(rmnc)) deallocate(rmnc)
        allocate(rmnc(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+       if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
        if (allocated(zmns)) deallocate(zmns)
        allocate(zmns(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+       if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
        xm = (/0,1/)
        xn = (/0,0/)
        rmnc(1) = R0_plasma
@@ -96,27 +96,27 @@ contains
        
        if (allocated(xm)) deallocate(xm)
        allocate(xm(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop "init_regcoil_plasma Allocation error! 1"
+       if (iflag .ne. 0) stop "regcoil_init_plasma Allocation error! 1"
 
        if (allocated(xn)) deallocate(xn)
        allocate(xn(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop "init_regcoil_plasma Allocation error!  2"
+       if (iflag .ne. 0) stop "regcoil_init_plasma Allocation error!  2"
 
        if (allocated(rmnc)) deallocate(rmnc)
        allocate(rmnc(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop "init_regcoil_plasma Allocation error!  3"
+       if (iflag .ne. 0) stop "regcoil_init_plasma Allocation error!  3"
 
        if (allocated(zmns)) deallocate(zmns)
        allocate(zmns(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop "init_regcoil_plasma Allocation error!  4"
+       if (iflag .ne. 0) stop "regcoil_init_plasma Allocation error!  4"
 
        if (allocated(rmns)) deallocate(rmns)
        allocate(rmns(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop "init_regcoil_plasma Allocation error!  5"
+       if (iflag .ne. 0) stop "regcoil_init_plasma Allocation error!  5"
 
        if (allocated(zmnc)) deallocate(zmnc)
        allocate(zmnc(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop "init_regcoil_plasma Allocation error!  6"
+       if (iflag .ne. 0) stop "regcoil_init_plasma Allocation error!  6"
        
        ! Skip a line
        read (iunit, *)
@@ -156,19 +156,19 @@ contains
       
        if (allocated(xm)) deallocate(xm)
        allocate(xm(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+       if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
        if (allocated(xn)) deallocate(xn)
        allocate(xn(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+       if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
        if (allocated(rmnc)) deallocate(rmnc)
        allocate(rmnc(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+       if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
        if (allocated(zmns)) deallocate(zmns)
        allocate(zmns(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+       if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
        
        xm = xm_vmec
        xn = xn_vmec
@@ -179,12 +179,12 @@ contains
 
           if (allocated(rmns)) deallocate(rmns)
           allocate(rmns(mnmax),stat=iflag)
-          if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+          if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
           if (allocated(zmnc)) deallocate(zmnc)
           allocate(zmnc(mnmax),stat=iflag)
 
-          if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+          if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
           rmns = rmns_vmec(:,ns-1) * weight1 + rmns_vmec(:,ns) * weight2
           zmnc = zmnc_vmec(:,ns-1) * weight1 + zmnc_vmec(:,ns) * weight2
        end if
@@ -211,11 +211,11 @@ contains
 
        if (allocated(rmnc_vmecLast)) deallocate(rmnc_vmecLast)
        allocate(rmnc_vmecLast(mnmax_vmec),stat=iflag)
-       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+       if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
        if (allocated(zmns_vmecLast)) deallocate(zmns_vmecLast)
        allocate(zmns_vmecLast(mnmax_vmec),stat=iflag)
-       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+       if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
        rmnc_vmecLast = rmnc_vmec(:,ns-1) * weight1 + rmnc_vmec(:,ns) * weight2
        zmns_vmecLast = zmns_vmec(:,ns-1) * weight1 + zmns_vmec(:,ns) * weight2
@@ -233,11 +233,11 @@ contains
 
        if (allocated(r_coordTransform)) deallocate(r_coordTransform)
        allocate(r_coordTransform(ntheta_coordTransform, nzeta_coordTransform), stat=iflag)
-       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+       if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
        if (allocated(z_coordTransform)) deallocate(z_coordTransform)
        allocate(z_coordTransform(ntheta_coordTransform, nzeta_coordTransform), stat=iflag)
-       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+       if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
        r_coordTransform = 0
        z_coordTransform = 0
        
@@ -294,19 +294,19 @@ contains
        
        if (allocated(xm)) deallocate(xm)
        allocate(xm(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+       if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
        if (allocated(xn)) deallocate(xn)
        allocate(xn(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+       if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
        if (allocated(rmnc)) deallocate(rmnc)
        allocate(rmnc(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+       if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
        if (allocated(zmns)) deallocate(zmns)
        allocate(zmns(mnmax),stat=iflag)
-       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+       if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
        
        ! Handle the xm=0 modes:
        xm=0
@@ -357,27 +357,27 @@ contains
 
        if (allocated(xm)) deallocate(xm)
        allocate(xm(efit_num_modes),stat=iflag)
-       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+       if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
        if (allocated(xn)) deallocate(xn)
        allocate(xn(efit_num_modes),stat=iflag)
-       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+       if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
        if (allocated(rmnc)) deallocate(rmnc)
        allocate(rmnc(efit_num_modes),stat=iflag)
-       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+       if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
        if (allocated(zmns)) deallocate(zmns)
        allocate(zmns(efit_num_modes),stat=iflag)
-       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+       if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
        if (allocated(rmns)) deallocate(rmns)
        allocate(rmns(efit_num_modes),stat=iflag)
-       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+       if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
        if (allocated(zmnc)) deallocate(zmnc)
        allocate(zmnc(efit_num_modes),stat=iflag)
-       if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+       if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
        call read_efit(efit_filename, efit_psiN, efit_num_modes, rmnc, zmns, rmns, zmnc)
        
        ! Set major radius equal to the zero-frequency component of R(theta)
@@ -416,15 +416,15 @@ contains
     
     if (allocated(theta_plasma)) deallocate(theta_plasma)
     allocate(theta_plasma(ntheta_plasma),stat=iflag)
-    if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+    if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
     if (allocated(zeta_plasma)) deallocate(zeta_plasma)
     allocate(zeta_plasma(nzeta_plasma),stat=iflag)
-    if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+    if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
     if (allocated(zetal_plasma)) deallocate(zetal_plasma)
     allocate(zetal_plasma(nzetal_plasma),stat=iflag)
-    if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+    if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
     
     do i=1,ntheta_plasma
        theta_plasma(i) = twopi*(i-1.0_dp)/ntheta_plasma
@@ -442,19 +442,19 @@ contains
 
     if (allocated(r_plasma)) deallocate(r_plasma)
     allocate(r_plasma(3,ntheta_plasma,nzetal_plasma),stat=iflag)
-    if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+    if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
     if (allocated(drdtheta_plasma)) deallocate(drdtheta_plasma)
     allocate(drdtheta_plasma(3,ntheta_plasma,nzetal_plasma),stat=iflag)
-    if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+    if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
     if (allocated(drdzeta_plasma)) deallocate(drdzeta_plasma)
     allocate(drdzeta_plasma(3,ntheta_plasma,nzetal_plasma),stat=iflag)
-    if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+    if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
     if (allocated(normal_plasma)) deallocate(normal_plasma)
     allocate(normal_plasma(3,ntheta_plasma,nzetal_plasma),stat=iflag)
-    if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+    if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
     
     r_plasma=0
     drdtheta_plasma=0
@@ -512,7 +512,7 @@ contains
     
     if (allocated(norm_normal_plasma)) deallocate(norm_normal_plasma)
     allocate(norm_normal_plasma(ntheta_plasma, nzeta_plasma),stat=iflag)
-    if (iflag .ne. 0) stop 'init_regcoil_plasma Allocation error!'
+    if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
     norm_normal_plasma = sqrt(normal_plasma(1,:,1:nzeta_plasma)**2 &
          + normal_plasma(2,:,1:nzeta_plasma)**2 &
          + normal_plasma(3,:,1:nzeta_plasma)**2)
@@ -580,4 +580,4 @@ contains
 
   end function fzero_residual
 
-end module init_regcoil_plasma
+end module regcoil_init_plasma

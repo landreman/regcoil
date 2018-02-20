@@ -1,4 +1,4 @@
-module init_regcoil_coil_surface
+module regcoil_init_coil_surface
 
 contains
  
@@ -49,4 +49,4 @@ subroutine init_coil_surface(lscreen_optin)
 
 end subroutine init_coil_surface
 
-end module init_regcoil_coil_surface
+end module regcoil_init_coil_surface
