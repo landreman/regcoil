@@ -121,13 +121,27 @@ subroutine regcoil_read_input(iunit, istat)
   integer, intent(out) :: istat
   integer, intent(in) :: iunit
 
+  ! The 'STELLOPT_DEBUG' controls the print staements and other diagnostic
+  ! information used for STELLOPT integration. This can be removed
+  ! once the integration process has been completed.
+  logical :: STELLOPT_DEBUG
+
+
+  STELLOPT_DEBUG  = .false.
+
   ntheta_plasma = 0
  
-  print "(a,i4)","   iunit =",iunit
-  print "(a,i4)","   istat =",istat
+  if (STELLOPT_DEBUG) then
+    print "(a,i4)","   iunit =",iunit
+    print "(a,i4)","   istat =",istat
+  end if
+
   read(iunit, nml=regcoil_nml, iostat=istat)
-  print "(a,i4)","   iunit =",iunit
-  print "(a,i4)","   istat =",istat
+
+  if (STELLOPT_DEBUG) then
+    print "(a,i4)","   iunit =",iunit
+    print "(a,i4)","   istat =",istat
+  end if
 !  if (istat /= 0) then
 !    print *,"Error!  I was able to open the file ", trim(inputFilename), &
 !            " but not read data from the regcoil namelist in it."
@@ -137,24 +151,33 @@ subroutine regcoil_read_input(iunit, istat)
 !  end if
 !  print *,"Successfully read parameters from regcoil namelist"
 
-  print *,"Resolution parameters:"
-  print "(a,i4)","   ntheta_plasma =",ntheta_plasma
-  print "(a,i4)","   ntheta_coil   =",ntheta_coil
-  print "(a,i4)","   nzeta_plasma  =",nzeta_plasma
-  print "(a,i4)","   nzeta_coil    =",nzeta_coil
-  print "(a,i4)","   mpol_coil     =",mpol_coil
-  print "(a,i4)","   ntor_coil     =",ntor_coil
+  if (STELLOPT_DEBUG) then
+    print *,"Resolution parameters:"
+    print "(a,i4)","   ntheta_plasma =",ntheta_plasma
+    print "(a,i4)","   ntheta_coil   =",ntheta_coil
+    print "(a,i4)","   nzeta_plasma  =",nzeta_plasma
+    print "(a,i4)","   nzeta_coil    =",nzeta_coil
+    print "(a,i4)","   mpol_coil     =",mpol_coil
+    print "(a,i4)","   ntor_coil     =",ntor_coil
+  end if
 
   select case (symmetry_option)
   case (1)
-     print *,"Symmetry: sin(m*theta - n*zeta) modes only"
+    if (STELLOPT_DEBUG) then
+      print *,"Symmetry: sin(m*theta - n*zeta) modes only"
+    end if
   case (2)
-     print *,"Symmetry: cos(m*theta - n*zeta) modes only"
+    if (STELLOPT_DEBUG) then
+      print *,"Symmetry: cos(m*theta - n*zeta) modes only"
+    end if
   case (3)
-     print *,"Symmetry: both sin(m*theta - n*zeta) and cos(m*theta - n*zeta) modes"
+    if (STELLOPT_DEBUG) then
+      print *,"Symmetry: both sin(m*theta - n*zeta) and cos(m*theta - n*zeta) modes"
+    end if
   case default
-     print *,"Error! Invalid setting for symmetry_option: ",symmetry_option
-     stop
+    ! This print statement should not be masked by debugging cases.
+    print *,"Error! Invalid setting for symmetry_option: ",symmetry_option
+    stop
   end select
 
 
