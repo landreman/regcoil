@@ -317,25 +317,33 @@ subroutine auto_regularization_solve(lscreen_optin)
         if (lscreen) print *,"Target current density has been bracketed."
      end if
      if (stage==10 .and. last_above_target) then
-        print *,"*******************************************************************************"
-        print *,"*******************************************************************************"
-        print *,"Error! The current_density_target you have set is not achievable because"
-        print *,"it is too low."
-        print *,"*******************************************************************************"
-        print *,"*******************************************************************************"
+        if (lscreen) then
+           print *,"*******************************************************************************"
+           print *,"*******************************************************************************"
+           print *,"Error! The current_density_target you have set is not achievable because"
+           print *,"it is too low."
+           print *,"*******************************************************************************"
+           print *,"*******************************************************************************"
+        end if
         Nlambda = ilambda
         exit_code = -2
+        ! Put the achieved chi2_B into the chi2_B_target variable for STELLOPT.
+        chi2_B_target = chi2_B(ilambda)
         exit
      end if
      if (stage==11 .and. (.not. last_above_target)) then
-        print *,"*******************************************************************************"
-        print *,"*******************************************************************************"
-        print *,"Error! The current_density_target you have set is not achievable because"
-        print *,"it is too high."
-        print *,"*******************************************************************************"
-        print *,"*******************************************************************************"
+        if (lscreen) then
+           print *,"*******************************************************************************"
+           print *,"*******************************************************************************"
+           print *,"Error! The current_density_target you have set is not achievable because"
+           print *,"it is too high."
+           print *,"*******************************************************************************"
+           print *,"*******************************************************************************"
+        end if
         Nlambda = ilambda
         exit_code = -3
+        ! Put the achieved chi2_B into the chi2_B_target variable for STELLOPT.
+        chi2_B_target = chi2_B(Nlambda)
         exit
      end if
      if (stage==2 .and. next_stage == 3) then
