@@ -327,8 +327,13 @@ subroutine auto_regularization_solve(lscreen_optin)
         end if
         Nlambda = ilambda
         exit_code = -2
-        ! Put the achieved chi2_B into the chi2_B_target variable for STELLOPT.
-        chi2_B_target = chi2_B(ilambda)
+        ! Modified to change the behavior when current density target can not be
+        ! reached.  Now, the chi2_B returned is the one that is calculated with
+        ! infinite regularization 
+        ! Put the best achieved chi2_B into the chi2_B_target variable for STELLOPT.
+        ! chi2_B_target = chi2_B(ilambda)  ! 'Best' achieved chi2_B
+        ! Put the worst achieved chi2_B into the chi2_B_target variable for STELLOPT.
+        chi2_B_target = chi2_B(1)    ! 'Worst' achieved chi2_B
         exit
      end if
      if (stage==11 .and. (.not. last_above_target)) then
@@ -342,8 +347,13 @@ subroutine auto_regularization_solve(lscreen_optin)
         end if
         Nlambda = ilambda
         exit_code = -3
-        ! Put the achieved chi2_B into the chi2_B_target variable for STELLOPT.
-        chi2_B_target = chi2_B(Nlambda)
+        ! Modified to change the behavior when current density target can not be
+        ! reached.  Now, the chi2_B returned is the one that is calculated with
+        ! infinite regularization 
+        ! Put the best achieved chi2_B into the chi2_B_target variable for STELLOPT.
+        ! chi2_B_target = chi2_B(ilambda)  ! 'Best' achieved chi2_B
+        ! Put the worst achieved chi2_B into the chi2_B_target variable for STELLOPT.
+        chi2_B_target = chi2_B(1)  ! 'Worst' achieved chi2_B
         exit
      end if
      if (stage==2 .and. next_stage == 3) then
