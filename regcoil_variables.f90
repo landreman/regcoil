@@ -87,5 +87,15 @@ module regcoil_variables
   integer :: exit_code = 0
   real(dp) :: chi2_B_target = 0
 
+  ! Variables added to interact with stellopt
+  !
+  !     FOR REGCOIL WINDING SURFACE VARIATION - These numbers should match those
+  !     in LIBSTELL/Sources/Modules/vparams.f
+  !
+  INTEGER, PARAMETER :: mpol_rcws = 32    !maximum number of poloidal harmonics
+  INTEGER, PARAMETER :: ntor_rcws = 32    !maximum number of toroidal harmonics
+  real(dp), dimension(-mpol_rcws:mpol_rcws,-ntor_rcws:ntor_rcws) :: rc_rmnc_stellopt, rc_rmns_stellopt, &
+                                                                    rc_zmnc_stellopt, rc_zmns_stellopt
+
 end module regcoil_variables
 

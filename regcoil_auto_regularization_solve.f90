@@ -324,14 +324,13 @@ subroutine auto_regularization_solve(lscreen_optin)
            print *,"it is too low."
            print *,"*******************************************************************************"
            print *,"*******************************************************************************"
+           print *,"chi2_B(1) = ", chi2_B(1)
         end if
         Nlambda = ilambda
         exit_code = -2
         ! Modified to change the behavior when current density target can not be
         ! reached.  Now, the chi2_B returned is the one that is calculated with
         ! infinite regularization 
-        ! Put the best achieved chi2_B into the chi2_B_target variable for STELLOPT.
-        ! chi2_B_target = chi2_B(ilambda)  ! 'Best' achieved chi2_B
         ! Put the worst achieved chi2_B into the chi2_B_target variable for STELLOPT.
         chi2_B_target = chi2_B(1)    ! 'Worst' achieved chi2_B
         exit
@@ -344,14 +343,13 @@ subroutine auto_regularization_solve(lscreen_optin)
            print *,"it is too high."
            print *,"*******************************************************************************"
            print *,"*******************************************************************************"
+           print *,"chi2_B(1) = ", chi2_B(1)
         end if
         Nlambda = ilambda
         exit_code = -3
         ! Modified to change the behavior when current density target can not be
         ! reached.  Now, the chi2_B returned is the one that is calculated with
         ! infinite regularization 
-        ! Put the best achieved chi2_B into the chi2_B_target variable for STELLOPT.
-        ! chi2_B_target = chi2_B(ilambda)  ! 'Best' achieved chi2_B
         ! Put the worst achieved chi2_B into the chi2_B_target variable for STELLOPT.
         chi2_B_target = chi2_B(1)  ! 'Worst' achieved chi2_B
         exit
@@ -392,13 +390,14 @@ subroutine auto_regularization_solve(lscreen_optin)
            if (lscreen) print *,"Requested tolerance has been met."
            exit_code=0
            Nlambda = ilambda
+           chi2_B_target = chi2_B(Nlambda)
            exit
         end if
      end if
      stage = next_stage
   end do
 
-  chi2_B_target = chi2_B(Nlambda)
+ !   print *,"exit_code", exit_code, " chi2_B_target = ", chi2_B_target
 
   if (exit_code == -1) then
      print *,"*******************************************************************************"

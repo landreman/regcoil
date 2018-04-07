@@ -445,4 +445,12 @@ subroutine write_output
 
 end subroutine write_output
 
+
+!subroutine write_regcoil_nescin_output
+!
+!  character(*) :: nescin_filename
+!  call safe_open(iunit, istat, trim(nescin_filename), 'old', 'formatted')
+!
+!end subroutine write_regcoil_nescin_output
+
 end module  regcoil_write_output
