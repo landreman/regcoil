@@ -16,7 +16,8 @@ OBJ_FILES = regcoil.o regcoil_auto_regularization_solve.o regcoil_build_matrices
 	init_Fourier_modes_mod.o regcoil_init_coil_surface.o regcoil_init_plasma.o \
 	init_surface_mod.o regcoil_read_bnorm.o \
 	read_efit_mod.o regcoil_input_mod.o read_nescin.o splines.o \
-	solve.o svd_scan.o regcoil_validate_input.o regcoil_write_output.o
+	solve.o svd_scan.o regcoil_validate_input.o regcoil_write_output.o  \
+	regcoil_nescin_utils_1.o regcoil_nescin_utils_2.o
 
 # Dependencies:
 regcoil.o: regcoil_variables.o regcoil_init_plasma.o regcoil_input_mod.o \
@@ -32,7 +33,9 @@ expand_plasma_surface.o: regcoil_variables.o
 fzero.o: 
 regcoil_variables.o: 
 init_Fourier_modes_mod.o:
-regcoil_init_coil_surface.o: regcoil_variables.o init_surface_mod.o
+regcoil_nescin_utils_1.o: regcoil_variables.o
+regcoil_nescin_utils_2.o: regcoil_variables.o
+regcoil_init_coil_surface.o: regcoil_variables.o init_surface_mod.o regcoil_nescin_utils_1.o regcoil_nescin_utils_2.o
 regcoil_init_plasma.o: regcoil_variables.o read_efit_mod.o
 init_surface_mod.o: compute_offset_surface_mod.o regcoil_variables.o
 regcoil_read_bnorm.o: regcoil_variables.o

@@ -317,25 +317,41 @@ subroutine auto_regularization_solve(lscreen_optin)
         if (lscreen) print *,"Target current density has been bracketed."
      end if
      if (stage==10 .and. last_above_target) then
-        print *,"*******************************************************************************"
-        print *,"*******************************************************************************"
-        print *,"Error! The current_density_target you have set is not achievable because"
-        print *,"it is too low."
-        print *,"*******************************************************************************"
-        print *,"*******************************************************************************"
+        if (lscreen) then
+           print *,"*******************************************************************************"
+           print *,"*******************************************************************************"
+           print *,"Error! The current_density_target you have set is not achievable because"
+           print *,"it is too low."
+           print *,"*******************************************************************************"
+           print *,"*******************************************************************************"
+           print *,"chi2_B(1) = ", chi2_B(1)
+        end if
         Nlambda = ilambda
         exit_code = -2
+        ! Modified to change the behavior when current density target can not be
+        ! reached.  Now, the chi2_B returned is the one that is calculated with
+        ! infinite regularization 
+        ! Put the worst achieved chi2_B into the chi2_B_target variable for STELLOPT.
+        chi2_B_target = chi2_B(1)    ! 'Worst' achieved chi2_B
         exit
      end if
      if (stage==11 .and. (.not. last_above_target)) then
-        print *,"*******************************************************************************"
-        print *,"*******************************************************************************"
-        print *,"Error! The current_density_target you have set is not achievable because"
-        print *,"it is too high."
-        print *,"*******************************************************************************"
-        print *,"*******************************************************************************"
+        if (lscreen) then
+           print *,"*******************************************************************************"
+           print *,"*******************************************************************************"
+           print *,"Error! The current_density_target you have set is not achievable because"
+           print *,"it is too high."
+           print *,"*******************************************************************************"
+           print *,"*******************************************************************************"
+           print *,"chi2_B(1) = ", chi2_B(1)
+        end if
         Nlambda = ilambda
         exit_code = -3
+        ! Modified to change the behavior when current density target can not be
+        ! reached.  Now, the chi2_B returned is the one that is calculated with
+        ! infinite regularization 
+        ! Put the worst achieved chi2_B into the chi2_B_target variable for STELLOPT.
+        chi2_B_target = chi2_B(1)  ! 'Worst' achieved chi2_B
         exit
      end if
      if (stage==2 .and. next_stage == 3) then
@@ -374,13 +390,14 @@ subroutine auto_regularization_solve(lscreen_optin)
            if (lscreen) print *,"Requested tolerance has been met."
            exit_code=0
            Nlambda = ilambda
+           chi2_B_target = chi2_B(Nlambda)
            exit
         end if
      end if
      stage = next_stage
   end do
 
-  chi2_B_target = chi2_B(Nlambda)
+ !   print *,"exit_code", exit_code, " chi2_B_target = ", chi2_B_target
 
   if (exit_code == -1) then
      print *,"*******************************************************************************"
