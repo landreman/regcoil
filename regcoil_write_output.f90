@@ -1,7 +1,4 @@
-module  regcoil_write_output
-
-contains
-subroutine write_output
+subroutine regcoil_write_output
 
   use regcoil_variables
   use ezcdf
@@ -132,9 +129,9 @@ subroutine write_output
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  call cdf_open(ncid,outputFilename,'w',ierr)
+  call cdf_open(ncid,output_filename,'w',ierr)
   IF (ierr .ne. 0) then
-     print *,"Error opening output file ",outputFilename
+     print *,"Error opening output file ",output_filename
      stop
   end IF
 
@@ -443,14 +440,4 @@ subroutine write_output
   ! Finish up:
   call cdf_close(ncid)
 
-end subroutine write_output
-
-
-!subroutine write_regcoil_nescin_output
-!
-!  character(*) :: nescin_filename
-!  call safe_open(iunit, istat, trim(nescin_filename), 'old', 'formatted')
-!
-!end subroutine write_regcoil_nescin_output
-
-end module  regcoil_write_output
+end subroutine regcoil_write_output

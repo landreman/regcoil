@@ -1,20 +1,21 @@
+! This subroutine is used only when REGCOIL is called from STELLOPT,
+! and it not used when REGCOIL is run as a standalone code.
+
 subroutine regcoil_write_input(proc_string,iunit,istat)
   ! proc_string is normally located in stellopt_runtime.f90
   
+  ! istat is not used for anything. Why include it?
+
   integer, intent(in) :: istat
   character(256), intent(in) ::  proc_string
   character(256) ::  wout_filename_new
-  integer ::  ier, iunit
+  integer ::  iunit
   character(LEN=*), parameter :: OUTBOO  = "(2X,A,1X,'=',1X,L1)"
   character(LEN=*), parameter :: OUTINT  = "(2X,A,1X,'=',1X,I0)"
   character(LEN=*), parameter :: OUTFLT  = "(2X,A,1X,'=',1X,E22.14)"
   character(LEN=*), parameter :: OUTSTR  = "(2X,A,1X,'=',1X,'''',A,'''')"
 
-  ! print "(a,a)", "proc_string = ", proc_string
   wout_filename_new = 'wout_'//TRIM(proc_string)//'.nc'
-  ! print "(a,a)", "wout_filename_new = ", wout_filename_new
-  ! print "(a,i12)", "iunit=", iunit
-
 
   write(iunit, '(A)') '&regcoil'
   write(iunit, OUTSTR) 'wout_filename', trim(wout_filename_new)

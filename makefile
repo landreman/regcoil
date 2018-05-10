@@ -1,5 +1,6 @@
-# makefile for NERSC Edison and Cori
-# You must first load the cray-netcdf module and python module:
+# Makefile for REGCOIL
+#
+# For NERSC Edison and Cori you must first load the cray-netcdf module and python module:
 #   module load cray-netcdf python
 # It is convenient to run
 #   module unload cray-libsci
@@ -47,7 +48,7 @@ else ifeq ($(HOSTNAME),pppl)
 else
 	FC = mpif90
 	#EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none -cpp
-	EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none
+	EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none 
 	EXTRA_LINK_FLAGS =  -fopenmp -L/opt/local/lib -lnetcdff  -lnetcdf -framework Accelerate
 
 	# For batch systems, set the following variable to the command used to run jobs. This variable is used by 'make test'.
@@ -73,15 +74,18 @@ include makefile.depend
 %.o: %.f $(LIBSTELL_DIR)/mini_libstell.a
 	$(FC) $(EXTRA_COMPILE_FLAGS) -I $(LIBSTELL_DIR) -c $<
 
-$(TARGET): $(OBJ_FILES) $(LIBSTELL_FOR_REGCOIL)
-	$(FC) -o $(TARGET) $(OBJ_FILES) $(LIBSTELL_FOR_REGCOIL) $(EXTRA_LINK_FLAGS)
+lib$(TARGET).a: $(OBJ_FILES)
+	ar rcs lib$(TARGET).a $(OBJ_FILES)
+
+$(TARGET): lib$(TARGET).a $(TARGET).o $(LIBSTELL_FOR_REGCOIL)
+	$(FC) -o $(TARGET) $(TARGET).o lib$(TARGET).a $(LIBSTELL_FOR_REGCOIL) $(EXTRA_LINK_FLAGS)
 #	$(FC) -o $(TARGET) $(OBJ_FILES) $(LIBSTELL_DIR)/libstell.a $(EXTRA_LINK_FLAGS)
 
 $(LIBSTELL_DIR)/mini_libstell.a:
 	$(MAKE) -C mini_libstell
 
 clean:
-	rm -f *.o *.mod *.MOD *~ $(TARGET)
+	rm -f *.o *.mod *.MOD *~ $(TARGET) *.a
 	cd mini_libstell; rm -f *.o *.mod *.MOD *.a
 
 test: $(TARGET)

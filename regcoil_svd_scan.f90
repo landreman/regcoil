@@ -1,4 +1,4 @@
-subroutine svd_scan
+subroutine regcoil_svd_scan
 
   use regcoil_variables
   use stel_constants
@@ -243,7 +243,7 @@ subroutine svd_scan
      print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda),",  rms K:",sqrt(chi2_K(ilambda)/area_coil)
   end do
 
-end subroutine svd_scan
+end subroutine regcoil_svd_scan
 
     ! Here is the LAPACK documentation for the relevant SVD subroutine:
 

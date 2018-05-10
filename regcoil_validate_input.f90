@@ -1,8 +1,4 @@
-module regcoil_validate_input
-
-contains
-
-subroutine validate_input
+subroutine regcoil_validate_input
 
   use regcoil_variables
   use safe_open_mod
@@ -118,7 +114,7 @@ subroutine validate_input
 
   if (general_option==2) then
      ! Replace nlambda with the number of current potentials saved in the nescout file.
-     print *,"Opening nescout file",nescout_filename
+     if (verbose) print *,"Opening nescout file",nescout_filename
      call safe_open(iunit, istat, trim(nescout_filename), 'old', 'formatted')
      if (istat .ne. 0) then
         stop 'Error opening nescout file'
@@ -131,7 +127,7 @@ subroutine validate_input
            j = j + 1
         end if
      end do
-     print *,"Detected",j,"current potentials in the nescout file."
+     if (verbose) print *,"Detected",j,"current potentials in the nescout file."
      nlambda = j
   end if
 
@@ -161,6 +157,4 @@ subroutine validate_input
      print *,line
   end if
 
-end subroutine validate_input
-
-end module regcoil_validate_input
+end subroutine regcoil_validate_input

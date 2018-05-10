@@ -1,8 +1,7 @@
-module regcoil_nescin_utils_1
+! This subroutine is used only when REGCOIL is called from STELLOPT,
+! and it not used when REGCOIL is run as a standalone code.
 
-contains
-
-  subroutine read_nescin_spectrum(nescin_filename, lscreen_optin)
+subroutine regcoil_read_nescin_spectrum(nescin_filename, lscreen)
   ! Modification of the original read_nescin/init_surface_mod subroutines.
   ! The spectrum is read in and returned via the passed-in variables, which are
   ! allocated during this call.
@@ -20,7 +19,7 @@ contains
          rc_zmnc_stellopt, rc_zmns_stellopt
     implicit none
 
-    character(*) :: nescin_filename
+    character(256) :: nescin_filename
     integer :: itheta, izeta, nummodes, xm_in, xn_in, istat, ii, jj, kk
     integer :: iflag, which_surface, iunit  = 7
     !real(dp) :: angle, sinangle, cosangle, dsinangledtheta, dcosangledtheta
@@ -31,17 +30,8 @@ contains
 
     character(300) :: myline
     character(*), parameter :: matchString = "------ Current Surface"
-
-    ! variables to handle printing to the screen
-    logical, optional :: lscreen_optin
     logical :: lscreen
     
-    if(present(lscreen_optin)) then 
-      lscreen = lscreen_optin
-    else
-      lscreen = .true.
-    endif
-
     call safe_open(iunit, istat, trim(nescin_filename), 'old', 'formatted')
     if (istat .ne. 0) then
        stop 'Error opening nescin file'
@@ -142,7 +132,4 @@ contains
         dtheta_coil = theta_coil(2)-theta_coil(1)
         dzeta_coil  = zeta_coil(2)-zeta_coil(1)
   
-  end subroutine read_nescin_spectrum
-  
-  
-end module regcoil_nescin_utils_1
+end subroutine regcoil_read_nescin_spectrum

@@ -1,4 +1,4 @@
-subroutine read_nescin(nescin_filename, r, drdtheta, drdzeta, d2rdtheta2, d2rdthetadzeta, d2rdzeta2, ntheta, nzetal, theta, zetal, compute_2nd_derivs)
+subroutine regcoil_read_nescin(nescin_filename, r, drdtheta, drdzeta, d2rdtheta2, d2rdthetadzeta, d2rdzeta2, ntheta, nzetal, theta, zetal, compute_2nd_derivs)
 
   use regcoil_variables, only: nfp, xm, xn, mnmax, rmnc_global => rmnc, zmns_global => zmns, rmns_global => rmns, zmnc_global => zmnc
   use safe_open_mod
@@ -56,45 +56,10 @@ subroutine read_nescin(nescin_filename, r, drdtheta, drdzeta, d2rdtheta2, d2rdth
   print *,"  Reading",ntotal,"Fourier modes from nescin"
 
 
-!!$  if (geometry_option_outer==4) then
-!!$     ! Clear arrays associated with the plasma surface for offsetting,
-!!$     ! and replace them with the nescin values.
-!!$     deallocate(xm,xn,rmnc_global,zmns_global)
-!!$     if (allocated(rmns_global)) then
-!!$        deallocate(rmns_global)
-!!$     end if
-!!$     if (allocated(zmnc_global)) then
-!!$        deallocate(zmnc_global)
-!!$     end if
-!!$     mnmax = ntotal
-!!$     allocate(xm(mnmax),stat=iflag)
-!!$     if (iflag .ne. 0) stop "Allocation error! read_nescin 1"
-!!$     allocate(xn(mnmax),stat=iflag)
-!!$     if (iflag .ne. 0) stop "Allocation error! read_nescin 2"
-!!$     allocate(rmnc_global(mnmax),stat=iflag)
-!!$     if (iflag .ne. 0) stop "Allocation error! read_nescin 3"
-!!$     allocate(zmns_global(mnmax),stat=iflag)
-!!$     if (iflag .ne. 0) stop "Allocation error! read_nescin 4"
-!!$     allocate(rmns_global(mnmax),stat=iflag)
-!!$     if (iflag .ne. 0) stop "Allocation error! read_nescin 5"
-!!$     allocate(zmnc_global(mnmax),stat=iflag)
-!!$     if (iflag .ne. 0) stop "Allocation error! read_nescin 6"
-!!$  end if
-
   read (iunit, *)
   read (iunit, *)
   do k = 1, ntotal
      read (iunit, *) m, n, rmnc, zmns, rmns, zmnc
-
-!!$     if (geometry_option_outer==4) then
-!!$        ! Set arrays associated with offsetting surfaces
-!!$        xm(k) = m
-!!$        xn(k) = -n*nfp
-!!$        rmnc_global(k) = rmnc
-!!$        zmns_global(k) = zmns
-!!$        rmns_global(k) = rmns
-!!$        zmnc_global(k) = zmnc
-!!$     end if
 
      do izeta = 1,nzetal
         angle2 = zetal(izeta)
@@ -161,4 +126,4 @@ subroutine read_nescin(nescin_filename, r, drdtheta, drdzeta, d2rdtheta2, d2rdth
   
   close(iunit)
 
-end subroutine  read_nescin
+end subroutine  regcoil_read_nescin

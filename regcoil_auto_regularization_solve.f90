@@ -1,9 +1,4 @@
-module regcoil_auto_regularization_solve
-
-
-contains
-
-subroutine auto_regularization_solve(lscreen_optin)
+subroutine regcoil_auto_regularization_solve()
 
   use regcoil_variables
   use stel_constants
@@ -27,20 +22,6 @@ subroutine auto_regularization_solve(lscreen_optin)
   integer :: INFO, LWORK
   real(dp), dimension(:), allocatable :: WORK
   integer, dimension(:), allocatable :: IPIV
-
-  ! variables to handle printing to the screen
-  logical, optional :: lscreen_optin
-  logical :: lscreen
-
-  if(present(lscreen_optin)) then 
-    lscreen = lscreen_optin
-  else
-    lscreen = .true.
-  endif
-
-  ! Adding some checks to release previously allocated variables.
-  ! This is because STELLOPT may call this function multiple times.
-  ! if (allocated()) deallocate()
 
   if (allocated(matrix)) deallocate(matrix)
   allocate(matrix(num_basis_functions, num_basis_functions), stat=iflag)
@@ -124,7 +105,7 @@ subroutine auto_regularization_solve(lscreen_optin)
   ! Call LAPACK's DSYSV in query mode to determine the optimal size of the work array
   call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, IPIV, RHS, num_basis_functions, WORK, -1, INFO)
   LWORK = WORK(1)
-  if (lscreen) print *,"Optimal LWORK:",LWORK
+  if (verbose) print *,"Optimal LWORK:",LWORK
   deallocate(WORK)
   allocate(WORK(LWORK), stat=iflag)
   if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 20!'  
@@ -235,7 +216,7 @@ subroutine auto_regularization_solve(lscreen_optin)
         stop
      end select
 
-     if (lscreen) print "(a,es10.3,a,i3,a,i3,a)"," Solving system for lambda=",lambda(ilambda)," (",ilambda," of at most ",nlambda,")"
+     if (verbose) print "(a,es10.3,a,i3,a,i3,a)"," Solving system for lambda=",lambda(ilambda)," (",ilambda," of at most ",nlambda,")"
      call system_clock(tic,countrate)
 
      ! Done choosing the next lambda. Now comes the main solve.
@@ -250,7 +231,7 @@ subroutine auto_regularization_solve(lscreen_optin)
      end if
 
      call system_clock(toc)
-     if (lscreen) print *,"  Additions: ",real(toc-tic)/countrate," sec."
+     if (verbose) print *,"  Additions: ",real(toc-tic)/countrate," sec."
      call system_clock(tic)
 
      ! Compute solution = matrix \ RHS.
@@ -264,7 +245,7 @@ subroutine auto_regularization_solve(lscreen_optin)
      solution = RHS
 
      call system_clock(toc)
-     if (lscreen) print *,"  DSYSV: ",real(toc-tic)/countrate," sec."
+     if (verbose) print *,"  DSYSV: ",real(toc-tic)/countrate," sec."
      call system_clock(tic)
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -300,9 +281,9 @@ subroutine auto_regularization_solve(lscreen_optin)
           * sum(Bnormal_total(:,:,ilambda) * Bnormal_total(:,:,ilambda) * norm_normal_plasma)
 
      call system_clock(toc)
-     if (lscreen) print *,"  Diagnostics: ",real(toc-tic)/countrate," sec."
-     if (lscreen) print "(a,es10.3,a,es10.3)","   chi2_B:",chi2_B(ilambda),",  chi2_K:",chi2_K(ilambda)
-     if (lscreen) print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda),",  rms K:",sqrt(chi2_K(ilambda)/area_coil)
+     if (verbose) print *,"  Diagnostics: ",real(toc-tic)/countrate," sec."
+     if (verbose) print "(a,es10.3,a,es10.3)","   chi2_B:",chi2_B(ilambda),",  chi2_K:",chi2_K(ilambda)
+     if (verbose) print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda),",  rms K:",sqrt(chi2_K(ilambda)/area_coil)
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! Done computing diagnostics.
@@ -314,10 +295,10 @@ subroutine auto_regularization_solve(lscreen_optin)
      if (stage==2 .and. (last_above_target .neqv. initial_above_target)) then
         ! If we've bracketed the target, move on to stage 3.
         next_stage = 3  
-        if (lscreen) print *,"Target current density has been bracketed."
+        if (verbose) print *,"Target current density has been bracketed."
      end if
      if (stage==10 .and. last_above_target) then
-        if (lscreen) then
+        if (verbose) then
            print *,"*******************************************************************************"
            print *,"*******************************************************************************"
            print *,"Error! The current_density_target you have set is not achievable because"
@@ -336,7 +317,7 @@ subroutine auto_regularization_solve(lscreen_optin)
         exit
      end if
      if (stage==11 .and. (.not. last_above_target)) then
-        if (lscreen) then
+        if (verbose) then
            print *,"*******************************************************************************"
            print *,"*******************************************************************************"
            print *,"Error! The current_density_target you have set is not achievable because"
@@ -387,7 +368,7 @@ subroutine auto_regularization_solve(lscreen_optin)
         Brendt_xm = 0.5*(Brendt_c - Brendt_b)
         if (abs(Brendt_xm) <= Brendt_tol1 .or. (Brendt_fb==0)) then
            ! We met the requested tolerance
-           if (lscreen) print *,"Requested tolerance has been met."
+           if (verbose) print *,"Requested tolerance has been met."
            exit_code=0
            Nlambda = ilambda
            chi2_B_target = chi2_B(Nlambda)
@@ -431,7 +412,7 @@ contains
 
   end function target_function
 
-end subroutine auto_regularization_solve
+end subroutine regcoil_auto_regularization_solve
 
     ! Here is the LAPACK documentation for solving a symmetric linear system:
 
@@ -593,5 +574,3 @@ end subroutine auto_regularization_solve
 !!$*>               has been completed, but the block diagonal matrix D is
 !!$*>               exactly singular, so the solution could not be computed.
 !!$*> \endverbatim
-
-end module regcoil_auto_regularization_solve

@@ -5,6 +5,7 @@ module regcoil_variables
   implicit none
 
   integer :: general_option=1
+  logical :: verbose = .true.
 
   integer :: ntheta_plasma=64, nzeta_plasma=64, nzetal_plasma
   integer :: ntheta_coil=64, nzeta_coil=64, nzetal_coil
@@ -21,7 +22,7 @@ module regcoil_variables
   character(len=200) :: nescin_filename=""
   character(len=200) :: nescout_filename=""
   character(len=200) :: efit_filename=""
-  character(len=200) :: outputFilename
+  character(len=200) :: output_filename
 
   real(dp), dimension(:), allocatable :: theta_plasma, zeta_plasma, zetal_plasma
   real(dp), dimension(:,:,:), allocatable :: r_plasma, drdtheta_plasma, drdzeta_plasma, normal_plasma
@@ -96,6 +97,19 @@ module regcoil_variables
   INTEGER, PARAMETER :: ntor_rcws = 32    ! maximum toroidal mode number (+/-)
   real(dp), dimension(-mpol_rcws:mpol_rcws,-ntor_rcws:ntor_rcws) :: rc_rmnc_stellopt, rc_rmns_stellopt, &
                                                                     rc_zmnc_stellopt, rc_zmns_stellopt
+
+  namelist / regcoil_nml / ntheta_plasma, nzeta_plasma, ntheta_coil, nzeta_coil, &
+       geometry_option_plasma, geometry_option_coil, &
+       R0_plasma, R0_coil, a_plasma, a_coil, &
+       separation, wout_filename, &
+       save_level, nfp_imposed, symmetry_option, &
+       mpol_coil, ntor_coil, &
+       nescin_filename, efit_filename, efit_psiN, efit_num_modes, &
+       mpol_transform_refinement, ntor_transform_refinement, &
+       net_poloidal_current_Amperes, net_toroidal_current_Amperes, &
+       load_bnorm, bnorm_filename, &
+       shape_filename_plasma, nlambda, lambda_min, lambda_max, general_option, verbose, nescout_filename, &
+       target_option, current_density_target, lambda_search_tolerance
 
 end module regcoil_variables
 

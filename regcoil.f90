@@ -1,17 +1,9 @@
 ! Main program
 
-program regcoil_main
+program regcoil
 
-  use regcoil_variables, only: total_time, outputFilename, general_option
-  use regcoil_init_plasma
-  use regcoil_input_mod
-  use regcoil_validate_input
-  use regcoil_compute_lambda
-  use regcoil_init_coil_surface
-  use regcoil_read_bnorm
-  use regcoil_build_matrices
-  use regcoil_auto_regularization_solve
-  use regcoil_write_output
+  use regcoil_variables, only: total_time, output_filename, general_option
+  use regcoil_init_plasma_mod
 
   implicit none
 
@@ -21,27 +13,27 @@ program regcoil_main
   print *,"a regularized least-squares method for computing stellarator coil shapes."
   call system_clock(tic,countrate)
 
-  call read_regcoil_cmd_input()
-  call validate_input()
-  call compute_lambda()
+  call regcoil_read_input()
+  call regcoil_validate_input()
+  call regcoil_compute_lambda()
 
   ! Define the position vector and normal vector at each grid point for the surfaces:
-  call init_plasma()
-  call init_coil_surface()
+  call regcoil_init_plasma()
+  call regcoil_init_coil_surface()
 
   ! Initialize some of the vectors and matrices needed:
-  call read_bnorm()
-  call build_matrices()
+  call regcoil_read_bnorm()
+  call regcoil_build_matrices()
 
   select case (general_option)
   case (1)
-     call solve()
+     call regcoil_solve()
   case (2)
-     call compute_diagnostics_for_nescout_potential()
+     call regcoil_compute_diagnostics_for_nescout_potential()
   case (3)
-     call svd_scan()
+     call regcoil_svd_scan()
   case (4,5)
-     call auto_regularization_solve()
+     call regcoil_auto_regularization_solve()
   case default
      print *,"Invalid general_option:",general_option
      stop
@@ -50,9 +42,9 @@ program regcoil_main
   call system_clock(toc)
   total_time = real(toc-tic)/countrate
 
-  call write_output()
+  call regcoil_write_output()
  
   print *,"REGCOIL complete. Total time=",total_time,"sec."
-  print *,"You can run regcoilPlot ",trim(outputFilename)," to plot results."
+  print *,"You can run regcoilPlot ",trim(output_filename)," to plot results."
 
-end program regcoil_main
+end program regcoil

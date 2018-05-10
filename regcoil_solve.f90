@@ -1,4 +1,4 @@
-subroutine solve
+subroutine regcoil_solve
 
   use regcoil_variables
   use stel_constants
@@ -18,10 +18,6 @@ subroutine solve
   integer :: INFO, LWORK
   real(dp), dimension(:), allocatable :: WORK
   integer, dimension(:), allocatable :: IPIV
-
-  ! Adding some checks to release previously allocated variables.
-  ! This is because STELLOPT may call this function multiple times.
-  ! if (allocated()) deallocate()
 
   if (allocated(matrix)) deallocate(matrix)
   allocate(matrix(num_basis_functions, num_basis_functions), stat=iflag)
@@ -176,7 +172,7 @@ subroutine solve
      print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda),",  rms K:",sqrt(chi2_K(ilambda)/area_coil)
   end do
 
-end subroutine solve
+end subroutine regcoil_solve
 
     ! Here is the LAPACK documentation for solving a symmetric linear system:
 

@@ -60,6 +60,7 @@ numFailures += arrayShouldBe(data, [2713725.09530369, 125251911.209827, 15467287
     7877128.17061528, 8052687.63164847, 8000414.46145111, 7999999.98035358, 
     8000008.28938568], relativeTolerance,absoluteTolerance)
 
+del data
 f.close()
 print "numFailures:",numFailures
 exit(numFailures > 0)

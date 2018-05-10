@@ -1,4 +1,4 @@
-module regcoil_init_plasma
+module regcoil_init_plasma_mod
 
 
   use stel_kinds
@@ -7,16 +7,16 @@ module regcoil_init_plasma
 
   private
 
-  public :: init_plasma
+  public :: regcoil_init_plasma
 
   real(dp) :: theta_rootSolve_target, zeta
 
 contains
 
-  subroutine init_plasma(lscreen_optin)
+  subroutine regcoil_init_plasma()
 
     use regcoil_variables
-    use read_efit_mod
+    use regcoil_read_efit_mod
     use read_wout_mod, only: nfp_vmec => nfp, xm_vmec => xm, xn_vmec => xn, &
          rmnc_vmec => rmnc, zmns_vmec => zmns, rmns_vmec => rmns, zmnc_vmec => zmnc, &
          lasym_vmec => lasym, mnmax_vmec => mnmax, ns, Rmajor, read_wout_file, &
@@ -25,9 +25,6 @@ contains
     use stel_constants
     
     implicit none
-    ! variables to handle printing to the screen
-    logical, optional :: lscreen_optin
-    logical :: lscreen
 
     integer :: i, itheta, izeta, imn, tic, toc, countrate, iflag, ierr, iopen, tic1, toc1, iunit
     real(dp) :: angle, sinangle, cosangle, dsinangledtheta, dsinangledzeta, dcosangledtheta, dcosangledzeta
@@ -39,23 +36,13 @@ contains
     real(dp) :: rootSolve_abserr, rootSolve_relerr, theta_rootSolve_min, theta_rootSolve_max, theta_rootSolve_soln
     integer :: fzeroFlag, mpol, ntor, jm, jn, index
     
-    if(present(lscreen_optin)) then 
-      lscreen = lscreen_optin
-    else
-      lscreen = .true.
-    endif
-
-   ! Adding some checks to release previously allocated variables.
-   ! This is because STELLOPT may call this function multiple times.
-   ! if (allocated()) deallocate()
-
     call system_clock(tic, countrate)
-    if (lscreen) print *,"Initializing plasma surface."
+    if (verbose) print *,"Initializing plasma surface."
     
     select case (geometry_option_plasma)
     case (0,1)
        ! Plain circular torus
-       if (lscreen) print *,"  Building a plain circular torus."
+       if (verbose) print *,"  Building a plain circular torus."
        
        nfp = nfp_imposed
        mnmax = 2
@@ -134,19 +121,19 @@ contains
        call read_wout_file(wout_filename, ierr, iopen)
        if (iopen .ne. 0) stop 'error opening wout file'
        if (ierr .ne. 0) stop 'error reading wout file'
-       if (lscreen) print *,"  Successfully read VMEC data from ",trim(wout_filename)
+       if (verbose) print *,"  Successfully read VMEC data from ",trim(wout_filename)
        
        if (geometry_option_plasma == 2) then
           ! Only use the outermost point in the full radial mesh:
           weight1 = 0
           weight2 = 1
-          if (lscreen) print *,"  Using outermost grid point in VMEC's FULL radial grid."
+          if (verbose) print *,"  Using outermost grid point in VMEC's FULL radial grid."
        else
           ! Average the two outermost points in the full radial mesh 
           ! to get a value on the outermost point of the half radial mesh:
           weight1 = 0.5_dp
           weight2 = 0.5_dp
-          if (lscreen) print *,"  Using outermost grid point in VMEC's HALF radial grid."
+          if (verbose) print *,"  Using outermost grid point in VMEC's HALF radial grid."
        end if
        
        nfp = nfp_vmec
@@ -172,7 +159,7 @@ contains
        
        xm = xm_vmec
        xn = xn_vmec
-       if (lscreen) print *,"size of rmnc_vmec:",size(rmnc_vmec,1),size(rmnc_vmec,2)
+       if (verbose) print *,"size of rmnc_vmec:",size(rmnc_vmec,1),size(rmnc_vmec,2)
        rmnc = rmnc_vmec(:,ns-1) * weight1 + rmnc_vmec(:,ns) * weight2
        zmns = zmns_vmec(:,ns-1) * weight1 + zmns_vmec(:,ns) * weight2
        if (lasym) then
@@ -194,7 +181,7 @@ contains
        call read_wout_file(wout_filename, ierr, iopen)
        if (iopen .ne. 0) stop 'error opening wout file'
        if (ierr .ne. 0) stop 'error reading wout file'
-       if (lscreen) print *,"  Successfully read VMEC data from ",trim(wout_filename)
+       if (verbose) print *,"  Successfully read VMEC data from ",trim(wout_filename)
        
        
        nfp = nfp_vmec
@@ -254,7 +241,7 @@ contains
              theta_rootSolve_min = theta_rootSolve_target - 0.3
              theta_rootSolve_max = theta_rootSolve_target + 0.3
              
-             call fzero(fzero_residual, theta_rootSolve_min, theta_rootSolve_max, theta_rootSolve_target, &
+             call regcoil_fzero(fzero_residual, theta_rootSolve_min, theta_rootSolve_max, theta_rootSolve_target, &
                   rootSolve_relerr, rootSolve_abserr, fzeroFlag)
              ! Note: fzero returns its answer in theta_rootSolve_min
              theta_rootSolve_soln = theta_rootSolve_min
@@ -279,7 +266,7 @@ contains
        end do
        !close(unit=5)
        call system_clock(toc1)
-       if (lscreen) print *,"  Time for root solving:",real(toc1-tic1)/countrate
+       if (verbose) print *,"  Time for root solving:",real(toc1-tic1)/countrate
        
        ! Now that we have R and Z on a grid in the new coordinates, Fourier transform the results.
        
@@ -346,7 +333,7 @@ contains
           zmns(imn) = z_temp*dnorm
        end do
        call system_clock(toc1)
-       if (lscreen) print *,"  Time for Fourier transform:",real(toc1-tic1)/countrate
+       if (verbose) print *,"  Time for Fourier transform:",real(toc1-tic1)/countrate
        
     case (5)
        ! EFIT
@@ -378,7 +365,7 @@ contains
        if (allocated(zmnc)) deallocate(zmnc)
        allocate(zmnc(efit_num_modes),stat=iflag)
        if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
-       call read_efit(efit_filename, efit_psiN, efit_num_modes, rmnc, zmns, rmns, zmnc)
+       call regcoil_read_efit(efit_filename, efit_psiN, efit_num_modes, rmnc, zmns, rmns, zmnc)
        
        ! Set major radius equal to the zero-frequency component of R(theta)
        R0_plasma = rmnc(1)
@@ -393,22 +380,6 @@ contains
        stop
     end select
     
-!!$  ! Save plasma surface shape for NESCOIL
-!!$  iunit = 15
-!!$  call safe_open(iunit,ierr,'nescin_plasma_surface','replace','formatted')
-!!$  if (ierr .ne. 0) stop "Unable to open nescin output file"
-!!$  write (iunit, 10) '------ Plasma Surface ---- '
-!!$  write (iunit, 10) 'Number of fourier modes in table'
-!!$  write (iunit,*) mnmax
-!!$  write (iunit, 10) 'Table of fourier coefficients'
-!!$  write (iunit, 10) 'm,n,crc,czs,cls,crs,czc,clc'
-!!$  do imn = 1, mnmax
-!!$     write (iunit,'(x,2i6,1p6e20.12)') xm(imn), xn(imn), &
-!!$          rmnc(imn), zmns(imn), cl(m,n), crs(m,n), czc(m,n), clc(m,n)
-!!$  end do
-!!$
-!!$  close(iunit)
-     
 
 
     nzetal_plasma = nzeta_plasma * nfp
@@ -535,28 +506,28 @@ contains
          * (r_plasma(3,1,:)-r_plasma(3,ntheta_plasma,:))) ! dZ
     volume_plasma = abs(volume_plasma * dzeta_plasma / 2) ! r_plasma includes all nfp periods already, so no factor of nfp needed.
     deallocate(major_R_squared)
-    if (lscreen) print "(a,es10.3,a,es10.3,a)"," Plasma surface area:",area_plasma," m^2. Volume:",volume_plasma," m^3."
+    if (verbose) print "(a,es10.3,a,es10.3,a)"," Plasma surface area:",area_plasma," m^2. Volume:",volume_plasma," m^3."
     
     select case (geometry_option_plasma)
     case (2,3,4)
        ! A VMEC wout file is available
-       if (lscreen) print *,"Overriding net_poloidal_current_Amperes with value from the VMEC wout file."
+       if (verbose) print *,"Overriding net_poloidal_current_Amperes with value from the VMEC wout file."
        ! VMEC stores the toroidal Boozer component B_zeta as "bvco", using the HALF mesh
        net_poloidal_current_Amperes = 2*pi/mu0*(1.5_dp*bvco(ns)-0.5_dp*bvco(ns-1))
        ! curpol is a number which multiplies the data in the bnorm file.
        curpol = (2*pi/nfp)*(1.5_dp*bsubvmnc(1,ns) - 0.5_dp*bsubvmnc(1,ns-1))
     case default
        if (abs(net_poloidal_current_Amperes-1)<1e-12) then
-          if (lscreen) print *,"No VMEC file is available, and the default value of net_poloidal_current_Amperes (=1) will be used."
+          if (verbose) print *,"No VMEC file is available, and the default value of net_poloidal_current_Amperes (=1) will be used."
        else
-          if (lscreen) print *,"No VMEC file is available, so net_poloidal_current_Amperes will be taken from the bdistrib input file."
+          if (verbose) print *,"No VMEC file is available, so net_poloidal_current_Amperes will be taken from the bdistrib input file."
        end if
     end select
     
     call system_clock(toc)
-    if (lscreen) print *,"Done initializing plasma surface. Took ",real(toc-tic)/countrate," sec."
+    if (verbose) print *,"Done initializing plasma surface. Took ",real(toc-tic)/countrate," sec."
 
-  end subroutine init_plasma
+  end subroutine regcoil_init_plasma
 
   ! --------------------------------------------------------------------------
 
@@ -580,4 +551,4 @@ contains
 
   end function fzero_residual
 
-end module regcoil_init_plasma
+end module regcoil_init_plasma_mod

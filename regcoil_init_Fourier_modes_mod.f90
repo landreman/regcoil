@@ -1,10 +1,10 @@
-module init_Fourier_modes_mod
+module regcoil_init_Fourier_modes_mod
 
   implicit none
 
 contains
 
-  subroutine init_Fourier_modes(mpol, ntor, mnmax, xm, xn)
+  subroutine regcoil_init_Fourier_modes(mpol, ntor, mnmax, xm, xn)
 
     implicit none
 
@@ -51,6 +51,6 @@ contains
        stop
     end if
 
-  end subroutine init_Fourier_modes
+  end subroutine regcoil_init_Fourier_modes
   
-end module init_Fourier_modes_mod
+end module regcoil_init_Fourier_modes_mod

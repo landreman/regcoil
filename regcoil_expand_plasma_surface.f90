@@ -1,4 +1,4 @@
-subroutine expand_plasma_surface(theta, zeta, separation, x,y,z)
+subroutine regcoil_expand_plasma_surface(theta, zeta, separation, x,y,z)
   
   use regcoil_variables, only: nfp, xm, xn, mnmax, rmnc, zmns, rmns, zmnc, lasym
   use stel_kinds
@@ -86,4 +86,4 @@ subroutine expand_plasma_surface(theta, zeta, separation, x,y,z)
   y = y + normal_y * separation
   z = z + normal_z * separation
 
-end subroutine expand_plasma_surface
+end subroutine regcoil_expand_plasma_surface

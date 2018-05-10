@@ -1,8 +1,7 @@
-module regcoil_nescin_utils_2
+! This subroutine is used only when REGCOIL is called from STELLOPT,
+! and it not used when REGCOIL is run as a standalone code.
 
-contains
-
-subroutine initupdate_nescin_winding_surface(lscreen_optin)
+subroutine regcoil_initupdate_nescin_coil_surface(lscreen)
 
   use stel_constants
   use stel_kinds
@@ -32,17 +31,9 @@ subroutine initupdate_nescin_winding_surface(lscreen_optin)
 !  real(dp) :: x_new, y_new, z_new, x_old, y_old, z_old, delta_theta, delta_zeta, temp
   real(dp) :: rmnc, rmns, zmnc, zmns
 
-  ! variables to handle printing to the screen
-  logical, optional :: lscreen_optin
   logical :: lscreen
   
   logical :: compute_2nd_derivs = .false.
-
-  if(present(lscreen_optin)) then 
-    lscreen = lscreen_optin
-  else
-    lscreen = .true.
-  endif
 
   ! zero out the 2-D arrays of r_coil, drdtheta_coil and drdzeta_coil
   r_coil=0
@@ -161,7 +152,4 @@ subroutine initupdate_nescin_winding_surface(lscreen_optin)
 
       !print *,"<----Exiting regcoil initupdate_nescin_winding_surface."
  
-end subroutine initupdate_nescin_winding_surface
-
-
-end module regcoil_nescin_utils_2
+end subroutine regcoil_initupdate_nescin_coil_surface

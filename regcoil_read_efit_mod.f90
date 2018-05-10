@@ -1,4 +1,4 @@
-module read_efit_mod
+module regcoil_read_efit_mod
 
   use stel_kinds
 
@@ -6,7 +6,7 @@ module read_efit_mod
 
   private
 
-  public :: read_efit
+  public :: regcoil_read_efit
 
   integer :: nwb, nhb
   real(dp) :: this_theta, psiN_desired, R_mag, Z_mag
@@ -15,14 +15,14 @@ module read_efit_mod
 
 contains
 
-  subroutine read_efit(filename, psiN_desired_in, mnmax, rmnc, zmns, rmns, zmnc)
+  subroutine regcoil_read_efit(filename, psiN_desired_in, mnmax, rmnc, zmns, rmns, zmnc)
     
     ! Most of this subroutine is adapted from GS2's geometry module (geo/eeq.f90)
     
     ! Inputs: 
     !   filename: EFIT file to read
     !   psiN_desired
-    use splines
+    use regcoil_splines
     use stel_constants
     use stel_kinds
     
@@ -213,19 +213,19 @@ contains
     thetab_atan = atan2 ((zbbbs-Z_mag), (rbbbs-R_mag))
     r_bound = sqrt( (rbbbs - R_mag)**2 + (zbbbs - Z_mag)**2 )
     
-    call sort(thetab_atan, r_bound, zbbbs, rbbbs, nbbbs)
+    call regcoil_sort(thetab_atan, r_bound, zbbbs, rbbbs, nbbbs)
     
     
     ! Allow for duplicated points near +- pi:
     
     if(thetab_atan(1) == thetab_atan(2)) then
        thetab_atan(1) = thetab_atan(1) + twopi
-       call sort(thetab_atan, r_bound, zbbbs, rbbbs, nbbbs)
+       call regcoil_sort(thetab_atan, r_bound, zbbbs, rbbbs, nbbbs)
     endif
     
     if(thetab_atan(nbbbs-1) == thetab_atan(nbbbs)) then
        thetab_atan(nbbbs) = thetab_atan(nbbbs) - twopi
-       call sort(thetab_atan, r_bound, zbbbs, rbbbs, nbbbs)
+       call regcoil_sort(thetab_atan, r_bound, zbbbs, rbbbs, nbbbs)
     endif
     
     ! It isn't likely that a duplicate point would exist near theta = 0, 
@@ -338,9 +338,9 @@ contains
              print *,"Computing a flux surface inside the EFIT LCFS."
           end if
           
-          call fzero(fzero_residual, rootSolve_min, rootSolve_max, rootSolve_max * psiN_desired, &
+          call regcoil_fzero(regcoil_efit_fzero_residual, rootSolve_min, rootSolve_max, rootSolve_max * psiN_desired, &
                rootSolve_relerr, rootSolve_abserr, fzeroFlag)
-          ! Note: fzero returns its answer in rootSolve_min
+          ! Note: regcoil_fzero returns its answer in rootSolve_min
           r_minor = rootSolve_min
           if (fzeroFlag == 4) then
              stop "ERROR: fzero returned error 4: no sign change in residual"
@@ -349,9 +349,9 @@ contains
           end if
        end if
        
-       R_surface(i) = Rpos(r_minor, this_theta)
+       R_surface(i) = regcoil_Rpos(r_minor, this_theta)
        !Z_surface(i) = Zpos(r_minor, this_theta) - Z_mag  ! Shift vertically so magnetic axis is now at Z=0
-       Z_surface(i) = Zpos(r_minor, this_theta) 
+       Z_surface(i) = regcoil_Zpos(r_minor, this_theta) 
     end do
     
     print *,"Begin Fourier coefficients of plasma surface ----------"
@@ -393,23 +393,23 @@ contains
 !!$  print *," "
     print *,"  Succeeded reading and processing EFIT file."
         
-  end subroutine read_efit
+  end subroutine regcoil_read_efit
     
 ! --------------------------------------------------------------------------------
 
-  function fzero_residual(r)
+  function regcoil_efit_fzero_residual(r)
     implicit none
     
     real(dp), intent (in) :: r
-    real(dp) :: f, fzero_residual
+    real(dp) :: f, regcoil_efit_fzero_residual
     
-    call eqitem(r, this_theta, efit_psi, f)
-    fzero_residual = f - psiN_desired
-  end function fzero_residual
+    call regcoil_eqitem(r, this_theta, efit_psi, f)
+    regcoil_efit_fzero_residual = f - psiN_desired
+  end function regcoil_efit_fzero_residual
 
 ! --------------------------------------------------------------------------------
 
-  subroutine eqitem(r, thetin, f, fstar)
+  subroutine regcoil_eqitem(r, thetin, f, fstar)
     ! Given a quantity f(:,:) on the 'big' (i.e. refined) (R,Z) grid,
     ! linearly interpolate to evaluate the quantity at a given (r,theta)
     ! where theta is the angle defined by tan(theta) = (Z-Z_axis)/(R-R_axis).
@@ -422,8 +422,8 @@ contains
     real(dp) :: st, dt, sr, dr
     real(dp) :: r_pos, z_pos
     
-    r_pos = Rpos(r, thetin)
-    z_pos = Zpos(r, thetin)
+    r_pos = regcoil_Rpos(r, thetin)
+    z_pos = regcoil_Zpos(r, thetin)
     
     ! find point on R mesh
     
@@ -475,34 +475,34 @@ contains
          /abs(efit_R(istar+1)-efit_R(istar)) &
          /(efit_Z(jstar+1)-efit_Z(jstar))
     
-  end subroutine eqitem
+  end subroutine regcoil_eqitem
 
 ! -------------------------------------------------------------------------------- 
 
- function Zpos (r, theta)
+ function regcoil_Zpos (r, theta)
     implicit none
     real(dp), intent (in) :: r, theta
-    real(dp) :: Zpos
+    real(dp) :: regcoil_Zpos
     
-    Zpos = Z_mag + r * sin(theta)
-  end function Zpos
+    regcoil_Zpos = Z_mag + r * sin(theta)
+  end function regcoil_Zpos
   
 ! --------------------------------------------------------------------------------
 
-  function Rpos (r, theta)
+  function regcoil_Rpos (r, theta)
     implicit none
     real(dp), intent (in) :: r, theta
-    real(dp) :: Rpos
+    real(dp) :: regcoil_Rpos
     
-    Rpos = R_mag + r * cos(theta)
-  end function Rpos
+    regcoil_Rpos = R_mag + r * cos(theta)
+  end function regcoil_Rpos
         
   
-end module read_efit_mod
+end module regcoil_read_efit_mod
 
 ! --------------------------------------------------------------------------------
   
-subroutine sort(a, b, c, d, N)
+subroutine regcoil_sort(a, b, c, d, N)
     
   use stel_kinds
   
@@ -530,4 +530,4 @@ subroutine sort(a, b, c, d, N)
      if (sorted) exit
   enddo
   
-end subroutine sort
+end subroutine regcoil_sort

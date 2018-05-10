@@ -9,12 +9,9 @@ subroutine regcoil_init_coil_surface()
   
   implicit none
   
-  !character(*) :: nescin_filename
-  !integer :: geometry_option, iflag
   integer :: iflag
   ! These next 2 arrays are not used now, but may be needed in the future:
   real(dp), dimension(:,:,:), allocatable :: d2rdtheta2_coil, d2rdthetadzeta_coil, d2rdzeta2_coil
-  !real(dp), dimension(:,:), allocatable :: norm_normal, major_R_squared
   real(dp), dimension(:,:), allocatable :: major_R_squared
   real(dp) :: R0_to_use
   real(dp) :: angle, sinangle, cosangle, dsinangledtheta, dcosangledtheta
@@ -94,7 +91,7 @@ subroutine regcoil_init_coil_surface()
   if (geometry_option_coil==3 .or. geometry_option_coil == 4) then
      if (verbose) print *,"  Reading coil surface from nescin file ",trim(nescin_filename)
 
-     call regcoil_read_nescin(nescin_filename, r_coil, drdtheta_coil, drdzeta_coil, d2rdtheta2, d2rdthetadzeta, d2rdzeta2, &
+     call regcoil_read_nescin(nescin_filename, r_coil, drdtheta_coil, drdzeta_coil, d2rdtheta2_coil, d2rdthetadzeta_coil, d2rdzeta2_coil, &
           ntheta_coil, nzetal_coil, theta_coil, zetal_coil, .false.)
   end if
 
