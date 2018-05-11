@@ -24,10 +24,11 @@ program regcoil
   ! Initialize some of the vectors and matrices needed:
   call regcoil_read_bnorm()
   call regcoil_build_matrices()
+  call regcoil_prepare_solve()
 
   select case (general_option)
   case (1)
-     call regcoil_solve()
+     call regcoil_lambda_scan()
   case (2)
      call regcoil_compute_diagnostics_for_nescout_potential()
   case (3)

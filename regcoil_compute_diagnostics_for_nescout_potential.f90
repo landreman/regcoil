@@ -8,12 +8,7 @@ subroutine regcoil_compute_diagnostics_for_nescout_potential
   implicit none
 
   integer :: iflag, tic, toc, countrate
-  real(dp), dimension(:,:), allocatable :: matrix, this_current_potential
-  real(dp), dimension(:), allocatable :: RHS, solution
-  real(dp), dimension(:), allocatable :: KDifference_x, KDifference_y, KDifference_z
-  real(dp), dimension(:,:), allocatable :: this_K2_times_N
-  real(dp) :: factor_theta, factor_zeta
-  integer :: ilambda, itheta, izeta
+  integer :: ilambda
 
   integer :: iunit = 7, temp1, status, m, n, mm, nn, index, istat
   character(300) :: myline
@@ -22,77 +17,6 @@ subroutine regcoil_compute_diagnostics_for_nescout_potential
   character(*), parameter :: matchString_phi = "---- Phi(m,n) for"
   character(*), parameter :: matchString_phi2 = "---- end Phi(m,n)"
 
-  if (allocated(matrix)) deallocate(matrix)
-  allocate(matrix(num_basis_functions, num_basis_functions), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  if (allocated(RHS)) deallocate(RHS)
-  allocate(RHS(num_basis_functions), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  if (allocated(solution)) deallocate(solution)
-  allocate(solution(num_basis_functions), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  if (allocated(chi2_B)) deallocate(chi2_B)
-  allocate(chi2_B(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  if (allocated(chi2_K)) deallocate(chi2_K)
-  allocate(chi2_K(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  if (allocated(max_Bnormal)) deallocate(max_Bnormal)
-  allocate(max_Bnormal(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  if (allocated(max_K)) deallocate(max_K)
-  allocate(max_K(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  if (allocated(current_potential)) deallocate(current_potential)
-  allocate(current_potential(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  if (allocated(single_valued_current_potential_thetazeta)) &
-        deallocate(single_valued_current_potential_thetazeta)
-  allocate(single_valued_current_potential_thetazeta(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  if (allocated(this_current_potential)) deallocate(this_current_potential)
-  allocate(this_current_potential(ntheta_coil,nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  if (allocated(single_valued_current_potential_mn)) deallocate(single_valued_current_potential_mn)
-  allocate(single_valued_current_potential_mn(num_basis_functions,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  if (allocated(Bnormal_total)) deallocate(Bnormal_total)
-  allocate(Bnormal_total(ntheta_plasma,nzeta_plasma,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  if (allocated(K2)) deallocate(K2)
-  allocate(K2(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  if (allocated(KDifference_x)) deallocate(KDifference_x)
-  allocate(KDifference_x(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  if (allocated(KDifference_y)) deallocate(KDifference_y)
-  allocate(KDifference_y(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  if (allocated(KDifference_z)) deallocate(KDifference_z)
-  allocate(KDifference_z(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  if (allocated(this_K2_times_N)) deallocate(this_K2_times_N)
-  allocate(this_K2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-
-  factor_zeta  = net_poloidal_current_Amperes / twopi
-  factor_theta = net_toroidal_current_Amperes / twopi
 
   matrix = matrix_B
   RHS    =    RHS_B
@@ -175,44 +99,7 @@ subroutine regcoil_compute_diagnostics_for_nescout_potential
      end if
      print *,"Successfully read current potential"
 
-     call system_clock(tic,countrate)
-
-     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-     ! Now compute diagnostics.
-     ! This code should be verbatim copied from regcoil_solve.f90
-     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-     single_valued_current_potential_mn(:,ilambda) = solution
-     this_current_potential = reshape(matmul(basis_functions, solution), (/ ntheta_coil, nzeta_coil /)) ! Could use BLAS2 for this line for extra speed.
-     single_valued_current_potential_thetazeta(:,:,ilambda) = this_current_potential
-     do izeta = 1,nzeta_coil
-        do itheta = 1,ntheta_coil
-           this_current_potential(itheta,izeta) = this_current_potential(itheta,izeta) &
-                + factor_zeta*zeta_coil(izeta) + factor_theta*theta_coil(itheta)
-        end do
-     end do
-     current_potential(:,:,ilambda) = this_current_potential
-
-     KDifference_x = d_x - matmul(f_x, solution)
-     KDifference_y = d_y - matmul(f_y, solution)
-     KDifference_z = d_z - matmul(f_z, solution)
-     this_K2_times_N = reshape(KDifference_x*KDifference_x + KDifference_y*KDifference_y + KDifference_z*KDifference_z, (/ ntheta_coil, nzeta_coil /)) &
-          / norm_normal_coil
-     chi2_K(ilambda) = nfp * dtheta_coil * dzeta_coil * sum(this_K2_times_N)
-     K2(:,:,ilambda) = this_K2_times_N / norm_normal_coil
-
-     Bnormal_total(:,:,ilambda) = (reshape(matmul(g,solution),(/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma) &
-          + Bnormal_from_plasma_current + Bnormal_from_net_coil_currents
-
-     max_Bnormal(ilambda) = maxval(abs(Bnormal_total(:,:,ilambda)))
-     max_K(ilambda) = sqrt(maxval(K2(:,:,ilambda)))
-
-     chi2_B(ilambda) = nfp * dtheta_plasma * dzeta_plasma &
-          * sum(Bnormal_total(:,:,ilambda) * Bnormal_total(:,:,ilambda) * norm_normal_plasma)
-
-     call system_clock(toc)
-     print *,"  Diagnostics: ",real(toc-tic)/countrate," sec."
-     print *,"  chi2_B:",chi2_B(ilambda),"chi2_K:",chi2_K(ilambda)
+     call regcoil_diagnostics(ilambda)
 
   end do outerLoop
 

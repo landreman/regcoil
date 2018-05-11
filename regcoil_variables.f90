@@ -82,6 +82,16 @@ module regcoil_variables
   real(dp) :: lambda_min = 1.0d-19, lambda_max = 1.0d-13
   real(dp), dimension(:), allocatable :: lambda
 
+  real(dp), dimension(:,:), allocatable :: matrix, this_current_potential
+  real(dp), dimension(:), allocatable :: RHS, solution
+  real(dp), dimension(:), allocatable :: KDifference_x, KDifference_y, KDifference_z
+  real(dp), dimension(:,:), allocatable :: this_K2_times_N
+
+  ! Variables needed by LAPACK:
+  integer :: LAPACK_INFO, LAPACK_LWORK
+  real(dp), dimension(:), allocatable :: LAPACK_WORK
+  integer, dimension(:), allocatable :: LAPACK_IPIV
+
   integer :: target_option = 1
   real(dp) :: current_density_target = 8.0d+6
   real(dp) :: lambda_search_tolerance = 1.0d-5
