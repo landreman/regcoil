@@ -11,8 +11,18 @@ subroutine regcoil_solve(ilambda)
   call system_clock(tic,countrate)
 
   ! The scaling below ensures that matrix and RHS are O(1) regardless of whether lambda is >> 1 or << 1.
-  matrix = (1 / (1 + lambda(ilambda))) * matrix_B + (lambda(ilambda) / (1 + lambda(ilambda))) * matrix_K
-  RHS    = (1 / (1 + lambda(ilambda))) *    RHS_B + (lambda(ilambda) / (1 + lambda(ilambda))) *    RHS_K
+  select case (regularization_term_option)
+  case (1)
+     ! Regularization term is chi^2_K
+     matrix = (1 / (1 + lambda(ilambda))) * matrix_B + (lambda(ilambda) / (1 + lambda(ilambda))) * matrix_K
+     RHS    = (1 / (1 + lambda(ilambda))) *    RHS_B + (lambda(ilambda) / (1 + lambda(ilambda))) *    RHS_K
+  case (2)
+     ! Regularization term is \int d^2a (grad^2 Phi)^2 where grad^2 = Laplace-Beltrami operator
+     matrix = (1 / (1 + lambda(ilambda))) * matrix_B + (lambda(ilambda) / (1 + lambda(ilambda))) * matrix_Laplace_Beltrami
+     RHS    = (1 / (1 + lambda(ilambda))) *    RHS_B + (lambda(ilambda) / (1 + lambda(ilambda))) *    RHS_Laplace_Beltrami
+  case default
+     print *,"Error! Invalid regularization_term_option:",regularization_term_option
+  end select
 
   call system_clock(toc)
   if (verbose) print *,"  Additions: ",real(toc-tic)/countrate," sec."

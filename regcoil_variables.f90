@@ -7,6 +7,8 @@ module regcoil_variables
   integer :: general_option=1
   logical :: verbose = .true.
 
+  integer :: regularization_term_option = 1
+
   integer :: ntheta_plasma=64, nzeta_plasma=64, nzetal_plasma
   integer :: ntheta_coil=64, nzeta_coil=64, nzetal_coil
 
@@ -27,22 +29,23 @@ module regcoil_variables
   real(dp), dimension(:), allocatable :: theta_plasma, zeta_plasma, zetal_plasma
   real(dp), dimension(:,:,:), allocatable :: r_plasma, drdtheta_plasma, drdzeta_plasma, normal_plasma
 
-  real(dp), dimension(:,:), allocatable :: g, f_x, f_y, f_z
-  real(dp), dimension(:), allocatable :: h, d_x, d_y, d_z
+  real(dp), dimension(:,:), allocatable :: g, f_x, f_y, f_z, f_Laplace_Beltrami
+  real(dp), dimension(:), allocatable :: h, d_x, d_y, d_z, d_Laplace_Beltrami
 
   real(dp), dimension(:,:), allocatable :: Bnormal_from_plasma_current
   real(dp), dimension(:,:), allocatable :: Bnormal_from_net_coil_currents
-  real(dp), dimension(:,:), allocatable :: matrix_B, matrix_K, inductance
+  real(dp), dimension(:,:), allocatable :: matrix_B, matrix_K, inductance, matrix_Laplace_Beltrami
   real(dp), dimension(:,:), allocatable :: single_valued_current_potential_mn
   real(dp), dimension(:,:,:), allocatable :: single_valued_current_potential_thetazeta
   real(dp), dimension(:,:,:), allocatable :: current_potential
-  real(dp), dimension(:), allocatable :: RHS_B, RHS_K
+  real(dp), dimension(:), allocatable :: RHS_B, RHS_K, RHS_Laplace_Beltrami
   real(dp), dimension(:,:,:), allocatable :: Bnormal_total
-  real(dp), dimension(:,:,:), allocatable :: K2
-  real(dp), dimension(:), allocatable :: chi2_B, chi2_K, max_Bnormal, max_K
+  real(dp), dimension(:,:,:), allocatable :: K2, Laplace_Beltrami2
+  real(dp), dimension(:), allocatable :: chi2_B, chi2_K, max_Bnormal, max_K, chi2_Laplace_Beltrami
 
   real(dp), dimension(:), allocatable :: theta_coil, zeta_coil, zetal_coil
   real(dp), dimension(:,:,:), allocatable :: r_coil, drdtheta_coil, drdzeta_coil, normal_coil
+  real(dp), dimension(:,:,:), allocatable :: d2rdtheta2_coil, d2rdthetadzeta_coil, d2rdzeta2_coil
 
   real(dp), dimension(:,:), allocatable :: norm_normal_plasma, norm_normal_coil
   real(dp), dimension(:,:), allocatable :: basis_functions
@@ -84,8 +87,8 @@ module regcoil_variables
 
   real(dp), dimension(:,:), allocatable :: matrix, this_current_potential
   real(dp), dimension(:), allocatable :: RHS, solution
-  real(dp), dimension(:), allocatable :: KDifference_x, KDifference_y, KDifference_z
-  real(dp), dimension(:,:), allocatable :: this_K2_times_N
+  real(dp), dimension(:), allocatable :: KDifference_x, KDifference_y, KDifference_z, KDifference_Laplace_Beltrami
+  real(dp), dimension(:,:), allocatable :: this_K2_times_N, this_Laplace_Beltrami2_times_N
 
   ! Variables needed by LAPACK:
   integer :: LAPACK_INFO, LAPACK_LWORK
@@ -118,7 +121,7 @@ module regcoil_variables
        mpol_transform_refinement, ntor_transform_refinement, &
        net_poloidal_current_Amperes, net_toroidal_current_Amperes, &
        load_bnorm, bnorm_filename, &
-       shape_filename_plasma, nlambda, lambda_min, lambda_max, general_option, verbose, nescout_filename, &
+       shape_filename_plasma, nlambda, lambda_min, lambda_max, general_option, regularization_term_option, verbose, nescout_filename, &
        target_option, current_density_target, lambda_search_tolerance
 
 end module regcoil_variables

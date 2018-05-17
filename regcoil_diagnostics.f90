@@ -31,10 +31,15 @@ subroutine regcoil_diagnostics(ilambda)
   KDifference_x = d_x - matmul(f_x, solution)
   KDifference_y = d_y - matmul(f_y, solution)
   KDifference_z = d_z - matmul(f_z, solution)
+  KDifference_Laplace_Beltrami = d_Laplace_Beltrami - matmul(f_Laplace_Beltrami, solution)
   this_K2_times_N = reshape(KDifference_x*KDifference_x + KDifference_y*KDifference_y + KDifference_z*KDifference_z, (/ ntheta_coil, nzeta_coil /)) &
+       / norm_normal_coil
+  this_Laplace_Beltrami2_times_N = reshape(KDifference_Laplace_Beltrami*KDifference_Laplace_Beltrami, (/ ntheta_coil, nzeta_coil /)) &
        / norm_normal_coil
   chi2_K(ilambda) = nfp * dtheta_coil * dzeta_coil * sum(this_K2_times_N)
   K2(:,:,ilambda) = this_K2_times_N / norm_normal_coil
+  chi2_Laplace_Beltrami(ilambda) = nfp * dtheta_coil * dzeta_coil * sum(this_Laplace_Beltrami2_times_N)
+  Laplace_Beltrami2(:,:,ilambda) = this_Laplace_Beltrami2_times_N / norm_normal_coil
   
   Bnormal_total(:,:,ilambda) = (reshape(matmul(g,solution),(/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma) &
        + Bnormal_from_plasma_current + Bnormal_from_net_coil_currents
@@ -47,7 +52,7 @@ subroutine regcoil_diagnostics(ilambda)
   
   call system_clock(toc)
   if (verbose) print *,"  Diagnostics: ",real(toc-tic)/countrate," sec."
-  if (verbose) print "(a,es10.3,a,es10.3)","   chi2_B:",chi2_B(ilambda),",  chi2_K:",chi2_K(ilambda)
+  if (verbose) print "(a,es10.3,a,es10.3,a,es10.3)","   chi2_B:",chi2_B(ilambda),",  chi2_K:",chi2_K(ilambda),",  chi2_Laplace_Beltrami:",chi2_Laplace_Beltrami(ilambda)
   if (verbose) print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda),",  rms K:",sqrt(chi2_K(ilambda)/area_coil)
 
 

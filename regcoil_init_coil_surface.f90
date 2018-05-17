@@ -10,8 +10,6 @@ subroutine regcoil_init_coil_surface()
   implicit none
   
   integer :: iflag
-  ! These next 2 arrays are not used now, but may be needed in the future:
-  real(dp), dimension(:,:,:), allocatable :: d2rdtheta2_coil, d2rdthetadzeta_coil, d2rdzeta2_coil
   real(dp), dimension(:,:), allocatable :: major_R_squared
   real(dp) :: R0_to_use
   real(dp) :: angle, sinangle, cosangle, dsinangledtheta, dcosangledtheta
@@ -69,21 +67,21 @@ subroutine regcoil_init_coil_surface()
   allocate(normal_coil(3,ntheta_coil,nzetal_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 7'
 
+  if (allocated(d2rdtheta2_coil)) deallocate(d2rdtheta2_coil)
+  allocate(d2rdtheta2_coil(3,ntheta_coil,nzetal_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 8'
+
+  if (allocated(d2rdthetadzeta_coil)) deallocate(d2rdthetadzeta_coil)
+  allocate(d2rdthetadzeta_coil(3,ntheta_coil,nzetal_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 9'
+
+  if (allocated(d2rdzeta2_coil)) deallocate(d2rdzeta2_coil)
+  allocate(d2rdzeta2_coil(3,ntheta_coil,nzetal_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 10'
+
   r_coil = 0
   drdtheta_coil = 0
   drdzeta_coil = 0
-
-  ! We do not use the 2nd derivatives presently, but these placeholders are here in case we need them in the future:
-  if (allocated(d2rdtheta2_coil)) deallocate(d2rdtheta2_coil)
-  allocate(d2rdtheta2_coil(3,ntheta_coil,nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 8'
-  if (allocated(d2rdthetadzeta_coil)) deallocate(d2rdthetadzeta_coil)
-  allocate(d2rdthetadzeta_coil(3,ntheta_coil,nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 9'
-  if (allocated(d2rdzeta2_coil)) deallocate(d2rdzeta2_coil)
-  allocate(d2rdzeta2_coil(3,ntheta_coil,nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 10'
-
   d2rdtheta2_coil = 0
   d2rdthetadzeta_coil = 0
   d2rdzeta2_coil = 0
@@ -92,7 +90,7 @@ subroutine regcoil_init_coil_surface()
      if (verbose) print *,"  Reading coil surface from nescin file ",trim(nescin_filename)
 
      call regcoil_read_nescin(nescin_filename, r_coil, drdtheta_coil, drdzeta_coil, d2rdtheta2_coil, d2rdthetadzeta_coil, d2rdzeta2_coil, &
-          ntheta_coil, nzetal_coil, theta_coil, zetal_coil, .false.)
+          ntheta_coil, nzetal_coil, theta_coil, zetal_coil, .true.)
   end if
 
 
@@ -135,27 +133,26 @@ subroutine regcoil_init_coil_surface()
            
            drdzeta_coil(1,itheta,izeta) = (R0_to_use + a_coil * cosangle) * dcosangle2dzeta
            drdzeta_coil(2,itheta,izeta) = (R0_to_use + a_coil * cosangle) * dsinangle2dzeta
-           !drdzeta(3,itheta,izeta) = 0, so no equation needed for it here.
+           !drdzeta_coil(3,itheta,izeta) = 0, so no equation needed for it here.
            
-           ! This next bit is remarked out since we don't need 2nd derivatives presently
-!!$               if (transfer_matrix_option==2 .and. which_surface == 1) then
-!!$                  d2rdu2(1,itheta,izeta) = a * d2cosangledu2 * cosangle2
-!!$                  d2rdu2(2,itheta,izeta) = a * d2cosangledu2 * sinangle2
-!!$                  d2rdu2(3,itheta,izeta) = a * d2sinangledu2
-!!$
-!!$                  d2rdudzeta(1,itheta,izeta) = a * dcosangledu * dcosangle2dv
-!!$                  d2rdudzeta(2,itheta,izeta) = a * dcosangledu * dsinangle2dv
-!!$                  !d2rdudzeta(3,itheta,izeta) = 0, so no equation needed for it here.
-!!$
-!!$                  d2rdv2(1,itheta,izeta) = (R0_to_use + a * cosangle) * d2cosangle2dv2
-!!$                  d2rdv2(2,itheta,izeta) = (R0_to_use + a * cosangle) * d2sinangle2dv2
-!!$                  !d2rdv2(3,itheta,izeta) = 0, so no equation needed for it here.
-!!$               end if
+           d2rdtheta2_coil(1,itheta,izeta) = a_coil * d2cosangledtheta2 * cosangle2
+           d2rdtheta2_coil(2,itheta,izeta) = a_coil * d2cosangledtheta2 * sinangle2
+           d2rdtheta2_coil(3,itheta,izeta) = a_coil * d2sinangledtheta2
+
+           d2rdthetadzeta_coil(1,itheta,izeta) = a_coil * dcosangledtheta * dcosangle2dzeta
+           d2rdthetadzeta_coil(2,itheta,izeta) = a_coil * dcosangledtheta * dsinangle2dzeta
+           !d2rdthetadzeta_coil(3,itheta,izeta) = 0, so no equation needed for it here.
+
+           d2rdzeta2_coil(1,itheta,izeta) = (R0_to_use + a_coil * cosangle) * d2cosangle2dzeta2
+           d2rdzeta2_coil(2,itheta,izeta) = (R0_to_use + a_coil * cosangle) * d2sinangle2dzeta2
+           !d2rdzeta2_coil(3,itheta,izeta) = 0, so no equation needed for it here.
         end do
      end do
      
   case (2,4)
      
+     if (regularization_term_option==2) stop "geometry_option_coil 2 and 4 are not yet compatible with regularization_term_option 2"
+
      if (geometry_option_coil==2) then
         if (verbose) print "(a,f10.4,a)","   Constructing a surface offset from the plasma by ",separation," meters."
      else

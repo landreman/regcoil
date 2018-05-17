@@ -55,9 +55,11 @@ subroutine regcoil_write_output
        vn_h = "h", &
        vn_RHS_B = "RHS_B", &
        vn_RHS_K = "RHS_K", &
+       vn_RHS_Laplace_Beltrami = "RHS_Laplace_Beltrami", &
        vn_lambda = "lambda", &
        vn_chi2_B = "chi2_B", &
        vn_chi2_K = "chi2_K", &
+       vn_chi2_Laplace_Beltrami = "chi2_Laplace_Beltrami", &
        vn_max_Bnormal = "max_Bnormal", &
        vn_max_K = "max_K"
 
@@ -86,7 +88,8 @@ subroutine regcoil_write_output
        vn_single_valued_current_potential_thetazeta = "single_valued_current_potential_thetazeta", &
        vn_current_potential = "current_potential", &
        vn_Bnormal_total = "Bnormal_total", &
-       vn_K2 = "K2"
+       vn_K2 = "K2", &
+       vn_Laplace_Beltrami2 = "Laplace_Beltrami2"
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Now create variables that name the dimensions.
@@ -258,6 +261,7 @@ subroutine regcoil_write_output
   call cdf_define(ncid, vn_h, h, dimname=nthetanzeta_plasma_dim)
   call cdf_define(ncid, vn_RHS_B, RHS_B, dimname=num_basis_functions_dim)
   call cdf_define(ncid, vn_RHS_K, RHS_K, dimname=num_basis_functions_dim)
+  call cdf_define(ncid, vn_RHS_Laplace_Beltrami, RHS_Laplace_Beltrami, dimname=num_basis_functions_dim)
 
   call cdf_define(ncid, vn_lambda, lambda(1:Nlambda), dimname=nlambda_dim)
   call cdf_setatt(ncid, vn_lambda, 'Values of the regularization parameter that were used, in SI units (Tesla^2 meter^2 / Ampere^2)')
@@ -267,6 +271,9 @@ subroutine regcoil_write_output
 
   call cdf_define(ncid, vn_chi2_K, chi2_K(1:Nlambda), dimname=nlambda_dim)
   call cdf_setatt(ncid, vn_chi2_K, 'Values of chi^2_K (the area integral over the coil winding surface of current density squared) that resulted for each value of lambda, in SI units (Ampere^2)')
+
+  call cdf_define(ncid, vn_chi2_Laplace_Beltrami, chi2_Laplace_Beltrami(1:Nlambda), dimname=nlambda_dim)
+  call cdf_setatt(ncid, vn_chi2_Laplace_Beltrami, '')
 
   call cdf_define(ncid, vn_max_Bnormal, max_Bnormal(1:Nlambda), dimname=nlambda_dim)
   call cdf_setatt(ncid, vn_max_Bnormal, 'Maximum (over the plasma surface) magnetic field normal to the target plasma shape that resulted for each value of lambda, in Tesla.')
@@ -329,11 +336,11 @@ subroutine regcoil_write_output
 
   call cdf_define(ncid, vn_single_valued_current_potential_thetazeta, single_valued_current_potential_thetazeta(:,:,1:Nlambda), &
        dimname=ntheta_nzeta_coil_nlambda_dim)
-  call cdf_setatt(ncid, vn_K2, 'Periodic (single-valued) term in the current potential on the coil winding surface, in units of Amperes, ' // &
+  call cdf_setatt(ncid, vn_single_valued_current_potential_thetazeta, 'Periodic (single-valued) term in the current potential on the coil winding surface, in units of Amperes, ' // &
        'for each value of the regularization parameter lambda considered.')
 
   call cdf_define(ncid, vn_current_potential, current_potential(:,:,1:Nlambda), dimname=ntheta_nzeta_coil_nlambda_dim)
-  call cdf_setatt(ncid, vn_K2, 'Total (multiple-valued) current potential on the coil winding surface, in units of Amperes, ' // &
+  call cdf_setatt(ncid, vn_current_potential, 'Total (multiple-valued) current potential on the coil winding surface, in units of Amperes, ' // &
        'for each value of the regularization parameter lambda considered.')
 
   call cdf_define(ncid, vn_Bnormal_total, Bnormal_total(:,:,1:Nlambda), dimname=ntheta_nzeta_plasma_nlambda_dim)
@@ -343,6 +350,9 @@ subroutine regcoil_write_output
   call cdf_define(ncid, vn_K2, K2(:,:,1:Nlambda), dimname=ntheta_nzeta_coil_nlambda_dim)
   call cdf_setatt(ncid, vn_K2, 'Squared current density on the coil winding surface, in units of Amperes^2/meter^2, ' // &
        'for each value of the regularization parameter lambda considered.')
+
+  call cdf_define(ncid, vn_Laplace_Beltrami2, Laplace_Beltrami2(:,:,1:Nlambda), dimname=ntheta_nzeta_coil_nlambda_dim)
+  call cdf_setatt(ncid, vn_Laplace_Beltrami2, '')
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
   ! Done with cdf_define calls. Now write the data.
@@ -393,9 +403,11 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_h, h)
   call cdf_write(ncid, vn_RHS_B, RHS_B)
   call cdf_write(ncid, vn_RHS_K, RHS_K)
+  call cdf_write(ncid, vn_RHS_Laplace_Beltrami, RHS_Laplace_Beltrami)
   call cdf_write(ncid, vn_lambda, lambda(1:Nlambda))
   call cdf_write(ncid, vn_chi2_B, chi2_B(1:Nlambda))
   call cdf_write(ncid, vn_chi2_K, chi2_K(1:Nlambda))
+  call cdf_write(ncid, vn_chi2_Laplace_Beltrami, chi2_Laplace_Beltrami(1:Nlambda))
   call cdf_write(ncid, vn_max_Bnormal, max_Bnormal(1:Nlambda))
   call cdf_write(ncid, vn_max_K, max_K(1:Nlambda))
 
@@ -436,6 +448,7 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_current_potential, current_potential(:,:,1:Nlambda))
   call cdf_write(ncid, vn_Bnormal_total, Bnormal_total(:,:,1:Nlambda))
   call cdf_write(ncid, vn_K2, K2(:,:,1:Nlambda))
+  call cdf_write(ncid, vn_Laplace_Beltrami2, Laplace_Beltrami2(:,:,1:Nlambda))
 
   ! Finish up:
   call cdf_close(ncid)

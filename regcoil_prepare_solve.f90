@@ -34,6 +34,10 @@ subroutine regcoil_prepare_solve()
   allocate(chi2_K(nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 7!'
 
+  if (allocated(chi2_Laplace_Beltrami)) deallocate(chi2_Laplace_Beltrami)
+  allocate(chi2_Laplace_Beltrami(nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 7!'
+
   if (allocated(max_Bnormal)) deallocate(max_Bnormal)
   allocate(max_Bnormal(nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 8!'
@@ -68,6 +72,10 @@ subroutine regcoil_prepare_solve()
   allocate(K2(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 15!'
 
+  if (allocated(Laplace_Beltrami2)) deallocate(Laplace_Beltrami2)
+  allocate(Laplace_Beltrami2(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 15!'
+
   if (allocated(KDifference_x)) deallocate(KDifference_x)
   allocate(KDifference_x(ntheta_coil*nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 16!'
@@ -80,8 +88,16 @@ subroutine regcoil_prepare_solve()
   allocate(KDifference_z(ntheta_coil*nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 18!'
 
+  if (allocated(KDifference_Laplace_Beltrami)) deallocate(KDifference_Laplace_Beltrami)
+  allocate(KDifference_Laplace_Beltrami(ntheta_coil*nzeta_coil), stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 18!'
+
   if (allocated(this_K2_times_N)) deallocate(this_K2_times_N)
   allocate(this_K2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 19!'
+
+  if (allocated(this_Laplace_Beltrami2_times_N)) deallocate(this_Laplace_Beltrami2_times_N)
+  allocate(this_Laplace_Beltrami2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 19!'
 
 
