@@ -31,6 +31,7 @@ def maximizeWindow():
 lambda_many = []
 chi2_B_many = []
 chi2_K_many = []
+chi2_Laplace_Beltrami_many = []
 max_B_many = []
 max_K_many = []
 max_lambda = 0
@@ -64,6 +65,11 @@ for whichFile in range(1,len(sys.argv)):
         chi2_K_many.append(f.variables['chi2_J'][()][permutation])
         max_K_many.append(f.variables['max_J'][()][permutation])
 
+    try:
+        chi2_Laplace_Beltrami_many.append(f.variables['chi2_Laplace_Beltrami'][()][permutation])
+    except:
+        chi2_Laplace_Beltrami_many.append([])
+
     f.close()
 
     print "Read data from file "+filename
@@ -74,19 +80,26 @@ for whichFile in range(1,len(sys.argv)):
 # Make plots
 ##########################################################
 
-for whichFigure in range(2):
+for whichFigure in range(3):
     if whichFigure==0:
-        data_B = chi2_B_many
         data_K = chi2_K_many
-        labelText = 'chi2_'
+        label_K = 'chi2_K'
+        data_B = chi2_B_many
+        label_B = 'chi2_B'
+    elif whichFigure==1:
+        data_K = chi2_Laplace_Beltrami_many
+        label_K = 'chi2_Laplace_Beltrami'
+        data_B = chi2_B_many
+        label_B = 'chi2_B'
     else:
-        data_B = max_B_many
         data_K = max_K_many
-        labelText = 'max '
+        label_K = 'max K'
+        data_B = max_B_many
+        label_B = 'max B'
 
 
     matplotlib.rcParams.update({'font.size': 9})
-    fig = plt.figure()
+    fig = plt.figure(figsize=(16,7))
     fig.patch.set_facecolor('white')
 
     numRows=2;
@@ -96,8 +109,8 @@ for whichFigure in range(2):
     for whichFile in range(len(sys.argv)-1):
         filename = sys.argv[whichFile+1]
         plt.loglog(data_K[whichFile],data_B[whichFile],'.-',label=filename)
-    plt.xlabel(labelText+'K [A^2]')
-    plt.ylabel(labelText+'B [T^2 m^2]')
+    plt.xlabel(label_K)
+    plt.ylabel(label_B)
     #plt.legend(frameon=False,prop=dict(size=8),loc=0)
     plt.grid(True)
 
@@ -106,7 +119,7 @@ for whichFigure in range(2):
         filename = sys.argv[whichFile+1]
         plt.loglog(lambda_many[whichFile],data_B[whichFile],'.-',label=filename)
     plt.xlabel('lambda [T^2 m^2 / A^2]')
-    plt.ylabel(labelText+'B [T^2 m^2]')
+    plt.ylabel(label_B)
     #plt.legend(frameon=False,prop=dict(size=8),loc=0)
     plt.grid(True)
 
@@ -115,7 +128,7 @@ for whichFigure in range(2):
         filename = sys.argv[whichFile+1]
         plt.semilogy(lambda_many[whichFile],data_B[whichFile],'.-',label=filename)
     plt.xlabel('lambda [T^2 m^2 / A^2]')
-    plt.ylabel(labelText+'B [T^2 m^2]')
+    plt.ylabel(label_B)
     #plt.legend(frameon=False,prop=dict(size=8),loc=0)
     plt.grid(True)
     plt.xlim(-max_lambda*0.05,max_lambda*1.05)
@@ -125,7 +138,7 @@ for whichFigure in range(2):
         filename = sys.argv[whichFile+1]
         plt.loglog(lambda_many[whichFile],data_K[whichFile],'.-',label=filename)
     plt.xlabel('lambda [T^2 m^2 / A^2]')
-    plt.ylabel(labelText+'K [A^2]')
+    plt.ylabel(label_K)
     #plt.legend(frameon=False,prop=dict(size=8),loc=0)
     plt.grid(True)
 
@@ -134,7 +147,7 @@ for whichFigure in range(2):
         filename = sys.argv[whichFile+1]
         plt.semilogy(lambda_many[whichFile],data_K[whichFile],'.-',label=filename)
     plt.xlabel('lambda [T^2 m^2 / A^2]')
-    plt.ylabel(labelText+'K [A^2]')
+    plt.ylabel(label_K)
     plt.legend(frameon=False,prop=dict(size=8),loc=0)
     plt.grid(True)
     plt.xlim(-max_lambda*0.05,max_lambda*1.05)

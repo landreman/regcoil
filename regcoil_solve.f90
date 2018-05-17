@@ -10,7 +10,7 @@ subroutine regcoil_solve(ilambda)
 
   call system_clock(tic,countrate)
 
-  ! The scaling below ensures that matrix and RHS are O(1) regardless of whether lambda is >> 1 or << 1.
+  ! The scaling of the terms below by 1/(1+lambda) ensures that matrix and RHS are O(1) regardless of whether lambda is >> 1 or << 1.
   select case (regularization_term_option)
   case (1)
      ! Regularization term is chi^2_K

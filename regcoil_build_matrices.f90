@@ -185,7 +185,7 @@ subroutine regcoil_build_matrices()
   d_z = reshape((net_poloidal_current_Amperes * drdtheta_coil(3,:,1:nzeta_coil) - net_toroidal_current_Amperes * drdzeta_coil(3,:,1:nzeta_coil)) / twopi, &
        (/ ntheta_coil*nzeta_coil /))
 
-  d_Laplace_Beltrami = reshape((net_poloidal_current_Amperes / twopi) * Laplace_Beltrami_d_Phi_d_zeta_coefficient &
+  d_Laplace_Beltrami = -reshape((net_poloidal_current_Amperes / twopi) * Laplace_Beltrami_d_Phi_d_zeta_coefficient &
        + (net_toroidal_current_Amperes / twopi) * Laplace_Beltrami_d_Phi_d_theta_coefficient, (/ ntheta_coil*nzeta_coil /))
 
   select case (symmetry_option)
@@ -229,7 +229,7 @@ subroutine regcoil_build_matrices()
                       - xn_coil(imn) * Laplace_Beltrami_d_Phi_d_zeta_coefficient(itheta_coil, izeta_coil)) * cosangle &
                       + (   xm_coil(imn) * xm_coil(imn) * g_zeta_zeta(  itheta_coil, izeta_coil) &
                       +     xn_coil(imn) * xn_coil(imn) * g_theta_theta(itheta_coil, izeta_coil) &
-                      - 2 * xm_coil(imn) * xn_coil(imn) * g_theta_zeta( itheta_coil, izeta_coil) ) * sinangle
+                      + 2 * xm_coil(imn) * xn_coil(imn) * g_theta_zeta( itheta_coil, izeta_coil) ) * (-sinangle) / norm_normal_coil(itheta_coil, izeta_coil)
               else
                  basis_functions(index_coil, imn+offset) = cosangle
                  f_x(index_coil, imn+offset) = -sinangle*(xn_coil(imn)*drdtheta_coil(1,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(1,itheta_coil,izeta_coil))
@@ -240,7 +240,7 @@ subroutine regcoil_build_matrices()
                       - xn_coil(imn) * Laplace_Beltrami_d_Phi_d_zeta_coefficient(itheta_coil, izeta_coil)) * (-sinangle) &
                       + (   xm_coil(imn) * xm_coil(imn) * g_zeta_zeta(  itheta_coil, izeta_coil) &
                       +     xn_coil(imn) * xn_coil(imn) * g_theta_theta(itheta_coil, izeta_coil) &
-                      - 2 * xm_coil(imn) * xn_coil(imn) * g_theta_zeta( itheta_coil, izeta_coil) ) * cosangle
+                      + 2 * xm_coil(imn) * xn_coil(imn) * g_theta_zeta( itheta_coil, izeta_coil) ) * (-cosangle) / norm_normal_coil(itheta_coil, izeta_coil)
               end if
            end do
         end do
