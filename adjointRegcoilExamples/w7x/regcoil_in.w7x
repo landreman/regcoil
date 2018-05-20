@@ -1,0 +1,51 @@
+&regcoil
+general_option = 5
+symmetry_option = 1
+load_bnorm=.f.
+
+nlambda = 40
+target_option = 8
+current_density_target = 7700000.0
+target_option_p = 1e4
+
+max_k_p = 1e4
+
+coil_plasma_dist_lse_p=1e4
+
+ntheta_plasma=64
+ntheta_coil  =64
+nzeta_plasma =64
+nzeta_coil   =64
+
+mpol_coil =6
+ntor_coil =6
+
+geometry_option_plasma = 3
+wout_filename = "wout_d23p4_tm.nc"
+
+geometry_option_coil= 3
+nescin_filename = "nescin.w7x_winding_surface_from_Drevlak_0"
+
+sensitivity_option = 4
+fixed_norm_sensitivity_option = 2
+nmax_sensitivity = 4
+mmax_sensitivity = 6
+
+load_bnorm = .true.
+bnorm_filename = "bnorm.d23p4_tm" 
+/
+
+&regcoilOptimize
+alphaV = 0.5 ! Volume
+alphaS = 0.24 ! S_p
+alphaB = 1.0 ! chi2_B
+alphaK = 1.6e-6 ! rms_K 
+d_min = 0.37
+nlopt_method = 'nlopt.LD_CCSAQ'
+constraint_max = 0
+constraint_min = 1
+omega_min = -1.0
+omega_max = 6.0
+nmax = 4
+mmax = 6
+/

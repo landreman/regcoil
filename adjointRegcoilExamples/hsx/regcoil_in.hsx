@@ -1,0 +1,53 @@
+&regcoil
+general_option = 5
+symmetry_option = 1
+load_bnorm=.f.
+
+nlambda = 40
+!lambda_min = 1.898E-13
+!lambda_max = 1.898E-13
+target_option = 8
+current_density_target = 1840000.0
+target_option_p = 1e3
+max_k_p = 1e4
+
+coil_plasma_dist_lse_p=1e4
+
+ntheta_plasma=64
+ntheta_coil  =64
+nzeta_plasma =64
+nzeta_coil   =64
+
+mpol_coil =6
+ntor_coil =6
+
+geometry_option_plasma = 2
+wout_filename = "wout_hsxt.nc"
+
+geometry_option_coil= 3
+nescin_filename = "nescin_clone_actual.txt.changesign_0"
+
+sensitivity_option = 4
+fixed_norm_sensitivity_option = 2
+nmax_sensitivity = 5
+mmax_sensitivity = 4
+compute_curvature = 1
+
+/
+
+&regcoilOptimize
+alphaV = 3.127e-4 ! Volume
+alphaS = 0 ! S_p
+alphaB = 1 ! chi2_B
+alphaK = 3e-10 ! rms_K 
+scaleFactor = 1e5
+d_min = 0.144
+nlopt_method = 'nlopt.LD_CCSAQ'
+constraint_max = 0
+constraint_min = 1
+omega_min = -0.5
+omega_max = 1.5
+nmax = 4
+mmax = 5
+/
+
