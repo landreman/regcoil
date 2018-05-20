@@ -1,4 +1,4 @@
-\chapter{Input Parameters}
+input\chapter{Input Parameters}
 \label{ch:input}
 
 \newcommand{\param}[5]{{\setlength{\parindent}{0cm} {\ttfamily \bfseries \hypertarget{#1}{#1}}\\{\it Type}: #2\\{\it Default}: #3\\{\it When it matters}: #4\\{\it Meaning}: #5}}
@@ -490,7 +490,7 @@ surface integral.
 \param{current\_density\_target}
 {real}
 {8.0e6}
-{Only when \parlink{general\_option}=4 or 5.}
+{Only when \parlink{general\_option}$>3$.}
 {The value of root-mean-square or maximum surface current density used to determine $\lambda$.
 See \parlink{target\_option}.
 As with all other input and output quantities, this surface current density is specified in SI units,
@@ -599,14 +599,12 @@ Number of values of $p$ to use for compute the $L^p$ norm of the current density
 {1}
 {When \parlink{sensitivity\_option} $> 1$.}
 {Symmetry assumed when computed sensitivity to coil geometry parameters. This does not need to be the same as \parlink{symmetry\_option}. \\
-{\ttfamily sensitivity\_symmetry\_option} = 1: Force the single-valued part of the current potential
-to be odd in $\theta$ and $\zeta$. This option corresponds to stellarator symmetry.\\
+{\ttfamily sensitivity\_symmetry\_option} = 1: Only compute derivatives with respect to $r_{mn}^c$ and $z_{mn}^s$ of the winding surface using the \texttt{NESCIN} convention. This option corresponds to stellarator symmetry.\\
 
-{\ttfamily sensitivity\_symmetry\_option} = 2: Force the single-valued part of the current potential
-to be even in $\theta$ and $\zeta$. I'm not sure why you would ever use this option,
+{\ttfamily sensitivity\_symmetry\_option} = 2: Only compute derivatives with respect to $r_{mn}^s$ and $z_{mn}^c$ of the winding surface using the \texttt{NESCIN} convention. I'm not sure why you would ever use this option,
 but it is available for completeness.\\
 
-{\ttfamily sensitivity\_symmetry\_option} = 3: No symmetry in the current potential is imposed.
+{\ttfamily sensitivity\_symmetry\_option} = 3: No symmetry in the winding surface is imposed. 
 }
 
 \myhrule
@@ -614,9 +612,8 @@ but it is available for completeness.\\
 \param{fixed\_norm\_sensitivity\_option}
 {integer}
 {1}
-{When \parlink{sensitivity\_option} $> 1$ and \parlink{target\_option} $ == 8$.}
-{If \parlink{fixed\_norm\_sensitivity\_option} $> 1$, gradients of $\chi^2$ are computed at fixed $\norm{\bm{K}'}_p$ rather than fixed $\lambda$. This option must be used with \parlink{general\_option} $> 3$ and  \parlink{target\_option} $ == 8$ or \parlink{target\_option} $ == 4$. If \parlink{sensitivity\_option} $ >2$, then gradients of $\chi^2_K$ and $\chi^2_B$ will also be computed at fixed $\norm{\bm{K}'}_p$. 
-
+{When \parlink{sensitivity\_option} $> 1$ and \parlink{target\_option} = 4, 8, or 9.}
+{If \parlink{fixed\_norm\_sensitivity\_option} $>1$, gradients of $\chi^2$ are computed at fixed $\norm{\bm{K}}_p$ rather than fixed $\lambda$. This option must be used with \parlink{general\_option} $> 3$ and  \parlink{target\_option} = 4, 8, or 9. If \parlink{sensitivity\_option} $>2$, then gradients of $\chi^2_K$ and $\chi^2_B$ will also be computed at the fixed target. 
 }
 
 \myhrule
@@ -705,7 +702,7 @@ The parameters related to winding surface optimization are defined in the \textt
 \subsection{NLOPT Optimize}
 The following objective function is used when \texttt{nlopt\_optimize} is called.
 \begin{gather}
-f = \texttt{nlopt\_optimize} \left( -\alpha_V V_{\text{coil}} + \alpha_S S_p - \alpha_D d_{\text{min}} + \alpha_B \chi^2_B + \alpha_K \norm{\bm{K}}_2 + \alpha_{\max K} \max{K} \right)
+f = \texttt{nlopt\_optimize} \left( -\alpha_V V_{\text{coil}} + \alpha_S S_p - \alpha_D d_{\text{min}} + \alpha_B \chi^2_B + \alpha_K \norm{\bm{K}}_2 + \alpha_{\max K} K_{\max} \right)
 \end{gather}
 Here $S_p$ is the spectral width,
 \begin{gather}
@@ -768,7 +765,7 @@ The coefficients in $f$ are defined by the user.
 {float}
 {0}
 {When \texttt{nlopt\_optimize} is being called.}
-{Scaling factor for $\max{K}$ in the objective function.}
+{Scaling factor for $K_{\max}$ in the objective function.}
 
 \myhrule
 
@@ -894,4 +891,46 @@ The coefficients in $f$ are defined by the user.
 {none}
 {When \texttt{nlopt\_optimize} is being called.}
 {Maximum $m$ value for winding surface Fourier modes in \texttt{nescin\_filename}.}
+
+\chapter{Winding Surface Optimization with Adjoint \texttt{REGCOIL}}
+\label{ch:adjoint}
+
+In this section we describe winding surface optimization using the adjoint \texttt{REGCOIL} method. 
+
+\section{Overview}
+
+If an adjoint equation is solved in \texttt{REGCOIL}, (\parlink{sensitivity\_option} $> 1$), then derivatives of $\chi^2_B$ and/or $\chi^2_K$ are computed with respect to the Fourier coefficients defining the winding surface. 
+These derivatives are used for a gradient-based optimization method to find a winding surface which minimizes a user-defined objective function. The target plasma surface is held fixed during the optimization. The user has the option of holding a target function fixed (such as $\chi^2_B$, $K_{\text{rms}}$, or $K_{\max}$) during the optimization to fix the regularization parameter $\lambda$. There are also options to impose constraints, such as on the minimum coil-plasma distance. 
+The \texttt{NESCIN} convention is used, and the result of the optimization is a \texttt{NESCIN} file with the optimal winding surface Fourier coefficients. 
+
+\section{Required \texttt{\&regcoil} namelist parameters}
+The following items in the \texttt{\&regcoil} namelist should be used when running adjoint \texttt{REGCOIL}.
+\begin{itemize}
+\item \parlink{geometry\_option\_coil} = 3 
+    \begin{itemize}
+    \item A \parlink{nescin\_filename} must be specified. It is assumed that the $m=0$ mode only includes $n\geq0$ modes. 
+    \end{itemize}
+\item \parlink{geometry\_option\_plasma} = 3, 4, or 5.
+\item \parlink{sensitivity\_option} $>1$ denotes an adjoint solve must be performed. If $\chi^2_B$ and/or $\chi^2_K$ are included in the objective function, \parlink{sensitivity\_option} must be $>2$.
+\item \parlink{nmax\_sensitivity} should be set to the largest value of $n$ that should be varied in the \texttt{NESCIN} file.
+\item \parlink{nmax\_sensitivity} should be set to the largest value of $m$ that should be varied in the \texttt{NESCIN} file. 
+\item \parlink{sensitivity\_symmetry\_option} should be set to reflect the symmetry desired in the optimized winding surface. 
+\item If the coil-plasma distance is to be included in the objective function or constraints, then \parlink{coil\_plasma\_dist\_lse\_p} should be set to the desired value for the log-sum-exponent approximation. 
+\item If the gradients of $\chi^2_B$ and $\chi^2_K$ are to be computed at fixed $\norm{\bm{K}}_p$ (rather than at fixed $\lambda$), \parlink{sensitivity\_option} should be $>1$. The following parameters matter when \parlink{sensitivity\_option} $>1$. 
+	\begin{itemize}
+	\item \parlink{target\_option} must be 4, 8, or 9. 
+	\item \parlink{target\_option\_p} is a parameter in the norm defined by \parlink{target\_option}
+	\end{itemize}
+\end{itemize}
+
+\section{Optimization scripts}
+In addition to the \texttt{\&regcoil} namelist, the \texttt{\&Optimum} namelist must be included. The parameters in this namelist are read by either the \texttt{scipy\_optimize} or \texttt{nlopt\_optimize} python scripts, found in the \texttt{coilOptimizationTools} directory. The \texttt{nlopt} package must be installed in order to call \texttt{nlopt\_optimize}. See the \href{https://nlopt.readthedocs.io/en/latest/#download-and-installation}{nlopt documentation} for installation instructions. Each time that \texttt{REGCOIL} is called from one of the scripts, an \texttt{eval} directory will be created. The script will print the objective function and constraint functions diagnostics with each evaluation to standard output. The \texttt{compareRegcoilSurface} script can be called on two regcoil output files to compare the winding surfaces at 2 evaluations. 
+
+\section{General considerations and tips}
+\begin{itemize}
+\item The results of the optimization vary widely with the input parameters. It is suggested that a user perform low-resolution optimizations with varying parameters (such as $\alpha_B$, $\alpha_S$, $\alpha_{\max{K}}$, and $\alpha_V$). To begin, one can run the optimization for a few evaluations to ensure that it is descending in the desired direction. 
+\item The SLSQP and CCSAQ algorithms in \texttt{nlopt} can be sensitive to the selection of \parlink{omega\_min} and \parlink{omega\_max}, as these set the initial step size for the optimization. If the winding surface wanders to far from the initial surface, these should be adjusted. 
+\end{itemize}
+
+
 
