@@ -6,12 +6,18 @@
 
   nlambda = 20
 
+!  ntheta_plasma = 4
+!  ntheta_coil   = 4
+!  nzeta_plasma  = 6
+!  nzeta_coil    = 6
+
   ntheta_plasma = 64
   ntheta_coil   = 64
   nzeta_plasma  = 64
   nzeta_coil    = 64
-  mpol_coil = 12
-  ntor_coil = 12
+
+  mpol_potential = 12
+  ntor_potential = 12
 
   geometry_option_plasma = 2
   wout_filename = '../../equilibria/wout_d23p4_tm.nc'

@@ -1,6 +1,6 @@
 subroutine regcoil_expand_plasma_surface(theta, zeta, separation, x,y,z)
   
-  use regcoil_variables, only: nfp, xm, xn, mnmax, rmnc, zmns, rmns, zmnc, lasym
+  use regcoil_variables, only: nfp, xm_plasma, xn_plasma, mnmax_plasma, rmnc_plasma, zmns_plasma, rmns_plasma, zmnc_plasma, lasym
   use stel_kinds
   use stel_constants
 
@@ -33,39 +33,39 @@ subroutine regcoil_expand_plasma_surface(theta, zeta, separation, x,y,z)
   dsinphidzeta = cosphi
   dcosphidzeta = -sinphi
 
-  do imn = 1,mnmax
-     angle = xm(imn)*theta - xn(imn)*zeta
+  do imn = 1,mnmax_plasma
+     angle = xm_plasma(imn)*theta - xn_plasma(imn)*zeta
      cosangle = cos(angle)
      sinangle = sin(angle)
-     dsinangledtheta = cosangle*xm(imn)
-     dcosangledtheta = -sinangle*xm(imn)
-     dsinangledzeta = -cosangle*xn(imn)
-     dcosangledzeta = sinangle*xn(imn)
+     dsinangledtheta = cosangle*xm_plasma(imn)
+     dcosangledtheta = -sinangle*xm_plasma(imn)
+     dsinangledzeta = -cosangle*xn_plasma(imn)
+     dcosangledzeta = sinangle*xn_plasma(imn)
 
-     x = x + rmnc(imn) * cosangle * cosphi
-     y = y + rmnc(imn) * cosangle * sinphi
-     z = z + zmns(imn) * sinangle
+     x = x + rmnc_plasma(imn) * cosangle * cosphi
+     y = y + rmnc_plasma(imn) * cosangle * sinphi
+     z = z + zmns_plasma(imn) * sinangle
      
-     dxdtheta = dxdtheta + rmnc(imn) * dcosangledtheta * cosphi
-     dydtheta = dydtheta + rmnc(imn) * dcosangledtheta * sinphi
-     dzdtheta = dzdtheta + zmns(imn) * dsinangledtheta
+     dxdtheta = dxdtheta + rmnc_plasma(imn) * dcosangledtheta * cosphi
+     dydtheta = dydtheta + rmnc_plasma(imn) * dcosangledtheta * sinphi
+     dzdtheta = dzdtheta + zmns_plasma(imn) * dsinangledtheta
      
-     dxdzeta = dxdzeta + rmnc(imn) * (dcosangledzeta * cosphi + cosangle * dcosphidzeta)
-     dydzeta = dydzeta + rmnc(imn) * (dcosangledzeta * sinphi + cosangle * dsinphidzeta)
-     dzdzeta = dzdzeta + zmns(imn) * dsinangledzeta
+     dxdzeta = dxdzeta + rmnc_plasma(imn) * (dcosangledzeta * cosphi + cosangle * dcosphidzeta)
+     dydzeta = dydzeta + rmnc_plasma(imn) * (dcosangledzeta * sinphi + cosangle * dsinphidzeta)
+     dzdzeta = dzdzeta + zmns_plasma(imn) * dsinangledzeta
 
      if (lasym) then
-        x = x + rmns(imn) * sinangle * cosphi
-        y = y + rmns(imn) * sinangle * sinphi
-        z = z + zmnc(imn) * cosangle
+        x = x + rmns_plasma(imn) * sinangle * cosphi
+        y = y + rmns_plasma(imn) * sinangle * sinphi
+        z = z + zmnc_plasma(imn) * cosangle
      
-        dxdtheta = dxdtheta + rmns(imn) * dsinangledtheta * cosphi
-        dydtheta = dydtheta + rmns(imn) * dsinangledtheta * sinphi
-        dzdtheta = dzdtheta + zmnc(imn) * dcosangledtheta
+        dxdtheta = dxdtheta + rmns_plasma(imn) * dsinangledtheta * cosphi
+        dydtheta = dydtheta + rmns_plasma(imn) * dsinangledtheta * sinphi
+        dzdtheta = dzdtheta + zmnc_plasma(imn) * dcosangledtheta
      
-        dxdzeta = dxdzeta + rmns(imn) * (dsinangledzeta * cosphi + sinangle * dcosphidzeta)
-        dydzeta = dydzeta + rmns(imn) * (dsinangledzeta * sinphi + sinangle * dsinphidzeta)
-        dzdzeta = dzdzeta + zmnc(imn) * dcosangledzeta
+        dxdzeta = dxdzeta + rmns_plasma(imn) * (dsinangledzeta * cosphi + sinangle * dcosphidzeta)
+        dydzeta = dydzeta + rmns_plasma(imn) * (dsinangledzeta * sinphi + sinangle * dsinphidzeta)
+        dzdzeta = dzdzeta + zmnc_plasma(imn) * dcosangledzeta
      end if
      
   end do

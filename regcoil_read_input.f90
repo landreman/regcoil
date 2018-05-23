@@ -46,12 +46,12 @@ subroutine regcoil_read_input
 
   if (verbose) then
      print *,"Resolution parameters:"
-     print "(a,i5)","   ntheta_plasma =",ntheta_plasma
-     print "(a,i5)","   ntheta_coil   =",ntheta_coil
-     print "(a,i5)","   nzeta_plasma  =",nzeta_plasma
-     print "(a,i5)","   nzeta_coil    =",nzeta_coil
-     print "(a,i5)","   mpol_coil     =",mpol_coil
-     print "(a,i5)","   ntor_coil     =",ntor_coil
+     print "(a,i5)","   ntheta_plasma  =",ntheta_plasma
+     print "(a,i5)","   ntheta_coil    =",ntheta_coil
+     print "(a,i5)","   nzeta_plasma   =",nzeta_plasma
+     print "(a,i5)","   nzeta_coil     =",nzeta_coil
+     print "(a,i5)","   mpol_potential =",mpol_potential
+     print "(a,i5)","   ntor_potential =",ntor_potential
      
      select case (symmetry_option)
      case (1)

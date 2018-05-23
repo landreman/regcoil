@@ -7,19 +7,18 @@ OBJ_FILES =  \
 	regcoil_compute_lambda.o \
 	regcoil_compute_offset_surface_mod.o \
 	regcoil_diagnostics.o \
+	regcoil_evaluate_coil_surface.o \
 	regcoil_expand_plasma_surface.o \
 	regcoil_fzero.o \
 	regcoil_init_coil_surface.o \
 	regcoil_init_Fourier_modes_mod.o \
 	regcoil_init_plasma_mod.o \
-	regcoil_initupdate_nescin_coil_surface.o \
 	regcoil_lambda_scan.o \
 	regcoil_prepare_solve.o \
 	regcoil_read_bnorm.o \
 	regcoil_read_efit_mod.o \
 	regcoil_read_input.o \
 	regcoil_read_nescin.o \
-	regcoil_read_nescin_spectrum.o \
 	regcoil_solve.o \
 	regcoil_splines.o \
 	regcoil_svd_scan.o \
@@ -36,19 +35,18 @@ regcoil_compute_diagnostics_for_nescout_potential.o: regcoil_variables.o
 regcoil_compute_lambda.o: regcoil_variables.o
 regcoil_compute_offset_surface_mod.o: regcoil_variables.o
 regcoil_diagnostics.o: regcoil_variables.o
+regcoil_evaluate_coil_surface.o: regcoil_variables.o
 regcoil_expand_plasma_surface.o: regcoil_variables.o
 regcoil_fzero.o: 
-regcoil_init_coil_surface.o: regcoil_compute_offset_surface_mod.o regcoil_variables.o
+regcoil_init_coil_surface.o: regcoil_compute_offset_surface_mod.o regcoil_init_Fourier_modes_mod.o regcoil_variables.o
 regcoil_init_Fourier_modes_mod.o:
 regcoil_init_plasma_mod.o: regcoil_variables.o regcoil_read_efit_mod.o
-regcoil_initupdate_nescin_coil_surface.o: regcoil_variables.o
 regcoil_lambda_scan.o: regcoil_variables.o
 regcoil_prepare_solve.o: regcoil_variables.o
 regcoil_read_bnorm.o: regcoil_variables.o
 regcoil_read_efit_mod.o: regcoil_splines.o
 regcoil_read_input.o: regcoil_variables.o
 regcoil_read_nescin.o: regcoil_variables.o
-regcoil_read_nescin_spectrum.o: regcoil_variables.o
 regcoil_solve.o: regcoil_variables.o
 regcoil_splines.o:
 regcoil_svd_scan.o: regcoil_variables.o

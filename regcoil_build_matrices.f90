@@ -35,14 +35,14 @@ subroutine regcoil_build_matrices()
   if (verbose) print *,"Initializing basis functions and f"
   
   ! Initialize Fourier arrays
-  call regcoil_init_Fourier_modes(mpol_coil, ntor_coil, mnmax_coil, xm_coil, xn_coil)
-  xn_coil = xn_coil * nfp
+  call regcoil_init_Fourier_modes(mpol_potential, ntor_potential, mnmax_potential, xm_potential, xn_potential, .false.)
+  xn_potential = xn_potential * nfp
   
   select case (symmetry_option)
   case (1,2)
-     num_basis_functions = mnmax_coil
+     num_basis_functions = mnmax_potential
   case (3)
-     num_basis_functions = mnmax_coil * 2
+     num_basis_functions = mnmax_potential * 2
   case default
      print *,"Error! Invalid setting for symmetry_option:",symmetry_option
      stop
@@ -207,7 +207,7 @@ subroutine regcoil_build_matrices()
   do whichSymmetry = minSymmetry, maxSymmetry
      
      if (whichSymmetry==2 .and. symmetry_option==3) then
-        offset = mnmax_coil
+        offset = mnmax_potential
      else
         offset = 0
      end if
@@ -215,32 +215,32 @@ subroutine regcoil_build_matrices()
      do izeta_coil = 1, nzeta_coil
         do itheta_coil = 1, ntheta_coil
            index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
-           do imn = 1, mnmax_coil
-              angle = xm_coil(imn)*theta_coil(itheta_coil)-xn_coil(imn)*zeta_coil(izeta_coil)
+           do imn = 1, mnmax_potential
+              angle = xm_potential(imn)*theta_coil(itheta_coil)-xn_potential(imn)*zeta_coil(izeta_coil)
               sinangle = sin(angle)
               cosangle = cos(angle)
               if (whichSymmetry==1) then
                  basis_functions(index_coil, imn) = sinangle
-                 f_x(index_coil, imn) = cosangle*(xn_coil(imn)*drdtheta_coil(1,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(1,itheta_coil,izeta_coil))
-                 f_y(index_coil, imn) = cosangle*(xn_coil(imn)*drdtheta_coil(2,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(2,itheta_coil,izeta_coil))
-                 f_z(index_coil, imn) = cosangle*(xn_coil(imn)*drdtheta_coil(3,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(3,itheta_coil,izeta_coil))
+                 f_x(index_coil, imn) = cosangle*(xn_potential(imn)*drdtheta_coil(1,itheta_coil,izeta_coil) + xm_potential(imn)*drdzeta_coil(1,itheta_coil,izeta_coil))
+                 f_y(index_coil, imn) = cosangle*(xn_potential(imn)*drdtheta_coil(2,itheta_coil,izeta_coil) + xm_potential(imn)*drdzeta_coil(2,itheta_coil,izeta_coil))
+                 f_z(index_coil, imn) = cosangle*(xn_potential(imn)*drdtheta_coil(3,itheta_coil,izeta_coil) + xm_potential(imn)*drdzeta_coil(3,itheta_coil,izeta_coil))
                  f_Laplace_Beltrami(index_coil, imn) = ( &
-                      xm_coil(imn) * Laplace_Beltrami_d_Phi_d_theta_coefficient(itheta_coil, izeta_coil) &
-                      - xn_coil(imn) * Laplace_Beltrami_d_Phi_d_zeta_coefficient(itheta_coil, izeta_coil)) * cosangle &
-                      + (   xm_coil(imn) * xm_coil(imn) * g_zeta_zeta(  itheta_coil, izeta_coil) &
-                      +     xn_coil(imn) * xn_coil(imn) * g_theta_theta(itheta_coil, izeta_coil) &
-                      + 2 * xm_coil(imn) * xn_coil(imn) * g_theta_zeta( itheta_coil, izeta_coil) ) * (-sinangle) / norm_normal_coil(itheta_coil, izeta_coil)
+                      xm_potential(imn) * Laplace_Beltrami_d_Phi_d_theta_coefficient(itheta_coil, izeta_coil) &
+                      - xn_potential(imn) * Laplace_Beltrami_d_Phi_d_zeta_coefficient(itheta_coil, izeta_coil)) * cosangle &
+                      + (   xm_potential(imn) * xm_potential(imn) * g_zeta_zeta(  itheta_coil, izeta_coil) &
+                      +     xn_potential(imn) * xn_potential(imn) * g_theta_theta(itheta_coil, izeta_coil) &
+                      + 2 * xm_potential(imn) * xn_potential(imn) * g_theta_zeta( itheta_coil, izeta_coil) ) * (-sinangle) / norm_normal_coil(itheta_coil, izeta_coil)
               else
                  basis_functions(index_coil, imn+offset) = cosangle
-                 f_x(index_coil, imn+offset) = -sinangle*(xn_coil(imn)*drdtheta_coil(1,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(1,itheta_coil,izeta_coil))
-                 f_y(index_coil, imn+offset) = -sinangle*(xn_coil(imn)*drdtheta_coil(2,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(2,itheta_coil,izeta_coil))
-                 f_z(index_coil, imn+offset) = -sinangle*(xn_coil(imn)*drdtheta_coil(3,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(3,itheta_coil,izeta_coil))
+                 f_x(index_coil, imn+offset) = -sinangle*(xn_potential(imn)*drdtheta_coil(1,itheta_coil,izeta_coil) + xm_potential(imn)*drdzeta_coil(1,itheta_coil,izeta_coil))
+                 f_y(index_coil, imn+offset) = -sinangle*(xn_potential(imn)*drdtheta_coil(2,itheta_coil,izeta_coil) + xm_potential(imn)*drdzeta_coil(2,itheta_coil,izeta_coil))
+                 f_z(index_coil, imn+offset) = -sinangle*(xn_potential(imn)*drdtheta_coil(3,itheta_coil,izeta_coil) + xm_potential(imn)*drdzeta_coil(3,itheta_coil,izeta_coil))
                  f_Laplace_Beltrami(index_coil, imn + offset) = ( &
-                      xm_coil(imn) * Laplace_Beltrami_d_Phi_d_theta_coefficient(itheta_coil, izeta_coil) &
-                      - xn_coil(imn) * Laplace_Beltrami_d_Phi_d_zeta_coefficient(itheta_coil, izeta_coil)) * (-sinangle) &
-                      + (   xm_coil(imn) * xm_coil(imn) * g_zeta_zeta(  itheta_coil, izeta_coil) &
-                      +     xn_coil(imn) * xn_coil(imn) * g_theta_theta(itheta_coil, izeta_coil) &
-                      + 2 * xm_coil(imn) * xn_coil(imn) * g_theta_zeta( itheta_coil, izeta_coil) ) * (-cosangle) / norm_normal_coil(itheta_coil, izeta_coil)
+                      xm_potential(imn) * Laplace_Beltrami_d_Phi_d_theta_coefficient(itheta_coil, izeta_coil) &
+                      - xn_potential(imn) * Laplace_Beltrami_d_Phi_d_zeta_coefficient(itheta_coil, izeta_coil)) * (-sinangle) &
+                      + (   xm_potential(imn) * xm_potential(imn) * g_zeta_zeta(  itheta_coil, izeta_coil) &
+                      +     xn_potential(imn) * xn_potential(imn) * g_theta_theta(itheta_coil, izeta_coil) &
+                      + 2 * xm_potential(imn) * xn_potential(imn) * g_theta_zeta( itheta_coil, izeta_coil) ) * (-cosangle) / norm_normal_coil(itheta_coil, izeta_coil)
               end if
            end do
         end do

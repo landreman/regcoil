@@ -15,7 +15,7 @@ f = readOutputFile()
 variableName = 'chi2_B_target'
 data = f.variables[variableName][()]
 relativeTolerance = 1e-4
-numFailures += shouldBe(data, 0.33784814179529,relativeTolerance,absoluteTolerance)
+numFailures += shouldBe(data, 0.337712583344148 ,relativeTolerance,absoluteTolerance)
 
 
 variableName = 'exit_code'
@@ -27,38 +27,38 @@ numFailures += shouldBe(data, 0,relativeTolerance,absoluteTolerance)
 variableName = 'lambda'
 data = f.variables[variableName][()]
 relativeTolerance = 1e-10
-numFailures += arrayShouldBe(data, [1e+200, 0, 1.86103543888473e-17, 1.86103543888473e-15, \
-    1.67447016215951e-15, 1.72798458404329e-15, 1.72841562509787e-15, \
-    1.72840698304124e-15],relativeTolerance,absoluteTolerance)
+numFailures += arrayShouldBe(data, [1e+200, 0, 1.86098014413313e-17, 1.86098014413313e-15, \
+    1.67493916804206e-15, 1.7278563450837e-15, 1.72828277387722e-15, \
+    1.72827413248484e-15],relativeTolerance,absoluteTolerance)
 
 
 variableName = 'chi2_B'
 data = f.variables[variableName][()]
 relativeTolerance = 0.001
-numFailures += arrayShouldBe(data, [13.149476484944, 7.69174650558559e-06, 0.00423827116265938, \
-    0.362892488869994, 0.327618094383163, 0.337768127590254, \
-    0.337849778826274, 0.33784814179529],relativeTolerance,absoluteTolerance)
+numFailures += arrayShouldBe(data, [13.1506816246147, 7.71670836033572e-06, 0.00424834281462129, \
+    0.362769356668118, 0.327597924797486, 0.337633450768883, \
+    0.337714220082776, 0.337712583344148],relativeTolerance,absoluteTolerance)
 
 variableName = 'chi2_K'
 data = f.variables[variableName][()]
 relativeTolerance = 0.001
-numFailures += arrayShouldBe(data, [1.21295356557164e+15, 1.9912738045989e+16, 2.57210417536396e+15, \
-    1.67310511685225e+15, 1.69307959624817e+15, 1.68711276457985e+15, \
-    1.68706551817808e+15, 1.68706646530854e+15], relativeTolerance,absoluteTolerance)
+numFailures += arrayShouldBe(data, [1.21300287142288e+15, 1.99560519855456e+16, 2.5719665173851e+15, \
+    1.6732483015856e+15, 1.69316202257536e+15, 1.68726310825612e+15, \
+    1.68721636863624e+15, 1.68721731567034e+15], relativeTolerance,absoluteTolerance)
 
 variableName = 'max_Bnormal'
 data = f.variables[variableName][()]
 relativeTolerance = 0.001
-numFailures += arrayShouldBe(data, [0.800294392804433, 0.00131081772888197, 0.0344837973451904, 
-    0.170106680639416, 0.161770814559884, 0.164214867896084, 
-    0.164234374507914, 0.164233983442413], relativeTolerance,absoluteTolerance)
+numFailures += arrayShouldBe(data, [0.800268516799401, 0.00131646260910012, 0.0345167565909495, \
+    0.17013629890868, 0.161820866475293, 0.16423854399308, 0.164257851045158, \
+    0.164257459823674], relativeTolerance,absoluteTolerance)
 
 variableName = 'max_K'
 data = f.variables[variableName][()]
 relativeTolerance = 0.001
-numFailures += arrayShouldBe(data, [2713725.09530369, 125251911.209827, 15467287.3730328, 
-    7877128.17061528, 8052687.63164847, 8000414.46145111, 7999999.98035358, 
-    8000008.28938568], relativeTolerance,absoluteTolerance)
+numFailures += arrayShouldBe(data, [2754022.92888632, 126095244.116546, 15504329.594164, 
+    7877053.03140448, 8052093.2255605, 8000410.04678498, 7999999.98076259, 
+    8000008.28957208], relativeTolerance,absoluteTolerance)
 
 del data
 f.close()

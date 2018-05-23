@@ -53,8 +53,8 @@ subroutine regcoil_compute_diagnostics_for_nescout_potential
      print *,"Found a current potential in the nescout file."
      ilambda = ilambda + 1
      solution = 0
-     do mm = 0,mpol_coil
-        do nn = -ntor_coil, ntor_coil
+     do mm = 0,mpol_potential
+        do nn = -ntor_potential, ntor_potential
            read (iunit, *) m, n, amplitude
            if ((m .ne. mm) .or. (n .ne. nn)) then
               print *,"Something weird happened:"
@@ -71,14 +71,14 @@ subroutine regcoil_compute_diagnostics_for_nescout_potential
               ! Nescoil convention is m*u+n*v
               ! Regcoil convention is m*u-n*v
               ! so need to swap sign of n.
-              index = ntor_coil + (mm-1)*(ntor_coil*2+1) + ntor_coil - nn + 1
-              if ((xm_coil(index) .ne. m) .or. (xn_coil(index) .ne. -nfp*n)) then
+              index = ntor_potential + (mm-1)*(ntor_potential*2+1) + ntor_potential - nn + 1
+              if ((xm_potential(index) .ne. m) .or. (xn_potential(index) .ne. -nfp*n)) then
                  print *,"Indexing error:"
                  print *,"index=",index
                  print *,"m =",m
-                 print *,"xm_coil=",xm_coil(index)
+                 print *,"xm_potential=",xm_potential(index)
                  print *,"n =",n
-                 print *,"xn_coil=",xn_coil(index)
+                 print *,"xn_potential=",xn_potential(index)
                  print *,"Are you sure the mpol and ntor for regcoil match those from nescoil?"
                  stop
               end if

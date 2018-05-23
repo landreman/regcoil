@@ -25,9 +25,9 @@ subroutine regcoil_write_output
        vn_a_coil  = "a_coil", &
        vn_R0_plasma  = "R0_plasma", &
        vn_R0_coil  = "R0_coil", &
-       vn_mpol_coil = "mpol_coil", &
-       vn_ntor_coil = "ntor_coil", &
-       vn_mnmax_coil = "mnmax_coil", &
+       vn_mpol_potential = "mpol_potential", &
+       vn_ntor_potential = "ntor_potential", &
+       vn_mnmax_potential = "mnmax_potential", &
        vn_num_basis_functions = "num_basis_functions", &
        vn_symmetry_option = "symmetry_option", &
        vn_area_plasma = "area_plasma", &
@@ -50,8 +50,8 @@ subroutine regcoil_write_output
        vn_theta_coil = "theta_coil", &
        vn_zeta_coil = "zeta_coil", &
        vn_zetal_coil = "zetal_coil", &
-       vn_xm_coil = "xm_coil", &
-       vn_xn_coil = "xn_coil", &
+       vn_xm_potential = "xm_potential", &
+       vn_xn_potential = "xn_potential", &
        vn_h = "h", &
        vn_RHS_B = "RHS_B", &
        vn_RHS_K = "RHS_K", &
@@ -103,7 +103,7 @@ subroutine regcoil_write_output
        ntheta_coil_dim = (/'ntheta_coil'/), &
        nzeta_coil_dim = (/'nzeta_coil'/), &
        nzetal_coil_dim = (/'nzetal_coil'/), &
-       mnmax_coil_dim = (/'mnmax_coil'/), &
+       mnmax_potential_dim = (/'mnmax_potential'/), &
        nthetanzeta_plasma_dim = (/'ntheta_nzeta_plasma'/), &
        num_basis_functions_dim = (/'num_basis_functions'/), &
        nlambda_dim = (/'nlambda'/)
@@ -173,19 +173,19 @@ subroutine regcoil_write_output
   call cdf_define(ncid, vn_R0_plasma, R0_plasma)
   call cdf_define(ncid, vn_R0_coil, R0_coil)
 
-  call cdf_define(ncid, vn_mpol_coil, mpol_coil)
-  call cdf_setatt(ncid, vn_mpol_coil, 'The maximum poloidal mode number retained in the current potential.' // input_parameter_text)
+  call cdf_define(ncid, vn_mpol_potential, mpol_potential)
+  call cdf_setatt(ncid, vn_mpol_potential, 'The maximum poloidal mode number retained in the current potential.' // input_parameter_text)
 
-  call cdf_define(ncid, vn_ntor_coil, ntor_coil)
-  call cdf_setatt(ncid, vn_ntor_coil, 'ntor_coil * nfp is the maximum toroidal mode number retained in the current potential.' // input_parameter_text)
+  call cdf_define(ncid, vn_ntor_potential, ntor_potential)
+  call cdf_setatt(ncid, vn_ntor_potential, 'ntor_potential * nfp is the maximum toroidal mode number retained in the current potential.' // input_parameter_text)
 
-  call cdf_define(ncid, vn_mnmax_coil, mnmax_coil)
-  call cdf_setatt(ncid, vn_mnmax_coil, 'Number of unique (m,n) pairs for the Fourier modes retained in the single-valued part of the current potential. ' // &
-       'Equal to mpol_coil*(ntor_coil*2+1) + ntor_coil.')
+  call cdf_define(ncid, vn_mnmax_potential, mnmax_potential)
+  call cdf_setatt(ncid, vn_mnmax_potential, 'Number of unique (m,n) pairs for the Fourier modes retained in the single-valued part of the current potential. ' // &
+       'Equal to mpol_potential*(ntor_potential*2+1) + ntor_potential.')
 
   call cdf_define(ncid, vn_num_basis_functions, num_basis_functions)
   call cdf_setatt(ncid, vn_num_basis_functions, 'Number of cos(m*theta-n*zeta) and/or sin(m*theta-n*zeta) Fourier modes retained ' // &
-       'in the single-valued part of the current potential. Equal to mnmax_coil * 1 or 2, depending on symmetry_option.')
+       'in the single-valued part of the current potential. Equal to mnmax_potential * 1 or 2, depending on symmetry_option.')
 
   call cdf_define(ncid, vn_symmetry_option, symmetry_option)
   call cdf_setatt(ncid, vn_symmetry_option, '1 = The single-valued part of the current potential was forced to be stellarator-symmetric. ' // &
@@ -256,8 +256,8 @@ subroutine regcoil_write_output
   call cdf_define(ncid, vn_zetal_coil, zetal_coil, dimname=nzetal_coil_dim)
   call cdf_setatt(ncid, vn_theta_coil, 'Grid points of the toroidal angle on the coil surface, including all nfp toroidal periods.')
 
-  call cdf_define(ncid, vn_xm_coil, xm_coil, dimname=mnmax_coil_dim)
-  call cdf_define(ncid, vn_xn_coil, xn_coil, dimname=mnmax_coil_dim)
+  call cdf_define(ncid, vn_xm_potential, xm_potential, dimname=mnmax_potential_dim)
+  call cdf_define(ncid, vn_xn_potential, xn_potential, dimname=mnmax_potential_dim)
   call cdf_define(ncid, vn_h, h, dimname=nthetanzeta_plasma_dim)
   call cdf_define(ncid, vn_RHS_B, RHS_B, dimname=num_basis_functions_dim)
   call cdf_define(ncid, vn_RHS_K, RHS_K, dimname=num_basis_functions_dim)
@@ -373,9 +373,9 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_a_coil, a_coil)
   call cdf_write(ncid, vn_R0_plasma, R0_plasma)
   call cdf_write(ncid, vn_R0_coil, R0_coil)
-  call cdf_write(ncid, vn_mpol_coil, mpol_coil)
-  call cdf_write(ncid, vn_ntor_coil, ntor_coil)
-  call cdf_write(ncid, vn_mnmax_coil, mnmax_coil)
+  call cdf_write(ncid, vn_mpol_potential, mpol_potential)
+  call cdf_write(ncid, vn_ntor_potential, ntor_potential)
+  call cdf_write(ncid, vn_mnmax_potential, mnmax_potential)
   call cdf_write(ncid, vn_num_basis_functions, num_basis_functions)
   call cdf_write(ncid, vn_symmetry_option, symmetry_option)
   call cdf_write(ncid, vn_area_plasma, area_plasma)
@@ -398,8 +398,8 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_theta_coil, theta_coil)
   call cdf_write(ncid, vn_zeta_coil, zeta_coil)
   call cdf_write(ncid, vn_zetal_coil, zetal_coil)
-  call cdf_write(ncid, vn_xm_coil, xm_coil)
-  call cdf_write(ncid, vn_xn_coil, xn_coil)
+  call cdf_write(ncid, vn_xm_potential, xm_potential)
+  call cdf_write(ncid, vn_xn_potential, xn_potential)
   call cdf_write(ncid, vn_h, h)
   call cdf_write(ncid, vn_RHS_B, RHS_B)
   call cdf_write(ncid, vn_RHS_K, RHS_K)

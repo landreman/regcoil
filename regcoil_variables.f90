@@ -52,16 +52,16 @@ module regcoil_variables
 
   real(dp) :: dtheta_plasma, dzeta_plasma, dtheta_coil, dzeta_coil
 
-  integer :: mpol_coil=12
-  integer :: ntor_coil=12
-  integer :: mnmax_coil
+  integer :: mpol_potential=12
+  integer :: ntor_potential=12
+  integer :: mnmax_plasma, mnmax_coil, mnmax_potential
   integer :: num_basis_functions
-  integer, dimension(:), allocatable :: xm_coil, xn_coil
-
-  real(dp), dimension(:), allocatable :: rmns, zmnc, rmnc, zmns
-  integer :: mnmax, nfp
-  integer, dimension(:), allocatable :: xm, xn
+  integer, dimension(:), allocatable :: xm_plasma, xn_plasma, xm_coil, xn_coil, xm_potential, xn_potential
+  real(dp), dimension(:), allocatable :: rmns_plasma, zmnc_plasma, rmnc_plasma, zmns_plasma
+  real(dp), dimension(:), allocatable :: rmns_coil, zmnc_coil, rmnc_coil, zmns_coil
+  integer :: nfp
   logical :: lasym
+  integer :: max_mpol_coil = 24, max_ntor_coil = 24 ! These variables are upper limits on the # of Fourier modes used to describe a uniform-offset coil surface.
 
   integer :: save_level = 3
   integer :: nfp_imposed = 1
@@ -101,24 +101,14 @@ module regcoil_variables
   integer :: exit_code = 0
   real(dp) :: chi2_B_target = 0
 
-  ! Variables added to interact with stellopt
-  !
-  !     FOR REGCOIL WINDING SURFACE VARIATION - These numbers should match those
-  !     in LIBSTELL/Sources/Modules/vparams.f
-  !
-  INTEGER, PARAMETER :: mpol_rcws = 32    ! maximum poloidal mode number (+/-)
-  INTEGER, PARAMETER :: ntor_rcws = 32    ! maximum toroidal mode number (+/-)
-  real(dp), dimension(-mpol_rcws:mpol_rcws,-ntor_rcws:ntor_rcws) :: rc_rmnc_stellopt, rc_rmns_stellopt, &
-                                                                    rc_zmnc_stellopt, rc_zmns_stellopt
-
   namelist / regcoil_nml / ntheta_plasma, nzeta_plasma, ntheta_coil, nzeta_coil, &
        geometry_option_plasma, geometry_option_coil, &
        R0_plasma, R0_coil, a_plasma, a_coil, &
        separation, wout_filename, &
        save_level, nfp_imposed, symmetry_option, &
-       mpol_coil, ntor_coil, &
+       mpol_potential, ntor_potential, &
        nescin_filename, efit_filename, efit_psiN, efit_num_modes, &
-       mpol_transform_refinement, ntor_transform_refinement, &
+       mpol_transform_refinement, ntor_transform_refinement, max_mpol_coil, max_ntor_coil, &
        net_poloidal_current_Amperes, net_toroidal_current_Amperes, &
        load_bnorm, bnorm_filename, &
        shape_filename_plasma, nlambda, lambda_min, lambda_max, general_option, regularization_term_option, verbose, nescout_filename, &

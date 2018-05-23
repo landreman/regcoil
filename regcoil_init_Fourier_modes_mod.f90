@@ -4,23 +4,23 @@ module regcoil_init_Fourier_modes_mod
 
 contains
 
-  subroutine regcoil_init_Fourier_modes(mpol, ntor, mnmax, xm, xn)
+  subroutine regcoil_init_Fourier_modes(mpol, ntor, mnmax, xm, xn, include_00)
 
     implicit none
 
     integer :: mpol, ntor, mnmax
     integer, dimension(:), allocatable :: xm, xn
+    logical, intent(in) :: include_00
     
     integer :: jn, jm, index, iflag
     integer, dimension(:), allocatable :: xm_temp, xn_temp
     
     ! xm is nonnegative.
     ! xn can be negative, zero, or positive.
-    ! When xm is 0, xn must be positive.
+    ! When xm is 0, xn must be 0 or positive.
     mnmax = mpol*(ntor*2+1) + ntor
+    if (include_00) mnmax = mnmax + 1
    
-    ! Adding a check to release previously allocated variable.
-    ! This is because STELLOPT may call this function multiple times.
 
     if (allocated(xm)) deallocate(xm)
     allocate(xm(mnmax),stat=iflag)
@@ -30,14 +30,18 @@ contains
     allocate(xn(mnmax),stat=iflag)
     if (iflag .ne. 0) stop 'init_Fourier Allocation error!'
 
+    xm = 0
+    xn = 0
+
     ! Handle the xm=0 modes:
-    xm=0
-    do jn=1,ntor
-       xn(jn)=jn
+    index = 0
+    if (include_00) index = 1
+    do jn = 1, ntor
+       index = index + 1
+       xn(index)=jn
     end do
     
     ! Handle the xm>0 modes:
-    index = ntor
     do jm = 1,mpol
        do jn = -ntor, ntor
           index = index + 1

@@ -44,6 +44,20 @@ Thus, this option takes a little more time than {\ttfamily general\_option}=4 bu
 
 \myhrule
 
+\param{regularization\_term\_option}
+{integer}
+{1}
+{Always}
+{Determines which term is used for regularization.\\
+
+{\ttfamily regularization\_term\_option} = 1: Use $\chi^2_K$ as the regularization term, as described in the Nuclear Fusion paper.\\
+
+{\ttfamily regularization\_term\_option} = 2: Use $\int d^2a (\nabla^2 \Phi)^2$ as the regularization term, where the integral is 
+performed over the coil surface, and $\nabla^2$ is the Laplace-Beltrami operator.\\
+}
+
+\myhrule
+
 \param{nescout\_filename}
 {string}
 {`'}
@@ -181,7 +195,7 @@ It is resonable and common but not mandatory to use the same value for \parlink{
 
 \myhrule
 
-\param{mpol\_coil}
+\param{mpol\_potential}
 {integer}
 {12}
 {Always}
@@ -190,7 +204,7 @@ It is resonable and common but not mandatory to use the same value for \parlink{
 
 \myhrule
 
-\param{ntor\_coil}
+\param{ntor\_potential}
 {integer}
 {12}
 {Always}

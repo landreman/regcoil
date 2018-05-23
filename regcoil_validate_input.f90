@@ -28,13 +28,13 @@ subroutine regcoil_validate_input
   end if
 
 
-  if (mpol_coil < 0) then
-     stop "Error! mpol_coil must be >= 0."
+  if (mpol_potential < 0) then
+     stop "Error! mpol_potential must be >= 0."
   end if
 
 
-  if (ntor_coil < 0) then
-     stop "Error! ntor_coil must be >= 0."
+  if (ntor_potential < 0) then
+     stop "Error! ntor_potential must be >= 0."
   end if
 
 
