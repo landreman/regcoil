@@ -19,6 +19,7 @@ class coilFourier:
     load_bnorm = readVariable("load_bnorm","string",regcoil_input_file,required=False)
     general_option = readVariable("general_option","int",regcoil_input_file,required=False)
     fixed_norm_sensitivity_option = readVariable("fixed_norm_sensitivity_option","int",regcoil_input_file,required=False)
+    sensitivity_option = readVariable("sensitivity_option","int",regcoil_input_file,required=False)
 
   # Set to default values if absent
     if (geometry_option_plasma is None):
@@ -33,12 +34,16 @@ class coilFourier:
 			general_option = 1
     if (fixed_norm_sensitivity_option is None):
 			fixed_norm_sensitivity_option = 1
+    if (sensitivity_option is None):
+			sensitivity_option = 1
 	
 	  # Set class variables
     self.geometry_option_coil = geometry_option_coil
     self.geometry_option_plasma = geometry_option_plasma
     self.load_bnorm = load_bnorm
     self.general_option = general_option
+    self.fixed_norm_sensitivity_option = fixed_norm_sensitivity_option
+    self.sensitivity_option = sensitivity_option
 	
     if (general_option > 3):
       current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=False)
@@ -99,6 +104,9 @@ class coilFourier:
     if (abs(self.alphaB)>0 and (target_option==9) and (fixed_norm_sensitivity_option==2)):
 			print "Error! chi2_B included in objective function but chi2_B is held fixed in gradient calculation."
 			sys.exit(0)
+
+    if ((abs(self.alphaB)>0 or abs(self.alphaK)>0 or abs(self.alphaMaxK)>0) and self.sensitivity_option < 2):
+			print "Warning! chi2_B, K_rms, or K_max are included in the objective function but their derivatives are not computed in REGCOIL. Make sure that grad_option = 1 (using scipy_optmize) so finite difference derivatives are performed."
 
     self.nmax_sensitivity = nmax_sensitivity
     self.mmax_sensitivity = mmax_sensitivity
@@ -263,9 +271,29 @@ class coilFourier:
     print "norm(dcoil_volumedomega): " + str(np.linalg.norm(self.dcoil_volumedomega,2))
     print "norm(dcoil_plasma_dist_mindomega): " + str(np.linalg.norm(self.dcoil_plasma_dist_mindomega,2))
     print "norm(dspectral_normdomegas): " + str(np.linalg.norm(self.dspectral_normdomegas,2))
-    
-    self.objective_function = self.scaleFactor*(self.alphaB*self.chi2B - self.alphaD*self.coil_plasma_dist_min_lse - self.alphaV*self.coil_volume**(1.0/3.0) + self.alphaS*self.spectral_norm + self.alphaK*self.rms_K + self.alphaMaxK*self.max_K)
-    self.set_dobjective_functiondomegas(self.scaleFactor*(self.alphaB*self.dchi2Bdomega - self.alphaD*self.dcoil_plasma_dist_mindomega - self.alphaV*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega + self.alphaS*self.dspectral_normdomegas + self.alphaK*self.drms_Kdomega + self.alphaMaxK*self.dmax_Kdomega))
+	
+    dobjective_functiondomegas = 0
+    self.objective_function = 0
+    if (abs(self.alphaV)>0):
+        self.objective_function = self.objective_function - self.alphaV*self.coil_volume**(1.0/3.0)
+        dobjective_functiondomegas = self.objective_function - self.alphaV*(1.0/3.0)*(self.coil_volume**(-2.0/3.0))*self.dcoil_volumedomega
+    if (abs(self.alphaB)>0):
+        self.objective_function = self.objective_function + self.alphaB*self.chi2B
+        dobjective_functiondomegas = dobjective_functiondomegas + self.alphaB*self.dchi2Bdomega
+    if (abs(self.alphaS)>0):
+				self.objective_function = self.objective_function + self.alphaS*self.spectral_norm
+				dobjective_functiondomegas = dobjective_functiondomegas + self.alphaS*self.dspectral_normdomegas
+    if (abs(self.alphaK)>0):
+				self.objective_function = self.objective_function + self.alphaK*self.rms_K
+				dobjective_functiondomegas = dobjective_functiondomegas + self.alphaK*self.drms_Kdomega
+    if (abs(self.alphaMaxK)>0):
+				self.objective_function = self.objective_function + self.alphaMaxK*self.dmax_Kdomega
+    if (abs(self.alphaD)>0):
+				self.objective_function = self.objective_function - self.alphaD*self.dcoil_plasma_dist_mindomega
+				dobjective_functiondomegas = dobjective_functiondomegas - self.alphaD*self.dcoil_plasma_dist_mindomega
+
+    self.objective_function = self.scaleFactor*self.objective_function
+    self.set_dobjective_functiondomegas(self.scaleFactor*dobjective_functiondomegas)
 
   # This is a script to be called within a nonlinear optimization routine in order to evaluate
   # chi2 and its gradient with respect to the Fourier coefficients
@@ -365,34 +393,37 @@ class coilFourier:
 
     exit_code = f.variables["exit_code"][()]
     if (exit_code == 0):
-      self.set_dchi2Bdomega(f.variables["dchi2Bdomega"][()][-1])
-      self.set_dchi2Kdomega(f.variables["dchi2Kdomega"][()][-1])
-      self.set_darea_coildomega(f.variables["darea_coildomega"][()])
-      self.area_coil = f.variables["area_coil"][()]
-      self.set_dcoil_volumedomega(f.variables["dvolume_coildomega"][()])
-      self.set_dcoil_plasma_dist_mindomega(f.variables["dcoil_plasma_dist_mindomega"][()])
-      self.chi2B = f.variables["chi2_B"][()][-1]
-      self.chi2K = f.variables["chi2_K"][()][-1]
-      self.max_K = f.variables["max_K"][()][-1]
-      self.rms_K = np.sqrt(self.chi2K/self.area_coil)
-      drms_Kdomega = 0.5*self.rms_K**(-1.0)*(self.dchi2Kdomega/self.area_coil - self.chi2K*self.darea_coildomega/self.area_coil**2)
-      self.set_drms_Kdomega(drms_Kdomega)
-      self.set_dmax_Kdomega(f.variables["dmax_kdomega"][()][:,-1])
-      self.coil_volume = f.variables["volume_coil"][()]
-      self.coil_plasma_dist_min_lse = f.variables["coil_plasma_dist_min_lse"][()]
-      self.coil_plasma_dist_max_lse = f.variables["coil_plasma_dist_max_lse"][()]
+			self.area_coil = f.variables["area_coil"][()]
+			self.chi2B = f.variables["chi2_B"][()][-1]
+			self.chi2K = f.variables["chi2_K"][()][-1]
+			self.max_K = f.variables["max_K"][()][-1]
+			self.rms_K = np.sqrt(self.chi2K/self.area_coil)
+			self.coil_volume = f.variables["volume_coil"][()]
+		
+			if (self.sensitivity_option>1):
+				self.set_darea_coildomega(f.variables["darea_coildomega"][()])
+				self.set_dcoil_volumedomega(f.variables["dvolume_coildomega"][()])
+				self.set_dcoil_plasma_dist_mindomega(f.variables["dcoil_plasma_dist_mindomega"][()])
+				self.coil_plasma_dist_min_lse = f.variables["coil_plasma_dist_min_lse"][()]
+				self.coil_plasma_dist_max_lse = f.variables["coil_plasma_dist_max_lse"][()]
+			if (self.sensitivity_option>2):
+				self.set_dchi2Bdomega(f.variables["dchi2Bdomega"][()][-1])
+				self.set_dchi2Kdomega(f.variables["dchi2Kdomega"][()][-1])
+				drms_Kdomega = 0.5*self.rms_K**(-1.0)*(self.dchi2Kdomega/self.area_coil - self.chi2K*self.darea_coildomega/self.area_coil**2)
+			
+			self.set_drms_Kdomega(drms_Kdomega)
+			self.set_dmax_Kdomega(f.variables["dmax_kdomega"][()][:,-1])
 
-      self.evaluateObjectiveFunction()
+			self.evaluateObjectiveFunction()
     
-      os.chdir('..')
-      self.increment_feval()
-      self.evaluated = True
-      if (self.general_option > 3):
-        self.increased_target_current = False
-        self.decreased_target_current = False
-        self.current_factor = 0.1
-        self.current_density_target = self.current_density_target_init
-
+			os.chdir('..')
+			self.increment_feval()
+			self.evaluated = True
+			if (self.general_option > 3):
+				self.increased_target_current = False
+				self.decreased_target_current = False
+				self.current_factor = 0.1
+				self.current_density_target = self.current_density_target_init
     else:
       print "Error! Job did not complete."
       if (exit_code == -1): # did not converge in nlambda iterations
@@ -510,6 +541,7 @@ def evaluateFunctionRegcoil(omegas_sensitivity_new, nescinObject):
       nescinObject.evaluateRegcoil(omegas_sensitivity_new,nescinObject.current_density_target)
     else:
       nescinObject.evaluateRegcoil(omegas_sensitivity_new)
+  print "Value of objective function: " + str(nescinObject.objective_function)
   return nescinObject.objective_function
 
 def evaluateGradientRegcoil(omegas_sensitivity_new, nescinObject):
@@ -518,6 +550,7 @@ def evaluateGradientRegcoil(omegas_sensitivity_new, nescinObject):
       nescinObject.evaluateRegcoil(omegas_sensitivity_new,nescinObject.current_density_target)
     else:
       nescinObject.evaluateRegcoil(omegas_sensitivity_new)
+  print "Norm of gradient of objective function: " + str(np.linalg.norm(nescinObject.dobjective_functiondomegas_sensitivity,2))
   return np.array(nescinObject.dobjective_functiondomegas_sensitivity)
 
 ## Testing ##
@@ -536,11 +569,8 @@ if __name__ == "__main__":
   print nescinObject.xn_sensitivity
   omegas_old = nescinObject.omegas
   print omegas_old
-#  print nescinObject.omegas_sensitivity
   new_omegas = nescinObject.omegas_sensitivity
   for imn in range(0,nescinObject.nmodes_sensitivity):
-#    print("m = " + str(nescinObject.xm_sensitivity[imn]))
-#    print("n = " + str(nescinObject.xn_sensitivity[imn]))
     if (nescinObject.xm_sensitivity[imn] == 6 and nescinObject.xn_sensitivity[imn] == 3):
       print new_omegas[2*imn]
       print new_omegas[2*imn+1]
