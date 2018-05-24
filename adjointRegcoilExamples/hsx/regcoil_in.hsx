@@ -4,13 +4,9 @@ symmetry_option = 1
 load_bnorm=.f.
 
 nlambda = 40
-!lambda_min = 1.898E-13
-!lambda_max = 1.898E-13
 target_option = 8
 current_density_target = 1840000.0
 target_option_p = 1e3
-max_k_p = 1e4
-
 coil_plasma_dist_lse_p=1e4
 
 ntheta_plasma=64
@@ -31,8 +27,6 @@ sensitivity_option = 4
 fixed_norm_sensitivity_option = 2
 nmax_sensitivity = 5
 mmax_sensitivity = 4
-compute_curvature = 1
-
 /
 
 &regcoilOptimize

@@ -1,14 +1,11 @@
 &regcoil
 general_option = 5
 symmetry_option = 1
-load_bnorm=.f.
 
 nlambda = 40
 target_option = 8
 current_density_target = 7700000.0
 target_option_p = 1e4
-
-max_k_p = 1e4
 
 coil_plasma_dist_lse_p=1e4
 
