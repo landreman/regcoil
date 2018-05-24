@@ -11,18 +11,42 @@ class coilFourier:
 
   def __init__(self,nmax,mmax,regcoil_input_file):
     self.regcoil_input_file = regcoil_input_file
+	# Load in variables from input file
     nmax_sensitivity = readVariable("nmax_sensitivity","int",regcoil_input_file,required=True)
     mmax_sensitivity = readVariable("mmax_sensitivity","int",regcoil_input_file,required=True)
-    geometry_option_coil = readVariable("geometry_option_coil","int",regcoil_input_file,required=True)
-    geometry_option_plasma = readVariable("geometry_option_plasma","int",regcoil_input_file,required=True)
-    general_option = readVariable("general_option","int",regcoil_input_file,required=True)
+    geometry_option_coil = readVariable("geometry_option_coil","int",regcoil_input_file,required=False)
+    geometry_option_plasma = readVariable("geometry_option_plasma","int",regcoil_input_file,required=False)
+    load_bnorm = readVariable("load_bnorm","string",regcoil_input_file,required=False)
+    general_option = readVariable("general_option","int",regcoil_input_file,required=False)
+    fixed_norm_sensitivity_option = readVariable("fixed_norm_sensitivity_option","int",regcoil_input_file,required=False)
+
+  # Set to default values if absent
+    if (geometry_option_plasma is None):
+		  geometry_option_plasma = 0
+    if (geometry_option_coil is None):
+		  geometry_option_coil = 0
+    if (load_bnorm is None):
+			load_bnorm = False
+    if (load_bnorm == ".true." or load_bnorm == "T" or load_bnorm == ".TRUE."):
+			load_bnorm = True
+    if (general_option is None):
+			general_option = 1
+    if (fixed_norm_sensitivity_option is None):
+			fixed_norm_sensitivity_option = 1
+	
+	  # Set class variables
+    self.geometry_option_coil = geometry_option_coil
+    self.geometry_option_plasma = geometry_option_plasma
+    self.load_bnorm = load_bnorm
     self.general_option = general_option
+	
     if (general_option > 3):
       current_density_target = readVariable("current_density_target","float",regcoil_input_file,required=False)
       self.current_density_target = current_density_target
       self.current_density_target_init = current_density_target
       target_option = readVariable("target_option","int",regcoil_input_file,required=True)
       self.target_option = target_option
+	
     spectral_norm_p = readVariable("spectral_norm_p","float",regcoil_input_file,required=False)
     spectral_norm_q = readVariable("spectral_norm_q","float",regcoil_input_file,required=False)
     self.spectral_norm_p = spectral_norm_p
@@ -62,13 +86,19 @@ class coilFourier:
       self.alphaMaxK = 0
     if (scaleFactor == None):
       self.scaleFactor = 1.0
-    # Check parameters
-    if (geometry_option_plasma < 2 or geometry_option_plasma > 4):
-      print "Error! This script is only compatible with geometry_option_plasma=(3,4,5) at the moment."
-      sys.exit(0)
+
+		# Check for correct input
     if (geometry_option_coil != 3):
       print "Error! This script is only compatible with geometry_option_coil=3 at the moment."
       sys.exit(0)
+
+    if (abs(self.alphaMaxK)>0 and (target_option==7 or target_option==8) and (fixed_norm_sensitivity_option==2)):
+			print "Error! K_max included in objective function but K_max is held fixed in gradient calculation."
+			sys.exit(0)
+
+    if (abs(self.alphaB)>0 and (target_option==9) and (fixed_norm_sensitivity_option==2)):
+			print "Error! chi2_B included in objective function but chi2_B is held fixed in gradient calculation."
+			sys.exit(0)
 
     self.nmax_sensitivity = nmax_sensitivity
     self.mmax_sensitivity = mmax_sensitivity
@@ -244,10 +274,17 @@ class coilFourier:
     self.set_omegas_sensitivity(omegas_sensitivity_new.copy())
     
     regcoil_input_file = self.regcoil_input_file
-    
-    wout_filename = readVariable("wout_filename","string",regcoil_input_file,required=True)
+	
+    if (self.geometry_option_plasma == 3 or self.geometry_option_plasma == 4):
+    	wout_filename = readVariable("wout_filename","string",regcoil_input_file,required=True)
+    elif (self.geometry_option_plasma == 5):
+			efit_filename = readVariable("efit_filename","string",regcoil_input_file,required=True)
+    elif (self.geometry_option_plasma == 6):
+			shape_filename = readVariable("shape_filename_plasma","string",regcoil_input_file,required=True)
     nescin_filename = readVariable("nescin_filename","string",regcoil_input_file,required=True)
-    
+    if (self.load_bnorm):
+    	bnorm_filename = readVariable("bnorm_filename","string",regcoil_input_file,required=True)
+	
     # Create new directory
     directory = "eval_" + str(self.feval)
     if (not os.path.isdir(directory)):
@@ -275,15 +312,26 @@ class coilFourier:
       inputFile = f.readlines()
     f = open(regcoil_input_file,"w")
     for line in inputFile:
-      if namelistLineContains(line,"nescin_filename"):
-        line = 'nescin_filename = "'+new_nescin+'"\n'
-      if namelistLineContains(line,"wout_filename"):
-        new_wout = '../' + wout_filename
-        line = 'wout_filename = "'+new_wout+'"\n'
-      if (self.general_option > 3):
-        if namelistLineContains(line,"current_density_target"):
-          line = 'current_density_target = '+str(current_density_target)+'\n'
-      f.write(line)
+        if namelistLineContains(line,"nescin_filename"):
+            line = 'nescin_filename = "'+new_nescin+'"\n'
+        if (self.geometry_option_plasma == 3 or self.geometry_option_plasma == 4):
+				if namelistLineContains(line,"wout_filename"):
+					new_wout = '../' + wout_filename
+					line = 'wout_filename = "'+new_wout+'"\n'
+				elif (self.geometry_option_plasma == 5):
+					if namelistLineContains(line,"efit_filename"):
+						new_efit = '../' + efit_filename
+				elif (self.geometry_option_plasma == 6):
+					if namelistLineContains(line,"shape_filename_plasma"):
+						new_shape_file = '../' + shape_filename
+				if (self.load_bnorm):
+					if namelistLineContains(line,"bnorm_filename"):
+						new_bnorm = '../' + bnorm_filename
+						line = 'bnorm_filename = "'+new_bnorm+'"\n'
+				if (self.general_option > 3):
+					if namelistLineContains(line,"current_density_target"):
+						line = 'current_density_target = '+str(current_density_target)+'\n'
+				f.write(line)
     f.close()
 
     submitCommand = "regcoil " + regcoil_input_file
@@ -484,9 +532,6 @@ if __name__ == "__main__":
   path = os.getcwd()
   filename = path + "/" + file
   nescinObject.set_Fourier_from_nescin(filename)
-  #print nescinObject.rmncs
-  #print nescinObject.zmnss
-  #print nescinObject.omegas_sensitivity
   print nescinObject.xn
   print nescinObject.xn_sensitivity
   omegas_old = nescinObject.omegas
