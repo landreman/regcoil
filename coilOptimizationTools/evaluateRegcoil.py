@@ -275,7 +275,7 @@ class coilFourier:
     if (abs(self.alphaS)>0):
         print "spectral_norm: " + str(self.spectral_norm)
         print "norm(dspectral_normdomegas): " + str(np.linalg.norm(self.dspectral_normdomegas,2))
-	
+
     dobjective_functiondomegas = 0
     self.objective_function = 0
     if (abs(self.alphaV)>0):
@@ -294,7 +294,7 @@ class coilFourier:
 				self.objective_function = self.objective_function + self.alphaMaxK*self.max_K
 				dobjective_functiondomegas = dobjective_functiondomegas + self.alphaMaxK*self.dmax_Kdomega
     if (abs(self.alphaD)>0):
-				self.objective_function = self.objective_function - self.alphaD*self.dcoil_plasma_dist_mindomega
+				self.objective_function = self.objective_function - self.alphaD*self.coil_plasma_dist_min_lse
 				dobjective_functiondomegas = dobjective_functiondomegas - self.alphaD*self.dcoil_plasma_dist_mindomega
 
     self.objective_function = self.scaleFactor*self.objective_function
