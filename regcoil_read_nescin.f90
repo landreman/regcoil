@@ -27,7 +27,7 @@ subroutine regcoil_read_nescin()
   read (iunit, *)
 
   read (iunit, *) mnmax_coil
-  print *,"  Reading",mnmax_coil,"Fourier modes from nescin"
+  if (verbose) print *,"  Reading",mnmax_coil,"Fourier modes from nescin"
 
   allocate(xn_coil(mnmax_coil))
   allocate(xm_coil(mnmax_coil))

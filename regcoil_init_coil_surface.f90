@@ -34,6 +34,8 @@ subroutine regcoil_init_coil_surface()
   if(allocated(zmnc_coil)) deallocate(zmnc_coil)
   if(allocated(zmns_coil)) deallocate(zmns_coil)
 
+  nzetal_coil   = nzeta_coil   * nfp
+
   if (allocated(theta_coil)) deallocate(theta_coil)
   allocate(theta_coil(ntheta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 1'

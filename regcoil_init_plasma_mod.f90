@@ -289,7 +289,6 @@ contains
     ! Now comes the code that applies to all values of geometry_option_plasma.
 
     nzetal_plasma = nzeta_plasma * nfp
-    nzetal_coil   = nzeta_coil   * nfp
     
     if (allocated(theta_plasma)) deallocate(theta_plasma)
     allocate(theta_plasma(ntheta_plasma),stat=iflag)
