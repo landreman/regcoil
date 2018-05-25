@@ -117,32 +117,16 @@ for j in range(numCoilsFound):
 
 f=open(nescinFilename,'r')
 
-line = ''
-while "np     iota_edge       phip_edge       curpol" not in line:
-    line = f.readline()
-line = f.readline()
-nfp_nescin = int(line.split()[0])
-print "nfp:",nfp_nescin
-if nfp != nfp_nescin:
-   print "Error! nfp from regcoil_out does not match nfp from nescin!"
-   exit(1)
-
-line = ''
-while "Number of fourier modes in table" not in line:
-    line = f.readline()
-line = f.readline()
-print "Number of Fourier modes in plasma surface from nescin file: ",line
-# Don't bother reading plasma surface.
-
 contour_R = []
 contour_Z = []
 for j in range(numCoils):
-   contour_R.append(contour_zeta[j]*0)
-   contour_Z.append(contour_zeta[j]*0)
+  contour_R.append(contour_zeta[j]*0)
+  contour_Z.append(contour_zeta[j]*0)
 
 line = ''
-while "Number of fourier modes in table" not in line:
+while 'Current Surface' not in line:
     line = f.readline()
+line = f.readline()
 line = f.readline()
 print "Number of Fourier modes in coil surface from nescin file: ",line
 nmodes = int(line)
