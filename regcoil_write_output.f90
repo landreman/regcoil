@@ -28,6 +28,8 @@ subroutine regcoil_write_output
        vn_mpol_potential = "mpol_potential", &
        vn_ntor_potential = "ntor_potential", &
        vn_mnmax_potential = "mnmax_potential", &
+       vn_mnmax_plasma = "mnmax_plasma", &
+       vn_mnmax_coil = "mnmax_coil", &
        vn_num_basis_functions = "num_basis_functions", &
        vn_symmetry_option = "symmetry_option", &
        vn_area_plasma = "area_plasma", &
@@ -52,6 +54,18 @@ subroutine regcoil_write_output
        vn_zetal_coil = "zetal_coil", &
        vn_xm_potential = "xm_potential", &
        vn_xn_potential = "xn_potential", &
+       vn_xm_plasma = "xm_plasma", &
+       vn_xn_plasma = "xn_plasma", &
+       vn_xm_coil = "xm_coil", &
+       vn_xn_coil = "xn_coil", &
+       vn_rmnc_plasma = "rmnc_plasma", &
+       vn_rmns_plasma = "rmns_plasma", &
+       vn_zmnc_plasma = "zmnc_plasma", &
+       vn_zmns_plasma = "zmns_plasma", &
+       vn_rmnc_coil = "rmnc_coil", &
+       vn_rmns_coil = "rmns_coil", &
+       vn_zmnc_coil = "zmnc_coil", &
+       vn_zmns_coil = "zmns_coil", &
        vn_h = "h", &
        vn_RHS_B = "RHS_B", &
        vn_RHS_K = "RHS_K", &
@@ -104,6 +118,8 @@ subroutine regcoil_write_output
        nzeta_coil_dim = (/'nzeta_coil'/), &
        nzetal_coil_dim = (/'nzetal_coil'/), &
        mnmax_potential_dim = (/'mnmax_potential'/), &
+       mnmax_plasma_dim = (/'mnmax_plasma'/), &
+       mnmax_coil_dim = (/'mnmax_coil'/), &
        nthetanzeta_plasma_dim = (/'ntheta_nzeta_plasma'/), &
        num_basis_functions_dim = (/'num_basis_functions'/), &
        nlambda_dim = (/'nlambda'/)
@@ -183,6 +199,12 @@ subroutine regcoil_write_output
   call cdf_setatt(ncid, vn_mnmax_potential, 'Number of unique (m,n) pairs for the Fourier modes retained in the single-valued part of the current potential. ' // &
        'Equal to mpol_potential*(ntor_potential*2+1) + ntor_potential.')
 
+  call cdf_define(ncid, vn_mnmax_plasma, mnmax_plasma)
+  call cdf_setatt(ncid, vn_mnmax_plasma, 'Number of unique (m,n) pairs for the Fourier modes retained in the plasma surface.')
+
+  call cdf_define(ncid, vn_mnmax_coil, mnmax_coil)
+  call cdf_setatt(ncid, vn_mnmax_coil, 'Number of unique (m,n) pairs for the Fourier modes retained in the coil winding surface.')
+
   call cdf_define(ncid, vn_num_basis_functions, num_basis_functions)
   call cdf_setatt(ncid, vn_num_basis_functions, 'Number of cos(m*theta-n*zeta) and/or sin(m*theta-n*zeta) Fourier modes retained ' // &
        'in the single-valued part of the current potential. Equal to mnmax_potential * 1 or 2, depending on symmetry_option.')
@@ -257,7 +279,50 @@ subroutine regcoil_write_output
   call cdf_setatt(ncid, vn_theta_coil, 'Grid points of the toroidal angle on the coil surface, including all nfp toroidal periods.')
 
   call cdf_define(ncid, vn_xm_potential, xm_potential, dimname=mnmax_potential_dim)
+  call cdf_setatt(ncid, vn_xm_potential, 'Values of poloidal mode number m used in the Fourier representation of the single-valued part of the current potential.')
   call cdf_define(ncid, vn_xn_potential, xn_potential, dimname=mnmax_potential_dim)
+  call cdf_setatt(ncid, vn_xm_potential, 'Values of toroidal mode number n used in the Fourier representation of the single-valued part of the current potential.')
+
+  call cdf_define(ncid, vn_xm_plasma, xm_plasma, dimname=mnmax_plasma_dim)
+  call cdf_setatt(ncid, vn_xm_plasma, 'Values of poloidal mode number m used in the Fourier representation of the plasma surface.')
+  call cdf_define(ncid, vn_xn_plasma, xn_plasma, dimname=mnmax_plasma_dim)
+  call cdf_setatt(ncid, vn_xm_plasma, 'Values of toroidal mode number n used in the Fourier representation of the plasma surface.')
+
+  call cdf_define(ncid, vn_xm_coil, xm_coil, dimname=mnmax_coil_dim)
+  call cdf_setatt(ncid, vn_xm_coil, 'Values of poloidal mode number m used in the Fourier representation of the coil winding surface.')
+  call cdf_define(ncid, vn_xn_coil, xn_coil, dimname=mnmax_coil_dim)
+  call cdf_setatt(ncid, vn_xm_coil, 'Values of toroidal mode number n used in the Fourier representation of the coil winding surface.')
+
+  call cdf_define(ncid, vn_rmnc_plasma, rmnc_plasma, dimname=mnmax_plasma_dim)
+  call cdf_setatt(ncid, vn_rmnc_plasma, 'Amplitudes of the cosine(m*theta-n*zeta) terms in a Fourier expansion of the cylindrical coordinate ' // &
+       'R(theta,zeta) defining the plasma surface. The corresponding mode numbers (m,n) are stored in xm_plasma and xn_plasma.')
+  if (lasym) then
+     call cdf_define(ncid, vn_rmns_plasma, rmns_plasma, dimname=mnmax_plasma_dim)
+     call cdf_setatt(ncid, vn_rmns_plasma, 'Amplitudes of the sine(m*theta-n*zeta) terms in a Fourier expansion of the cylindrical coordinate ' // &
+          'R(theta,zeta) defining the plasma surface. The corresponding mode numbers (m,n) are stored in xm_plasma and xn_plasma.')
+     call cdf_define(ncid, vn_zmnc_plasma, zmnc_plasma, dimname=mnmax_plasma_dim)
+     call cdf_setatt(ncid, vn_zmnc_plasma, 'Amplitudes of the cosine(m*theta-n*zeta) terms in a Fourier expansion of the coordinate ' // &
+          'Z(theta,zeta) defining the plasma surface. The corresponding mode numbers (m,n) are stored in xm_plasma and xn_plasma.')
+  end if
+  call cdf_define(ncid, vn_zmns_plasma, zmns_plasma, dimname=mnmax_plasma_dim)
+  call cdf_setatt(ncid, vn_zmns_plasma, 'Amplitudes of the sine(m*theta-n*zeta) terms in a Fourier expansion of the coordinate ' // &
+       'Z(theta,zeta) defining the plasma surface. The corresponding mode numbers (m,n) are stored in xm_plasma and xn_plasma.')
+
+  call cdf_define(ncid, vn_rmnc_coil, rmnc_coil, dimname=mnmax_coil_dim)
+  call cdf_setatt(ncid, vn_rmnc_coil, 'Amplitudes of the cosine(m*theta-n*zeta) terms in a Fourier expansion of the cylindrical coordinate ' // &
+       'R(theta,zeta) defining the coil surface. The corresponding mode numbers (m,n) are stored in xm_coil and xn_coil.')
+  if (lasym) then
+     call cdf_define(ncid, vn_rmns_coil, rmns_coil, dimname=mnmax_coil_dim)
+     call cdf_setatt(ncid, vn_rmns_coil, 'Amplitudes of the sine(m*theta-n*zeta) terms in a Fourier expansion of the cylindrical coordinate ' // &
+          'R(theta,zeta) defining the coil surface. The corresponding mode numbers (m,n) are stored in xm_coil and xn_coil.')
+     call cdf_define(ncid, vn_zmnc_coil, zmnc_coil, dimname=mnmax_coil_dim)
+     call cdf_setatt(ncid, vn_zmnc_coil, 'Amplitudes of the cosine(m*theta-n*zeta) terms in a Fourier expansion of the coordinate ' // &
+          'Z(theta,zeta) defining the coil surface. The corresponding mode numbers (m,n) are stored in xm_coil and xn_coil.')
+  end if
+  call cdf_define(ncid, vn_zmns_coil, zmns_coil, dimname=mnmax_coil_dim)
+  call cdf_setatt(ncid, vn_zmns_coil, 'Amplitudes of the sine(m*theta-n*zeta) terms in a Fourier expansion of the coordinate ' // &
+       'Z(theta,zeta) defining the coil surface. The corresponding mode numbers (m,n) are stored in xm_coil and xn_coil.')
+
   call cdf_define(ncid, vn_h, h, dimname=nthetanzeta_plasma_dim)
   call cdf_define(ncid, vn_RHS_B, RHS_B, dimname=num_basis_functions_dim)
   call cdf_define(ncid, vn_RHS_K, RHS_K, dimname=num_basis_functions_dim)
@@ -376,6 +441,8 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_mpol_potential, mpol_potential)
   call cdf_write(ncid, vn_ntor_potential, ntor_potential)
   call cdf_write(ncid, vn_mnmax_potential, mnmax_potential)
+  call cdf_write(ncid, vn_mnmax_plasma, mnmax_plasma)
+  call cdf_write(ncid, vn_mnmax_coil, mnmax_coil)
   call cdf_write(ncid, vn_num_basis_functions, num_basis_functions)
   call cdf_write(ncid, vn_symmetry_option, symmetry_option)
   call cdf_write(ncid, vn_area_plasma, area_plasma)
@@ -400,6 +467,22 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_zetal_coil, zetal_coil)
   call cdf_write(ncid, vn_xm_potential, xm_potential)
   call cdf_write(ncid, vn_xn_potential, xn_potential)
+  call cdf_write(ncid, vn_xm_plasma, xm_plasma)
+  call cdf_write(ncid, vn_xn_plasma, xn_plasma)
+  call cdf_write(ncid, vn_xm_coil, xm_coil)
+  call cdf_write(ncid, vn_xn_coil, xn_coil)
+  call cdf_write(ncid, vn_rmnc_plasma, rmnc_plasma)
+  if (lasym) then
+     call cdf_write(ncid, vn_rmns_plasma, rmns_plasma)
+     call cdf_write(ncid, vn_zmnc_plasma, zmnc_plasma)
+  end if
+  call cdf_write(ncid, vn_zmns_plasma, zmns_plasma)
+  call cdf_write(ncid, vn_rmnc_coil, rmnc_coil)
+  if (lasym) then
+     call cdf_write(ncid, vn_rmns_coil, rmns_coil)
+     call cdf_write(ncid, vn_zmnc_coil, zmnc_coil)
+  end if
+  call cdf_write(ncid, vn_zmns_coil, zmns_coil)
   call cdf_write(ncid, vn_h, h)
   call cdf_write(ncid, vn_RHS_B, RHS_B)
   call cdf_write(ncid, vn_RHS_K, RHS_K)
