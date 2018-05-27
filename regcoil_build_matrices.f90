@@ -124,7 +124,8 @@ subroutine regcoil_build_matrices()
   allocate(Laplace_Beltrami_d_Phi_d_zeta_coefficient(ntheta_coil,nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error!'
 
-  ! For the Laplace-Beltrami operator, compute the metric coefficients and their derivatives on the coil surface:
+  ! For the Laplace-Beltrami operator, compute the metric coefficients and their derivatives on the coil surface.
+  ! See my notes from 20180516 for the derivation of the necessary quantities.
 
   g_theta_theta = drdtheta_coil(1,:,1:nzeta_coil) * drdtheta_coil(1,:,1:nzeta_coil) &
        +          drdtheta_coil(2,:,1:nzeta_coil) * drdtheta_coil(2,:,1:nzeta_coil) &
