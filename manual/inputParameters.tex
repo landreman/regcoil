@@ -427,28 +427,37 @@ the nonzero values.}
 \myhrule
 
 \param{target\_option}
-{integer}
-{1}
+{string}
+{{\ttfamily ""}}
 {Only when \parlink{general\_option}=4 or 5.}
-{Controls which target is used to find determine $\lambda$:\\
+{Controls which quantity is targeted to determine $\lambda$:\\
 
-{\ttfamily target\_option} = 1: Search for the $\lambda$ value such that the maximum
-current density over the winding surface equals \parlink{current\_density\_target}.\\
+{\ttfamily target\_option = "max\_K"}: Search for the $\lambda$ value such that the maximum
+current density over the winding surface equals \parlink{target\_value}.\\
 
-{\ttfamily target\_option} = 2: Search for the $\lambda$ value such that the root-mean-square current density
-$\left( \int d^2a\; K^2 \right)^{1/2}$ equals \parlink{current\_density\_target}.
+{\ttfamily target\_option = "chi2\_K"}: Search for the $\lambda$ value such that $\chi^2_K$ equals \parlink{target\_value}.\\
+
+{\ttfamily target\_option = "rms\_K"}: Search for the $\lambda$ value such that the root-mean-square current density
+$\left( \int d^2a\; K^2 \right)^{1/2}$ (where the integral is over the current winding surface) equals \parlink{target\_value}.\\
+
+{\ttfamily target\_option = "max\_Bnormal"}: Search for the $\lambda$ value such that the maximum
+$\vect{B}\cdot\vect{n}$ over the plasma surface equals \parlink{target\_value}.\\
+
+{\ttfamily target\_option = "chi2\_B"}: Search for the $\lambda$ value such that $\chi^2_B$ equals \parlink{target\_value}.\\
+
+{\ttfamily target\_option = "rms\_Bnormal"}: Search for the $\lambda$ value such that the root-mean-square value of $\vect{B}\cdot\vect{n}$, i.e.
+$\left( \int d^2a\; B_n^2 \right)^{1/2}$ (where the integral is over the plasma surface) equals \parlink{target\_value}.
+
 }
 
 \myhrule
 
-\param{current\_density\_target}
+\param{target\_value}
 {real}
 {8.0e6}
 {Only when \parlink{general\_option}=4 or 5.}
-{The value of root-mean-square or maximum surface current density used to determine $\lambda$.
-See \parlink{target\_option}.
-As with all other input and output quantities, this surface current density is specified in SI units,
-so the units are Amperes/meter.
+{The value of the quantity specified by \parlink{target\_option} that the code will attempt to match
+by varyling $\lambda$.
 }
 
 \myhrule

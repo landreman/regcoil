@@ -7,10 +7,9 @@ subroutine regcoil_auto_regularization_solve()
 
   integer :: ilambda
   integer :: stage, next_stage
-  logical :: initial_above_target, last_above_target
+  logical :: initial_above_target, last_above_target, targeted_quantity_increases_with_lambda
   real(dp) :: Brendt_a, Brendt_b, Brendt_c, Brendt_fa, Brendt_fb, Brendt_fc, Brendt_d, Brendt_e
-  real(dp) :: Brendt_p, Brendt_q, Brendt_r, Brendt_s, Brendt_tol1, Brendt_xm, Brendt_EPS
-
+  real(dp) :: Brendt_p, Brendt_q, Brendt_r, Brendt_s, Brendt_tol1, Brendt_xm, Brendt_EPS, factor
 
   if (general_option==4) then
      stage = 1
@@ -50,12 +49,14 @@ subroutine regcoil_auto_regularization_solve()
         next_stage = 2
 
         if (initial_above_target) then
-           ! If the current density from the first solve was too high, then increase lambda
-           lambda(ilambda) = lambda(ilambda-1) * 100
+           factor = 100
         else
-           ! If the current density from the first solve was too low, then decrease lambda
-           lambda(ilambda) = lambda(ilambda-1) * 0.01
+           factor = 0.01
         end if
+
+        if (targeted_quantity_increases_with_lambda) factor = 1/factor
+
+        lambda(ilambda) = lambda(ilambda-1) * factor
 
      case (3)
         ! Now that we've bracketed the target current density, search for the target using Brendt's algorithm.
@@ -122,22 +123,22 @@ subroutine regcoil_auto_regularization_solve()
 
      call regcoil_solve(ilambda)
 
-     last_above_target = (target_function(ilambda) > current_density_target)
+     last_above_target = (target_function(ilambda) > target_value)
      if (stage==1) initial_above_target = last_above_target
      if (stage==2 .and. (last_above_target .neqv. initial_above_target)) then
         ! If we've bracketed the target, move on to stage 3.
         next_stage = 3  
-        if (verbose) print *,"Target current density has been bracketed."
+        if (verbose) print *,"Target_value has been bracketed."
      end if
-     if (stage==10 .and. last_above_target) then
+     if (last_above_target .and. (((.not. targeted_quantity_increases_with_lambda) .and. stage==10) &
+          .or. (targeted_quantity_increases_with_lambda .and. stage==11))) then
         if (verbose) then
            print *,"*******************************************************************************"
            print *,"*******************************************************************************"
-           print *,"Error! The current_density_target you have set is not achievable because"
+           print *,"Error! The target_value you have set is not achievable because"
            print *,"it is too low."
            print *,"*******************************************************************************"
            print *,"*******************************************************************************"
-           print *,"chi2_B(1) = ", chi2_B(1)
         end if
         Nlambda = ilambda
         exit_code = -2
@@ -148,15 +149,15 @@ subroutine regcoil_auto_regularization_solve()
         chi2_B_target = chi2_B(1)    ! 'Worst' achieved chi2_B
         exit
      end if
-     if (stage==11 .and. (.not. last_above_target)) then
+     if ((.not. last_above_target) .and. (((.not. targeted_quantity_increases_with_lambda) .and. stage==11) &
+          .or. (targeted_quantity_increases_with_lambda .and. stage==10))) then
         if (verbose) then
            print *,"*******************************************************************************"
            print *,"*******************************************************************************"
-           print *,"Error! The current_density_target you have set is not achievable because"
+           print *,"Error! The target_value you have set is not achievable because"
            print *,"it is too high."
            print *,"*******************************************************************************"
            print *,"*******************************************************************************"
-           print *,"chi2_B(1) = ", chi2_B(1)
         end if
         Nlambda = ilambda
         exit_code = -3
@@ -171,14 +172,14 @@ subroutine regcoil_auto_regularization_solve()
         ! Initialize Brendt's algorithm for root-finding
         Brendt_a = log(lambda(ilambda-1))
         Brendt_b = log(lambda(ilambda))
-        Brendt_fa = log(target_function(ilambda-1) / current_density_target)
-        Brendt_fb = log(target_function(ilambda) / current_density_target)
+        Brendt_fa = log(target_function(ilambda-1) / target_value)
+        Brendt_fb = log(target_function(ilambda) / target_value)
         Brendt_c = Brendt_b
         Brendt_fc = Brendt_fb
         Brendt_d = Brendt_b - Brendt_a
         Brendt_e = Brendt_d
      end if
-     if (stage==3) Brendt_fb = log(target_function(ilambda) / current_density_target)
+     if (stage==3) Brendt_fb = log(target_function(ilambda) / target_value)
      if (next_stage==3) then
         ! Analyze the most recent diagnostics for Brendt's algorithm.
         if ((Brendt_fb > 0 .and. Brendt_fc > 0) .or. (Brendt_fb < 0 .and. Brendt_fc < 0)) then
@@ -230,13 +231,32 @@ contains
     real(dp) :: target_function
 
     target_function = 0
-    select case (target_option)
-    case (1)
-       ! maximum current density
-       target_function =  max_K(jlambda)
-    case (2)
-       ! root-mean-squared current density
+    select case (trim(target_option))
+
+    case (target_option_max_K)
+       target_function = max_K(jlambda)
+       targeted_quantity_increases_with_lambda = .false.
+
+    case (target_option_rms_K)
        target_function = sqrt(chi2_K(jlambda) / area_coil)
+       targeted_quantity_increases_with_lambda = .false.
+
+    case (target_option_chi2_K)
+       target_function = chi2_K(jlambda)
+       targeted_quantity_increases_with_lambda = .false.
+
+    case (target_option_max_Bnormal)
+       target_function =  max_Bnormal(jlambda)
+       targeted_quantity_increases_with_lambda = .true.
+
+    case (target_option_rms_Bnormal)
+       target_function = sqrt(chi2_B(jlambda) / area_plasma)
+       targeted_quantity_increases_with_lambda = .true.
+
+    case (target_option_chi2_B)
+       target_function = chi2_B(jlambda)
+       targeted_quantity_increases_with_lambda = .true.
+
     case default
        print *,"Invalid target_option: ",target_option
        stop

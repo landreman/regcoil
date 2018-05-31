@@ -2,7 +2,8 @@
 
 &regcoil_nml
   general_option = 5  ! Determine lambda to meet a current density target
-  current_density_target = 1.0d+6
+  target_option = 'max_K'
+  target_value = 1.0d+6
 
   nlambda = 20
 

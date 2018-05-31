@@ -95,11 +95,19 @@ module regcoil_variables
   real(dp), dimension(:), allocatable :: LAPACK_WORK
   integer, dimension(:), allocatable :: LAPACK_IPIV
 
-  integer :: target_option = 1
-  real(dp) :: current_density_target = 8.0d+6
+  character(len=200) :: target_option
+  real(dp) :: target_value = 8.0d+6
   real(dp) :: lambda_search_tolerance = 1.0d-5
   integer :: exit_code = 0
   real(dp) :: chi2_B_target = 0
+
+  character(len=*), parameter :: &
+       target_option_max_K = "max_K", &
+       target_option_rms_K = "rms_K", &
+       target_option_chi2_K = "chi2_K", &
+       target_option_max_Bnormal = "max_Bnormal", &
+       target_option_rms_Bnormal = "rms_Bnormal", &
+       target_option_chi2_B = "chi2_B"
 
   namelist / regcoil_nml / ntheta_plasma, nzeta_plasma, ntheta_coil, nzeta_coil, &
        geometry_option_plasma, geometry_option_coil, &
@@ -112,7 +120,7 @@ module regcoil_variables
        net_poloidal_current_Amperes, net_toroidal_current_Amperes, &
        load_bnorm, bnorm_filename, &
        shape_filename_plasma, nlambda, lambda_min, lambda_max, general_option, regularization_term_option, verbose, nescout_filename, &
-       target_option, current_density_target, lambda_search_tolerance
+       target_option, target_value, lambda_search_tolerance
 
 end module regcoil_variables
 
