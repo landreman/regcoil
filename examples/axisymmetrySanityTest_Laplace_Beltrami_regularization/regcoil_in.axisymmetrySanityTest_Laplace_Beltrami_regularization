@@ -5,7 +5,7 @@
   lambda_min = 1e-15
   lambda_max = 1e+100
 
-  regularization_term_option = 2
+  regularization_term_option = "Laplace-Beltrami"
 
   ntheta_plasma = 32
   ntheta_coil   = 32

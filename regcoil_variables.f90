@@ -7,7 +7,12 @@ module regcoil_variables
   integer :: general_option=1
   logical :: verbose = .true.
 
-  integer :: regularization_term_option = 1
+  character(len=*), parameter :: &
+       regularization_term_option_chi2_K = "chi2_K", &
+       regularization_term_option_Laplace_Beltrami = "Laplace-Beltrami", &
+       regularization_term_option_K_xy = "K_xy", &
+       regularization_term_option_K_zeta = "K_zeta"
+  character(len=200) :: regularization_term_option = regularization_term_option_chi2_K
 
   integer :: ntheta_plasma=64, nzeta_plasma=64, nzetal_plasma
   integer :: ntheta_coil=64, nzeta_coil=64, nzetal_coil
@@ -34,11 +39,11 @@ module regcoil_variables
 
   real(dp), dimension(:,:), allocatable :: Bnormal_from_plasma_current
   real(dp), dimension(:,:), allocatable :: Bnormal_from_net_coil_currents
-  real(dp), dimension(:,:), allocatable :: matrix_B, matrix_K, inductance, matrix_Laplace_Beltrami
+  real(dp), dimension(:,:), allocatable :: matrix_B, matrix_regularization, inductance
   real(dp), dimension(:,:), allocatable :: single_valued_current_potential_mn
   real(dp), dimension(:,:,:), allocatable :: single_valued_current_potential_thetazeta
   real(dp), dimension(:,:,:), allocatable :: current_potential
-  real(dp), dimension(:), allocatable :: RHS_B, RHS_K, RHS_Laplace_Beltrami
+  real(dp), dimension(:), allocatable :: RHS_B, RHS_regularization
   real(dp), dimension(:,:,:), allocatable :: Bnormal_total
   real(dp), dimension(:,:,:), allocatable :: K2, Laplace_Beltrami2
   real(dp), dimension(:), allocatable :: chi2_B, chi2_K, max_Bnormal, max_K, chi2_Laplace_Beltrami
@@ -95,7 +100,6 @@ module regcoil_variables
   real(dp), dimension(:), allocatable :: LAPACK_WORK
   integer, dimension(:), allocatable :: LAPACK_IPIV
 
-  character(len=200) :: target_option
   real(dp) :: target_value = 8.0d+6
   real(dp) :: lambda_search_tolerance = 1.0d-5
   integer :: exit_code = 0
@@ -108,6 +112,7 @@ module regcoil_variables
        target_option_max_Bnormal = "max_Bnormal", &
        target_option_rms_Bnormal = "rms_Bnormal", &
        target_option_chi2_B = "chi2_B"
+  character(len=200) :: target_option = target_option_max_K
 
   namelist / regcoil_nml / ntheta_plasma, nzeta_plasma, ntheta_coil, nzeta_coil, &
        geometry_option_plasma, geometry_option_coil, &

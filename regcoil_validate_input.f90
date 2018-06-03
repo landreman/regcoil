@@ -172,4 +172,14 @@ subroutine regcoil_validate_input
      end if
   end if
 
+  select case (trim(regularization_term_option))
+  case (regularization_term_option_chi2_K)
+  case (regularization_term_option_Laplace_Beltrami)
+  case (regularization_term_option_K_xy)
+  case (regularization_term_option_K_zeta)
+  case default
+     print *,"Error! Unrecognized regularization_term_option: ",trim(regularization_term_option)
+     stop
+  end select
+
 end subroutine regcoil_validate_input

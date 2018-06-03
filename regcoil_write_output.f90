@@ -68,8 +68,7 @@ subroutine regcoil_write_output
        vn_zmns_coil = "zmns_coil", &
        vn_h = "h", &
        vn_RHS_B = "RHS_B", &
-       vn_RHS_K = "RHS_K", &
-       vn_RHS_Laplace_Beltrami = "RHS_Laplace_Beltrami", &
+       vn_RHS_regularization = "RHS_regularization", &
        vn_lambda = "lambda", &
        vn_chi2_B = "chi2_B", &
        vn_chi2_K = "chi2_K", &
@@ -325,8 +324,7 @@ subroutine regcoil_write_output
 
   call cdf_define(ncid, vn_h, h, dimname=nthetanzeta_plasma_dim)
   call cdf_define(ncid, vn_RHS_B, RHS_B, dimname=num_basis_functions_dim)
-  call cdf_define(ncid, vn_RHS_K, RHS_K, dimname=num_basis_functions_dim)
-  call cdf_define(ncid, vn_RHS_Laplace_Beltrami, RHS_Laplace_Beltrami, dimname=num_basis_functions_dim)
+  call cdf_define(ncid, vn_RHS_regularization, RHS_regularization, dimname=num_basis_functions_dim)
 
   call cdf_define(ncid, vn_lambda, lambda(1:Nlambda), dimname=nlambda_dim)
   call cdf_setatt(ncid, vn_lambda, 'Values of the regularization parameter that were used, in SI units (Tesla^2 meter^2 / Ampere^2)')
@@ -485,8 +483,7 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_zmns_coil, zmns_coil)
   call cdf_write(ncid, vn_h, h)
   call cdf_write(ncid, vn_RHS_B, RHS_B)
-  call cdf_write(ncid, vn_RHS_K, RHS_K)
-  call cdf_write(ncid, vn_RHS_Laplace_Beltrami, RHS_Laplace_Beltrami)
+  call cdf_write(ncid, vn_RHS_regularization, RHS_regularization)
   call cdf_write(ncid, vn_lambda, lambda(1:Nlambda))
   call cdf_write(ncid, vn_chi2_B, chi2_B(1:Nlambda))
   call cdf_write(ncid, vn_chi2_K, chi2_K(1:Nlambda))
