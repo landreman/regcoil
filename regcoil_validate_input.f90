@@ -64,8 +64,8 @@ subroutine validate_input
      stop "Error! geometry_option_plasma must be >= 0."
   end if
 
-  if (geometry_option_plasma > 6) then
-     stop "Error! geometry_option_plasma must be <= 6."
+  if (geometry_option_plasma > 7) then                  ! czhu changed this to option 7 for FOCUS
+     stop "Error! geometry_option_plasma must be <= 7." 
   end if
 
 
@@ -88,7 +88,7 @@ subroutine validate_input
   if (load_bnorm) then
      ! To use bnorm data, we must have a VMEC file to set the overall normalization
      select case (geometry_option_plasma)
-     case (2,3,4)
+     case (2,3,4,7)
         ! Yes, we have a VMEC file available.
      case (0,1,5)
         stop "Error! If load_bnorm=.t., the plasma surface must come from a vmec wout file."

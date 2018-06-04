@@ -17,7 +17,8 @@ module init_surface_mod
                                normal_coil, norm_normal_coil, area_coil, &
                                geometry_option_coil, R0_coil, a_coil,  &
                                separation, dtheta_coil, dzeta_coil, &
-                               nescin_filename
+                               nescin_filename, mpol_coil, ntor_coil, &
+                               nescin_filename, curpol
 
       use stel_kinds
       use stel_constants
@@ -36,8 +37,9 @@ module init_surface_mod
       real(dp) :: angle, sinangle, cosangle, dsinangledtheta, dcosangledtheta
       real(dp) :: angle2, sinangle2, cosangle2, dsinangle2dzeta, dcosangle2dzeta
       real(dp) :: d2sinangledtheta2, d2cosangledtheta2, d2sinangle2dzeta2, d2cosangle2dzeta2
-      integer :: i, itheta, izeta
+      integer :: i, itheta, izeta, im, in, mnmax_ws, istat = 0, iunit = 8
       real(dp) :: x_new, y_new, z_new, x_old, y_old, z_old, delta_theta, delta_zeta, temp
+      real(dp) :: r_tmp, rc_tmp, rs_tmp, zc_tmp, zs_tmp, factor
 
       ! variables to handle printing to the screen
       logical, optional :: lscreen_optin
@@ -244,9 +246,12 @@ module init_surface_mod
 
          end do
          !$OMP END DO
-         !$OMP END PARALLEL
-
+         !$OMP END PARALLEL                  
+         call write_nescin  ! write the offset winding surface
+         
       case (3)
+
+         !call write_nescin  ! write the offset winding surface
          ! Nothing to do - we already read the nescin file.
 
       case default

@@ -42,7 +42,11 @@ current_potential = f.variables['current_potential'][()]
 f.close()
 
 print "current_potential.shape",current_potential.shape
-data = current_potential[ilambda,:,:] / net_poloidal_current_Amperes * nfp
+if abs(net_poloidal_current_Amperes) > np.finfo(float).eps:
+   data = current_potential[ilambda,:,:] / net_poloidal_current_Amperes * nfp
+else:
+   data = current_potential[ilambda,:,:] / np.max(current_potential[ilambda,:,:])
+#data = current_potential[ilambda,:,:] / np.max(abs(current_potential[ilambda,:,:] ))
 
 print "Theta before shift:"
 print theta
@@ -127,11 +131,11 @@ if nfp != nfp_nescin:
    print "Error! nfp from regcoil_out does not match nfp from nescin!"
    exit(1)
 
-line = ''
-while "Number of fourier modes in table" not in line:
-    line = f.readline()
-line = f.readline()
-print "Number of Fourier modes in plasma surface from nescin file: ",line
+#line = ''
+#while "Number of fourier modes in table" not in line:
+#    line = f.readline()
+#line = f.readline()
+#print "Number of Fourier modes in plasma surface from nescin file: ",line
 # Don't bother reading plasma surface.
 
 contour_R = []
@@ -157,11 +161,13 @@ for imode in range(nmodes):
     # See bn_read_vmecf90.f line 89.
     crc = float(data[2])
     czs = float(data[3])
+    crs = float(data[4])
+    czc = float(data[5])
     # Skip remaining columns
     for j in range(numCoils):
        angle = m*contour_theta[j] - n*contour_zeta[j]
-       contour_R[j] = contour_R[j] + crc*np.cos(angle)
-       contour_Z[j] = contour_Z[j] + czs*np.sin(angle)
+       contour_R[j] = contour_R[j] + crc*np.cos(angle) + crs*np.sin(angle)
+       contour_Z[j] = contour_Z[j] + czs*np.sin(angle) + czc*np.cos(angle)
 f.close()
 
 contour_X = []

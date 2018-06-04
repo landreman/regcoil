@@ -41,8 +41,10 @@ else ifeq ($(HOSTNAME),pppl)
 	EXTRA_COMPILE_FLAGS = -O2 -ffree-line-length-none -fexternal-blas -fopenmp -I$(NETCDF_F)/include -I$(NETCDF_C)/include
 	EXTRA_LINK_FLAGS =  -fopenmp -L$(ACML_HOME)/lib -lacml -L$(NETCDF_C)/lib -lnetcdf -L$(NETCDF_F)/lib -lnetcdff
 	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -n 1 -c 32
-        LIBSTELL_DIR=/u/slazerso/bin/libstell_dir
-        LIBSTELL_FOR_REGCOIL=/u/slazerso/bin/libstell.a
+        #LIBSTELL_DIR=/u/slazerso/bin/libstell_dir
+        #LIBSTELL_FOR_REGCOIL=/u/slazerso/bin/libstell.a
+	LIBSTELL_DIR=/p/stellopt/stellopt260_gnu/bin/libstell_dir
+	LIBSTELL_FOR_REGCOIL=/p/stellopt/stellopt260_gnu/bin/libstell.a 
 	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -N 1 -n 1 -c 8 -p dawson
 else
 	FC = mpif90

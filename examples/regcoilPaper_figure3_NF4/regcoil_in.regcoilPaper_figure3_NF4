@@ -32,4 +32,6 @@
   bnorm_filename='../../equilibria/bnorm.li383_1.4m'
 
   symmetry_option = 1
+
+  save_level = 1
 /

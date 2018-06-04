@@ -129,6 +129,86 @@ contains
        nfp = nfp_imposed
        lasym = .true.
        
+    case(7)
+       ! Read in FOCUS format plasma boundary, for more information, please check
+       ! https://princetonuniversity.github.io/FOCUS/rdsurf.pdf
+       call safe_open(iunit, ierr, trim(shape_filename_plasma), 'old', 'formatted')
+       if (ierr .ne. 0) then
+          stop 'Error opening FOCUS file'
+       endif
+       if (lscreen) print *,"Reading FOCUS format data from file:", trim(shape_filename_plasma)
+       
+       ! Skip first line
+       read (iunit, *)
+       read (iunit, *) mnmax, nfp, nbf
+       
+       if (allocated(xm)) deallocate(xm)
+       allocate(xm(mnmax),stat=iflag)
+       if (iflag .ne. 0) stop "regcoil_init_plasma Allocation error! 1"
+
+       if (allocated(xn)) deallocate(xn)
+       allocate(xn(mnmax),stat=iflag)
+       if (iflag .ne. 0) stop "regcoil_init_plasma Allocation error!  2"
+
+       if (allocated(rmnc)) deallocate(rmnc)
+       allocate(rmnc(mnmax),stat=iflag)
+       if (iflag .ne. 0) stop "regcoil_init_plasma Allocation error!  3"
+
+       if (allocated(zmns)) deallocate(zmns)
+       allocate(zmns(mnmax),stat=iflag)
+       if (iflag .ne. 0) stop "regcoil_init_plasma Allocation error!  4"
+
+       if (allocated(rmns)) deallocate(rmns)
+       allocate(rmns(mnmax),stat=iflag)
+       if (iflag .ne. 0) stop "regcoil_init_plasma Allocation error!  5"
+
+       if (allocated(zmnc)) deallocate(zmnc)
+       allocate(zmnc(mnmax),stat=iflag)
+       if (iflag .ne. 0) stop "regcoil_init_plasma Allocation error!  6"
+       
+       ! Skip two lines
+       read (iunit, *)
+       read (iunit, *)
+       do i = 1, mnmax
+          read (iunit, *) xn(i), xm(i), rmnc(i), rmns(i), zmnc(i), zmns(i)
+       end do      
+
+       xn = xn * nfp ! include nfp
+
+       ! read bnorm coefficients if available
+       if ( nbf > 0 ) then
+          if (allocated(bfm)) deallocate(bfs)
+          allocate(bfm(nbf),stat=iflag)
+          if (iflag .ne. 0) stop "regcoil_init_plasma Allocation error!  7"          
+
+          if (allocated(bfn)) deallocate(bfc)
+          allocate(bfn(nbf),stat=iflag)
+          if (iflag .ne. 0) stop "regcoil_init_plasma Allocation error!  8"  
+
+          if (allocated(bfs)) deallocate(bfs)
+          allocate(bfs(nbf),stat=iflag)
+          if (iflag .ne. 0) stop "regcoil_init_plasma Allocation error!  9"          
+
+          if (allocated(bfc)) deallocate(bfc)
+          allocate(bfc(nbf),stat=iflag)
+          if (iflag .ne. 0) stop "regcoil_init_plasma Allocation error! 10"  
+
+          ! Skip two lines
+          read (iunit, *)
+          read (iunit, *) !empty line
+          do i = 1, nbf
+             read (iunit, *) bfn(i), bfm(i), bfc(i), bfs(i)
+          enddo
+
+          bfn = bfn * nfp ! include nfp
+
+          if (lscreen) print *,"Number of modes for Bnormal read from FOCUS file:", nbf
+       endif
+
+       close(iunit)
+       
+       lasym = .true.
+       
     case (2,3)
        ! VMEC, "original" theta coordinate which is not a straight-field-line coordinate
        call read_wout_file(wout_filename, ierr, iopen)
@@ -393,6 +473,18 @@ contains
        stop
     end select
     
+!!$    if (lscreen) print *,"Number of modes for the boundary read from FOCUS file:", mnmax
+!!$    if (lscreen) then
+!!$       print *, '----------------------------------------------------'
+!!$       write(*,*) allocated(xn), allocated(xm), allocated(rmnc), allocated(zmns), allocated(rmns), allocated(zmnc)
+!!$       write(*,*) size(xn), size(xm), size(rmnc), size(zmns), size(rmns), size(zmnc)
+!!$       do i = 1, mnmax
+!!$          !print *, "i = ", i
+!!$          write(*,*) xn(i), xm(i), rmnc(i), zmns(i)
+!!$       enddo
+!!$       print *, '----------------------------------------------------'
+!!$    endif
+    
 !!$  ! Save plasma surface shape for NESCOIL
 !!$  iunit = 15
 !!$  call safe_open(iunit,ierr,'nescin_plasma_surface','replace','formatted')
@@ -540,11 +632,14 @@ contains
     select case (geometry_option_plasma)
     case (2,3,4)
        ! A VMEC wout file is available
-       if (lscreen) print *,"Overriding net_poloidal_current_Amperes with value from the VMEC wout file."
+
        ! VMEC stores the toroidal Boozer component B_zeta as "bvco", using the HALF mesh
        net_poloidal_current_Amperes = 2*pi/mu0*(1.5_dp*bvco(ns)-0.5_dp*bvco(ns-1))
        ! curpol is a number which multiplies the data in the bnorm file.
        curpol = (2*pi/nfp)*(1.5_dp*bsubvmnc(1,ns) - 0.5_dp*bsubvmnc(1,ns-1))
+
+       if (lscreen) print *,"Overriding net_poloidal_current_Amperes with value from the VMEC wout file."
+       if (lscreen) print *,"G = ", net_poloidal_current_Amperes, " ; curpol = ", curpol
     case default
        if (abs(net_poloidal_current_Amperes-1)<1e-12) then
           if (lscreen) print *,"No VMEC file is available, and the default value of net_poloidal_current_Amperes (=1) will be used."
@@ -552,7 +647,7 @@ contains
           if (lscreen) print *,"No VMEC file is available, so net_poloidal_current_Amperes will be taken from the bdistrib input file."
        end if
     end select
-    
+
     call system_clock(toc)
     if (lscreen) print *,"Done initializing plasma surface. Took ",real(toc-tic)/countrate," sec."
 

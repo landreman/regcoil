@@ -112,7 +112,7 @@ plasma surface associated with current inside the plasma.}
 \param{net\_poloidal\_current\_Amperes}
 {real}
 {1.0}
-{If \parlink{geometry\_option\_plasma}=0,1,or 5, i.e. if the plasma surface is not a vmec equilibrium.}
+{If \parlink{geometry\_option\_plasma}=0,1, 5 or 7, i.e. if the plasma surface is not a vmec equilibrium.}
 {The number of Amperes of current the links the coil winding surface poloidally,
 denoted $G$ in \cite{regcoilPaper}. If the plasma surface is obtained from a vmec equilibrium,
 then {\ttfamily net\_poloidal\_current\_Amperes} will be determined instead
@@ -255,7 +255,10 @@ This option exists in order to examine changes when using a different poloidal c
 \parlink{efit\_psiN} taken from the {\ttfamily efit} file specified by \parlink{efit\_filename}. \\
 
 {\ttfamily geometry\_option\_plasma} = 6: The plasma surface will be loaded from an ASCII file, specified by \parlink{shape\_filename\_plasma}. The first line of this file is ignored. The second line is an integer giving the number of Fourier modes
-to read. The remaining lines contain $m$, $n$, $rmnc$, $zmns$, $rmns$, $zmnc$.
+to read. The remaining lines contain $m$, $n$, $rmnc$, $zmns$, $rmns$, $zmnc$. \\
+
+{\ttfamily geometry\_option\_plasma} = 7: The plasma surface and Bnorm information will be loaded from an ASCII file in FOCUS format, specified by \parlink{shape\_filename\_plasma}. For more information, please look here \url{https://princetonuniversity.github.io/FOCUS/rdsurf.pdf}.
+
 }
 
 \myhrule
@@ -263,7 +266,7 @@ to read. The remaining lines contain $m$, $n$, $rmnc$, $zmns$, $rmns$, $zmnc$.
 \param{shape\_filename\_plasma}
 {string}
 {`'}
-{Only when \parlink{geometry\_option\_plasma} is 6.}
+{Only when \parlink{geometry\_option\_plasma} is 6 or 7.}
 {ASCII file from which to read in the plasma shape.}
 
 \myhrule
@@ -343,7 +346,7 @@ if  \parlink{geometry\_option\_plasma} is 2.
 
 {\ttfamily geometry\_option\_coil} = 1: Identical to option 0, except the major radius of the coil surface will be set by \parlink{R0\_coil}.\\
 
-{\ttfamily geometry\_option\_coil} = 2: The coil surface will computing by expanding the plasma surface uniformly by a distance \parlink{separation}.\\
+{\ttfamily geometry\_option\_coil} = 2: The coil surface will computing by expanding the plasma surface uniformly by a distance \parlink{separation}. The expanded surface will be saved to a local file specified by \parlink{nescin\_filename}. \\
 
 {\ttfamily geometry\_option\_coil} = 3: The coil surface will be the `coil' surface in the \nescoil~`nescin' input file specified by \parlink{nescin\_filename}.
 }
@@ -378,7 +381,7 @@ if  \parlink{geometry\_option\_plasma} is 2.
 \param{nescin\_filename}
 {string}
 {`'}
-{Only when \parlink{geometry\_option\_coil} is 3.}
+{Only when \parlink{geometry\_option\_coil} is 2 (write to) or 3 (read from).}
 {Name of a \nescoil~{\ttfamily nescin} input file. The coil surface from
 this file will be used as the coil surface for \regcoil.}
 

@@ -281,7 +281,11 @@ fig.patch.set_facecolor('white')
 
 # Set up contours at appropriate levels
 x = net_poloidal_current_Amperes/nfp
-contours = np.linspace(-0.5*x,1.5*x,coilsPerHalfPeriod*2*2,endpoint=False)
+if abs(x) > np.finfo(float).eps:  # if net_poloidal_current_Ampere presented
+    contours = np.linspace(-0.5*x,1.5*x,coilsPerHalfPeriod*2*2,endpoint=False)
+else:
+    x = np.max(current_potential) # some new value
+    contours = np.linspace(-0.5*x,1.5*x,coilsPerHalfPeriod*2*2,endpoint=False)
 d = contours[1]-contours[0]
 contours = contours + d/2
 
@@ -292,7 +296,7 @@ for whichPlot in range(numPlots):
     plt.subplot(numRows,numCols,whichPlot+1)
     data = np.transpose(current_potential[ilambda_to_plot[whichPlot]-1,:,:])
     data_extended = np.concatenate((data,data[0:1,:]),axis=0) # Add the repeated point in theta
-    data_extended = np.concatenate((data_extended,data_extended[:,0:1]+x),axis=1) # Add the repeated point in zeta
+    data_extended = np.concatenate((data_extended,data_extended[:,0:1]+x),axis=1) # Add the repeated point in zeta +G
     plt.contourf(zeta_coil_extended, theta_coil_extended, data_extended, contours)
     plt.colorbar()
     plt.xlabel('zeta',fontsize='x-small')
@@ -357,7 +361,7 @@ for whichPlot in range(numPlots-2):
     plt.ylabel('theta',fontsize='x-small')
     plt.title('Total, lambda='+str(lambdas[ilambda_to_plot[whichPlot]-1]),fontsize='x-small')
 
-plt.tight_layout()
+#plt.tight_layout()
 plt.figtext(0.5,0.99,"Bnormal [Tesla]",horizontalalignment='center',verticalalignment='top',fontsize='small')
 
 

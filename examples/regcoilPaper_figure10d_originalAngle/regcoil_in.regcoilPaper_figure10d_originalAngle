@@ -4,7 +4,7 @@
 ! /global/cscratch1/sd/landrema/20160801-01-regcoilPaper/20160801-01-079-W7X_REGCOIL_withBnorm_mpol32_ntor32_ntheta128_nzeta128_uniform_0.5m_offset
 
 &regcoil_nml
-  nlambda = 10
+  nlambda = 1
   lambda_min = 1e-15
   lambda_max = 1e-14
 
@@ -29,4 +29,6 @@
   net_toroidal_current_Amperes = 0.0
 
   symmetry_option = 1
+
+  save_level = 1
 /
