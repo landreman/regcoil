@@ -1,14 +1,10 @@
-module regcoil_build_matrices
-
-contains
-
-subroutine build_matrices(lscreen_optin)
+subroutine regcoil_build_matrices()
 
   use regcoil_variables
   use stel_constants
   use stel_kinds
   use omp_lib
-  use init_Fourier_modes_mod
+  use regcoil_init_Fourier_modes_mod
   
   implicit none
 
@@ -20,7 +16,13 @@ subroutine build_matrices(lscreen_optin)
   real(dp) :: angle, sinangle, cosangle
   real(dp), dimension(:,:,:), allocatable :: factor_for_h
   real(dp), dimension(:), allocatable :: norm_normal_plasma_inv1D, norm_normal_coil_inv1D
-  real(dp), dimension(:,:), allocatable :: g_over_N_plasma, f_x_over_N_coil, f_y_over_N_coil, f_z_over_N_coil
+  real(dp), dimension(:,:), allocatable :: g_over_N_plasma, f_x_over_N_coil, f_y_over_N_coil, f_z_over_N_coil, f_Laplace_Beltrami_over_N_coil
+  real(dp), dimension(:,:), allocatable :: g_theta_theta, g_theta_zeta, g_zeta_zeta
+  real(dp), dimension(:,:), allocatable :: d_g_theta_theta_d_theta, d_g_theta_theta_d_zeta
+  real(dp), dimension(:,:), allocatable :: d_g_theta_zeta_d_theta, d_g_theta_zeta_d_zeta
+  real(dp), dimension(:,:), allocatable :: d_g_zeta_zeta_d_theta, d_g_zeta_zeta_d_zeta
+  real(dp), dimension(:,:), allocatable :: d_N_d_theta, d_N_d_zeta
+  real(dp), dimension(:,:), allocatable :: Laplace_Beltrami_d_Phi_d_theta_coefficient, Laplace_Beltrami_d_Phi_d_zeta_coefficient
   
   ! Variables needed by BLAS DGEMM:
   character :: TRANSA, TRANSB
@@ -28,64 +30,154 @@ subroutine build_matrices(lscreen_optin)
   real(dp) :: BLAS_ALPHA=1, BLAS_BETA=0
   real(dp), dimension(:,:), allocatable :: tempMatrix
 
-  ! variables to handle printing to the screen
-  logical, optional :: lscreen_optin
-  logical :: lscreen
 
-  if(present(lscreen_optin)) then
-    lscreen = lscreen_optin
-  else
-    lscreen = .true.
-  endif
- 
   call system_clock(tic,countrate)
-  if (lscreen) print *,"Initializing basis functions and f"
+  if (verbose) print *,"Initializing basis functions and f"
   
   ! Initialize Fourier arrays
-  call init_Fourier_modes(mpol_coil, ntor_coil, mnmax_coil, xm_coil, xn_coil)
-  xn_coil = xn_coil * nfp
+  call regcoil_init_Fourier_modes(mpol_potential, ntor_potential, mnmax_potential, xm_potential, xn_potential, .false.)
+  xn_potential = xn_potential * nfp
   
   select case (symmetry_option)
   case (1,2)
-     num_basis_functions = mnmax_coil
+     num_basis_functions = mnmax_potential
   case (3)
-     num_basis_functions = mnmax_coil * 2
+     num_basis_functions = mnmax_potential * 2
   case default
      print *,"Error! Invalid setting for symmetry_option:",symmetry_option
      stop
   end select
 
-  ! Adding some checks to release previously allocated variables.
-  ! This is because STELLOPT may call this function multiple times.
-  ! if (allocated()) deallocate()
-  
   if (allocated(basis_functions)) deallocate(basis_functions)
   allocate(basis_functions(ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'brm Allocation error 1!'
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 1!'
 
   if (allocated(f_x)) deallocate(f_x)
   allocate(f_x(ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'brm Allocation error 2!'
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 2!'
 
   if (allocated(f_y)) deallocate(f_y)
   allocate(f_y(ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'brm Allocation error 3!'
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 3!'
 
   if (allocated(f_z)) deallocate(f_z)
   allocate(f_z(ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'brm Allocation error 4!'
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 4!'
+
+  if (allocated(f_Laplace_Beltrami)) deallocate(f_Laplace_Beltrami)
+  allocate(f_Laplace_Beltrami(ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 4!'
 
   if (allocated(d_x)) deallocate(d_x)
   allocate(d_x(ntheta_coil*nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'brm Allocation error 5!'
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 5!'
 
   if (allocated(d_y)) deallocate(d_y)
   allocate(d_y(ntheta_coil*nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'brm Allocation error 6!'
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 6!'
 
   if (allocated(d_z)) deallocate(d_z)
   allocate(d_z(ntheta_coil*nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'brm Allocation error 7!'
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 7!'
+
+  if (allocated(d_Laplace_Beltrami)) deallocate(d_Laplace_Beltrami)
+  allocate(d_Laplace_Beltrami(ntheta_coil*nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 7!'
+
+
+  allocate(g_theta_theta(ntheta_coil,nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error!'
+
+  allocate(g_theta_zeta(ntheta_coil,nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error!'
+
+  allocate(g_zeta_zeta(ntheta_coil,nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error!'
+
+  allocate(d_g_theta_theta_d_theta(ntheta_coil,nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error!'
+
+  allocate(d_g_theta_theta_d_zeta(ntheta_coil,nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error!'
+
+  allocate(d_g_theta_zeta_d_theta(ntheta_coil,nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error!'
+
+  allocate(d_g_theta_zeta_d_zeta(ntheta_coil,nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error!'
+
+  allocate(d_g_zeta_zeta_d_theta(ntheta_coil,nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error!'
+
+  allocate(d_g_zeta_zeta_d_zeta(ntheta_coil,nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error!'
+
+  allocate(d_N_d_theta(ntheta_coil,nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error!'
+
+  allocate(d_N_d_zeta(ntheta_coil,nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error!'
+
+  allocate(Laplace_Beltrami_d_Phi_d_theta_coefficient(ntheta_coil,nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error!'
+
+  allocate(Laplace_Beltrami_d_Phi_d_zeta_coefficient(ntheta_coil,nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error!'
+
+  ! For the Laplace-Beltrami operator, compute the metric coefficients and their derivatives on the coil surface.
+  ! See my notes from 20180516 for the derivation of the necessary quantities.
+
+  g_theta_theta = drdtheta_coil(1,:,1:nzeta_coil) * drdtheta_coil(1,:,1:nzeta_coil) &
+       +          drdtheta_coil(2,:,1:nzeta_coil) * drdtheta_coil(2,:,1:nzeta_coil) &
+       +          drdtheta_coil(3,:,1:nzeta_coil) * drdtheta_coil(3,:,1:nzeta_coil)
+
+  g_theta_zeta  = drdtheta_coil(1,:,1:nzeta_coil) * drdzeta_coil(1,:,1:nzeta_coil) &
+       +          drdtheta_coil(2,:,1:nzeta_coil) * drdzeta_coil(2,:,1:nzeta_coil) &
+       +          drdtheta_coil(3,:,1:nzeta_coil) * drdzeta_coil(3,:,1:nzeta_coil)
+
+  g_zeta_zeta   = drdzeta_coil(1,:,1:nzeta_coil) * drdzeta_coil(1,:,1:nzeta_coil) &
+       +          drdzeta_coil(2,:,1:nzeta_coil) * drdzeta_coil(2,:,1:nzeta_coil) &
+       +          drdzeta_coil(3,:,1:nzeta_coil) * drdzeta_coil(3,:,1:nzeta_coil)
+
+  d_g_theta_theta_d_theta = (d2rdtheta2_coil(1,:,1:nzeta_coil) * drdtheta_coil(1,:,1:nzeta_coil) &
+       +                     d2rdtheta2_coil(2,:,1:nzeta_coil) * drdtheta_coil(2,:,1:nzeta_coil) &
+       +                     d2rdtheta2_coil(3,:,1:nzeta_coil) * drdtheta_coil(3,:,1:nzeta_coil)) * 2
+
+  d_g_theta_theta_d_zeta  = (d2rdthetadzeta_coil(1,:,1:nzeta_coil) * drdtheta_coil(1,:,1:nzeta_coil) &
+       +                     d2rdthetadzeta_coil(2,:,1:nzeta_coil) * drdtheta_coil(2,:,1:nzeta_coil) &
+       +                     d2rdthetadzeta_coil(3,:,1:nzeta_coil) * drdtheta_coil(3,:,1:nzeta_coil)) * 2
+
+  d_g_theta_zeta_d_theta = d2rdtheta2_coil(1,:,1:nzeta_coil) * drdzeta_coil(1,:,1:nzeta_coil) &
+       +                   d2rdtheta2_coil(2,:,1:nzeta_coil) * drdzeta_coil(2,:,1:nzeta_coil) &
+       +                   d2rdtheta2_coil(3,:,1:nzeta_coil) * drdzeta_coil(3,:,1:nzeta_coil) &
+       +                   drdtheta_coil(1,:,1:nzeta_coil) * d2rdthetadzeta_coil(1,:,1:nzeta_coil) &
+       +                   drdtheta_coil(2,:,1:nzeta_coil) * d2rdthetadzeta_coil(2,:,1:nzeta_coil) &
+       +                   drdtheta_coil(3,:,1:nzeta_coil) * d2rdthetadzeta_coil(3,:,1:nzeta_coil)
+
+  d_g_theta_zeta_d_zeta = d2rdthetadzeta_coil(1,:,1:nzeta_coil) * drdzeta_coil(1,:,1:nzeta_coil) &
+       +                  d2rdthetadzeta_coil(2,:,1:nzeta_coil) * drdzeta_coil(2,:,1:nzeta_coil) &
+       +                  d2rdthetadzeta_coil(3,:,1:nzeta_coil) * drdzeta_coil(3,:,1:nzeta_coil) &
+       +                  drdtheta_coil(1,:,1:nzeta_coil) * d2rdzeta2_coil(1,:,1:nzeta_coil) &
+       +                  drdtheta_coil(2,:,1:nzeta_coil) * d2rdzeta2_coil(2,:,1:nzeta_coil) &
+       +                  drdtheta_coil(3,:,1:nzeta_coil) * d2rdzeta2_coil(3,:,1:nzeta_coil)
+
+  d_g_zeta_zeta_d_theta = (d2rdthetadzeta_coil(1,:,1:nzeta_coil) * drdzeta_coil(1,:,1:nzeta_coil) &
+       +                   d2rdthetadzeta_coil(2,:,1:nzeta_coil) * drdzeta_coil(2,:,1:nzeta_coil) &
+       +                   d2rdthetadzeta_coil(3,:,1:nzeta_coil) * drdzeta_coil(3,:,1:nzeta_coil)) * 2
+
+  d_g_zeta_zeta_d_zeta = (d2rdzeta2_coil(1,:,1:nzeta_coil) * drdzeta_coil(1,:,1:nzeta_coil) &
+       +                  d2rdzeta2_coil(2,:,1:nzeta_coil) * drdzeta_coil(2,:,1:nzeta_coil) &
+       +                  d2rdzeta2_coil(3,:,1:nzeta_coil) * drdzeta_coil(3,:,1:nzeta_coil)) * 2
+
+  d_N_d_theta = (d_g_zeta_zeta_d_theta * g_theta_theta + d_g_theta_theta_d_theta * g_zeta_zeta - 2 * d_g_theta_zeta_d_theta * g_theta_zeta) / (2 * norm_normal_coil)
+
+  d_N_d_zeta  = (d_g_zeta_zeta_d_zeta  * g_theta_theta + d_g_theta_theta_d_zeta  * g_zeta_zeta - 2 * d_g_theta_zeta_d_zeta  * g_theta_zeta) / (2 * norm_normal_coil)
+
+  Laplace_Beltrami_d_Phi_d_theta_coefficient = (d_g_zeta_zeta_d_theta - d_g_theta_zeta_d_zeta &
+       + (-g_zeta_zeta * d_N_d_theta + g_theta_zeta * d_N_d_zeta) / norm_normal_coil) / norm_normal_coil
+
+  Laplace_Beltrami_d_Phi_d_zeta_coefficient  = (d_g_theta_theta_d_zeta - d_g_theta_zeta_d_theta &
+       + (g_theta_zeta * d_N_d_theta - g_theta_theta * d_N_d_zeta) / norm_normal_coil) / norm_normal_coil
 
   d_x = reshape((net_poloidal_current_Amperes * drdtheta_coil(1,:,1:nzeta_coil) - net_toroidal_current_Amperes * drdzeta_coil(1,:,1:nzeta_coil)) / twopi, &
        (/ ntheta_coil*nzeta_coil /))
@@ -93,6 +185,9 @@ subroutine build_matrices(lscreen_optin)
        (/ ntheta_coil*nzeta_coil /))
   d_z = reshape((net_poloidal_current_Amperes * drdtheta_coil(3,:,1:nzeta_coil) - net_toroidal_current_Amperes * drdzeta_coil(3,:,1:nzeta_coil)) / twopi, &
        (/ ntheta_coil*nzeta_coil /))
+
+  d_Laplace_Beltrami = -reshape((net_poloidal_current_Amperes / twopi) * Laplace_Beltrami_d_Phi_d_zeta_coefficient &
+       + (net_toroidal_current_Amperes / twopi) * Laplace_Beltrami_d_Phi_d_theta_coefficient, (/ ntheta_coil*nzeta_coil /))
 
   select case (symmetry_option)
   case (1)
@@ -113,7 +208,7 @@ subroutine build_matrices(lscreen_optin)
   do whichSymmetry = minSymmetry, maxSymmetry
      
      if (whichSymmetry==2 .and. symmetry_option==3) then
-        offset = mnmax_coil
+        offset = mnmax_potential
      else
         offset = 0
      end if
@@ -121,20 +216,32 @@ subroutine build_matrices(lscreen_optin)
      do izeta_coil = 1, nzeta_coil
         do itheta_coil = 1, ntheta_coil
            index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
-           do imn = 1, mnmax_coil
-              angle = xm_coil(imn)*theta_coil(itheta_coil)-xn_coil(imn)*zeta_coil(izeta_coil)
+           do imn = 1, mnmax_potential
+              angle = xm_potential(imn)*theta_coil(itheta_coil)-xn_potential(imn)*zeta_coil(izeta_coil)
               sinangle = sin(angle)
               cosangle = cos(angle)
               if (whichSymmetry==1) then
                  basis_functions(index_coil, imn) = sinangle
-                 f_x(index_coil, imn) = cosangle*(xn_coil(imn)*drdtheta_coil(1,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(1,itheta_coil,izeta_coil))
-                 f_y(index_coil, imn) = cosangle*(xn_coil(imn)*drdtheta_coil(2,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(2,itheta_coil,izeta_coil))
-                 f_z(index_coil, imn) = cosangle*(xn_coil(imn)*drdtheta_coil(3,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(3,itheta_coil,izeta_coil))
+                 f_x(index_coil, imn) = cosangle*(xn_potential(imn)*drdtheta_coil(1,itheta_coil,izeta_coil) + xm_potential(imn)*drdzeta_coil(1,itheta_coil,izeta_coil))
+                 f_y(index_coil, imn) = cosangle*(xn_potential(imn)*drdtheta_coil(2,itheta_coil,izeta_coil) + xm_potential(imn)*drdzeta_coil(2,itheta_coil,izeta_coil))
+                 f_z(index_coil, imn) = cosangle*(xn_potential(imn)*drdtheta_coil(3,itheta_coil,izeta_coil) + xm_potential(imn)*drdzeta_coil(3,itheta_coil,izeta_coil))
+                 f_Laplace_Beltrami(index_coil, imn) = ( &
+                      xm_potential(imn) * Laplace_Beltrami_d_Phi_d_theta_coefficient(itheta_coil, izeta_coil) &
+                      - xn_potential(imn) * Laplace_Beltrami_d_Phi_d_zeta_coefficient(itheta_coil, izeta_coil)) * cosangle &
+                      + (   xm_potential(imn) * xm_potential(imn) * g_zeta_zeta(  itheta_coil, izeta_coil) &
+                      +     xn_potential(imn) * xn_potential(imn) * g_theta_theta(itheta_coil, izeta_coil) &
+                      + 2 * xm_potential(imn) * xn_potential(imn) * g_theta_zeta( itheta_coil, izeta_coil) ) * (-sinangle) / norm_normal_coil(itheta_coil, izeta_coil)
               else
                  basis_functions(index_coil, imn+offset) = cosangle
-                 f_x(index_coil, imn+offset) = -sinangle*(xn_coil(imn)*drdtheta_coil(1,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(1,itheta_coil,izeta_coil))
-                 f_y(index_coil, imn+offset) = -sinangle*(xn_coil(imn)*drdtheta_coil(2,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(2,itheta_coil,izeta_coil))
-                 f_z(index_coil, imn+offset) = -sinangle*(xn_coil(imn)*drdtheta_coil(3,itheta_coil,izeta_coil) + xm_coil(imn)*drdzeta_coil(3,itheta_coil,izeta_coil))
+                 f_x(index_coil, imn+offset) = -sinangle*(xn_potential(imn)*drdtheta_coil(1,itheta_coil,izeta_coil) + xm_potential(imn)*drdzeta_coil(1,itheta_coil,izeta_coil))
+                 f_y(index_coil, imn+offset) = -sinangle*(xn_potential(imn)*drdtheta_coil(2,itheta_coil,izeta_coil) + xm_potential(imn)*drdzeta_coil(2,itheta_coil,izeta_coil))
+                 f_z(index_coil, imn+offset) = -sinangle*(xn_potential(imn)*drdtheta_coil(3,itheta_coil,izeta_coil) + xm_potential(imn)*drdzeta_coil(3,itheta_coil,izeta_coil))
+                 f_Laplace_Beltrami(index_coil, imn + offset) = ( &
+                      xm_potential(imn) * Laplace_Beltrami_d_Phi_d_theta_coefficient(itheta_coil, izeta_coil) &
+                      - xn_potential(imn) * Laplace_Beltrami_d_Phi_d_zeta_coefficient(itheta_coil, izeta_coil)) * (-sinangle) &
+                      + (   xm_potential(imn) * xm_potential(imn) * g_zeta_zeta(  itheta_coil, izeta_coil) &
+                      +     xn_potential(imn) * xn_potential(imn) * g_theta_theta(itheta_coil, izeta_coil) &
+                      + 2 * xm_potential(imn) * xn_potential(imn) * g_theta_zeta( itheta_coil, izeta_coil) ) * (-cosangle) / norm_normal_coil(itheta_coil, izeta_coil)
               end if
            end do
         end do
@@ -142,31 +249,27 @@ subroutine build_matrices(lscreen_optin)
   end do
   
   call system_clock(toc)
-  if (lscreen) print *,"Done. Took",real(toc-tic)/countrate,"sec."
+  if (verbose) print *,"Done. Took",real(toc-tic)/countrate,"sec."
   
 
   if (allocated(g)) deallocate(g)
   allocate(g(ntheta_plasma*nzeta_plasma, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'brm Allocation error 8!'
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 8!'
 
   if (allocated(inductance)) deallocate(inductance)
   allocate(inductance(ntheta_plasma*nzeta_plasma, ntheta_coil*nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'brm Allocation error 9!'
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 9!'
 
   if (allocated(h)) deallocate(h)
   allocate(h(ntheta_plasma*nzeta_plasma),stat=iflag)
-  if (iflag .ne. 0) stop 'brm Allocation error 10!'
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 10!'
 
-  ! if (allocated(factor_for_h)) then
-  !   print *, 'Deallocating factor_h_for_h (which should have been done?!?!)'
-  !   deallocate(factor_for_h)
-  ! endif
   allocate(factor_for_h(3,ntheta_coil,nzetal_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'brm Allocation error 11!'
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 11!'
 
   if (allocated(Bnormal_from_net_coil_currents)) deallocate(Bnormal_from_net_coil_currents)
   allocate(Bnormal_from_net_coil_currents(ntheta_plasma,nzeta_plasma),stat=iflag)
-  if (iflag .ne. 0) stop 'brm Allocation error 12!'
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 12!'
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Now compute g and h
@@ -177,11 +280,11 @@ subroutine build_matrices(lscreen_optin)
   factor_for_h = net_poloidal_current_Amperes * drdtheta_coil - net_toroidal_current_Amperes * drdzeta_coil
 
   call system_clock(tic,countrate)
-  if (lscreen) print *,"Building inductance matrix and h."
+  if (verbose) print *,"Building inductance matrix and h."
   !$OMP PARALLEL
 
   !$OMP MASTER
-  if (lscreen) print *,"  Number of OpenMP threads:",omp_get_num_threads()
+  if (verbose) print *,"  Number of OpenMP threads:",omp_get_num_threads()
   !$OMP END MASTER
 
   ! Note: the outermost loop below must be over the plasma variables rather than over the coil variables.
@@ -235,7 +338,7 @@ subroutine build_matrices(lscreen_optin)
   !$OMP END PARALLEL
 
   call system_clock(toc)
-  if (lscreen) print *,"Done. Took",real(toc-tic)/countrate,"sec."
+  if (verbose) print *,"Done. Took",real(toc-tic)/countrate,"sec."
   
   h = h * (dtheta_coil*dzeta_coil*mu0/(8*pi*pi))
   inductance = inductance * (mu0/(4*pi))
@@ -247,8 +350,7 @@ subroutine build_matrices(lscreen_optin)
 
   ! For some reason, the BLAS matrix-matrix multiplication function DGEMM sometimes causes the
   ! program to crash on Edison unless you are careful to use the Intel MKL instead of Cray LibSci.
-  ! If you like, you can use the following method which is slower but more reliable:
-  !    inductance = matmul(transpose(basis_functions_1), matmul(inductance_xbasis, basis_functions_2))
+  ! If you like, you can use "matmul" instead which is slower but more reliable.
 
   !*******************************************************
   ! Call BLAS3 subroutine DGEMM for matrix multiplications:
@@ -272,47 +374,50 @@ subroutine build_matrices(lscreen_optin)
   call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,inductance,LDA,basis_functions,LDB,BLAS_BETA,g,LDC)
 
   call system_clock(toc)
-  if (lscreen) print *,"inductance*basis_functions:",real(toc-tic)/countrate,"sec."
+  if (verbose) print *,"inductance*basis_functions:",real(toc-tic)/countrate,"sec."
 
   if (allocated(matrix_B)) deallocate(matrix_B)
   allocate(matrix_B(num_basis_functions, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'brm Allocation error 13!'
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 13!'
 
-  if (allocated(matrix_K)) deallocate(matrix_K)
-  allocate(matrix_K(num_basis_functions, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'brm Allocation error 14!'
+  if (allocated(matrix_regularization)) deallocate(matrix_regularization)
+  allocate(matrix_regularization(num_basis_functions, num_basis_functions),stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 14!'
 
   if (allocated(RHS_B)) deallocate(RHS_B)
   allocate(RHS_B(num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'brm Allocation error 15!'
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 15!'
 
-  if (allocated(RHS_K)) deallocate(RHS_K)
-  allocate(RHS_K(num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'brm Allocation error 16!'
+  if (allocated(RHS_regularization)) deallocate(RHS_regularization)
+  allocate(RHS_regularization(num_basis_functions),stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 16!'
 
   ! if (allocated(norm_normal_plasma_inv1D)) deallocate(norm_normal_plasma_inv1D)
   allocate(norm_normal_plasma_inv1D(ntheta_plasma*nzeta_plasma),stat=iflag)
-  if (iflag .ne. 0) stop 'brm Allocation error 17!'
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 17!'
 
   ! if (allocated(norm_normal_coil_inv1D)) deallocate(norm_normal_coil_inv1D)
   allocate(norm_normal_coil_inv1D(ntheta_coil*nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'brm Allocation error 18!'
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 18!'
 
   ! if (allocated(g_over_N_plasma)) deallocate(g_over_N_plasma)
   allocate(g_over_N_plasma(ntheta_plasma*nzeta_plasma,num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'brm Allocation error 19!'
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 19!'
 
   ! if (allocated(f_x_over_N_coil)) deallocate(f_x_over_N_coil)
   allocate(f_x_over_N_coil(ntheta_coil*nzeta_coil,num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'brm Allocation error 20!'
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 20!'
 
   ! if (allocated(f_y_over_N_coil)) deallocate(f_y_over_N_coil)
   allocate(f_y_over_N_coil(ntheta_coil*nzeta_coil,num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'brm Allocation error 21!'
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 21!'
 
   ! if (allocated(f_z_over_N_coil)) deallocate(f_z_over_N_coil)
   allocate(f_z_over_N_coil(ntheta_coil*nzeta_coil,num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'brm Allocation error 22!'
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 22!'
+
+  allocate(f_Laplace_Beltrami_over_N_coil(ntheta_coil*nzeta_coil,num_basis_functions),stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 22!'
 
   call system_clock(tic)
 
@@ -320,7 +425,7 @@ subroutine build_matrices(lscreen_optin)
        reshape(Bnormal_from_plasma_current+Bnormal_from_net_coil_currents, (/ ntheta_plasma*nzeta_plasma /)), g)
 
   call system_clock(toc)
-  if (lscreen) print *,"Form RHS_B:",real(toc-tic)/countrate,"sec."
+  if (verbose) print *,"Form RHS_B:",real(toc-tic)/countrate,"sec."
   call system_clock(tic)
 
   norm_normal_plasma_inv1D = reshape(1/norm_normal_plasma, (/ ntheta_plasma*nzeta_plasma /))
@@ -330,13 +435,14 @@ subroutine build_matrices(lscreen_optin)
      f_x_over_N_coil(:,j) = f_x(:,j) * norm_normal_coil_inv1D
      f_y_over_N_coil(:,j) = f_y(:,j) * norm_normal_coil_inv1D
      f_z_over_N_coil(:,j) = f_z(:,j) * norm_normal_coil_inv1D
+     f_Laplace_Beltrami_over_N_coil(:,j) = f_Laplace_Beltrami(:,j) * norm_normal_coil_inv1D
   end do
   matrix_B = 0
   deallocate(norm_normal_plasma_inv1D)
   deallocate(norm_normal_coil_inv1D)
 
   call system_clock(toc)
-  if (lscreen) print *,"Prepare for matrix_B:",real(toc-tic)/countrate,"sec."
+  if (verbose) print *,"Prepare for matrix_B:",real(toc-tic)/countrate,"sec."
   call system_clock(tic)
 
 
@@ -357,89 +463,142 @@ subroutine build_matrices(lscreen_optin)
   call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,g,LDA,g_over_N_plasma,LDB,BLAS_BETA,matrix_B,LDC)
 
   call system_clock(toc)
-  if (lscreen) print *,"matmul for matrix_B:",real(toc-tic)/countrate,"sec."
+  if (verbose) print *,"matmul for matrix_B:",real(toc-tic)/countrate,"sec."
 
   deallocate(g_over_N_plasma)
     
 
+  matrix_regularization = 0
+     
+  select case (trim(regularization_term_option))
+  case (regularization_term_option_chi2_K, regularization_term_option_K_xy)
+  
+     call system_clock(tic)
+     ! Here we carry out matrix_regularization += dtheta*dzeta*(f_x ^ T) * f_x_over_N_coil
+     ! A = f_x
+     ! B = f_x_over_N_plasma
+     ! C = matrix_regularization
+     M = num_basis_functions ! # rows of A^T
+     N = num_basis_functions ! # cols of B
+     K = ntheta_coil*nzeta_coil ! Common dimension of A^T and B
+     LDA = K ! Would be M if not taking the transpose.
+     LDB = K
+     LDC = M
+     TRANSA = 'T' ! DO take a transpose!
+     TRANSB = 'N'
+     BLAS_ALPHA = dtheta_coil*dzeta_coil
+     BLAS_BETA=1
+     call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_x,LDA,f_x_over_N_coil,LDB,BLAS_BETA,matrix_regularization,LDC)
+     
+     call system_clock(toc)
+     if (verbose) print *,"matmul 1 for matrix_regularization:",real(toc-tic)/countrate,"sec."
+     
+     call system_clock(tic)
+     ! Here we carry out matrix_regularization += dtheta*dzeta*(f_y ^ T) * f_y_over_N_coil
+     ! A = f_y
+     ! B = f_y_over_N_plasma
+     ! C = matrix_regularization
+     M = num_basis_functions ! # rows of A^T
+     N = num_basis_functions ! # cols of B
+     K = ntheta_coil*nzeta_coil ! Common dimension of A^T and B
+     LDA = K ! Would be M if not taking the transpose.
+     LDB = K
+     LDC = M
+     TRANSA = 'T' ! DO take a transpose!
+     TRANSB = 'N'
+     BLAS_ALPHA = dtheta_coil*dzeta_coil
+     BLAS_BETA=1
+     call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_y,LDA,f_y_over_N_coil,LDB,BLAS_BETA,matrix_regularization,LDC)
+     
+     call system_clock(toc)
+     if (verbose) print *,"matmul 2 for matrix_regularization:",real(toc-tic)/countrate,"sec."
+     
+     if (trim(regularization_term_option) == regularization_term_option_chi2_K) then
+        call system_clock(tic)
+        ! Here we carry out matrix_regularization += dtheta*dzeta*(f_z ^ T) * f_z_over_N_coil
+        ! A = f_z
+        ! B = f_z_over_N_plasma
+        ! C = matrix_regularization
+        M = num_basis_functions ! # rows of A^T
+        N = num_basis_functions ! # cols of B
+        K = ntheta_coil*nzeta_coil ! Common dimension of A^T and B
+        LDA = K ! Would be M if not taking the transpose.
+        LDB = K
+        LDC = M
+        TRANSA = 'T' ! DO take a transpose!
+        TRANSB = 'N'
+        BLAS_ALPHA = dtheta_coil*dzeta_coil
+        BLAS_BETA=1
+        call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_z,LDA,f_z_over_N_coil,LDB,BLAS_BETA,matrix_regularization,LDC)
+        
+        call system_clock(toc)
+        if (verbose) print *,"matmul 3 for matrix_regularization:",real(toc-tic)/countrate,"sec."
+     end if
+     
+     
+     call system_clock(tic)
+     
+     if (trim(regularization_term_option) == regularization_term_option_chi2_K) then     
+        RHS_regularization = (matmul(d_x, f_x_over_N_coil) + matmul(d_y, f_y_over_N_coil) + matmul(d_z, f_z_over_N_coil)) &
+             * (dtheta_coil*dzeta_coil)
+     else
+        RHS_regularization = (matmul(d_x, f_x_over_N_coil) + matmul(d_y, f_y_over_N_coil)) &
+             * (dtheta_coil*dzeta_coil)
+     end if
+     
+     call system_clock(toc)
+     if (verbose) print *,"Matmuls for RHS_regularization:",real(toc-tic)/countrate,"sec."
 
-  matrix_K = 0
+  case (regularization_term_option_Laplace_Beltrami)
+     ! ------------------------------------------------------------------
+     ! Laplace-Beltrami matrix and RHS:
+     
+     call system_clock(tic)
+     ! Here we carry out matrix = dtheta*dzeta*(f ^ T) * f_over_N_coil
+     ! A = f
+     ! B = f_over_N_plasma
+     ! C = matrix
+     M = num_basis_functions ! # rows of A^T
+     N = num_basis_functions ! # cols of B
+     K = ntheta_coil*nzeta_coil ! Common dimension of A^T and B
+     LDA = K ! Would be M if not taking the transpose.
+     LDB = K
+     LDC = M
+     TRANSA = 'T' ! DO take a transpose!
+     TRANSB = 'N'
+     BLAS_ALPHA = dtheta_coil*dzeta_coil
+     BLAS_BETA=1
+     call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_Laplace_Beltrami,LDA,f_Laplace_Beltrami_over_N_coil,LDB,BLAS_BETA,matrix_regularization,LDC)
+     
+     call system_clock(toc)
+     if (verbose) print *,"matmul for matrix_regularization:",real(toc-tic)/countrate,"sec."
+     
+     call system_clock(tic)
+     
+     RHS_regularization = matmul(d_Laplace_Beltrami, f_Laplace_Beltrami_over_N_coil) * (dtheta_coil*dzeta_coil)
+     
+     call system_clock(toc)
+     if (verbose) print *,"Matmul for RHS_regularization:",real(toc-tic)/countrate,"sec."
 
-  call system_clock(tic)
-  ! Here we carry out matrix_K += dtheta*dzeta*(f_x ^ T) * f_x_over_N_coil
-  ! A = f_x
-  ! B = f_x_over_N_plasma
-  ! C = matrix_K
-  M = num_basis_functions ! # rows of A^T
-  N = num_basis_functions ! # cols of B
-  K = ntheta_coil*nzeta_coil ! Common dimension of A^T and B
-  LDA = K ! Would be M if not taking the transpose.
-  LDB = K
-  LDC = M
-  TRANSA = 'T' ! DO take a transpose!
-  TRANSB = 'N'
-  BLAS_ALPHA = dtheta_coil*dzeta_coil
-  BLAS_BETA=1
-  call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_x,LDA,f_x_over_N_coil,LDB,BLAS_BETA,matrix_K,LDC)
+  case default
+     print *,"Error! Unrecognized regularization_term_option: ",regularization_term_option
+  end select
 
-  call system_clock(toc)
-  if (lscreen) print *,"matmul 1 for matrix_K:",real(toc-tic)/countrate,"sec."
-
-  call system_clock(tic)
-  ! Here we carry out matrix_K += dtheta*dzeta*(f_y ^ T) * f_y_over_N_coil
-  ! A = f_y
-  ! B = f_y_over_N_plasma
-  ! C = matrix_K
-  M = num_basis_functions ! # rows of A^T
-  N = num_basis_functions ! # cols of B
-  K = ntheta_coil*nzeta_coil ! Common dimension of A^T and B
-  LDA = K ! Would be M if not taking the transpose.
-  LDB = K
-  LDC = M
-  TRANSA = 'T' ! DO take a transpose!
-  TRANSB = 'N'
-  BLAS_ALPHA = dtheta_coil*dzeta_coil
-  BLAS_BETA=1
-  call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_y,LDA,f_y_over_N_coil,LDB,BLAS_BETA,matrix_K,LDC)
-
-  call system_clock(toc)
-  if (lscreen) print *,"matmul 2 for matrix_K:",real(toc-tic)/countrate,"sec."
-
-  call system_clock(tic)
-  ! Here we carry out matrix_K += dtheta*dzeta*(f_z ^ T) * f_z_over_N_coil
-  ! A = f_z
-  ! B = f_z_over_N_plasma
-  ! C = matrix_K
-  M = num_basis_functions ! # rows of A^T
-  N = num_basis_functions ! # cols of B
-  K = ntheta_coil*nzeta_coil ! Common dimension of A^T and B
-  LDA = K ! Would be M if not taking the transpose.
-  LDB = K
-  LDC = M
-  TRANSA = 'T' ! DO take a transpose!
-  TRANSB = 'N'
-  BLAS_ALPHA = dtheta_coil*dzeta_coil
-  BLAS_BETA=1
-  call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_z,LDA,f_z_over_N_coil,LDB,BLAS_BETA,matrix_K,LDC)
-
-  call system_clock(toc)
-  if (lscreen) print *,"matmul 3 for matrix_K:",real(toc-tic)/countrate,"sec."
-
-
-
-  call system_clock(tic)
-
-  RHS_K = (matmul(d_x, f_x_over_N_coil) + matmul(d_y, f_y_over_N_coil) + matmul(d_z, f_z_over_N_coil)) &
-       * (dtheta_coil*dzeta_coil)
-
-  call system_clock(toc)
-  if (lscreen) print *,"Matmuls for RHS_K:",real(toc-tic)/countrate,"sec."
+  ! ------------------------------------------------------------------
 
   deallocate(f_x_over_N_coil)
   deallocate(f_y_over_N_coil)
   deallocate(f_z_over_N_coil)
+  deallocate(f_Laplace_Beltrami_over_N_coil)
 
-end subroutine build_matrices
+  deallocate(g_theta_theta, g_theta_zeta, g_zeta_zeta)
+  deallocate(d_g_theta_theta_d_theta, d_g_theta_theta_d_zeta)
+  deallocate(d_g_theta_zeta_d_theta, d_g_theta_zeta_d_zeta)
+  deallocate(d_g_zeta_zeta_d_theta, d_g_zeta_zeta_d_zeta)
+  deallocate(d_N_d_theta, d_N_d_zeta)
+  deallocate(Laplace_Beltrami_d_Phi_d_theta_coefficient, Laplace_Beltrami_d_Phi_d_zeta_coefficient)
+
+end subroutine regcoil_build_matrices
 
 
 
@@ -597,5 +756,4 @@ end subroutine build_matrices
 !!$*> \endverbatim
 
 
-end module regcoil_build_matrices
 

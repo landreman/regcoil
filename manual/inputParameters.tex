@@ -44,9 +44,24 @@ Thus, this option takes a little more time than {\ttfamily general\_option}=4 bu
 
 \myhrule
 
+\param{regularization\_term\_option}
+{string}
+{{\ttfamily "chi2\_K"}}
+{Always}
+{Determines which term is used for regularization.\\
+
+{\ttfamily regularization\_term\_option = "chi2\_K"}: Use $\chi^2_K$ as the regularization term, as described in the Nuclear Fusion paper.\\
+
+{\ttfamily regularization\_term\_option = "Laplace-Beltrami"}: Use $\int d^2a (\nabla^2 \Phi)^2$ as the regularization term, where the integral is 
+performed over the coil surface, and $\nabla^2$ is the Laplace-Beltrami operator.
+
+}
+
+\myhrule
+
 \param{nescout\_filename}
 {string}
-{`'}
+{{\ttfamily ""}}
 {Only when \parlink{general\_option}=2.}
 {Name of a \nescoil~output file which can be read in for processing.
 }
@@ -102,7 +117,7 @@ to the target plasma surface.
 
 \param{bnorm\_filename}
 {string}
-{`'}
+{{\ttfamily ""}}
 {When \parlink{general\_option}=1 or 3 and \parlink{load\_bnorm}=\true.}
 {Output file from the \bnorm~code which contains the magnetic field normal to the target
 plasma surface associated with current inside the plasma.}
@@ -181,7 +196,7 @@ It is resonable and common but not mandatory to use the same value for \parlink{
 
 \myhrule
 
-\param{mpol\_coil}
+\param{mpol\_potential}
 {integer}
 {12}
 {Always}
@@ -190,7 +205,7 @@ It is resonable and common but not mandatory to use the same value for \parlink{
 
 \myhrule
 
-\param{ntor\_coil}
+\param{ntor\_potential}
 {integer}
 {12}
 {Always}
@@ -265,7 +280,7 @@ to read. The remaining lines contain $m$, $n$, $rmnc$, $zmns$, $rmns$, $zmnc$. \
 
 \param{shape\_filename\_plasma}
 {string}
-{`'}
+{{\ttfamily ""}}
 {Only when \parlink{geometry\_option\_plasma} is 6 or 7.}
 {ASCII file from which to read in the plasma shape.}
 
@@ -299,7 +314,7 @@ and is used when {\ttfamily nfp} is not already loaded from a \vmec~file.}
 
 \param{wout\_filename}
 {string}
-{`'}
+{{\ttfamily ""}}
 {Only when \parlink{geometry\_option\_plasma} is 2, 3, or 4.}
 {Name of the \vmec~{\ttfamily wout} output file which will be used for the plasma surface.
 You can use either a \netCDF~or {\ttfamily ASCII} format file.}
@@ -308,7 +323,7 @@ You can use either a \netCDF~or {\ttfamily ASCII} format file.}
 
 \param{efit\_filename}
 {string}
-{`'}
+{{\ttfamily ""}}
 {Only when \parlink{geometry\_option\_plasma} is 5.}
 {Name of the {\ttfamily efit} output file which will be used for the plasma surface.}
 
@@ -380,7 +395,7 @@ if  \parlink{geometry\_option\_plasma} is 2.
 
 \param{nescin\_filename}
 {string}
-{`'}
+{{\ttfamily ""}}
 {Only when \parlink{geometry\_option\_coil} is 2 (write to) or 3 (read from).}
 {Name of a \nescoil~{\ttfamily nescin} input file. The coil surface from
 this file will be used as the coil surface for \regcoil.}
@@ -391,7 +406,7 @@ this file will be used as the coil surface for \regcoil.}
 \param{Nlambda}
 {integer}
 {4}
-{Only when \parlink{general\_option}=1, 4, or 5.}
+{Only when \parlink{general\_option} = 1, 4, or 5.}
 {When \parlink{general\_option}=1, {\ttfamily Nlambda} is the number of values of $\lambda$ for which the problem is solved.
 When \parlink{general\_option}=4 or 5, {\ttfamily Nlambda} is the upper limit on the number of values of $\lambda$ for which the problem is solved.}
 
@@ -400,7 +415,7 @@ When \parlink{general\_option}=4 or 5, {\ttfamily Nlambda} is the upper limit on
 \param{lambda\_max}
 {real}
 {1.0e-13}
-{Only when \parlink{general\_option}=1.}
+{Only when \parlink{general\_option} = 1.}
 {Maximum value of $\lambda$ for which the problem is solved.}
 
 \myhrule
@@ -408,7 +423,7 @@ When \parlink{general\_option}=4 or 5, {\ttfamily Nlambda} is the upper limit on
 \param{lambda\_min}
 {real}
 {1.0e-19}
-{Only when \parlink{general\_option}=1.}
+{Only when \parlink{general\_option} = 1.}
 {Minimum nonzero value of $\lambda$ for which the problem is solved.
 Note that the problem is always solved for $\lambda=0$ in addition to
 the nonzero values.}
@@ -416,28 +431,37 @@ the nonzero values.}
 \myhrule
 
 \param{target\_option}
-{integer}
-{1}
-{Only when \parlink{general\_option}=4 or 5.}
-{Controls which target is used to find determine $\lambda$:\\
+{string}
+{{\ttfamily "max\_K"}}
+{Only when \parlink{general\_option} = 4 or 5.}
+{Controls which quantity is targeted to determine $\lambda$:\\
 
-{\ttfamily target\_option} = 1: Search for the $\lambda$ value such that the maximum
-current density over the winding surface equals \parlink{current\_density\_target}.\\
+{\ttfamily target\_option = "max\_K"}: Search for the $\lambda$ value such that the maximum
+current density over the winding surface equals \parlink{target\_value}.\\
 
-{\ttfamily target\_option} = 2: Search for the $\lambda$ value such that the root-mean-square current density
-$\left( \int d^2a\; K^2 \right)^{1/2}$ equals \parlink{current\_density\_target}.
+{\ttfamily target\_option = "chi2\_K"}: Search for the $\lambda$ value such that $\chi^2_K$ equals \parlink{target\_value}.\\
+
+{\ttfamily target\_option = "rms\_K"}: Search for the $\lambda$ value such that the root-mean-square current density
+$\left( \int d^2a\; K^2 \right)^{1/2}$ (where the integral is over the current winding surface) equals \parlink{target\_value}.\\
+
+{\ttfamily target\_option = "max\_Bnormal"}: Search for the $\lambda$ value such that the maximum
+$\vect{B}\cdot\vect{n}$ over the plasma surface equals \parlink{target\_value}.\\
+
+{\ttfamily target\_option = "chi2\_B"}: Search for the $\lambda$ value such that $\chi^2_B$ equals \parlink{target\_value}.\\
+
+{\ttfamily target\_option = "rms\_Bnormal"}: Search for the $\lambda$ value such that the root-mean-square value of $\vect{B}\cdot\vect{n}$, i.e.
+$\left( \int d^2a\; B_n^2 \right)^{1/2}$ (where the integral is over the plasma surface) equals \parlink{target\_value}.
+
 }
 
 \myhrule
 
-\param{current\_density\_target}
+\param{target\_value}
 {real}
 {8.0e6}
-{Only when \parlink{general\_option}=4 or 5.}
-{The value of root-mean-square or maximum surface current density used to determine $\lambda$.
-See \parlink{target\_option}.
-As with all other input and output quantities, this surface current density is specified in SI units,
-so the units are Amperes/meter.
+{Only when \parlink{general\_option} = 4 or 5.}
+{The value of the quantity specified by \parlink{target\_option} that the code will attempt to match
+by varying $\lambda$.
 }
 
 \myhrule
@@ -445,5 +469,5 @@ so the units are Amperes/meter.
 \param{lambda\_search\_tolerance}
 {real}
 {1.0e-5}
-{Only when \parlink{general\_option}=4 or 5.}
+{Only when \parlink{general\_option} = 4 or 5.}
 {Relative tolerance for the lambda root-finding.}

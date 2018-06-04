@@ -1,11 +1,7 @@
-module regcoil_read_bnorm
-
-contains
-
-subroutine read_bnorm(lscreen_optin)
+subroutine regcoil_read_bnorm()
 
   use regcoil_variables, only: load_bnorm, bnorm_filename, ntheta_plasma, nzeta_plasma, &
-       Bnormal_from_plasma_current, theta_plasma, zeta_plasma, nfp, curpol, &
+       Bnormal_from_plasma_current, theta_plasma, zeta_plasma, nfp, curpol, verbose, &
        nbf, bfn, bfm, bfs, bfc
   use safe_open_mod
   use stel_constants
@@ -17,20 +13,6 @@ subroutine read_bnorm(lscreen_optin)
   real(dp) :: bf
   integer :: tic, toc, countrate
 
-  ! variables to handle printing to the screen
-  logical, optional :: lscreen_optin
-  logical :: lscreen
-
-  if(present(lscreen_optin)) then 
-    lscreen = lscreen_optin
-  else
-    lscreen = .true.
-  endif
-
-  ! Adding some checks to release previously allocated variables.
-  ! This is because STELLOPT may call this function multiple times.
-  ! if (allocated()) deallocate()
-
   call system_clock(tic,countrate)
 
   if (allocated(Bnormal_from_plasma_current)) deallocate(Bnormal_from_plasma_current)
@@ -40,7 +22,7 @@ subroutine read_bnorm(lscreen_optin)
   Bnormal_from_plasma_current = 0
 
   if (.not. load_bnorm) then
-     if (lscreen) print *,"Not reading a bnorm file, so Bnormal_from_plasma_current arrays will all be 0."
+     if (verbose) print *,"Not reading a bnorm file, so Bnormal_from_plasma_current arrays will all be 0."
      return
   end if
 
@@ -63,7 +45,7 @@ subroutine read_bnorm(lscreen_optin)
   endif
 
 
-  if (lscreen) print *,"Loading B_normal on the plasma surface due to plasma current from file ",trim(bnorm_filename)
+  if (verbose) print *,"Loading B_normal on the plasma surface due to plasma current from file ",trim(bnorm_filename)
 
   call safe_open(iunit, i, trim(bnorm_filename), 'old', 'formatted')
   if (i .ne. 0 ) then
@@ -107,13 +89,11 @@ subroutine read_bnorm(lscreen_optin)
 
   call system_clock(toc)
   if (num_modes_added>0) then
-     if (lscreen) print *,"Number of modes read from bnorm file:",num_modes_added
+     if (verbose) print *,"Number of modes read from bnorm file:",num_modes_added
   else
      print *,"WARNING!!! No modes found in the bnorm file."
   end if
-  if (lscreen) print *,"Done reading B_normal on the plasma surface due to plasma current."
-  if (lscreen) print *,"Took ",real(toc-tic)/countrate," sec."
+  if (verbose) print *,"Done reading B_normal on the plasma surface due to plasma current."
+  if (verbose) print *,"Took ",real(toc-tic)/countrate," sec."
 
-end subroutine  read_bnorm
-
-end module regcoil_read_bnorm
+end subroutine  regcoil_read_bnorm

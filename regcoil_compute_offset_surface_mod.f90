@@ -1,4 +1,4 @@
-module compute_offset_surface_mod
+module regcoil_compute_offset_surface_mod
 
   use stel_kinds
 
@@ -6,14 +6,14 @@ module compute_offset_surface_mod
 
   private
 
-  public :: compute_offset_surface_xyz_of_thetazeta
+  public :: regcoil_compute_offset_surface_xyz_of_thetazeta
 
   real(dp) :: theta_rootSolve, zeta_rootSolve_target, separation
   !$OMP threadprivate(theta_rootSolve, zeta_rootSolve_target, separation)
 
 contains
 
-  subroutine compute_offset_surface_xyz_of_thetazeta(theta_rootSolve_in,zeta_rootSolve_target_in,x_offsetSurface,y_offsetSurface,z_offsetSurface,separation_in)
+  subroutine regcoil_compute_offset_surface_xyz_of_thetazeta(theta_rootSolve_in,zeta_rootSolve_target_in,x_offsetSurface,y_offsetSurface,z_offsetSurface,separation_in)
 
     use stel_kinds
     
@@ -37,7 +37,7 @@ contains
     
     zeta_rootSolve_min = zeta_rootSolve_target - 0.3
     zeta_rootSolve_max = zeta_rootSolve_target + 0.3
-    call fzero(fzero_residual, zeta_rootSolve_min, zeta_rootSolve_max, zeta_rootSolve_target, &
+    call regcoil_fzero(regcoil_fzero_residual, zeta_rootSolve_min, zeta_rootSolve_max, zeta_rootSolve_target, &
          rootSolve_relerr, rootSolve_abserr, fzeroFlag)
     ! Note: fzero returns its answer in zeta_rootSolve_min
     zeta_plasma_rootSolveSolution = zeta_rootSolve_min
@@ -47,22 +47,22 @@ contains
        print *,"WARNING in cosm: fzero returned an error code:",fzeroFlag
     end if
     
-    call expand_plasma_surface(theta_rootSolve, zeta_plasma_rootSolveSolution, separation, x_offsetSurface, y_offsetSurface, z_offsetSurface)
+    call regcoil_expand_plasma_surface(theta_rootSolve, zeta_plasma_rootSolveSolution, separation, x_offsetSurface, y_offsetSurface, z_offsetSurface)
   
   contains  
     !------------------------------------------------------------------------------------
   
-    function fzero_residual(zeta_plasma_test)
+    function regcoil_fzero_residual(zeta_plasma_test)
     
       use regcoil_variables, only: nfp
       use stel_constants
       
       implicit none
       
-      real(dp) :: zeta_plasma_test, fzero_residual
+      real(dp) :: zeta_plasma_test, regcoil_fzero_residual
       real(dp) :: x_outer, y_outer, z_outer, zeta_outer_new, zeta_error
       
-      call expand_plasma_surface(theta_rootSolve, zeta_plasma_test, separation, x_outer, y_outer, z_outer)
+      call regcoil_expand_plasma_surface(theta_rootSolve, zeta_plasma_test, separation, x_outer, y_outer, z_outer)
       zeta_outer_new = atan2(y_outer,x_outer)
       zeta_error = zeta_outer_new - zeta_rootSolve_target
       if (zeta_error < -pi) then
@@ -71,10 +71,10 @@ contains
       if (zeta_error > pi) then
          zeta_error = zeta_error - twopi
       end if
-      fzero_residual = zeta_error
+      regcoil_fzero_residual = zeta_error
       
-    end function fzero_residual
+    end function regcoil_fzero_residual
     
-  end subroutine compute_offset_surface_xyz_of_thetazeta
+  end subroutine regcoil_compute_offset_surface_xyz_of_thetazeta
   
-end module compute_offset_surface_mod
+end module regcoil_compute_offset_surface_mod

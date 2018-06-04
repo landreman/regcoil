@@ -1,182 +1,115 @@
-subroutine solve
+subroutine regcoil_prepare_solve()
 
   use regcoil_variables
-  use stel_constants
-  use stel_kinds
 
   implicit none
 
-  integer :: iflag, tic, toc, countrate
-  real(dp), dimension(:,:), allocatable :: matrix, this_current_potential
-  real(dp), dimension(:), allocatable :: RHS, solution
-  real(dp), dimension(:), allocatable :: KDifference_x, KDifference_y, KDifference_z
-  real(dp), dimension(:,:), allocatable :: this_K2_times_N
-  real(dp) :: factor_theta, factor_zeta
-  integer :: ilambda, itheta, izeta
-
-  ! Variables needed by LAPACK:
-  integer :: INFO, LWORK
-  real(dp), dimension(:), allocatable :: WORK
-  integer, dimension(:), allocatable :: IPIV
-
-  ! Adding some checks to release previously allocated variables.
-  ! This is because STELLOPT may call this function multiple times.
-  ! if (allocated()) deallocate()
+  integer :: iflag
 
   if (allocated(matrix)) deallocate(matrix)
   allocate(matrix(num_basis_functions, num_basis_functions), stat=iflag)
-  if (iflag .ne. 0) stop 'solve Allocation error 1!'
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 1!'
 
   if (allocated(RHS)) deallocate(RHS)
   allocate(RHS(num_basis_functions), stat=iflag)
-  if (iflag .ne. 0) stop 'solve Allocation error 2!'
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 2!'
 
   if (allocated(solution)) deallocate(solution)
   allocate(solution(num_basis_functions), stat=iflag)
-  if (iflag .ne. 0) stop 'solve Allocation error 3!'
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 3!'
 
-  if (allocated(WORK)) deallocate(WORK)
-  allocate(WORK(1), stat=iflag)
-  if (iflag .ne. 0) stop 'solve Allocation error 4!'
+  if (allocated(LAPACK_WORK)) deallocate(LAPACK_WORK)
+  allocate(LAPACK_WORK(1), stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 4!'
 
-  if (allocated(IPIV)) deallocate(IPIV)
-  allocate(IPIV(num_basis_functions), stat=iflag)
-  if (iflag .ne. 0) stop 'solve Allocation error 5!'
-
+  if (allocated(LAPACK_IPIV)) deallocate(LAPACK_IPIV)
+  allocate(LAPACK_IPIV(num_basis_functions), stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 5!'
 
   if (allocated(chi2_B)) deallocate(chi2_B)
   allocate(chi2_B(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'solve Allocation error 6!'
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 6!'
 
   if (allocated(chi2_K)) deallocate(chi2_K)
   allocate(chi2_K(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'solve Allocation error 7!'
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 7!'
+
+  if (allocated(chi2_Laplace_Beltrami)) deallocate(chi2_Laplace_Beltrami)
+  allocate(chi2_Laplace_Beltrami(nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 7!'
 
   if (allocated(max_Bnormal)) deallocate(max_Bnormal)
   allocate(max_Bnormal(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'solve Allocation error 8!'
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 8!'
 
   if (allocated(max_K)) deallocate(max_K)
   allocate(max_K(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'solve Allocation error 9!'
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 9!'
 
   if (allocated(current_potential)) deallocate(current_potential)
   allocate(current_potential(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'solve Allocation error 10!'
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 10!'
 
-  if (allocated(single_valued_current_potential_thetazeta)) deallocate(single_valued_current_potential_thetazeta)
+  if (allocated(single_valued_current_potential_thetazeta)) &
+        deallocate(single_valued_current_potential_thetazeta)
   allocate(single_valued_current_potential_thetazeta(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'solve Allocation error 11!'
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 11!'
 
   if (allocated(this_current_potential)) deallocate(this_current_potential)
   allocate(this_current_potential(ntheta_coil,nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'solve Allocation error 12!'
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 12!'
 
-  if (allocated(single_valued_current_potential_mn)) deallocate(single_valued_current_potential_mn)
+  if (allocated(single_valued_current_potential_mn)) &
+        deallocate(single_valued_current_potential_mn)
   allocate(single_valued_current_potential_mn(num_basis_functions,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'solve Allocation error 13!'
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 13!'
 
   if (allocated(Bnormal_total)) deallocate(Bnormal_total)
   allocate(Bnormal_total(ntheta_plasma,nzeta_plasma,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'solve Allocation error 14!'
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 14!'
 
   if (allocated(K2)) deallocate(K2)
   allocate(K2(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'solve Allocation error 15!'
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 15!'
+
+  if (allocated(Laplace_Beltrami2)) deallocate(Laplace_Beltrami2)
+  allocate(Laplace_Beltrami2(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 15!'
 
   if (allocated(KDifference_x)) deallocate(KDifference_x)
   allocate(KDifference_x(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'solve Allocation error 16!'
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 16!'
 
   if (allocated(KDifference_y)) deallocate(KDifference_y)
   allocate(KDifference_y(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'solve Allocation error 17!'
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 17!'
 
   if (allocated(KDifference_z)) deallocate(KDifference_z)
   allocate(KDifference_z(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'solve Allocation error 18!'
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 18!'
+
+  if (allocated(KDifference_Laplace_Beltrami)) deallocate(KDifference_Laplace_Beltrami)
+  allocate(KDifference_Laplace_Beltrami(ntheta_coil*nzeta_coil), stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 18!'
 
   if (allocated(this_K2_times_N)) deallocate(this_K2_times_N)
   allocate(this_K2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'solve Allocation error 19!'
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 19!'
+
+  if (allocated(this_Laplace_Beltrami2_times_N)) deallocate(this_Laplace_Beltrami2_times_N)
+  allocate(this_Laplace_Beltrami2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 19!'
 
 
   ! Call LAPACK's DSYSV in query mode to determine the optimal size of the work array
-  call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, IPIV, RHS, num_basis_functions, WORK, -1, INFO)
-  LWORK = WORK(1)
-  print *,"Optimal LWORK:",LWORK
-  if (allocated(WORK)) deallocate(WORK)
-  !deallocate(WORK)
-  allocate(WORK(LWORK), stat=iflag)
-  if (iflag .ne. 0) stop 'solve Allocation error 20!'  
+  call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, LAPACK_IPIV, RHS, num_basis_functions, LAPACK_WORK, -1, LAPACK_INFO)
+  LAPACK_LWORK = int(LAPACK_WORK(1))
+  if (verbose) print *,"Optimal LWORK:",LAPACK_LWORK
+  deallocate(LAPACK_WORK)
+  allocate(LAPACK_WORK(LAPACK_LWORK), stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve LAPACK error!'
 
-  factor_zeta  = net_poloidal_current_Amperes / twopi
-  factor_theta = net_toroidal_current_Amperes / twopi
-
-  do ilambda = 1,nlambda
-     print "(a,es10.3,a,i3,a,i3,a)"," Solving system for lambda=",lambda(ilambda)," (",ilambda," of ",nlambda,")"
-     call system_clock(tic,countrate)
-
-     matrix = matrix_B + lambda(ilambda) * matrix_K
-     RHS    =    RHS_B + lambda(ilambda) *    RHS_K
-
-     call system_clock(toc)
-     print *,"  Additions: ",real(toc-tic)/countrate," sec."
-     call system_clock(tic)
-
-     ! Compute solution = matrix \ RHS.
-     ! Use LAPACK's DSYSV since matrix is symmetric.
-     ! Note: RHS will be over-written with the solution.
-     call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, IPIV, RHS, num_basis_functions, WORK, LWORK, INFO)
-     if (INFO /= 0) then
-        print *, "!!!!!! Error in LAPACK DSYSV: INFO = ", INFO
-        !stop
-     end if
-     solution = RHS
-
-     call system_clock(toc)
-     print *,"  DSYSV: ",real(toc-tic)/countrate," sec."
-     call system_clock(tic)
-
-     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-     ! Now compute diagnostics
-     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-     single_valued_current_potential_mn(:,ilambda) = solution
-     this_current_potential = reshape(matmul(basis_functions, solution), (/ ntheta_coil, nzeta_coil /)) ! Could use BLAS2 for this line for extra speed.
-     single_valued_current_potential_thetazeta(:,:,ilambda) = this_current_potential
-     do izeta = 1,nzeta_coil
-        do itheta = 1,ntheta_coil
-           this_current_potential(itheta,izeta) = this_current_potential(itheta,izeta) &
-                + factor_zeta*zeta_coil(izeta) + factor_theta*theta_coil(itheta)
-        end do
-     end do
-     current_potential(:,:,ilambda) = this_current_potential
-
-     KDifference_x = d_x - matmul(f_x, solution)
-     KDifference_y = d_y - matmul(f_y, solution)
-     KDifference_z = d_z - matmul(f_z, solution)
-     this_K2_times_N = reshape(KDifference_x*KDifference_x + KDifference_y*KDifference_y + KDifference_z*KDifference_z, (/ ntheta_coil, nzeta_coil /)) &
-          / norm_normal_coil
-     chi2_K(ilambda) = nfp * dtheta_coil * dzeta_coil * sum(this_K2_times_N)
-     K2(:,:,ilambda) = this_K2_times_N / norm_normal_coil
-
-     Bnormal_total(:,:,ilambda) = (reshape(matmul(g,solution),(/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma) &
-          + Bnormal_from_plasma_current + Bnormal_from_net_coil_currents
-
-     max_Bnormal(ilambda) = maxval(abs(Bnormal_total(:,:,ilambda)))
-     max_K(ilambda) = sqrt(maxval(K2(:,:,ilambda)))
-
-     chi2_B(ilambda) = nfp * dtheta_plasma * dzeta_plasma &
-          * sum(Bnormal_total(:,:,ilambda) * Bnormal_total(:,:,ilambda) * norm_normal_plasma)
-
-     call system_clock(toc)
-     print *,"  Diagnostics: ",real(toc-tic)/countrate," sec."
-     print "(a,es10.3,a,es10.3)","   chi2_B:",chi2_B(ilambda),",  chi2_K:",chi2_K(ilambda)
-     print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda),",  rms K:",sqrt(chi2_K(ilambda)/area_coil)
-  end do
-
-end subroutine solve
+end subroutine regcoil_prepare_solve
 
     ! Here is the LAPACK documentation for solving a symmetric linear system:
 

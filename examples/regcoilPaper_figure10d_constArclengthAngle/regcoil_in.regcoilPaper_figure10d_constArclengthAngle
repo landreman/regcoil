@@ -9,8 +9,8 @@
   ntheta_coil   = 128
   nzeta_plasma  = 128
   nzeta_coil    = 128
-  mpol_coil = 32
-  ntor_coil = 32
+  mpol_potential = 32
+  ntor_potential = 32
 
 
   geometry_option_plasma = 2

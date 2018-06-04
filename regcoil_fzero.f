@@ -1,5 +1,5 @@
 
-      SUBROUTINE FZERO (F, B, C, R, RE, AE, IFLAG)
+      SUBROUTINE REGCOIL_FZERO (F, B, C, R, RE, AE, IFLAG)
 C***BEGIN PROLOGUE  FZERO
 C***PURPOSE  Search for a zero of a function F(X) in a given interval
 C            (B,C).  It is designed primarily for problems where F(B)
@@ -224,4 +224,4 @@ C
       RETURN
    14 IFLAG = 5
 
-      END SUBROUTINE FZERO
+      END SUBROUTINE REGCOIL_FZERO

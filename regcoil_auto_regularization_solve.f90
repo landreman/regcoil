@@ -1,136 +1,15 @@
-module regcoil_auto_regularization_solve
-
-
-contains
-
-subroutine auto_regularization_solve(lscreen_optin)
+subroutine regcoil_auto_regularization_solve()
 
   use regcoil_variables
-  use stel_constants
   use stel_kinds
 
   implicit none
 
-  integer :: iflag, tic, toc, countrate
-  real(dp), dimension(:,:), allocatable :: matrix, this_current_potential
-  real(dp), dimension(:), allocatable :: RHS, solution
-  real(dp), dimension(:), allocatable :: KDifference_x, KDifference_y, KDifference_z
-  real(dp), dimension(:,:), allocatable :: this_K2_times_N
-  real(dp) :: factor_theta, factor_zeta
-  integer :: ilambda, itheta, izeta
+  integer :: ilambda
   integer :: stage, next_stage
-  logical :: initial_above_target, last_above_target
+  logical :: initial_above_target, last_above_target, targeted_quantity_increases_with_lambda
   real(dp) :: Brendt_a, Brendt_b, Brendt_c, Brendt_fa, Brendt_fb, Brendt_fc, Brendt_d, Brendt_e
-  real(dp) :: Brendt_p, Brendt_q, Brendt_r, Brendt_s, Brendt_tol1, Brendt_xm, Brendt_EPS
-
-  ! Variables needed by LAPACK:
-  integer :: INFO, LWORK
-  real(dp), dimension(:), allocatable :: WORK
-  integer, dimension(:), allocatable :: IPIV
-
-  ! variables to handle printing to the screen
-  logical, optional :: lscreen_optin
-  logical :: lscreen
-
-  if(present(lscreen_optin)) then 
-    lscreen = lscreen_optin
-  else
-    lscreen = .true.
-  endif
-
-  ! Adding some checks to release previously allocated variables.
-  ! This is because STELLOPT may call this function multiple times.
-  ! if (allocated()) deallocate()
-
-  if (allocated(matrix)) deallocate(matrix)
-  allocate(matrix(num_basis_functions, num_basis_functions), stat=iflag)
-  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 1!'
-
-  if (allocated(RHS)) deallocate(RHS)
-  allocate(RHS(num_basis_functions), stat=iflag)
-  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 2!'
-
-  if (allocated(solution)) deallocate(solution)
-  allocate(solution(num_basis_functions), stat=iflag)
-  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 3!'
-
-  if (allocated(WORK)) deallocate(WORK)
-  allocate(WORK(1), stat=iflag)
-  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 4!'
-
-  if (allocated(IPIV)) deallocate(IPIV)
-  allocate(IPIV(num_basis_functions), stat=iflag)
-  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 5!'
-
-  if (allocated(chi2_B)) deallocate(chi2_B)
-  allocate(chi2_B(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 6!'
-
-  if (allocated(chi2_K)) deallocate(chi2_K)
-  allocate(chi2_K(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 7!'
-
-  if (allocated(max_Bnormal)) deallocate(max_Bnormal)
-  allocate(max_Bnormal(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 8!'
-
-  if (allocated(max_K)) deallocate(max_K)
-  allocate(max_K(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 9!'
-
-  if (allocated(current_potential)) deallocate(current_potential)
-  allocate(current_potential(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 10!'
-
-  if (allocated(single_valued_current_potential_thetazeta)) &
-        deallocate(single_valued_current_potential_thetazeta)
-  allocate(single_valued_current_potential_thetazeta(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 11!'
-
-  if (allocated(this_current_potential)) deallocate(this_current_potential)
-  allocate(this_current_potential(ntheta_coil,nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 12!'
-
-  if (allocated(single_valued_current_potential_mn)) &
-        deallocate(single_valued_current_potential_mn)
-  allocate(single_valued_current_potential_mn(num_basis_functions,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 13!'
-
-  if (allocated(Bnormal_total)) deallocate(Bnormal_total)
-  allocate(Bnormal_total(ntheta_plasma,nzeta_plasma,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 14!'
-
-  if (allocated(K2)) deallocate(K2)
-  allocate(K2(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 15!'
-
-  if (allocated(KDifference_x)) deallocate(KDifference_x)
-  allocate(KDifference_x(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 16!'
-
-  if (allocated(KDifference_y)) deallocate(KDifference_y)
-  allocate(KDifference_y(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 17!'
-
-  if (allocated(KDifference_z)) deallocate(KDifference_z)
-  allocate(KDifference_z(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 18!'
-
-  if (allocated(this_K2_times_N)) deallocate(this_K2_times_N)
-  allocate(this_K2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 19!'
-
-
-  ! Call LAPACK's DSYSV in query mode to determine the optimal size of the work array
-  call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, IPIV, RHS, num_basis_functions, WORK, -1, INFO)
-  LWORK = WORK(1)
-  if (lscreen) print *,"Optimal LWORK:",LWORK
-  deallocate(WORK)
-  allocate(WORK(LWORK), stat=iflag)
-  if (iflag .ne. 0) stop 'AutoRegSolve Allocation error 20!'  
-
-  factor_zeta  = net_poloidal_current_Amperes / twopi
-  factor_theta = net_toroidal_current_Amperes / twopi
+  real(dp) :: Brendt_p, Brendt_q, Brendt_r, Brendt_s, Brendt_tol1, Brendt_xm, Brendt_EPS, factor
 
   if (general_option==4) then
      stage = 1
@@ -170,12 +49,14 @@ subroutine auto_regularization_solve(lscreen_optin)
         next_stage = 2
 
         if (initial_above_target) then
-           ! If the current density from the first solve was too high, then increase lambda
-           lambda(ilambda) = lambda(ilambda-1) * 100
+           factor = 100
         else
-           ! If the current density from the first solve was too low, then decrease lambda
-           lambda(ilambda) = lambda(ilambda-1) * 0.01
+           factor = 0.01
         end if
+
+        if (targeted_quantity_increases_with_lambda) factor = 1/factor
+
+        lambda(ilambda) = lambda(ilambda-1) * factor
 
      case (3)
         ! Now that we've bracketed the target current density, search for the target using Brendt's algorithm.
@@ -235,96 +116,29 @@ subroutine auto_regularization_solve(lscreen_optin)
         stop
      end select
 
-     if (lscreen) print "(a,es10.3,a,i3,a,i3,a)"," Solving system for lambda=",lambda(ilambda)," (",ilambda," of at most ",nlambda,")"
-     call system_clock(tic,countrate)
+     if (verbose) print "(a,es10.3,a,i3,a,i3,a)"," Solving system for lambda=",lambda(ilambda)," (",ilambda," of at most ",nlambda,")"
 
      ! Done choosing the next lambda. Now comes the main solve.
      ! ------------------------------------------------------------------------------------------------
 
-     if (stage==10) then
-        matrix = matrix_K
-        RHS    =    RHS_K
-     else
-        matrix = matrix_B + lambda(ilambda) * matrix_K
-        RHS    =    RHS_B + lambda(ilambda) *    RHS_K
-     end if
+     call regcoil_solve(ilambda)
 
-     call system_clock(toc)
-     if (lscreen) print *,"  Additions: ",real(toc-tic)/countrate," sec."
-     call system_clock(tic)
-
-     ! Compute solution = matrix \ RHS.
-     ! Use LAPACK's DSYSV since matrix is symmetric.
-     ! Note: RHS will be over-written with the solution.
-     call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, IPIV, RHS, num_basis_functions, WORK, LWORK, INFO)
-     if (INFO /= 0) then
-        print *, "!!!!!! Error in LAPACK DSYSV: INFO = ", INFO
-        !stop
-     end if
-     solution = RHS
-
-     call system_clock(toc)
-     if (lscreen) print *,"  DSYSV: ",real(toc-tic)/countrate," sec."
-     call system_clock(tic)
-
-     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-     ! Now compute diagnostics
-     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-     single_valued_current_potential_mn(:,ilambda) = solution
-     this_current_potential = reshape(matmul(basis_functions, solution), (/ ntheta_coil, nzeta_coil /)) ! Could use BLAS2 for this line for extra speed.
-     single_valued_current_potential_thetazeta(:,:,ilambda) = this_current_potential
-     do izeta = 1,nzeta_coil
-        do itheta = 1,ntheta_coil
-           this_current_potential(itheta,izeta) = this_current_potential(itheta,izeta) &
-                + factor_zeta*zeta_coil(izeta) + factor_theta*theta_coil(itheta)
-        end do
-     end do
-     current_potential(:,:,ilambda) = this_current_potential
-
-     KDifference_x = d_x - matmul(f_x, solution)
-     KDifference_y = d_y - matmul(f_y, solution)
-     KDifference_z = d_z - matmul(f_z, solution)
-     this_K2_times_N = reshape(KDifference_x*KDifference_x + KDifference_y*KDifference_y + KDifference_z*KDifference_z, (/ ntheta_coil, nzeta_coil /)) &
-          / norm_normal_coil
-     chi2_K(ilambda) = nfp * dtheta_coil * dzeta_coil * sum(this_K2_times_N)
-     K2(:,:,ilambda) = this_K2_times_N / norm_normal_coil
-
-     Bnormal_total(:,:,ilambda) = (reshape(matmul(g,solution),(/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma) &
-          + Bnormal_from_plasma_current + Bnormal_from_net_coil_currents
-
-     max_Bnormal(ilambda) = maxval(abs(Bnormal_total(:,:,ilambda)))
-     max_K(ilambda) = sqrt(maxval(K2(:,:,ilambda)))
-
-     chi2_B(ilambda) = nfp * dtheta_plasma * dzeta_plasma &
-          * sum(Bnormal_total(:,:,ilambda) * Bnormal_total(:,:,ilambda) * norm_normal_plasma)
-
-     call system_clock(toc)
-     if (lscreen) print *,"  Diagnostics: ",real(toc-tic)/countrate," sec."
-     if (lscreen) print "(a,es10.3,a,es10.3)","   chi2_B:",chi2_B(ilambda),",  chi2_K:",chi2_K(ilambda)
-     if (lscreen) print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda),",  rms K:",sqrt(chi2_K(ilambda)/area_coil)
-
-     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-     ! Done computing diagnostics.
-     ! Now analyze the results to determine what to do next.
-     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-     last_above_target = (target_function(ilambda) > current_density_target)
+     last_above_target = (target_function(ilambda) > target_value)
      if (stage==1) initial_above_target = last_above_target
      if (stage==2 .and. (last_above_target .neqv. initial_above_target)) then
         ! If we've bracketed the target, move on to stage 3.
         next_stage = 3  
-        if (lscreen) print *,"Target current density has been bracketed."
+        if (verbose) print *,"Target_value has been bracketed."
      end if
-     if (stage==10 .and. last_above_target) then
-        if (lscreen) then
+     if (last_above_target .and. (((.not. targeted_quantity_increases_with_lambda) .and. stage==10) &
+          .or. (targeted_quantity_increases_with_lambda .and. stage==11))) then
+        if (verbose) then
            print *,"*******************************************************************************"
            print *,"*******************************************************************************"
-           print *,"Error! The current_density_target you have set is not achievable because"
+           print *,"Error! The target_value you have set is not achievable because"
            print *,"it is too low."
            print *,"*******************************************************************************"
            print *,"*******************************************************************************"
-           print *,"chi2_B(1) = ", chi2_B(1)
         end if
         Nlambda = ilambda
         exit_code = -2
@@ -335,15 +149,15 @@ subroutine auto_regularization_solve(lscreen_optin)
         chi2_B_target = chi2_B(1)    ! 'Worst' achieved chi2_B
         exit
      end if
-     if (stage==11 .and. (.not. last_above_target)) then
-        if (lscreen) then
+     if ((.not. last_above_target) .and. (((.not. targeted_quantity_increases_with_lambda) .and. stage==11) &
+          .or. (targeted_quantity_increases_with_lambda .and. stage==10))) then
+        if (verbose) then
            print *,"*******************************************************************************"
            print *,"*******************************************************************************"
-           print *,"Error! The current_density_target you have set is not achievable because"
+           print *,"Error! The target_value you have set is not achievable because"
            print *,"it is too high."
            print *,"*******************************************************************************"
            print *,"*******************************************************************************"
-           print *,"chi2_B(1) = ", chi2_B(1)
         end if
         Nlambda = ilambda
         exit_code = -3
@@ -358,14 +172,14 @@ subroutine auto_regularization_solve(lscreen_optin)
         ! Initialize Brendt's algorithm for root-finding
         Brendt_a = log(lambda(ilambda-1))
         Brendt_b = log(lambda(ilambda))
-        Brendt_fa = log(target_function(ilambda-1) / current_density_target)
-        Brendt_fb = log(target_function(ilambda) / current_density_target)
+        Brendt_fa = log(target_function(ilambda-1) / target_value)
+        Brendt_fb = log(target_function(ilambda) / target_value)
         Brendt_c = Brendt_b
         Brendt_fc = Brendt_fb
         Brendt_d = Brendt_b - Brendt_a
         Brendt_e = Brendt_d
      end if
-     if (stage==3) Brendt_fb = log(target_function(ilambda) / current_density_target)
+     if (stage==3) Brendt_fb = log(target_function(ilambda) / target_value)
      if (next_stage==3) then
         ! Analyze the most recent diagnostics for Brendt's algorithm.
         if ((Brendt_fb > 0 .and. Brendt_fc > 0) .or. (Brendt_fb < 0 .and. Brendt_fc < 0)) then
@@ -387,7 +201,7 @@ subroutine auto_regularization_solve(lscreen_optin)
         Brendt_xm = 0.5*(Brendt_c - Brendt_b)
         if (abs(Brendt_xm) <= Brendt_tol1 .or. (Brendt_fb==0)) then
            ! We met the requested tolerance
-           if (lscreen) print *,"Requested tolerance has been met."
+           if (verbose) print *,"Requested tolerance has been met."
            exit_code=0
            Nlambda = ilambda
            chi2_B_target = chi2_B(Nlambda)
@@ -417,13 +231,32 @@ contains
     real(dp) :: target_function
 
     target_function = 0
-    select case (target_option)
-    case (1)
-       ! maximum current density
-       target_function =  max_K(jlambda)
-    case (2)
-       ! root-mean-squared current density
+    select case (trim(target_option))
+
+    case (target_option_max_K)
+       target_function = max_K(jlambda)
+       targeted_quantity_increases_with_lambda = .false.
+
+    case (target_option_rms_K)
        target_function = sqrt(chi2_K(jlambda) / area_coil)
+       targeted_quantity_increases_with_lambda = .false.
+
+    case (target_option_chi2_K)
+       target_function = chi2_K(jlambda)
+       targeted_quantity_increases_with_lambda = .false.
+
+    case (target_option_max_Bnormal)
+       target_function =  max_Bnormal(jlambda)
+       targeted_quantity_increases_with_lambda = .true.
+
+    case (target_option_rms_Bnormal)
+       target_function = sqrt(chi2_B(jlambda) / area_plasma)
+       targeted_quantity_increases_with_lambda = .true.
+
+    case (target_option_chi2_B)
+       target_function = chi2_B(jlambda)
+       targeted_quantity_increases_with_lambda = .true.
+
     case default
        print *,"Invalid target_option: ",target_option
        stop
@@ -431,167 +264,4 @@ contains
 
   end function target_function
 
-end subroutine auto_regularization_solve
-
-    ! Here is the LAPACK documentation for solving a symmetric linear system:
-
-!!$
-!!$
-!!$*> \brief <b> DSYSV computes the solution to system of linear equations A * X = B for SY matrices</b>
-!!$*
-!!$*  =========== DOCUMENTATION ===========
-!!$*
-!!$* Online html documentation available at 
-!!$*            http://www.netlib.org/lapack/explore-html/ 
-!!$*
-!!$*> \htmlonly
-!!$*> Download DSYSV + dependencies 
-!!$*> <a href="http://www.netlib.org/cgi-bin/netlibfiles.tgz?format=tgz&filename=/lapack/lapack_routine/dsysv.f"> 
-!!$*> [TGZ]</a> 
-!!$*> <a href="http://www.netlib.org/cgi-bin/netlibfiles.zip?format=zip&filename=/lapack/lapack_routine/dsysv.f"> 
-!!$*> [ZIP]</a> 
-!!$*> <a href="http://www.netlib.org/cgi-bin/netlibfiles.txt?format=txt&filename=/lapack/lapack_routine/dsysv.f"> 
-!!$*> [TXT]</a>
-!!$*> \endhtmlonly 
-!!$*
-!!$*  Definition:
-!!$*  ===========
-!!$*
-!!$*       SUBROUTINE DSYSV( UPLO, N, NRHS, A, LDA, IPIV, B, LDB, WORK,
-!!$*                         LWORK, INFO )
-!!$* 
-!!$*       .. Scalar Arguments ..
-!!$*       CHARACTER          UPLO
-!!$*       INTEGER            INFO, LDA, LDB, LWORK, N, NRHS
-!!$*       ..
-!!$*       .. Array Arguments ..
-!!$*       INTEGER            IPIV( * )
-!!$*       DOUBLE PRECISION   A( LDA, * ), B( LDB, * ), WORK( * )
-!!$*       ..
-!!$*  
-!!$*
-!!$*> \par Purpose:
-!!$*  =============
-!!$*>
-!!$*> \verbatim
-!!$*>
-!!$*> DSYSV computes the solution to a real system of linear equations
-!!$*>    A * X = B,
-!!$*> where A is an N-by-N symmetric matrix and X and B are N-by-NRHS
-!!$*> matrices.
-!!$*>
-!!$*> The diagonal pivoting method is used to factor A as
-!!$*>    A = U * D * U**T,  if UPLO = 'U', or
-!!$*>    A = L * D * L**T,  if UPLO = 'L',
-!!$*> where U (or L) is a product of permutation and unit upper (lower)
-!!$*> triangular matrices, and D is symmetric and block diagonal with
-!!$*> 1-by-1 and 2-by-2 diagonal blocks.  The factored form of A is then
-!!$*> used to solve the system of equations A * X = B.
-!!$*> \endverbatim
-!!$*
-!!$*  Arguments:
-!!$*  ==========
-!!$*
-!!$*> \param[in] UPLO
-!!$*> \verbatim
-!!$*>          UPLO is CHARACTER*1
-!!$*>          = 'U':  Upper triangle of A is stored;
-!!$*>          = 'L':  Lower triangle of A is stored.
-!!$*> \endverbatim
-!!$*>
-!!$*> \param[in] N
-!!$*> \verbatim
-!!$*>          N is INTEGER
-!!$*>          The number of linear equations, i.e., the order of the
-!!$*>          matrix A.  N >= 0.
-!!$*> \endverbatim
-!!$*>
-!!$*> \param[in] NRHS
-!!$*> \verbatim
-!!$*>          NRHS is INTEGER
-!!$*>          The number of right hand sides, i.e., the number of columns
-!!$*>          of the matrix B.  NRHS >= 0.
-!!$*> \endverbatim
-!!$*>
-!!$*> \param[in,out] A
-!!$*> \verbatim
-!!$*>          A is DOUBLE PRECISION array, dimension (LDA,N)
-!!$*>          On entry, the symmetric matrix A.  If UPLO = 'U', the leading
-!!$*>          N-by-N upper triangular part of A contains the upper
-!!$*>          triangular part of the matrix A, and the strictly lower
-!!$*>          triangular part of A is not referenced.  If UPLO = 'L', the
-!!$*>          leading N-by-N lower triangular part of A contains the lower
-!!$*>          triangular part of the matrix A, and the strictly upper
-!!$*>          triangular part of A is not referenced.
-!!$*>
-!!$*>          On exit, if INFO = 0, the block diagonal matrix D and the
-!!$*>          multipliers used to obtain the factor U or L from the
-!!$*>          factorization A = U*D*U**T or A = L*D*L**T as computed by
-!!$*>          DSYTRF.
-!!$*> \endverbatim
-!!$*>
-!!$*> \param[in] LDA
-!!$*> \verbatim
-!!$*>          LDA is INTEGER
-!!$*>          The leading dimension of the array A.  LDA >= max(1,N).
-!!$*> \endverbatim
-!!$*>
-!!$*> \param[out] IPIV
-!!$*> \verbatim
-!!$*>          IPIV is INTEGER array, dimension (N)
-!!$*>          Details of the interchanges and the block structure of D, as
-!!$*>          determined by DSYTRF.  If IPIV(k) > 0, then rows and columns
-!!$*>          k and IPIV(k) were interchanged, and D(k,k) is a 1-by-1
-!!$*>          diagonal block.  If UPLO = 'U' and IPIV(k) = IPIV(k-1) < 0,
-!!$*>          then rows and columns k-1 and -IPIV(k) were interchanged and
-!!$*>          D(k-1:k,k-1:k) is a 2-by-2 diagonal block.  If UPLO = 'L' and
-!!$*>          IPIV(k) = IPIV(k+1) < 0, then rows and columns k+1 and
-!!$*>          -IPIV(k) were interchanged and D(k:k+1,k:k+1) is a 2-by-2
-!!$*>          diagonal block.
-!!$*> \endverbatim
-!!$*>
-!!$*> \param[in,out] B
-!!$*> \verbatim
-!!$*>          B is DOUBLE PRECISION array, dimension (LDB,NRHS)
-!!$*>          On entry, the N-by-NRHS right hand side matrix B.
-!!$*>          On exit, if INFO = 0, the N-by-NRHS solution matrix X.
-!!$*> \endverbatim
-!!$*>
-!!$*> \param[in] LDB
-!!$*> \verbatim
-!!$*>          LDB is INTEGER
-!!$*>          The leading dimension of the array B.  LDB >= max(1,N).
-!!$*> \endverbatim
-!!$*>
-!!$*> \param[out] WORK
-!!$*> \verbatim
-!!$*>          WORK is DOUBLE PRECISION array, dimension (MAX(1,LWORK))
-!!$*>          On exit, if INFO = 0, WORK(1) returns the optimal LWORK.
-!!$*> \endverbatim
-!!$*>
-!!$*> \param[in] LWORK
-!!$*> \verbatim
-!!$*>          LWORK is INTEGER
-!!$*>          The length of WORK.  LWORK >= 1, and for best performance
-!!$*>          LWORK >= max(1,N*NB), where NB is the optimal blocksize for
-!!$*>          DSYTRF.
-!!$*>          for LWORK < N, TRS will be done with Level BLAS 2
-!!$*>          for LWORK >= N, TRS will be done with Level BLAS 3
-!!$*>
-!!$*>          If LWORK = -1, then a workspace query is assumed; the routine
-!!$*>          only calculates the optimal size of the WORK array, returns
-!!$*>          this value as the first entry of the WORK array, and no error
-!!$*>          message related to LWORK is issued by XERBLA.
-!!$*> \endverbatim
-!!$*>
-!!$*> \param[out] INFO
-!!$*> \verbatim
-!!$*>          INFO is INTEGER
-!!$*>          = 0: successful exit
-!!$*>          < 0: if INFO = -i, the i-th argument had an illegal value
-!!$*>          > 0: if INFO = i, D(i,i) is exactly zero.  The factorization
-!!$*>               has been completed, but the block diagonal matrix D is
-!!$*>               exactly singular, so the solution could not be computed.
-!!$*> \endverbatim
-
-end module regcoil_auto_regularization_solve
+end subroutine regcoil_auto_regularization_solve

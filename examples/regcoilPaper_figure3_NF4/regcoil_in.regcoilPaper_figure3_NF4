@@ -12,8 +12,8 @@
   nzeta_plasma =128
   nzeta_coil   =128
 
-  mpol_coil =4
-  ntor_coil =4
+  mpol_potential = 4
+  ntor_potential = 4
 
   geometry_option_plasma = 2
   !R0_plasma = 3.0

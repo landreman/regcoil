@@ -1,8 +1,4 @@
-module regcoil_validate_input
-
-contains
-
-subroutine validate_input
+subroutine regcoil_validate_input
 
   use regcoil_variables
   use safe_open_mod
@@ -13,6 +9,7 @@ subroutine validate_input
   character(300) :: myline
   character(*), parameter :: matchString = "---- Phi(m,n) for"
   character(len=*), parameter :: line="******************************************************************"
+  real(dp) :: typical_target_min, typical_target_max
 
   if (ntheta_plasma < 1) then
      stop "Error! ntheta_plasma must be >= 1."
@@ -32,13 +29,13 @@ subroutine validate_input
   end if
 
 
-  if (mpol_coil < 0) then
-     stop "Error! mpol_coil must be >= 0."
+  if (mpol_potential < 0) then
+     stop "Error! mpol_potential must be >= 0."
   end if
 
 
-  if (ntor_coil < 0) then
-     stop "Error! ntor_coil must be >= 0."
+  if (ntor_potential < 0) then
+     stop "Error! ntor_potential must be >= 0."
   end if
 
 
@@ -118,7 +115,7 @@ subroutine validate_input
 
   if (general_option==2) then
      ! Replace nlambda with the number of current potentials saved in the nescout file.
-     print *,"Opening nescout file",nescout_filename
+     if (verbose) print *,"Opening nescout file",nescout_filename
      call safe_open(iunit, istat, trim(nescout_filename), 'old', 'formatted')
      if (istat .ne. 0) then
         stop 'Error opening nescout file'
@@ -131,36 +128,58 @@ subroutine validate_input
            j = j + 1
         end if
      end do
-     print *,"Detected",j,"current potentials in the nescout file."
+     if (verbose) print *,"Detected",j,"current potentials in the nescout file."
      nlambda = j
   end if
 
-  if (current_density_target<=0) then
-     stop "current_density_target must be positive."
+  if (target_value<=0) then
+     stop "target_value must be positive."
   end if
 
-  if (current_density_target < 1e5) then
-     print *,line
-     print *,"Warning! The value of current_density_target you have set"
-     print *,"is surprisingly small."
-     if (general_option .ne. 5) then
-        print *,"It is recommended that you run with general_option=5 to verify that this"
-        print *,"value of current_density_target is attainable."
+  if (general_option == 4 ) then
+     print *,"It is recommended that you run with general_option=5 instead of 4"
+     print *,"to verify that this value of target_value is attainable."
+  end if
+
+  if (general_option==4 .or. general_option==5) then
+     select case (trim(target_option))
+     case (target_option_max_K,target_option_rms_K)
+        typical_target_min = 1e5
+        typical_target_max = 3e8
+     case (target_option_chi2_K)
+        typical_target_min = 1e14
+        typical_target_max = 1e17
+     case (target_option_max_Bnormal,target_option_rms_Bnormal)
+        typical_target_min = 1e-5
+        typical_target_max = 5
+     case (target_option_chi2_B)
+        typical_target_min = 1e-6
+        typical_target_max = 100
+     case default
+        print *,"Invalid target_option: ",target_option
+        stop
+     end select
+
+     if (target_value < typical_target_min) then
+        print "(a)",line
+        print "(a)","Warning! The value of target_value you have set is surprisingly small."
+        print "(a)",line
      end if
-     print *,line
-  end if
-
-  if (current_density_target > 3e8) then
-     print *,line
-     print *,"Warning! The value of current_density_target you have set"
-     print *,"is surprisingly large."
-     if (general_option .ne. 5) then
-        print *,"It is recommended that you run with general_option=5 to verify that this"
-        print *,"value of current_density_target is attainable."
+     if (target_value > typical_target_max) then
+        print "(a)",line
+        print "(a)","Warning! The value of target_value you have set is surprisingly large."
+        print "(a)",line
      end if
-     print *,line
   end if
 
-end subroutine validate_input
+  select case (trim(regularization_term_option))
+  case (regularization_term_option_chi2_K)
+  case (regularization_term_option_Laplace_Beltrami)
+  case (regularization_term_option_K_xy)
+  case (regularization_term_option_K_zeta)
+  case default
+     print *,"Error! Unrecognized regularization_term_option: ",trim(regularization_term_option)
+     stop
+  end select
 
-end module regcoil_validate_input
+end subroutine regcoil_validate_input

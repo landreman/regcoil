@@ -1,17 +1,14 @@
-subroutine svd_scan
+subroutine regcoil_svd_scan
 
   use regcoil_variables
-  use stel_constants
   use stel_kinds
 
   implicit none
 
   integer :: iflag, tic, toc, countrate
-  real(dp), dimension(:,:), allocatable :: this_current_potential
-  real(dp), dimension(:), allocatable :: RHS, solution, singular_values, U_transpose_times_RHS
-  real(dp), dimension(:), allocatable :: KDifference_x, KDifference_y, KDifference_z
-  real(dp), dimension(:,:), allocatable :: this_K2_times_N, svd_matrix, U, VT
-  real(dp) :: factor_theta, factor_zeta, factor
+  real(dp), dimension(:), allocatable :: singular_values, U_transpose_times_RHS
+  real(dp), dimension(:,:), allocatable :: svd_matrix, U, VT
+  real(dp) :: factor
   integer :: ilambda, itheta, izeta, index, n_singular_values
 
   ! Variables needed by LAPACK:
@@ -20,86 +17,17 @@ subroutine svd_scan
   integer, dimension(:), allocatable :: IWORK
   character :: JOBZ
 
-  ! Adding some checks to release previously allocated variables.
-  ! This is because STELLOPT may call this function multiple times.
-  ! if (allocated()) deallocate()
-
-
   if (allocated(lambda)) deallocate(lambda)
-  ! deallocate(lambda)
   ! Nescoil seems to require keeping at least 2 singular values in a svd scan. We will do the same to keep the number
   ! of solutions the same as nescoil.
   nlambda = num_basis_functions-1
   allocate(lambda(nlambda))
   lambda=0
 
-  if (allocated(solution)) deallocate(solution)
-  allocate(solution(num_basis_functions), stat=iflag)
-  if (iflag .ne. 0) stop 'svd_scan Allocation error 1!'
-
-  if (allocated(chi2_B)) deallocate(chi2_B)
-  allocate(chi2_B(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'svd_scan Allocation error 2!'
-
-  if (allocated(chi2_K)) deallocate(chi2_K)
-  allocate(chi2_K(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'svd_scan Allocation error 3!'
-
-  if (allocated(max_Bnormal)) deallocate(max_Bnormal)
-  allocate(max_Bnormal(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'svd_scan Allocation error 4!'
-
-  if (allocated(max_K)) deallocate(max_K)
-  allocate(max_K(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'svd_scan Allocation error 5!'
-
-  if (allocated(current_potential)) deallocate(current_potential)
-  allocate(current_potential(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'svd_scan Allocation error 6!'
-
-  if (allocated(single_valued_current_potential_thetazeta)) deallocate(single_valued_current_potential_thetazeta)
-  allocate(single_valued_current_potential_thetazeta(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'svd_scan Allocation error 7!'
-
-  if (allocated(this_current_potential)) deallocate(this_current_potential)
-  allocate(this_current_potential(ntheta_coil,nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'svd_scan Allocation error 8!'
-
-  if (allocated(single_valued_current_potential_mn)) deallocate(single_valued_current_potential_mn)
-  allocate(single_valued_current_potential_mn(num_basis_functions,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'svd_scan Allocation error 9!'
-
-  if (allocated(Bnormal_total)) deallocate(Bnormal_total)
-  allocate(Bnormal_total(ntheta_plasma,nzeta_plasma,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'svd_scan Allocation error 10!'
-
-  if (allocated(K2)) deallocate(K2)
-  allocate(K2(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'svd_scan Allocation error 11!'
-
-  if (allocated(KDifference_x)) deallocate(KDifference_x)
-  allocate(KDifference_x(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'svd_scan Allocation error 12!'
-
-  if (allocated(KDifference_y)) deallocate(KDifference_y)
-  allocate(KDifference_y(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'svd_scan Allocation error 13!'
-
-  if (allocated(KDifference_z)) deallocate(KDifference_z)
-  allocate(KDifference_z(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'svd_scan Allocation error 14!'
-
-  if (allocated(this_K2_times_N)) deallocate(this_K2_times_N)
-  allocate(this_K2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'svd_scan Allocation error 15!'
 
   if (allocated(svd_matrix)) deallocate(svd_matrix)
   allocate(svd_matrix(ntheta_plasma*nzeta_plasma, num_basis_functions), stat=iflag)
   if (iflag .ne. 0) stop 'svd_scan Allocation error 16!'
-
-  if (allocated(RHS)) deallocate(RHS)
-  allocate(RHS(ntheta_plasma*nzeta_plasma), stat=iflag)
-  if (iflag .ne. 0) stop 'svd_scan Allocation error 17!'
 
 
   print *,"Beginning SVD."
@@ -188,15 +116,11 @@ subroutine svd_scan
   call system_clock(toc)
   print *,"matmul: ",real(toc-tic)/countrate," sec."
 
-  factor_zeta  = net_poloidal_current_Amperes / twopi
-  factor_theta = net_toroidal_current_Amperes / twopi
-
   !solution = 0
   ! Add the contribution from the ilambda-th singular vectors and singular value:
   solution = solution + VT(1,:) * (1/singular_values(1)) * U_transpose_times_RHS(1)
   do ilambda = nlambda,1,-1
      print "(a,es10.3,a,i3,a,i3,a)"," Solving system for lambda=",lambda(ilambda)," (",ilambda," of ",nlambda,")"
-     call system_clock(tic,countrate)
 
      ! Add the contribution from the ilambda-th singular vectors and singular value:
      !solution = solution + VT(ilambda,:) * (1/singular_values(ilambda)) * U_transpose_times_RHS(ilambda)
@@ -205,45 +129,11 @@ subroutine svd_scan
      print *,"index=",index
      solution = solution + VT(index,:) * (1/singular_values(index)) * U_transpose_times_RHS(index)
 
-     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-     ! Now compute diagnostics
-     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     call regcoil_diagnostics(ilambda)
 
-     single_valued_current_potential_mn(:,ilambda) = solution
-     this_current_potential = reshape(matmul(basis_functions, solution), (/ ntheta_coil, nzeta_coil /)) ! Could use BLAS2 for this line for extra speed.
-     single_valued_current_potential_thetazeta(:,:,ilambda) = this_current_potential
-     do izeta = 1,nzeta_coil
-        do itheta = 1,ntheta_coil
-           this_current_potential(itheta,izeta) = this_current_potential(itheta,izeta) &
-                + factor_zeta*zeta_coil(izeta) + factor_theta*theta_coil(itheta)
-        end do
-     end do
-     current_potential(:,:,ilambda) = this_current_potential
-
-     KDifference_x = d_x - matmul(f_x, solution)
-     KDifference_y = d_y - matmul(f_y, solution)
-     KDifference_z = d_z - matmul(f_z, solution)
-     this_K2_times_N = reshape(KDifference_x*KDifference_x + KDifference_y*KDifference_y + KDifference_z*KDifference_z, (/ ntheta_coil, nzeta_coil /)) &
-          / norm_normal_coil
-     chi2_K(ilambda) = nfp * dtheta_coil * dzeta_coil * sum(this_K2_times_N)
-     K2(:,:,ilambda) = this_K2_times_N / norm_normal_coil
-
-     Bnormal_total(:,:,ilambda) = (reshape(matmul(g,solution),(/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma) &
-          + Bnormal_from_plasma_current + Bnormal_from_net_coil_currents
-
-     max_Bnormal(ilambda) = maxval(abs(Bnormal_total(:,:,ilambda)))
-     max_K(ilambda) = sqrt(maxval(K2(:,:,ilambda)))
-
-     chi2_B(ilambda) = nfp * dtheta_plasma * dzeta_plasma &
-          * sum(Bnormal_total(:,:,ilambda) * Bnormal_total(:,:,ilambda) * norm_normal_plasma)
-
-     call system_clock(toc)
-     print *,"  Diagnostics: ",real(toc-tic)/countrate," sec."
-     print "(a,es10.3,a,es10.3)","   chi2_B:",chi2_B(ilambda),",  chi2_K:",chi2_K(ilambda)
-     print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda),",  rms K:",sqrt(chi2_K(ilambda)/area_coil)
   end do
 
-end subroutine svd_scan
+end subroutine regcoil_svd_scan
 
     ! Here is the LAPACK documentation for the relevant SVD subroutine:
 

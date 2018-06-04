@@ -1,4 +1,4 @@
-module splines
+module regcoil_splines
 
   use stel_kinds
 
@@ -38,12 +38,9 @@ contains
     integer :: ierr
 
     spl%n = n
-    ! if (allocated(spl%x)) deallocate(spl%x)
-    ! if (allocated(spl%y)) deallocate(spl%y)
     allocate (spl%x(n),spl%y(n))
     spl%x = x
     spl%y = y
-    ! if (allocated(spl%y2)) deallocate(spl%y2)
     allocate (spl%y2(n))
     call fitp_curv1 (n, x, y, 0.0_dp, 0.0_dp, 3, spl%y2, temp, 1.0_dp, ierr)
   end subroutine new_spline
@@ -59,12 +56,9 @@ contains
 
     spl%n = n
     spl%period = period
-    ! if (allocated(spl%x)) deallocate(spl%x)
-    ! if (allocated(spl%y)) deallocate(spl%y)
     allocate (spl%x(n),spl%y(n))
     spl%x = x
     spl%y = y
-    ! if (allocated(spl%y2)) deallocate(spl%y2)
     allocate (spl%y2(n))
     call fitp_curvp1 (n,x,y,period,spl%y2,temp,1.0_dp,ierr)
   end subroutine new_periodic_spline
@@ -4345,4 +4339,4 @@ contains
     end do
     deallocate (ypp, dum3)
   end subroutine lf_spline
-end module splines
+end module regcoil_splines
