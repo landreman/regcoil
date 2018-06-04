@@ -26,7 +26,7 @@ relativeTolerance = 1e-12
 numFailures += arrayShouldBe(data, [1e+200],relativeTolerance,absoluteTolerance)
 
 
-
+del data
 f.close()
 print "numFailures:",numFailures
 exit(numFailures > 0)
