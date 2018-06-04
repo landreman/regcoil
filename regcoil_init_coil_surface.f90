@@ -182,7 +182,11 @@ subroutine regcoil_init_coil_surface()
      deallocate(major_R_coil, z_coil)
      call system_clock(toc1)
      if (verbose) print *,"  Fourier transform:",real(toc1-tic1)/countrate,"sec"
+     
+     ! This write subroutine shoule be integrated with previous calculations.
      if (verbose) call regcoil_write_nescin  ! write the offset winding surface
+     call system_clock(tic1)
+     if (verbose) print *,"  Write nescin file:",real(tic1-toc1)/countrate,"sec"
 
   case (3)
      if (verbose) print *,"  Reading coil surface from nescin file ",trim(nescin_filename)

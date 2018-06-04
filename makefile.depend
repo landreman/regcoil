@@ -25,7 +25,8 @@ OBJ_FILES =  \
 	regcoil_validate_input.o \
 	regcoil_variables.o \
 	regcoil_write_input.o \
-	regcoil_write_output.o
+	regcoil_write_output.o \
+	regcoil_write_nescin.o
 
 # Dependencies:
 regcoil.o: regcoil_variables.o regcoil_init_plasma_mod.o
@@ -54,3 +55,4 @@ regcoil_validate_input.o: regcoil_variables.o
 regcoil_variables.o: 
 regcoil_write_input.o: regcoil_variables.o
 regcoil_write_output.o: regcoil_variables.o
+regcoil_write_nescin.o: regcoil_variables.o

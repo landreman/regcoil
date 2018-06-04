@@ -119,6 +119,8 @@ r_plasma  = f.variables['r_plasma'][()]
 r_coil  = f.variables['r_coil'][()]
 xm_coil = f.variables['xm_coil'][()]
 xn_coil = f.variables['xn_coil'][()]
+xm_potential = f.variables['xm_potential'][()]
+xn_potential = f.variables['xn_potential'][()]
 mnmax_coil = f.variables['mnmax_coil'][()]
 chi2_B = f.variables['chi2_B'][()]
 single_valued_current_potential_thetazeta = f.variables['single_valued_current_potential_thetazeta'][()]
@@ -130,7 +132,7 @@ net_poloidal_current_Amperes = f.variables['net_poloidal_current_Amperes'][()]
 phi_mn = f.variables['single_valued_current_potential_mn'][()][ilambda,:]
 f.close()
 
-mn_max = len(xm_coil)
+mn_max = len(xm_potential)
 phi_sin = phi_mn[0:mn_max]
 phi_cos = phi_mn[mn_max:]
 
@@ -139,7 +141,7 @@ def func(x):
     '''
     x = [theta,zeta]
     '''
-    angle = xm_coil*x[0] - xn_coil*x[1]
+    angle = xm_potential*x[0] - xn_potential*x[1]
     phi = np.sum(phi_cos * np.cos(angle) + phi_sin * np.sin(angle))
     return phi
 
@@ -225,9 +227,12 @@ ax.set_ylabel('theta')
 
 
 def onclick(event):
-	print "Please click the screen to choose contours. To finish, please close the figure."
+	print "------------------------------------------"
+	print "Please click the screen to choose contours."
+	print "To finish, please close the figure."
 	xdata = event.xdata
 	ydata = event.ydata
+	print xdata, ydata
 	tmp_value = func([ydata,xdata])
 	print "clicked contour value :", tmp_value
 	level.append(tmp_value)

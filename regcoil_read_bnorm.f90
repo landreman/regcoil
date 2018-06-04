@@ -28,7 +28,7 @@ subroutine regcoil_read_bnorm()
 
   ! using data from FOCUS file ; by czhu
   if ( nbf > 0 ) then
-     if (lscreen) print *, "Using Bn coefficients in FOCUS file."
+     if (verbose) print *, "Using Bn coefficients in FOCUS file."
 
      do izeta = 1,nzeta_plasma
         do itheta = 1,ntheta_plasma

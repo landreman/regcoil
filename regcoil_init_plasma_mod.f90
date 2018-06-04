@@ -86,44 +86,44 @@ contains
        if (ierr .ne. 0) then
           stop 'Error opening FOCUS file'
        endif
-       if (lscreen) print *,"Reading FOCUS format data from file:", trim(shape_filename_plasma)
+       if (verbose) print *,"Reading FOCUS format data from file:", trim(shape_filename_plasma)
        
        ! Skip first line
        read (iunit, *)
-       read (iunit, *) mnmax, nfp, nbf
+       read (iunit, *) mnmax_plasma, nfp, nbf
        
-       if (allocated(xm)) deallocate(xm)
-       allocate(xm(mnmax),stat=iflag)
+       if (allocated(xm_plasma)) deallocate(xm_plasma)
+       allocate(xm_plasma(mnmax_plasma),stat=iflag)
        if (iflag .ne. 0) stop "regcoil_init_plasma Allocation error! 1"
 
-       if (allocated(xn)) deallocate(xn)
-       allocate(xn(mnmax),stat=iflag)
+       if (allocated(xn_plasma)) deallocate(xn_plasma)
+       allocate(xn_plasma(mnmax_plasma),stat=iflag)
        if (iflag .ne. 0) stop "regcoil_init_plasma Allocation error!  2"
 
-       if (allocated(rmnc)) deallocate(rmnc)
-       allocate(rmnc(mnmax),stat=iflag)
+       if (allocated(rmnc_plasma)) deallocate(rmnc_plasma)
+       allocate(rmnc_plasma(mnmax_plasma),stat=iflag)
        if (iflag .ne. 0) stop "regcoil_init_plasma Allocation error!  3"
 
-       if (allocated(zmns)) deallocate(zmns)
-       allocate(zmns(mnmax),stat=iflag)
+       if (allocated(zmns_plasma)) deallocate(zmns_plasma)
+       allocate(zmns_plasma(mnmax_plasma),stat=iflag)
        if (iflag .ne. 0) stop "regcoil_init_plasma Allocation error!  4"
 
-       if (allocated(rmns)) deallocate(rmns)
-       allocate(rmns(mnmax),stat=iflag)
+       if (allocated(rmns_plasma)) deallocate(rmns_plasma)
+       allocate(rmns_plasma(mnmax_plasma),stat=iflag)
        if (iflag .ne. 0) stop "regcoil_init_plasma Allocation error!  5"
 
-       if (allocated(zmnc)) deallocate(zmnc)
-       allocate(zmnc(mnmax),stat=iflag)
+       if (allocated(zmnc_plasma)) deallocate(zmnc_plasma)
+       allocate(zmnc_plasma(mnmax_plasma),stat=iflag)
        if (iflag .ne. 0) stop "regcoil_init_plasma Allocation error!  6"
        
        ! Skip two lines
        read (iunit, *)
        read (iunit, *)
-       do i = 1, mnmax
-          read (iunit, *) xn(i), xm(i), rmnc(i), rmns(i), zmnc(i), zmns(i)
+       do i = 1, mnmax_plasma
+          read (iunit, *) xn_plasma(i), xm_plasma(i), rmnc_plasma(i), rmns_plasma(i), zmnc_plasma(i), zmns_plasma(i)
        end do      
 
-       xn = xn * nfp ! include nfp
+       xn_plasma = xn_plasma * nfp ! include nfp
 
        ! read bnorm coefficients if available
        if ( nbf > 0 ) then
@@ -152,7 +152,7 @@ contains
 
           bfn = bfn * nfp ! include nfp
 
-          if (lscreen) print *,"Number of modes for Bnormal read from FOCUS file:", nbf
+          if (verbose) print *,"Number of modes for Bnormal read from FOCUS file:", nbf
        endif
 
        close(iunit)
