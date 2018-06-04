@@ -146,7 +146,6 @@ numFailures += arrayShouldBe(data[1,:], [-636845.139192448, -93726.100985817, -1
     -6076.24785297526, -1618.96547832442, 5993.3173828301, -44505.6636867058,    ],relativeTolerance,absoluteTolerance,requireSameLength=False)
 
 
-del data
 f.close()
 print "numFailures:",numFailures
 exit(numFailures > 0)

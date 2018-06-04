@@ -5,12 +5,12 @@
   lambda_min = 1e-15
   lambda_max = 1e-14
 
-  ntheta_plasma = 128
-  ntheta_coil   = 128
-  nzeta_plasma  = 128
-  nzeta_coil    = 128
-  mpol_potential = 32
-  ntor_potential = 32
+  ntheta_plasma = 64
+  ntheta_coil   = 64
+  nzeta_plasma  = 64
+  nzeta_coil    = 64
+  mpol_coil = 12
+  ntor_coil = 12
 
 
   geometry_option_plasma = 2

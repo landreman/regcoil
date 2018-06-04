@@ -2,8 +2,7 @@
 
 &regcoil_nml
   general_option = 5  ! Determine lambda to meet a current density target
-  target_option = 'max_K'
-  target_value = 1.0d+6
+  current_density_target = 1.0d+6
 
   nlambda = 20
 
@@ -11,8 +10,8 @@
   ntheta_coil   = 64
   nzeta_plasma  = 64
   nzeta_coil    = 64
-  mpol_potential = 12
-  ntor_potential = 12
+  mpol_coil = 12
+  ntor_coil = 12
 
   geometry_option_plasma = 2
   wout_filename = '../../equilibria/wout_d23p4_tm.nc'
