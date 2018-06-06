@@ -1,0 +1,277 @@
+#!/usr/bin/env python
+print "usage: cut_saddle_coil regcoil_out.name nescin.name ilamda"
+
+###################################################################
+
+def real_space(nharmonics,coeff_array,polAng,torAng):
+	nn = len(torAng) 	
+	RR = np.zeros(nn)
+	ZZ = np.zeros(nn)
+	XX = np.zeros(nn)
+	YY = np.zeros(nn)
+	nnum = coeff_array[:,0]
+	mnum = coeff_array[:,1]
+	crc  = coeff_array[:,2]
+	crs  = coeff_array[:,3]
+	czc  = coeff_array[:,4]
+	czs  = coeff_array[:,5]
+	for i in range(nn):
+		for k in range(nharmonics):
+			RR[i] = RR[i] + crc[k]*np.cos(mnum[k]*polAng[i] + nnum[k]*torAng[i])\
+				      + crs[k]*np.sin(mnum[k]*polAng[i] + nnum[k]*torAng[i])
+		       	ZZ[i] = ZZ[i] + czc[k]*np.cos(mnum[k]*polAng[i] + nnum[k]*torAng[i])\
+				      + czs[k]*np.sin(mnum[k]*polAng[i] + nnum[k]*torAng[i])
+		XX[i] = RR[i]*np.cos(torAng[i])
+		YY[i] = RR[i]*np.sin(torAng[i])
+	
+	return XX, YY, RR, ZZ
+
+def read_surface_d3d(file_name):
+    fo = open(file_name, 'r')
+    line = fo.readline()
+    line = fo.readline()
+    nharmonics = int(line.split()[0])
+    line = fo.readline()
+    line = fo.readline()
+    read_array = np.zeros((nharmonics,6))
+    for i in range(nharmonics):
+        line = fo.readline()
+        element = line.split()
+        for j in range(6):
+            read_array[i,j] = element[j]
+    return nharmonics, read_array
+
+def com_two_angles(a, b, tol=0.0628):
+    if abs(a[0] - b[0]) < tol or 2*np.pi-abs(a[0] - b[0]) < tol:
+        if abs(a[1] - b[1]) < tol or 2*np.pi-abs(a[1] - b[1]) < tol:
+	    return True
+    return False
+
+def combine_lines(lines):
+	p_sta = [iline[ 0,:] for iline in lines] # starting points
+	p_end = [iline[-1,:] for iline in lines] # ending points
+
+   # not for helical coils or coils with more sections
+	new_lines = []
+	used_index = []
+	for i in range(len(lines)):
+		init_len = len(used_index)
+		if i not in used_index:
+			for j in range(len(lines)):
+				if j == i :
+					continue
+				if com_two_angles(p_sta[i], p_sta[j]):
+					print "find continued starting points of ", i, " and ", j
+					new_lines.append(np.concatenate((lines[i][::-1], lines[j])))
+					used_index.append(j)
+					continue
+				if  com_two_angles(p_sta[i], p_end[j]):
+					print "find continued starting points of ", i, " and ending points of ", j
+					new_lines.append(np.concatenate((lines[j], lines[i])))
+					used_index.append(j)
+					continue
+			if len(used_index) == init_len:	
+				new_lines.append(lines[i])
+	#raw_input('Enter something to continue...')
+	#print len(new_lines)
+	if used_index == [] :
+		return lines
+	else:
+		return combine_lines(new_lines)
+
+###################################################################
+
+from scipy.io import netcdf
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
+import sys
+
+if len(sys.argv) != 4:
+   print "Error! Wrong number of arguments."
+   exit(1)
+
+regcoilname = sys.argv[1]
+surfname = sys.argv[2]
+ilambda = int(sys.argv[3])
+#num_of_contours = int(sys.argv[4])
+
+print(sys.version)
+print 'regcoilname: ', regcoilname
+print 'surfname: ', surfname
+print "ilambda:",ilambda
+
+f = netcdf.netcdf_file(regcoilname,'r',mmap=False)
+nfp = f.variables['nfp'][()]
+ntheta_plasma = f.variables['ntheta_plasma'][()]
+ntheta_coil = f.variables['ntheta_coil'][()]
+nzeta_plasma = f.variables['nzeta_plasma'][()]
+nzeta_coil = f.variables['nzeta_coil'][()]
+nzetal_plasma = f.variables['nzetal_plasma'][()]
+nzetal_coil = f.variables['nzetal_coil'][()]
+theta_plasma = f.variables['theta_plasma'][()]
+theta_coil = f.variables['theta_coil'][()]
+zeta_plasma = f.variables['zeta_plasma'][()]
+zeta_coil = f.variables['zeta_coil'][()]
+zetal_plasma = f.variables['zetal_plasma'][()]
+zetal_coil = f.variables['zetal_coil'][()]
+r_plasma  = f.variables['r_plasma'][()]
+r_coil  = f.variables['r_coil'][()]
+xm_coil = f.variables['xm_coil'][()]
+xn_coil = f.variables['xn_coil'][()]
+xm_potential = f.variables['xm_potential'][()]
+xn_potential = f.variables['xn_potential'][()]
+mnmax_coil = f.variables['mnmax_coil'][()]
+chi2_B = f.variables['chi2_B'][()]
+single_valued_current_potential_thetazeta = f.variables['single_valued_current_potential_thetazeta'][()]
+current_potential = f.variables['current_potential'][()]
+Bnormal_from_plasma_current = f.variables['Bnormal_from_plasma_current'][()]
+Bnormal_from_net_coil_currents = f.variables['Bnormal_from_net_coil_currents'][()]
+Bnormal_total = f.variables['Bnormal_total'][()]
+net_poloidal_current_Amperes = f.variables['net_poloidal_current_Amperes'][()]
+phi_mn = f.variables['single_valued_current_potential_mn'][()][ilambda,:]
+f.close()
+
+mn_max = len(xm_potential)
+phi_sin = phi_mn[0:mn_max]
+phi_cos = phi_mn[mn_max:]
+
+####### define fucntion #######
+def func(x):
+    '''
+    x = [theta,zeta]
+    '''
+    angle = xm_potential*x[0] - xn_potential*x[1]
+    phi = np.sum(phi_cos * np.cos(angle) + phi_sin * np.sin(angle))
+    return phi
+
+def func2(x):
+    '''
+    square of phi
+    '''
+    return func(x)*func(x)
+
+##### test ######
+
+#phi_thetazeta = np.zeros([ntheta_coil, nzeta_coil])
+#for itheta in range(ntheta_coil):
+#    for jzeta in range(nzeta_coil):
+#        phi_thetazeta[itheta, jzeta] = func([theta_coil[itheta], zeta_coil[jzeta]])
+
+#plt.figure()
+#plt.imshow(phi_thetazeta)
+
+####### define gradient #######
+def jac(x):
+    '''
+    jac = [df/dx, df/dy]
+    '''
+    angle = xm_coil*x[0] - xn_coil*x[1]
+    dphi_dtheta = np.sum(phi_cos * (-1.0) * xm_coil * np.sin(angle) + phi_sin * ( 1.0) * xm_coil * np.cos(angle))
+    dphi_dzeta  = np.sum(phi_cos * ( 1.0) * xn_coil * np.sin(angle) + phi_sin * (-1.0) * xn_coil * np.cos(angle))
+    return np.array([dphi_dtheta, dphi_dzeta])
+
+def jac2(x):
+    '''
+    gradient of square phi
+    '''
+    return 2.0*func(x)*jac(x)
+
+##### test ########
+#eps = np.sqrt(np.finfo(float).eps)
+#x = [0,np.pi]
+#optimize.approx_fprime(x, func, eps)
+#jac(x)
+
+###### hessian ########
+def hess(x):
+    '''
+    hessian of phi
+    '''
+    angle = xm_coil*x[0] - xn_coil*x[1]
+    dphi_dtheta_dtheta = np.sum(phi_cos * (-1.0) * xm_coil * xm_coil * np.cos(angle) +
+                                phi_sin * (-1.0) * xm_coil * xm_coil * np.sin(angle))
+    dphi_dtheta_dzeta  = np.sum(phi_cos * ( 1.0) * xm_coil * xn_coil * np.cos(angle) +
+                                phi_sin * ( 1.0) * xm_coil * xn_coil * np.sin(angle))
+    dphi_dzeta_dtheta  = dphi_dtheta_dzeta
+    dphi_dzeta_dzeta   = np.sum(phi_cos * (-1.0) * xn_coil * xn_coil * np.cos(angle) +
+                                phi_sin * (-1.0) * xn_coil * xn_coil * np.sin(angle))
+    return np.array([[dphi_dtheta_dtheta, dphi_dtheta_dzeta],[dphi_dzeta_dtheta, dphi_dzeta_dzeta]])
+
+##### test ########
+
+current_potential_plot = np.transpose(current_potential[ilambda,:,:])
+
+
+# loop
+mtotal, surface_array = read_surface_d3d(surfname)
+#print "mtotal:", mtotal
+
+coilsFilename = 'coils.'+regcoilname[12:-3]
+f = open(coilsFilename,'w')
+f.write('periods '+str(nfp)+'\n')
+f.write('begin filament\n')
+f.write('mirror NIL\n')
+
+num_contour = 0
+level = []
+max_number = np.max(current_potential_plot) + 1E6
+
+# plot current_potential
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.contour(theta_coil, zeta_coil, current_potential_plot, 500)
+ax.set_xlabel('zeta')
+ax.set_ylabel('theta')
+#plt.show()
+
+
+def onclick(event):
+	print "------------------------------------------"
+	print "Please click the screen to choose contours."
+	print "To finish, please close the figure."
+	xdata = event.xdata
+	ydata = event.ydata
+	print xdata, ydata
+	tmp_value = func([ydata,xdata])
+	print "clicked contour value :", tmp_value
+	level.append(tmp_value)
+   #tmp_level = np.array([level[num_contour], max_number])
+	tmp_level = np.array([tmp_value])
+   #tmp_level = np.array([-4000.0, -2000.0, 2000.0, 4000.0])
+   #print tmp_level
+   #print np.shape(current_potential_plot)
+	cdata = ax.contour(zeta_coil,theta_coil,current_potential_plot, tmp_level)
+   
+	lines = [p.vertices for p in cdata.collections[0].get_paths()[:]] # get all the lines
+	print "number of raw contour lines: ", len(lines)
+	new_lines = combine_lines(lines)
+	print "number of closed contour lines: ", len(new_lines)
+   #fig = plt.figure()
+	for icoil in new_lines:
+   #print "cdata.collections:", len(cdata.collections)
+   #print "len(cdata.collections[0].get_paths()) : ", len(cdata.collections[0].get_paths())
+   #print "len(cdata.collections[1].get_paths()) : ", len(cdata.collections[1].get_paths())
+		contour_zeta = icoil[:,0]
+		contour_theta = icoil[:,1]
+      #print "np.shape(contour_theta): ", np.shape(contour_theta)
+      
+      #plt.plot(contour_zeta,contour_theta)
+		X,Y,R,Z = real_space(mtotal,surface_array,contour_theta,contour_zeta)
+      #ax.scatter(X[:],Y[:],Z[:])
+
+		for ii in range(len(X)-1):
+			f.write('{:23.15E} {:23.15E} {:23.15E} {:23.15E}\n'.format(X[ii],Y[ii],Z[ii], tmp_value))
+   # Close the loop
+		ii=0
+		f.write('{:23.15E} {:23.15E} {:23.15E} {:23.15E} {:d} RMP \n'.format(X[ii],Y[ii],Z[ii], 0.0, 1))
+
+fig.canvas.mpl_connect('button_press_event', onclick)
+plt.show()
+
+f.write('END \n')
+f.close()
+
+plt.figure()
+plt.contour(zeta_coil,theta_coil,current_potential_plot,np.sort(level))
+plt.show()

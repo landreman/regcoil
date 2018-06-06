@@ -26,7 +26,7 @@ module regcoil_variables
 
   character(len=200) :: wout_filename=""
   character(len=200) :: shape_filename_plasma=""
-  character(len=200) :: nescin_filename=""
+  character(len=200) :: nescin_filename="nescin.out"
   character(len=200) :: nescout_filename=""
   character(len=200) :: efit_filename=""
   character(len=200) :: output_filename
@@ -85,6 +85,9 @@ module regcoil_variables
   logical :: load_bnorm = .false.
   character(len=200) :: bnorm_filename=""
   real(dp) :: curpol = 1  ! number which multiplies data in bnorm file.
+  integer :: nbf ! number of Fourier harmonics in FOCUS format boundary.
+  integer, dimension(:), allocatable :: bfn, bfm
+  real(dp), dimension(:), allocatable :: bfs, bfc
 
   integer :: nlambda = 4
   real(dp) :: lambda_min = 1.0d-19, lambda_max = 1.0d-13

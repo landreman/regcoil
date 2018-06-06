@@ -1,7 +1,8 @@
 subroutine regcoil_read_bnorm()
 
   use regcoil_variables, only: load_bnorm, bnorm_filename, ntheta_plasma, nzeta_plasma, &
-       Bnormal_from_plasma_current, theta_plasma, zeta_plasma, nfp, curpol, verbose
+       Bnormal_from_plasma_current, theta_plasma, zeta_plasma, nfp, curpol, verbose, &
+       nbf, bfn, bfm, bfs, bfc
   use safe_open_mod
   use stel_constants
   use stel_kinds
@@ -24,6 +25,25 @@ subroutine regcoil_read_bnorm()
      if (verbose) print *,"Not reading a bnorm file, so Bnormal_from_plasma_current arrays will all be 0."
      return
   end if
+
+  ! using data from FOCUS file ; by czhu
+  if ( nbf > 0 ) then
+     if (verbose) print *, "Using Bn coefficients in FOCUS file."
+
+     do izeta = 1,nzeta_plasma
+        do itheta = 1,ntheta_plasma
+           do i = 1, nbf
+              Bnormal_from_plasma_current(itheta,izeta) = Bnormal_from_plasma_current(itheta,izeta) + &
+                   bfc(i)*cos(bfm(i)*theta_plasma(itheta) - bfn(i)*zeta_plasma(izeta)) + &
+                   bfs(i)*sin(bfm(i)*theta_plasma(itheta) - bfn(i)*zeta_plasma(izeta))
+              ! In FOCUS, the angle is using mu-nv. Both cosine and sin terms are retained.
+              ! For more information, please check https://princetonuniversity.github.io/FOCUS/rdsurf.pdf.
+           enddo
+        end do
+     end do
+     return
+  endif
+
 
   if (verbose) print *,"Loading B_normal on the plasma surface due to plasma current from file ",trim(bnorm_filename)
 
