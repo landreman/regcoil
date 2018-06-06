@@ -395,10 +395,13 @@ if  \parlink{geometry\_option\_plasma} is 2.
 
 \param{nescin\_filename}
 {string}
-{{\ttfamily ""}}
+{{\ttfamily "nescin.out"}}
 {Only when \parlink{geometry\_option\_coil} is 2 (write to) or 3 (read from).}
-{Name of a \nescoil~{\ttfamily nescin} input file. The coil surface from
-this file will be used as the coil surface for \regcoil.}
+{Name of a {\ttfamily nescin} file, of the sort used with the \nescoil~code.
+If \parlink{geometry\_option\_coil}=3, the coil surface from
+this file will be used as the coil surface for \regcoil. 
+If \parlink{geometry\_option\_coil}=2, \regcoil~will save the uniform-offset surface it computes
+into a file with this name.}
 
 
 \section{Parameters related to the regularization weight}

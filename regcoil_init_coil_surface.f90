@@ -124,18 +124,6 @@ subroutine regcoil_init_coil_surface()
      call system_clock(toc1)
      if (verbose) print *,"  Computing offset points:",real(toc1-tic1)/countrate,"sec"
 
-!!$     print *,""
-!!$     print *,"Here comes major_R_coil:"
-!!$     do j = 1,ntheta_coil
-!!$        print *,major_R_coil(j,:)
-!!$     end do
-!!$     print *,""
-!!$     print *,"Here comes z_coil:"
-!!$     do j = 1,ntheta_coil
-!!$        print *,z_coil(j,:)
-!!$     end do
-!!$     print *,""
-
      ! Fourier transform the result.
      ! This is not a rate-limiting step, so for clarity of code, we don't bother with an FFT.
      call system_clock(tic1)
@@ -163,7 +151,6 @@ subroutine regcoil_init_coil_surface()
               ! The next 2 lines ensure inverse Fourier transform(Fourier transform) = identity
               if (mod(ntheta_coil,2) == 0 .and.     xm_coil(j)  ==    (ntheta_coil/2)) factor2 = factor2 / 2
               if (mod( nzeta_coil,2) == 0 .and. abs(xn_coil(j)) == nfp*(nzeta_coil/2)) factor2 = factor2 / 2
-              !print *,"j=",j,"itheta=",itheta,"izeta=",izeta,"angle=",angle
               rmnc_coil(j) = rmnc_coil(j) + major_R_coil(itheta, izeta) * cosangle * factor2
               rmns_coil(j) = rmns_coil(j) + major_R_coil(itheta, izeta) * sinangle * factor2
               zmnc_coil(j) = zmnc_coil(j) + z_coil(itheta, izeta) * cosangle * factor2
@@ -171,11 +158,6 @@ subroutine regcoil_init_coil_surface()
            end do
         end do
      end do
-!!$     print *,"factor:",factor
-!!$     rmnc_coil = rmnc_coil * factor
-!!$     rmns_coil = rmns_coil * factor
-!!$     zmnc_coil = zmnc_coil * factor
-!!$     zmns_coil = zmns_coil * factor
      rmnc_coil(1) = sum(major_R_coil) / (ntheta_coil * nzeta_coil)
      zmnc_coil(1) = sum(z_coil) / (ntheta_coil * nzeta_coil)
 
@@ -183,8 +165,7 @@ subroutine regcoil_init_coil_surface()
      call system_clock(toc1)
      if (verbose) print *,"  Fourier transform:",real(toc1-tic1)/countrate,"sec"
      
-     ! This write subroutine shoule be integrated with previous calculations.
-     if (verbose) call regcoil_write_nescin  ! write the offset winding surface
+     if (verbose) call regcoil_write_nescin()
      call system_clock(tic1)
      if (verbose) print *,"  Write nescin file:",real(tic1-toc1)/countrate,"sec"
 
@@ -199,22 +180,6 @@ subroutine regcoil_init_coil_surface()
 
   ! End of code that is specific to each value of geometry_option_coil.
   ! Now comes the code that is common to all settings of geometry_option_coil.
-  
-!!$  print *,""
-!!$  print *,"mnmax_coil:",mnmax_coil
-!!$  print *,""
-!!$  print *,"xm_coil:",xm_coil
-!!$  print *,""
-!!$  print *,"xn_coil:",xn_coil
-!!$  print *,""
-!!$  print *,"rmnc_coil:",rmnc_coil
-!!$  print *,""
-!!$  print *,"rmns_coil:",rmns_coil
-!!$  print *,""
-!!$  print *,"zmnc_coil:",zmnc_coil
-!!$  print *,""
-!!$  print *,"zmns_coil:",zmns_coil
-!!$  print *,""
 
   ! First dimension is the Cartesian component x, y, or z.
   if (allocated(r_coil)) deallocate(r_coil)
@@ -248,17 +213,6 @@ subroutine regcoil_init_coil_surface()
   ! Convert Fourier representation of the coil winding surface to Cartesian coordinates:
   call regcoil_evaluate_coil_surface()
 
-!!$     print *,""
-!!$     print *,"Here comes sqrt(r_coil(1,:,:) ^ 2 + r_coil(2,:,:) ^ 2):"
-!!$     do j = 1,ntheta_coil
-!!$        print *,sqrt(r_coil(1,j,1:nzeta_coil) ** 2 + r_coil(2,j,1:nzeta_coil) ** 2)
-!!$     end do
-!!$     print *,""
-!!$     print *,"Here comes r_coil(3,:,:):"
-!!$     do j = 1,ntheta_coil
-!!$        print *,r_coil(3,j,1:nzeta_coil)
-!!$     end do
-!!$     print *,""
 
   call system_clock(toc)
   if (verbose) print *,"Done initializing coil surface. Took ",real(toc-tic)/countrate," sec."

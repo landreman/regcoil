@@ -26,7 +26,7 @@ module regcoil_variables
 
   character(len=200) :: wout_filename=""
   character(len=200) :: shape_filename_plasma=""
-  character(len=200) :: nescin_filename=""
+  character(len=200) :: nescin_filename="nescin.out"
   character(len=200) :: nescout_filename=""
   character(len=200) :: efit_filename=""
   character(len=200) :: output_filename
