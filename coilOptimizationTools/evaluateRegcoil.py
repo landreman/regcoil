@@ -308,7 +308,7 @@ class coilFourier:
     
     regcoil_input_file = self.regcoil_input_file
 	
-    if (self.geometry_option_plasma == 3 or self.geometry_option_plasma == 4):
+    if (self.geometry_option_plasma == 2 or self.geometry_option_plasma == 3 or self.geometry_option_plasma == 4):
     	wout_filename = readVariable("wout_filename","string",regcoil_input_file,required=True)
     elif (self.geometry_option_plasma == 5):
 			efit_filename = readVariable("efit_filename","string",regcoil_input_file,required=True)
@@ -347,7 +347,7 @@ class coilFourier:
     for line in inputFile:
         if namelistLineContains(line,"nescin_filename"):
             line = 'nescin_filename = "'+new_nescin+'"\n'
-        if (self.geometry_option_plasma == 3 or self.geometry_option_plasma == 4):
+        if (self.geometry_option_plasma ==2 or self.geometry_option_plasma == 3 or self.geometry_option_plasma == 4):
 				if namelistLineContains(line,"wout_filename"):
 					new_wout = '../' + wout_filename
 					line = 'wout_filename = "'+new_wout+'"\n'
