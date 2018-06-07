@@ -194,19 +194,23 @@ ax.plot([x1,x2],[y1,y2],[z1,z2],'k',linewidth=3)
 f = open(coilsFilename,'w')
 f.write('periods '+str(nfp)+'\n')
 
+contour_X = np.array(contour_X)
+print contour_X.shape
+
 for j in range(coilsPerHalfPeriod):
+   coilIndex = j*nfp
    f.write('\n')
    f.write('\n')
    f.write('begin polygonial\n')
    f.write('mirror MIRROR\n')
    f.write('rotate\n')
    f.write('current '+'{:14.22e}'.format(coilCurrent)+'\n')
-   N = len(contour_X[j])
+   N = len(contour_X[coilIndex])
    for k in range(N):
-      f.write('{:14.22e} {:14.22e} {:14.22e}\n'.format(contour_X[j][k],contour_Y[j][k],contour_Z[j][k]))
+      f.write('{:14.22e} {:14.22e} {:14.22e}\n'.format(contour_X[coilIndex][k],contour_Y[coilIndex][k],contour_Z[coilIndex][k]))
    # Close the loop
    k=0
-   f.write('{:14.22e} {:14.22e} {:14.22e}\n'.format(contour_X[j][k],contour_Y[j][k],contour_Z[j][k]))
+   f.write('{:14.22e} {:14.22e} {:14.22e}\n'.format(contour_X[coilIndex][k],contour_Y[coilIndex][k],contour_Z[coilIndex][k]))
    f.write('end\n')
 f.close()
 
