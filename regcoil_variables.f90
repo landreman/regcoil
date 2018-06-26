@@ -67,6 +67,7 @@ module regcoil_variables
   integer :: nfp
   logical :: lasym
   integer :: max_mpol_coil = 24, max_ntor_coil = 24 ! These variables are upper limits on the # of Fourier modes used to describe a uniform-offset coil surface.
+  integer :: mpol_coil_filter = 24, ntor_coil_filter = 24
 
   integer :: save_level = 3
   integer :: nfp_imposed = 1
@@ -76,6 +77,7 @@ module regcoil_variables
 
   integer :: efit_num_modes = 10
   real(dp) :: efit_psiN = 0.98
+  real(dp) :: constant_arclength_tolerance = 1.0e-6
 
   real(dp) :: mpol_transform_refinement=5, ntor_transform_refinement=1
   real(dp) :: area_plasma, area_coil, volume_plasma, volume_coil
@@ -122,7 +124,7 @@ module regcoil_variables
        R0_plasma, R0_coil, a_plasma, a_coil, &
        separation, wout_filename, &
        save_level, nfp_imposed, symmetry_option, &
-       mpol_potential, ntor_potential, &
+       mpol_potential, ntor_potential, mpol_coil_filter, ntor_coil_filter, &
        nescin_filename, efit_filename, efit_psiN, efit_num_modes, &
        mpol_transform_refinement, ntor_transform_refinement, max_mpol_coil, max_ntor_coil, &
        net_poloidal_current_Amperes, net_toroidal_current_Amperes, &

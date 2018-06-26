@@ -70,8 +70,8 @@ subroutine regcoil_validate_input
      stop "Error! geometry_option_coil must be >= 0."
   end if
 
-  if (geometry_option_coil > 3) then
-     stop "Error! geometry_option_coil must be <= 3."
+  if (geometry_option_coil > 4) then
+     stop "Error! geometry_option_coil must be <= 4."
   end if
 
 

@@ -363,7 +363,9 @@ if  \parlink{geometry\_option\_plasma} is 2.
 
 {\ttfamily geometry\_option\_coil} = 2: The coil surface will computing by expanding the plasma surface uniformly by a distance \parlink{separation}. The expanded surface will be saved to a local file specified by \parlink{nescin\_filename}. \\
 
-{\ttfamily geometry\_option\_coil} = 3: The coil surface will be the `coil' surface in the \nescoil~`nescin' input file specified by \parlink{nescin\_filename}.
+{\ttfamily geometry\_option\_coil} = 3: The coil surface will be the `coil' surface in the \nescoil~`nescin' input file specified by \parlink{nescin\_filename}. \\
+
+{\ttfamily geometry\_option\_coil} = 4: Similar to option 2, except that the poloidal angle will be changed such that the arclength (with respect to $\theta)$ is independent of $\theta$ at each $\zeta$. The coil surface will computing by expanding the plasma surface uniformly by a distance \parlink{separation}. The expanded surface will be saved to a local file specified by \parlink{nescin\_filename}. \\
 }
 
 \myhrule
@@ -402,6 +404,22 @@ If \parlink{geometry\_option\_coil}=3, the coil surface from
 this file will be used as the coil surface for \regcoil. 
 If \parlink{geometry\_option\_coil}=2, \regcoil~will save the uniform-offset surface it computes
 into a file with this name.}
+
+\myhrule
+
+\param{mpol\_coil\_filter}
+{integer}
+{24}
+{Only when \parlink{geometry\_option\_coil} is 2, 3, or 4.}
+{Terms in the Fourier series for $R(\theta,\zeta)$ and $Z(\theta,\zeta)$ describing the coil winding surface will be dropped if the poloidal mode number is larger than {\ttfamily mpol\_coil\_filter}.}
+
+\myhrule
+
+\param{ntor\_coil\_filter}
+{integer}
+{24}
+{Only when \parlink{geometry\_option\_coil} is 2, 3, or 4.}
+{Terms in the Fourier series for $R(\theta,\zeta)$ and $Z(\theta,\zeta)$ describing the coil winding surface will be dropped if the toroidal mode number is larger than {\ttfamily ntor\_coil\_filter}. Specify 1, 2, 3, $\ldots$ rather than {\ttfamily nfp}, 2$\times${\ttfamily nfp}, 3$\times${\ttfamily nfp}, etc.}
 
 
 \section{Parameters related to the regularization weight}

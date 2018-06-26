@@ -253,6 +253,8 @@ contains
     real(dp) :: yx(500)
     data yx(1)/1.0_dp/
     save yx
+    ! This next line is needed because yx has the "save" attribute, and multiple threads may call this function.
+    !$OMP threadprivate(yx)  
     integer :: i
 
     if (yx(1) .ne. 0.0_dp) then
@@ -441,7 +443,7 @@ contains
     integer :: i, ibak, nm1, np1
     real(dp) :: sdiag1, diag1, delxnm, dx1, diag, sdiag2, dx2, diag2
     real(dp) :: delxn, slpp1, delx1, sigmap, c3, c2, c1, slppn, delx2
-    
+
     nm1 = n-1
     np1 = n+1
     ierr = 0
@@ -1042,6 +1044,7 @@ contains
     real(dp) :: diag, diag2, sdiag2, ypn, dx2, sigmap, delx1
     real(dp) :: sdiag1, delx2, dx1, diag1
 
+
     nm1 = n-1
     np1 = n+1
     ierr = 0
@@ -1305,6 +1308,7 @@ contains
     integer :: i, im1
     real(dp) :: ss, sigdel, sum, s2, s1, dummy
     real(dp) :: tp, sigmap, dels, del2, del1
+
 
 !
 ! determine interval
@@ -3987,6 +3991,8 @@ contains
     real(dp) :: tt
 
     save i
+    ! This next line is needed because i has the "save" attribute, and multiple threads may call this function.
+    !$OMP threadprivate(i)
     data i /1/
 
     tt = t
@@ -4080,6 +4086,8 @@ contains
     real(dp) :: tt
 
     save i
+    ! This next line is needed because i has the "save" attribute, and multiple threads may call this function.
+    !$OMP threadprivate(i)
     data i /1/
 
     nper = (t-x(1))/p

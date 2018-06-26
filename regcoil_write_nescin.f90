@@ -12,6 +12,7 @@ subroutine regcoil_write_nescin
   real(dp) :: tol
 
   tol = separation * 1.0E-3_dp ! set the tolarence to ignore harmonics
+  tol = 0 ! MJL 20180617 Causes all harmonics to be written.
 
   call safe_open(iunit, istat, trim(nescin_filename), 'replace', 'formatted')
   if (istat .ne. 0) then

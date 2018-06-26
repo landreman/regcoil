@@ -3,6 +3,7 @@ subroutine regcoil_init_coil_surface()
   use regcoil_compute_offset_surface_mod
   use regcoil_variables
   use regcoil_init_Fourier_modes_mod
+  use regcoil_splines
   
   use stel_kinds
   use stel_constants
@@ -12,7 +13,7 @@ subroutine regcoil_init_coil_surface()
   
   integer :: iflag
   real(dp), dimension(:,:), allocatable :: major_R_coil, z_coil
-  real(dp) :: R0_to_use
+  real(dp) :: R0_to_use, relative_variation_in_dl
   real(dp) :: angle, sinangle, cosangle, dsinangledtheta, dcosangledtheta
   real(dp) :: angle2, sinangle2, cosangle2, dsinangle2dzeta, dcosangle2dzeta
   real(dp) :: d2sinangledtheta2, d2cosangledtheta2, d2sinangle2dzeta2, d2cosangle2dzeta2
@@ -21,7 +22,10 @@ subroutine regcoil_init_coil_surface()
   integer :: tic, toc, countrate, tic1, toc1
   integer :: mpol_coil, ntor_coil
   integer, allocatable, dimension(:) :: xm, xn
-  real(dp), allocatable, dimension(:) :: rmnc, rmns, zmnc, zmns
+  real(dp), allocatable, dimension(:) :: rmnc, rmns, zmnc, zmns  
+  real(dp), allocatable, dimension(:) :: theta_plasma_corresponding_to_theta_coil, dl, R_slice, z_slice
+  real(dp), allocatable, dimension(:) :: constant_arclength_theta_on_old_theta_grid
+  type (periodic_spline) :: theta_spline
 
   call system_clock(tic,countrate)
   if (verbose) print *,"Initializing coil surface."
@@ -89,37 +93,85 @@ subroutine regcoil_init_coil_surface()
      zmnc_coil = 0
      zmns_coil = (/ 0.0d+0, a_coil /)
 
-  case (2)
+  case (2, 4)
      
      if (verbose) print "(a,f10.4,a)","   Constructing a surface offset from the plasma by ",separation," meters."
-          
+     if (verbose .and. geometry_option_coil==4) print *,"  Using the constant-arclength theta coordinate."
+
      allocate(major_R_coil(ntheta_coil, nzeta_coil))
      allocate(z_coil(ntheta_coil, nzeta_coil))
      major_R_coil = 0
      z_coil = 0
 
      call system_clock(tic1)
-
-     !$OMP PARALLEL
+     !$OMP PARALLEL DEFAULT(NONE), PRIVATE(x_new,y_new,z_new,theta_plasma_corresponding_to_theta_coil,dl,relative_variation_in_dl,R_slice,z_slice,itheta,constant_arclength_theta_on_old_theta_grid,theta_spline), SHARED(verbose,geometry_option_coil,ntheta_coil,nzeta_coil,theta_coil,separation,zetal_coil,constant_arclength_tolerance,major_R_coil,z_coil)
      
+     allocate(theta_plasma_corresponding_to_theta_coil(Ntheta_coil))
+     allocate(R_slice(Ntheta_coil))
+     allocate(z_slice(Ntheta_coil))
+     allocate(dl(Ntheta_coil))
+     allocate(constant_arclength_theta_on_old_theta_grid(Ntheta_coil+1))
+     constant_arclength_theta_on_old_theta_grid = 0
+
      !$OMP MASTER
      if (verbose) print *,"  Number of OpenMP threads:",omp_get_num_threads()
      !$OMP END MASTER
      
-     !$OMP DO PRIVATE(x_new,y_new,z_new)
-     do itheta = 1,ntheta_coil
-        do izeta = 1,nzeta_coil
-           
-           ! Compute r:
-           call regcoil_compute_offset_surface_xyz_of_thetazeta(theta_coil(itheta),zetal_coil(izeta),x_new,y_new,z_new,separation)
-           major_R_coil(itheta,izeta) = sqrt(x_new * x_new + y_new * y_new)
-           z_coil(itheta,izeta) = z_new
-           
+     !$OMP DO
+     do izeta = 1,nzeta_coil
+        theta_plasma_corresponding_to_theta_coil = theta_coil
+        do
+           do itheta = 1,ntheta_coil           
+              ! Compute r:
+              call regcoil_compute_offset_surface_xyz_of_thetazeta(theta_plasma_corresponding_to_theta_coil(itheta), &
+                   zetal_coil(izeta),x_new,y_new,z_new,separation)
+              R_slice(itheta) = sqrt(x_new * x_new + y_new * y_new)
+              z_slice(itheta) = z_new
+           end do
+
+           if (geometry_option_coil==2) exit ! No need to iterate if we use the original theta coordinate.
+
+           dl(1:Ntheta_coil-1) = sqrt((R_slice(2:Ntheta_coil) - R_slice(1:Ntheta_coil-1)) * (R_slice(2:Ntheta_coil) - R_slice(1:Ntheta_coil-1)) &
+                + (z_slice(2:Ntheta_coil) - z_slice(1:Ntheta_coil-1)) * (z_slice(2:Ntheta_coil) - z_slice(1:Ntheta_coil-1)))
+           ! Handle endpoint:
+           dl(Ntheta_coil) = sqrt((R_slice(Ntheta_coil) - R_slice(1)) * (R_slice(Ntheta_coil) - R_slice(1)) &
+                + (z_slice(Ntheta_coil) - z_slice(1)) * (z_slice(Ntheta_coil) - z_slice(1)))
+
+           relative_variation_in_dl = (maxval(dl) - minval(dl)) / (sum(dl) / Ntheta_coil)
+           if (relative_variation_in_dl < constant_arclength_tolerance) then
+              !print *,omp_get_thread_num(),izeta," Tolerance achieved."
+              exit
+           end if
+
+           constant_arclength_theta_on_old_theta_grid(1) = 0
+           do itheta = 1, Ntheta_coil
+              constant_arclength_theta_on_old_theta_grid(itheta+1) = constant_arclength_theta_on_old_theta_grid(itheta) + dl(itheta)
+           end do
+           constant_arclength_theta_on_old_theta_grid = constant_arclength_theta_on_old_theta_grid * (2 * pi / constant_arclength_theta_on_old_theta_grid(Ntheta_coil+1))
+
+           call new_periodic_spline(Ntheta_coil, constant_arclength_theta_on_old_theta_grid(1:Ntheta_coil), &
+                theta_plasma_corresponding_to_theta_coil - constant_arclength_theta_on_old_theta_grid(1:Ntheta_coil), 2*pi, theta_spline)
+           ! In the line above, we subtract constant_arclength_theta_on_old_theta_grid so the function that is interpolated is periodic.
+
+           do itheta = 1, Ntheta_coil
+              theta_plasma_corresponding_to_theta_coil(itheta) = periodic_splint(theta_coil(itheta), theta_spline)
+           end do
+           theta_plasma_corresponding_to_theta_coil = theta_plasma_corresponding_to_theta_coil + theta_coil ! Here we add back the secular term.
+
+           call delete_periodic_spline(theta_spline)
+              
         end do
+
+        major_R_coil(:,izeta) = R_slice
+        z_coil(:,izeta) = z_slice
         
      end do
      !$OMP END DO
+
+     deallocate(theta_plasma_corresponding_to_theta_coil,dl,R_slice,z_slice,constant_arclength_theta_on_old_theta_grid)
+
      !$OMP END PARALLEL
+
 
      call system_clock(toc1)
      if (verbose) print *,"  Computing offset points:",real(toc1-tic1)/countrate,"sec"
@@ -161,6 +213,13 @@ subroutine regcoil_init_coil_surface()
      rmnc_coil(1) = sum(major_R_coil) / (ntheta_coil * nzeta_coil)
      zmnc_coil(1) = sum(z_coil) / (ntheta_coil * nzeta_coil)
 
+     if (.not. lasym) then
+        rmns_coil = 0
+        zmnc_coil = 0
+     end if
+
+     call regcoil_filter_coil_surface()
+
      deallocate(major_R_coil, z_coil)
      call system_clock(toc1)
      if (verbose) print *,"  Fourier transform:",real(toc1-tic1)/countrate,"sec"
@@ -172,6 +231,7 @@ subroutine regcoil_init_coil_surface()
   case (3)
      if (verbose) print *,"  Reading coil surface from nescin file ",trim(nescin_filename)
      call regcoil_read_nescin()
+     call regcoil_filter_coil_surface()
      
   case default
      print *,"Invalid setting for geometry_option_coil: ",geometry_option_coil
@@ -218,3 +278,23 @@ subroutine regcoil_init_coil_surface()
   if (verbose) print *,"Done initializing coil surface. Took ",real(toc-tic)/countrate," sec."
   
 end subroutine regcoil_init_coil_surface
+
+subroutine regcoil_filter_coil_surface()
+
+  use regcoil_variables
+
+  implicit none
+
+  integer :: j
+
+  ! Filter out high frequencies, if desired:
+  do j = 1, mnmax_coil
+     if (abs(xm_coil(j)) > mpol_coil_filter .or. abs(xn_coil(j)) > ntor_coil_filter*nfp) then
+        rmnc_coil(j) = 0
+        rmns_coil(j) = 0
+        zmnc_coil(j) = 0
+        zmns_coil(j) = 0
+     end if
+  end do
+
+end subroutine regcoil_filter_coil_surface
