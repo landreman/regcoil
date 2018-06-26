@@ -39,7 +39,7 @@ regcoil_diagnostics.o: regcoil_variables.o
 regcoil_evaluate_coil_surface.o: regcoil_variables.o
 regcoil_expand_plasma_surface.o: regcoil_variables.o
 regcoil_fzero.o: 
-regcoil_init_coil_surface.o: regcoil_compute_offset_surface_mod.o regcoil_init_Fourier_modes_mod.o regcoil_variables.o
+regcoil_init_coil_surface.o: regcoil_compute_offset_surface_mod.o regcoil_init_Fourier_modes_mod.o regcoil_splines.o regcoil_variables.o
 regcoil_init_Fourier_modes_mod.o:
 regcoil_init_plasma_mod.o: regcoil_variables.o regcoil_read_efit_mod.o
 regcoil_lambda_scan.o: regcoil_variables.o
