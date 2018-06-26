@@ -17,7 +17,7 @@ subroutine regcoil_init_coil_surface()
   real(dp) :: angle, sinangle, cosangle, dsinangledtheta, dcosangledtheta
   real(dp) :: angle2, sinangle2, cosangle2, dsinangle2dzeta, dcosangle2dzeta
   real(dp) :: d2sinangledtheta2, d2cosangledtheta2, d2sinangle2dzeta2, d2cosangle2dzeta2
-  integer :: i, j, itheta, izeta
+  integer :: i, j, itheta, izeta, iteration, max_iterations
   real(dp) :: x_new, y_new, z_new, delta_theta, delta_zeta, temp, factor, factor2
   integer :: tic, toc, countrate, tic1, toc1
   integer :: mpol_coil, ntor_coil
@@ -102,9 +102,10 @@ subroutine regcoil_init_coil_surface()
      allocate(z_coil(ntheta_coil, nzeta_coil))
      major_R_coil = 0
      z_coil = 0
+     max_iterations = 100
 
      call system_clock(tic1)
-     !$OMP PARALLEL DEFAULT(NONE), PRIVATE(x_new,y_new,z_new,theta_plasma_corresponding_to_theta_coil,dl,relative_variation_in_dl,R_slice,z_slice,itheta,constant_arclength_theta_on_old_theta_grid,theta_spline), SHARED(verbose,geometry_option_coil,ntheta_coil,nzeta_coil,theta_coil,separation,zetal_coil,constant_arclength_tolerance,major_R_coil,z_coil)
+     !$OMP PARALLEL DEFAULT(NONE), PRIVATE(iteration,x_new,y_new,z_new,theta_plasma_corresponding_to_theta_coil,dl,relative_variation_in_dl,R_slice,z_slice,itheta,constant_arclength_theta_on_old_theta_grid,theta_spline), SHARED(verbose,geometry_option_coil,ntheta_coil,nzeta_coil,theta_coil,separation,zetal_coil,constant_arclength_tolerance,major_R_coil,z_coil,max_iterations)
      
      allocate(theta_plasma_corresponding_to_theta_coil(Ntheta_coil))
      allocate(R_slice(Ntheta_coil))
@@ -120,7 +121,7 @@ subroutine regcoil_init_coil_surface()
      !$OMP DO
      do izeta = 1,nzeta_coil
         theta_plasma_corresponding_to_theta_coil = theta_coil
-        do
+        do iteration = 1,max_iterations
            do itheta = 1,ntheta_coil           
               ! Compute r:
               call regcoil_compute_offset_surface_xyz_of_thetazeta(theta_plasma_corresponding_to_theta_coil(itheta), &
@@ -161,6 +162,10 @@ subroutine regcoil_init_coil_surface()
            call delete_periodic_spline(theta_spline)
               
         end do
+
+        if (iteration >= max_iterations) then
+           print "(a,i3,a,i4,a,i5,a)","*** WARNING: constant-arclength conversion did not converge after",max_iterations," iterations. (proc=",omp_get_thread_num()," izeta=",izeta,")"
+        end if
 
         major_R_coil(:,izeta) = R_slice
         z_coil(:,izeta) = z_slice
