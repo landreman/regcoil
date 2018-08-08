@@ -3,43 +3,49 @@ print "usage: cut_saddle_coil regcoil_out.name nescin.name ilamda"
 
 ###################################################################
 
-def real_space(nharmonics,coeff_array,polAng,torAng):
-	nn = len(torAng) 	
-	RR = np.zeros(nn)
-	ZZ = np.zeros(nn)
-	XX = np.zeros(nn)
-	YY = np.zeros(nn)
-	nnum = coeff_array[:,0]
-	mnum = coeff_array[:,1]
-	crc  = coeff_array[:,2]
-	crs  = coeff_array[:,3]
-	czc  = coeff_array[:,4]
-	czs  = coeff_array[:,5]
-	for i in range(nn):
-		for k in range(nharmonics):
-			RR[i] = RR[i] + crc[k]*np.cos(mnum[k]*polAng[i] + nnum[k]*torAng[i])\
-				      + crs[k]*np.sin(mnum[k]*polAng[i] + nnum[k]*torAng[i])
-		       	ZZ[i] = ZZ[i] + czc[k]*np.cos(mnum[k]*polAng[i] + nnum[k]*torAng[i])\
-				      + czs[k]*np.sin(mnum[k]*polAng[i] + nnum[k]*torAng[i])
-		XX[i] = RR[i]*np.cos(torAng[i])
-		YY[i] = RR[i]*np.sin(torAng[i])
-	
-	return XX, YY, RR, ZZ
+def real_space(plas,theta,zeta):
+	npoints = len(theta)
+	r = np.zeros(npoints)
+	z = np.zeros(npoints)
+	x = np.zeros(npoints)
+	y = np.zeros(npoints)
+	for ipoint in range(npoints):
+		tmpr = plas['Rbc']*np.cos(plas['m']*theta[ipoint]+plas['n']*zeta[ipoint]) + \
+			plas['Rbs']*np.sin(plas['m']*theta[ipoint]+plas['n']*zeta[ipoint])
+		r[ipoint] = np.sum(tmpr) #r value at ipoint
+		x[ipoint] = r[ipoint]*np.cos(zeta[ipoint])
+		y[ipoint] = r[ipoint]*np.sin(zeta[ipoint])
+		tmpz = plas['Zbc']*np.cos(plas['m']*theta[ipoint]+plas['n']*zeta[ipoint]) + \
+			plas['Zbs']*np.sin(plas['m']*theta[ipoint]+plas['n']*zeta[ipoint])
+		z[ipoint] = np.sum(tmpz) #z value at ipoint
+	return x, y, z
 
-def read_surface_d3d(file_name):
-    fo = open(file_name, 'r')
-    line = fo.readline()
-    line = fo.readline()
-    nharmonics = int(line.split()[0])
-    line = fo.readline()
-    line = fo.readline()
-    read_array = np.zeros((nharmonics,6))
-    for i in range(nharmonics):
-        line = fo.readline()
-        element = line.split()
-        for j in range(6):
-            read_array[i,j] = element[j]
-    return nharmonics, read_array
+def read_winding_surface(filename):
+    with open(filename, 'r') as f:
+        line = ''
+        while "np     iota_edge       phip_edge       curpol" not in line:
+            line = f.readline()
+        line = f.readline()
+        nfp = int(line.split()[0])
+        print "nfp:",nfp
+
+        line = ''
+        while "------ Current Surface:" not in line:
+            line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        #print "Number of Fourier modes in coil surface from nescin file: ",line
+        num = int(line)
+        plas = np.zeros(num, dtype=[('m',np.float64), ('n', np.float64), #m,n saving as double
+                                         ('Rbc', np.float64), ('Zbs', np.float64),
+                                         ('Rbs', np.float64), ('Zbc', np.float64) ])
+        line = f.readline() #skip one line
+        line = f.readline() #skip one line
+        for i in range(num):
+            line = f.readline()
+            plas[i] = tuple([float(j) for j in line.split()])
+        plas['n'] *= nfp
+	return plas
 
 def com_two_angles(a, b, tol=0.0628):
     if abs(a[0] - b[0]) < tol or 2*np.pi-abs(a[0] - b[0]) < tol:
@@ -204,7 +210,7 @@ current_potential_plot = np.transpose(current_potential[ilambda,:,:])
 
 
 # loop
-mtotal, surface_array = read_surface_d3d(surfname)
+surface_array = read_winding_surface(surfname)
 #print "mtotal:", mtotal
 
 coilsFilename = 'coils.'+regcoilname[12:-3]
@@ -220,7 +226,7 @@ max_number = np.max(current_potential_plot) + 1E6
 # plot current_potential
 fig = plt.figure()
 ax = fig.add_subplot(111)
-ax.contour(theta_coil, zeta_coil, current_potential_plot, 500)
+ax.contour(theta_coil, zeta_coil, current_potential_plot, 500, cmap='jet')
 ax.set_xlabel('zeta')
 ax.set_ylabel('theta')
 #plt.show()
@@ -257,7 +263,7 @@ def onclick(event):
       #print "np.shape(contour_theta): ", np.shape(contour_theta)
       
       #plt.plot(contour_zeta,contour_theta)
-		X,Y,R,Z = real_space(mtotal,surface_array,contour_theta,contour_zeta)
+		X,Y,Z = real_space(surface_array,contour_theta,contour_zeta)
       #ax.scatter(X[:],Y[:],Z[:])
 
 		for ii in range(len(X)-1):
