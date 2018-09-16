@@ -1,6 +1,7 @@
 # -*- mode: makefile -*-
 
 OBJ_FILES =  \
+    regcoil_adjoint_solve.o \
 	regcoil_auto_regularization_solve.o \
 	regcoil_build_matrices.o \
 	regcoil_compute_diagnostics_for_nescout_potential.o \
@@ -9,10 +10,12 @@ OBJ_FILES =  \
 	regcoil_diagnostics.o \
 	regcoil_evaluate_coil_surface.o \
 	regcoil_expand_plasma_surface.o \
+    regcoil_fixed_norm_sensitivity.o \
 	regcoil_fzero.o \
 	regcoil_init_coil_surface.o \
 	regcoil_init_Fourier_modes_mod.o \
 	regcoil_init_plasma_mod.o \
+    regcoil_init_sensitivity.o \
 	regcoil_lambda_scan.o \
 	regcoil_prepare_solve.o \
 	regcoil_read_bnorm.o \
@@ -30,6 +33,7 @@ OBJ_FILES =  \
 
 # Dependencies:
 regcoil.o: regcoil_variables.o regcoil_init_plasma_mod.o
+regcoil_adjoint_solve.o: regcoil_variables.o
 regcoil_auto_regularization_solve.o: regcoil_variables.o
 regcoil_build_matrices.o: regcoil_variables.o regcoil_init_Fourier_modes_mod.o
 regcoil_compute_diagnostics_for_nescout_potential.o: regcoil_variables.o
@@ -42,7 +46,9 @@ regcoil_fzero.o:
 regcoil_init_coil_surface.o: regcoil_compute_offset_surface_mod.o regcoil_init_Fourier_modes_mod.o regcoil_splines.o regcoil_variables.o
 regcoil_init_Fourier_modes_mod.o:
 regcoil_init_plasma_mod.o: regcoil_variables.o regcoil_read_efit_mod.o
+regcoil_init_sensitivity.o: regcoil_init_Fourier_modes_mod.o regcoil_variables.o
 regcoil_lambda_scan.o: regcoil_variables.o
+regcoil_fixed_norm_sensitivity.o: regcoil_variables.o
 regcoil_prepare_solve.o: regcoil_variables.o
 regcoil_read_bnorm.o: regcoil_variables.o
 regcoil_read_efit_mod.o: regcoil_splines.o

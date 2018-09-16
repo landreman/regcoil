@@ -74,8 +74,6 @@ subroutine regcoil_validate_input
      stop "Error! geometry_option_coil must be <= 4."
   end if
 
-
-
   if (separation < 0) then
      stop "Error! separation must be >= 0."
   end if
@@ -113,6 +111,10 @@ subroutine regcoil_validate_input
      stop "general_option must be no more than 5."
   end if
 
+	if ((general_option==2 .or. general_option==3) .and. sensitivity_option>1) then
+		stop "sensitivity_option>1 must be used with general_option = 1, 4, or 5."
+	end if
+
   if (general_option==2) then
      ! Replace nlambda with the number of current potentials saved in the nescout file.
      if (verbose) print *,"Opening nescout file",nescout_filename
@@ -143,7 +145,7 @@ subroutine regcoil_validate_input
 
   if (general_option==4 .or. general_option==5) then
      select case (trim(target_option))
-     case (target_option_max_K,target_option_rms_K)
+     case (target_option_max_K,target_option_rms_K,target_option_max_K_lse,target_option_lp_norm_K)
         typical_target_min = 1e5
         typical_target_max = 3e8
      case (target_option_chi2_K)
@@ -175,11 +177,57 @@ subroutine regcoil_validate_input
   select case (trim(regularization_term_option))
   case (regularization_term_option_chi2_K)
   case (regularization_term_option_Laplace_Beltrami)
+		if (symmetry_option > 1) then
+			stop "Error! sensitivity_option > 1 can only be used with regularization_term_option = chi2_K."
+		end if
   case (regularization_term_option_K_xy)
+		if (symmetry_option > 1) then
+			stop "Error! sensitivity_option > 1 can only be used with regularization_term_option = chi2_K."
+		end if
   case (regularization_term_option_K_zeta)
+		if (symmetry_option > 1) then
+			stop "Error! sensitivity_option > 1 can only be used with regularization_term_option = chi2_K."
+		end if
   case default
      print *,"Error! Unrecognized regularization_term_option: ",trim(regularization_term_option)
      stop
   end select
+
+	if (sensitivity_option>5 .or. sensitivity_option<1) then
+		stop "sensitivity_option must be 1, 2, 3, 4, or 5."
+	end if
+
+	if (nmax_sensitivity<1) then
+		stop "nmax_sensitivity must be >=1."
+	end if
+
+	if (mmax_sensitivity<1) then
+		stop "mmax_sensitivity must be >=1."
+	end if
+
+	if (sensitivity_symmetry_option<1 .or. sensitivity_symmetry_option>2) then
+		stop "sensitivity_symmetry_option must be 1 or 2."
+	end if
+
+	if (target_option_p <1) then
+		stop "target_option_p must be >=1."
+	end if
+
+	if (coil_plasma_dist_lse_p <=1) then
+		stop "coil_plasma_dist_lse_p must be > 1."
+	end if
+
+	if (max_K_p <= 1) then
+		stop "max_K_p must be > 1."
+	end if
+
+	if ((general_option==4 .or. general_option==5) .and. fixed_norm_sensitivity_option) then
+     select case (trim(target_option))
+		 	case (target_option_max_K_lse,target_option_lp_norm_K,target_option_chi2_B)
+     	case default
+			print *,"fixed_norm_sensitivity_option must be used with target_option = 'max_K_lse', 'lp_norm_K', or 'chi2_B'"
+        stop
+     end select
+	end if
 
 end subroutine regcoil_validate_input

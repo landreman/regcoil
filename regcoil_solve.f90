@@ -31,7 +31,7 @@ subroutine regcoil_solve(ilambda)
   call system_clock(toc)
   if (verbose) print *,"  DSYSV: ",real(toc-tic)/countrate," sec."
   call system_clock(tic)
-  
+
   call regcoil_diagnostics(ilambda)
 
   

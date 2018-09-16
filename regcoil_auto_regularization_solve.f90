@@ -121,7 +121,7 @@ subroutine regcoil_auto_regularization_solve()
      ! Done choosing the next lambda. Now comes the main solve.
      ! ------------------------------------------------------------------------------------------------
 
-     call regcoil_solve(ilambda)
+		 call regcoil_solve(ilambda)
 
      last_above_target = (target_function(ilambda) > target_value)
      if (stage==1) initial_above_target = last_above_target
@@ -256,6 +256,14 @@ contains
     case (target_option_chi2_B)
        target_function = chi2_B(jlambda)
        targeted_quantity_increases_with_lambda = .true.
+
+		case (target_option_max_K_lse)
+			 target_function = max_K_lse(jlambda)
+			 targeted_quantity_increases_with_lambda = .false.
+
+		case (target_option_lp_norm_K)
+			 target_function = lp_norm_K(jlambda)
+			 targeted_quantity_increases_with_lambda = .false.
 
     case default
        print *,"Invalid target_option: ",target_option
