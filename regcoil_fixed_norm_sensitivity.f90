@@ -35,8 +35,6 @@ subroutine regcoil_fixed_norm_sensitivity()
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dKDifferencedomega(3,ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dmax_kdomega(nlambda,nomega_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
 
   q_tilde = 0
 
