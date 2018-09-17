@@ -578,19 +578,6 @@ d_{\min,\text{lse}} = - \frac{1}{p} \log \left( \frac{ \int_{\text{coil}} d^2 A 
 
 \myhrule
 
-\param{max\_K\_p}
-{real}
-{1.0d4}
-{When \parlink{sensitivity\_option}$> 1$ and \parlink{fixed\_norm\_sensitivity\_option}= true.}
-{If \parlink{fixed\_norm\_sensitivity} = true, the derivative of $K_{\max}$ will be computed using a log-sum-exponent approximation. 
-\begin{gather}
-K_{\max,\text{lse}} = \frac{1}{\texttt{max\_K\_p}} \log \left( \frac{\int_{\text{coil}} d^2 A \exp \left( \texttt{max\_K\_p}K \right)}{A_{\text{coil}}} \right)
-\end{gather}
-At large values of \texttt{max\_K\_p}, $K_{\max,\text{lse}}$ approximates the maximum function well, but obtains very sharp gradients. The default value is often a good choice. 
-}
-
-\myhrule
-
 \chapter{Winding Surface Optimization with Adjoint \texttt{REGCOIL}}
 \label{ch:adjoint}
 
@@ -615,7 +602,7 @@ While \texttt{nlopt\_optimize} and \texttt{scipy\_optimize} are serial optimizer
 
 To run \texttt{scipy\_optimize} or \texttt{nlopt\_optimize} from any directory, add the \\ \texttt{regcoil/coilOptimizationTools} directory to your \texttt{\$PATH} and to your \texttt{\$PYTHONPATH}, and add the \texttt{regcoil} directory to your \texttt{\$PATH}.
 
-\section{Required \texttt{\&regcoil} namelist parameters}
+\section{Required \texttt{\&regcoil\_nml} namelist parameters}
 The following items in the \texttt{\&regcoil} namelist should be used when running adjoint \texttt{REGCOIL}. 
 \begin{itemize}
 \item \parlink{geometry\_option\_coil} = 3 or 4 
@@ -646,7 +633,7 @@ The parameters related to winding surface optimization are defined in the input 
 
 The following objective function is used when \texttt{nlopt\_optimize} or \texttt{scipy\_optimize} is called.
 \begin{multline}
-f = \texttt{scale\_factor} \Bigg( -\alpha_V V_{\text{coil}} + \alpha_S S_p - \alpha_D d_{\text{min}} + \alpha_B \chi^2_B + \alpha_K \norm{\bm{K}}_2 + \alpha_{\max K} K_{\max} \\ + \alpha_{D,\tanh} \left(1 + \tanh\left( \left( d_{\min}-\texttt{d\_min\_target} \right)/\texttt{alpha\_D\_tanh\_scale} \right) \right) \Bigg)
+f = \texttt{scale\_factor} \Bigg( -\alpha_V V_{\text{coil}} + \alpha_S S_p - \alpha_D d_{\text{min}} + \alpha_B \chi^2_B + \alpha_K \norm{\bm{K}}_2 \\ + \alpha_{D,\tanh} \left(1 + \tanh\left( \left( d_{\min}-\texttt{d\_min\_target} \right)/\texttt{alpha\_D\_tanh\_scale} \right) \right) \Bigg)
 \end{multline}
 Here $S_p$ is the spectral width,
 \begin{gather}
@@ -702,14 +689,6 @@ The coefficients in $f$ are defined by the user.
 {0}
 {When \texttt{nlopt\_optimize} or \texttt{scipy\_optimize} is being called.}
 {Scaling factor for $\norm{\bm{K}}_2$ in the objective function.}
-
-\myhrule
-
-\param{alphaMaxK}
-{float}
-{0}
-{When \texttt{nlopt\_optimize} or \texttt{scipy\_optimize} is being called.}
-{Scaling factor for $K_{\max}$ in the objective function.}
 
 \myhrule
 
@@ -805,6 +784,20 @@ The following parameters are read if \texttt{scipy\_optimize} is being called.
 {Maximum $m$ for Fourier modes of coil winding surface parameterization in \parlink{nescin\_filename}.}
 
 \myhrule
+
+\param{nmax}
+{integer}
+{none}
+{When \texttt{nlopt\_optimize} is being called.}
+{Maximum $n$ value for winding surface Fourier modes in \texttt{nescin\_filename}.}
+
+\myhrule
+
+\param{mmax}
+{integer}
+{none}
+{When \texttt{nlopt\_optimize} is being called.}
+{Maximum $m$ value for winding surface Fourier modes in \texttt{nescin\_filename}.}
 
 \subsection{NLOPT Optimize}
 
@@ -903,27 +896,13 @@ The following parameters are read if \texttt{nlopt\_optimize} is being called.
 
 \myhrule
 
-\param{ftol\_tol}
+\param{ftol\_rel}
 {float}
 {1e-6}
 {When \texttt{nlopt\_optimize} is being called.}
-{Optimization will stop when the change in the objective function $f$ is less than \texttt{ftol\_tol} in successive steps.}
+{Optimization will stop when the relative change in the objective function $f$ is less than \texttt{ftol\_rel} in successive steps.}
 
 \myhrule
-
-\param{nmax}
-{integer}
-{none}
-{When \texttt{nlopt\_optimize} is being called.}
-{Maximum $n$ value for winding surface Fourier modes in \texttt{nescin\_filename}.}
-
-\myhrule
-
-\param{mmax}
-{integer}
-{none}
-{When \texttt{nlopt\_optimize} is being called.}
-{Maximum $m$ value for winding surface Fourier modes in \texttt{nescin\_filename}.}
 
 \section{General considerations and tips}
 \begin{itemize}
