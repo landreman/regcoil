@@ -119,7 +119,6 @@ module regcoil_variables
 	integer :: mmax_sensitivity = 1
 	real(dp) :: target_option_p = 4.0
 	real(dp) :: coil_plasma_dist_lse_p = 1.0d4
-	real(dp) :: max_K_p = 1.0d4
 
 	! Needed for sensitivity calculation
   real(dp), dimension(:), allocatable :: L_p_norm_with_area
@@ -144,7 +143,6 @@ module regcoil_variables
   real(dp), dimension(:), allocatable :: dcoil_plasma_dist_mindomega
   real(dp) :: coil_plasma_dist_min, coil_plasma_dist_max
   real(dp) :: coil_plasma_dist_min_lse, coil_plasma_dist_max_lse
-	real(dp), dimension(:,:), allocatable :: dmax_kdomega
 
   character(len=*), parameter :: &
        target_option_max_K = "max_K", &
@@ -171,7 +169,7 @@ module regcoil_variables
        target_option, target_value, lambda_search_tolerance, &
 			 sensitivity_option, nmax_sensitivity, mmax_sensitivity, &
 			 sensitivity_symmetry_option, target_option_p, &
-			 fixed_norm_sensitivity_option, coil_plasma_dist_lse_p, max_K_p
+			 fixed_norm_sensitivity_option, coil_plasma_dist_lse_p
 
 end module regcoil_variables
 

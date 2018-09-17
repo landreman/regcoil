@@ -5,8 +5,8 @@ subroutine regcoil_fixed_norm_sensitivity()
 
   implicit none
 
-  integer :: ilambda, iomega, iflag, tic, toc, countrate, i_basis_function, izeta,itheta, tic_begin
-  real(dp) :: sum_exp, sum_exp_max_K, dsum_expdomega, max_KN, dsum_expdphi, dRMS_Kdphi, &
+  integer :: ilambda, iomega, iflag, tic, toc, countrate, i_basis_function, izeta, itheta, tic_begin
+  real(dp) :: sum_exp, dsum_expdomega, dsum_expdphi,  &
 		q_tilde_denom, q_tilde_num, max_val, arg, dintKpdomega, dintKpdPhi, dsum_exp_max_kdomega
   real(dp), dimension(:,:), allocatable :: dnorm_Kdomega, norm_K, dnorm_Kdphi, dKDifferencedomega, &
 		dtarget_optiondOmega, dtarget_optiondPhi, q_tilde, dlambdadomega
@@ -65,7 +65,6 @@ subroutine regcoil_fixed_norm_sensitivity()
   norm_K = K2(:,:,ilambda)**(0.5)
 
   sum_exp = sum(norm_normal_coil*dtheta_coil*dzeta_coil*nfp/area_coil*exp(target_option_p*(norm_K-max_K(ilambda))))
-  sum_exp_max_K = sum(norm_normal_coil*dtheta_coil*dzeta_coil*nfp/area_coil*exp(max_k_p*(norm_K-max_K(ilambda))))
 
   call system_clock(tic, countrate)
 
@@ -91,11 +90,6 @@ subroutine regcoil_fixed_norm_sensitivity()
 			case ("chi2_B")
       	dtarget_optiondOmega(iomega,ilambda) = dchi2Bdomega_withoutadjoint(iomega,ilambda)
 		end select
-		dsum_exp_max_kdomega = sum(dtheta_coil*dzeta_coil*nfp*exp(max_k_p*(norm_K-max_K(ilambda))) &
-        *(dnorm_normaldomega(iomega,:,:)/area_coil &
-        - norm_normal_coil*darea_coildomega(iomega)/(area_coil**2) &
-        + norm_normal_coil*dnorm_Kdomega*target_option_p/(area_coil)))
-    dmax_kdomega(ilambda,iomega) = (1/max_k_p) * dsum_exp_max_kdomega/sum_exp_max_k
   end do
 
   call system_clock(toc)

@@ -217,10 +217,6 @@ subroutine regcoil_validate_input
 		stop "coil_plasma_dist_lse_p must be > 1."
 	end if
 
-	if (max_K_p <= 1) then
-		stop "max_K_p must be > 1."
-	end if
-
 	if ((general_option==4 .or. general_option==5) .and. fixed_norm_sensitivity_option) then
      select case (trim(target_option))
 		 	case (target_option_max_K_lse,target_option_lp_norm_K,target_option_chi2_B)

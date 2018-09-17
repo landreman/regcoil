@@ -54,8 +54,7 @@ subroutine regcoil_write_output
        vn_coil_plasma_dist_max = "coil_plasma_dist_max", &
        vn_coil_plasma_dist_min_lse = "coil_plasma_dist_min_lse", &
        vn_coil_plasma_dist_max_lse = "coil_plasma_dist_max_lse", &
-       vn_coil_plasma_dist_lse_p = "coil_plasma_dist_lse_p", &
-			 vn_max_K_p = "max_K_p"
+       vn_coil_plasma_dist_lse_p = "coil_plasma_dist_lse_p"
 
   ! Arrays with dimension 1
   character(len=*), parameter :: &
@@ -111,8 +110,7 @@ subroutine regcoil_write_output
 			 vn_dchi2Bdomega = "dchi2Bdomega", &
 			 vn_dchi2Kdomega = "dchi2Kdomega", &
 			 vn_dchi2domega = "dchi2domega", &
-			 vn_dRMSKdomega = "dRMSKdomega", &
-			 vn_dmax_kdomega = "dmax_Kdomega"
+			 vn_dRMSKdomega = "dRMSKdomega"
 
   ! Arrays with dimension 3
   character(len=*), parameter :: &
@@ -329,8 +327,6 @@ subroutine regcoil_write_output
     call cdf_define(ncid, vn_coil_plasma_dist_max_lse, coil_plasma_dist_max_lse)
   end if
 
-	call cdf_define(ncid,vn_max_k_p, max_k_p)
-
   ! Arrays with dimension 1
 
   call cdf_define(ncid, vn_theta_plasma, theta_plasma, dimname=ntheta_plasma_dim)
@@ -472,9 +468,6 @@ subroutine regcoil_write_output
     call cdf_define(ncid, vn_dchi2Bdomega, dchi2Bdomega(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
     call cdf_define(ncid, vn_dchi2Kdomega, dchi2Kdomega(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
   end if
-	if (fixed_norm_sensitivity_option) then
-		call cdf_define(ncid, vn_dmax_Kdomega, dmax_Kdomega, dimname=nlambda_nomega_dim)
-	end if
 
   ! Arrays with dimension 3
 
@@ -571,7 +564,6 @@ subroutine regcoil_write_output
     call cdf_write(ncid, vn_coil_plasma_dist_min_lse, coil_plasma_dist_min_lse)
     call cdf_write(ncid, vn_coil_plasma_dist_max_lse, coil_plasma_dist_max_lse)
   end if
-	call cdf_write(ncid, vn_max_k_p, max_k_p)
 
   ! Arrays with dimension 1
 
@@ -647,10 +639,6 @@ subroutine regcoil_write_output
     call cdf_write(ncid, vn_dchi2Bdomega, dchi2Bdomega(:,1:Nlambda))
     call cdf_write(ncid, vn_dRMSKdomega, dRMSKdomega(:,1:Nlambda))
   end if
-
-	if (fixed_norm_sensitivity_option .and. exit_code == 0) then
-		call cdf_write(ncid, vn_dmax_Kdomega, dmax_Kdomega(1:Nlambda,:))
-	end if
 
   ! Arrays with dimension 3
 
