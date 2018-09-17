@@ -154,7 +154,6 @@ class coilFourier:
     self.chi2B = 0
     self.chi2K = 0
     self.rms_K = 0
-    self.max_K = 0
     self.area_coil = 0
     self.dchi2Bdomega = 0
     self.dchi2Kdomega = 0
@@ -162,7 +161,6 @@ class coilFourier:
     self.coil_volume = 0
     self.dcoil_volumedomega = 0
     self.dcoil_plasma_dist_mindomega = 0
-    self.dmax_Kdomega = 0
     self.drms_Kdomega = 0
     self.coil_plasma_dist_min_lse = 0
     self.coil_plasma_dist_max_lse = 0
@@ -198,8 +196,6 @@ class coilFourier:
     self.file = file
     file.write('eval \t')
     file.write('objective_function \t norm(dobjective_functiondomega) \t')
-    if (abs(self.alphaMaxK) > 0):
-      file.write('max_K \t norm(dmax_Kdomega) \t')
     if (abs(self.alphaK) > 0):
       file.write('rms_K \t norm(drms_Kdomega) \t')
     if (abs(self.alphaB) > 0):
@@ -223,9 +219,6 @@ class coilFourier:
             self.omegas[2*jmn+1] = self.omegas_sensitivity[2*imn+1]
   # Function has not been evaluated at new omegas
     self.evaluated = False
-
-  def set_dmax_Kdomega(self,dmax_Kdomega):
-    self.dmax_Kdomega = dmax_Kdomega
   
   def set_drms_Kdomega(self,drms_Kdomega):
     self.drms_Kdomega = drms_Kdomega
@@ -308,9 +301,6 @@ class coilFourier:
     if (abs(self.alphaK)>0):
 				self.objective_function = self.objective_function + self.alphaK*self.rms_K
 				dobjective_functiondomegas = dobjective_functiondomegas + self.alphaK*self.drms_Kdomega
-    if (abs(self.alphaMaxK)>0):
-				self.objective_function = self.objective_function + self.alphaMaxK*self.max_K
-				dobjective_functiondomegas = dobjective_functiondomegas + self.alphaMaxK*self.dmax_Kdomega
     if (abs(self.alphaD)>0):
 				self.objective_function = self.objective_function - self.alphaD*self.coil_plasma_dist_min_lse
 				dobjective_functiondomegas = dobjective_functiondomegas - self.alphaD*self.dcoil_plasma_dist_mindomega
@@ -326,8 +316,6 @@ class coilFourier:
     self.file.write(str(self.feval)+'\t')
     self.file.write(str(self.objective_function)+'\t')
     self.file.write(str(np.linalg.norm(self.dobjective_functiondomegas_sensitivity,2))+'\t')
-    if (abs(self.alphaMaxK) > 0):
-        self.file.write(str(self.max_K)+'\t'+str(np.linalg.norm(self.dmax_Kdomega,2))+'\t')
     if (abs(self.alphaK) > 0):
         self.file.write(str(self.rms_K)+'\t'+str(np.linalg.norm(self.drms_Kdomega,2))+'\t')
     if (abs(self.alphaB) > 0):
@@ -443,7 +431,6 @@ class coilFourier:
 			self.area_coil = f.variables["area_coil"][()]
 			self.chi2B = f.variables["chi2_B"][()][-1]
 			self.chi2K = f.variables["chi2_K"][()][-1]
-			self.max_K = f.variables["max_K"][()][-1]
 			self.rms_K = np.sqrt(self.chi2K/self.area_coil)
 			self.coil_volume = f.variables["volume_coil"][()]
 		
@@ -459,7 +446,6 @@ class coilFourier:
 				drms_Kdomega = 0.5*self.rms_K**(-1.0)*(self.dchi2Kdomega/self.area_coil - self.chi2K*self.darea_coildomega/self.area_coil**2)
 			
 			self.set_drms_Kdomega(drms_Kdomega)
-			self.set_dmax_Kdomega(f.variables["dmax_Kdomega"][()][:,-1])
 
 			self.evaluateObjectiveFunction()
     
@@ -515,7 +501,7 @@ class coilFourier:
           self.decreased_target_current = True
           self.evaluateRegcoil(omegas_sensitivity_new,self.target_value)
         else:
-					print "Error! Incorrect target_option."
+					print "Error! Incorrect target_option: "+str(self.target_option.strip()[1:-1])
 					sys.exit(0)
       elif (exit_code == -3): # current density too high
         if (self.target_option.strip()[1:-1] == "max_K_lse" or self.target_option.strip()[1:-1] == "max_K_lse"):
@@ -541,7 +527,7 @@ class coilFourier:
           self.increased_target_current = True
           self.evaluateRegcoil(omegas_sensitivity_new,self.target_value)
         else:
-					print "Error! Incorrect target_option."
+					print "Error! Incorrect target_option: "+str(self.target_option.strip()[1:-1])
 					sys.exit(0)
       else:
         sys.exit(0)
