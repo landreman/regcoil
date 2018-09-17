@@ -270,10 +270,18 @@ class coilFourier:
             self.zmnss[imn] = zmns
             self.omegas[2*imn] = rmnc
             self.omegas[2*imn+1] = zmns
+          elif (self.xm[imn]==0 and this_m == 0 and self.xn[imn]==-this_n):
+						self.rmncs[imn] = rmnc
+						self.zmnss[imn] = -zmns
+						self.omegas[2*imn] = rmnc
+						self.omegas[2*imn+1] = -zmns
         for imn in range(0,self.nmodes_sensitivity):
           if (self.xn_sensitivity[imn]==this_n and self.xm_sensitivity[imn]==this_m):
             self.omegas_sensitivity[2*imn] = rmnc
             self.omegas_sensitivity[2*imn+1] = zmns
+          elif (self.xm_sensitivity[imn] == 0 and this_m == 0 and self.xn_sensitivity[imn]==-this_n):
+						self.omegas_sensitivity[2*imn] = rmnc
+						self.omegas_sensitivity[2*imn+1] = -zmns
       if re.match("------ Current Surface",line):
         inCurrentGeometry = 1
         next(file)
