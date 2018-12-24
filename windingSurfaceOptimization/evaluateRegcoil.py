@@ -52,7 +52,7 @@ class coilFourier:
       self.target_value = target_value
       self.target_value_init = target_value
       target_option = readVariable("target_option","string",regcoil_input_file,required=True)
-      self.target_option = target_option
+      self.target_option = target_option.strip()[1:-1]
 	
     spectral_norm_p = readVariable("spectral_norm_p","float",regcoil_input_file,required=False)
     spectral_norm_q = readVariable("spectral_norm_q","float",regcoil_input_file,required=False)
@@ -115,11 +115,11 @@ class coilFourier:
       print "Error! This script is only compatible with geometry_option_coil=3 or 4 at the moment."
       sys.exit(0)
 
-    if (abs(self.alphaMaxK)>0 and (target_option.strip()=='max_K_lse') and fixed_norm_sensitivity_option):
+    if (abs(self.alphaMaxK)>0 and (target_option=='max_K_lse') and fixed_norm_sensitivity_option):
 			print "Error! K_max included in objective function but K_max is held fixed in gradient calculation."
 			sys.exit(0)
 
-    if (abs(self.alphaB)>0 and (target_option.strip()=='chi2_B') and fixed_norm_sensitivity_option):
+    if (abs(self.alphaB)>0 and (target_option=='chi2_B') and fixed_norm_sensitivity_option):
 			print "Error! chi2_B included in objective function but chi2_B is held fixed in gradient calculation."
 			sys.exit(0)
 
@@ -487,7 +487,7 @@ class coilFourier:
           self.evaluateRegcoil(omegas_sensitivity_new)
       # exit_code == -2 or -3 should only happen with general_option > 3
       elif (exit_code == -2): # current density too low or chi2B too high
-        if (self.target_option.strip() == 'max_K_lse' or self.target_option.strip() == 'lp_norm_K'):
+        if (self.target_option == 'max_K_lse' or self.target_option == 'lp_norm_K'):
           print "Current density too low."
           # Decrease factor of increase/decrease
           if (self.decreased_target_current): # previously tried decreasing target
@@ -498,7 +498,7 @@ class coilFourier:
           os.chdir('..')
           self.increased_target_current = True
           self.evaluateRegcoil(omegas_sensitivity_new,self.target_value)
-        elif (self.target_option.strip() == 'chi2_B'):
+        elif (self.target_option == 'chi2_B'):
           print "chi2B too high."
           if (self.increased_target_current): # previously tried increasing
             self.current_factor = self.current_factor*0.5
@@ -509,10 +509,10 @@ class coilFourier:
           self.decreased_target_current = True
           self.evaluateRegcoil(omegas_sensitivity_new,self.target_value)
         else:
-					print "Error! Incorrect target_option: "+str(self.target_option.strip())
+					print "Error! Incorrect target_option: "+str(self.target_option)
 					sys.exit(0)
       elif (exit_code == -3): # current density too high
-        if (self.target_option.strip() == "max_K_lse" or self.target_option.strip() == "max_K_lse"):
+        if (self.target_option == "max_K_lse"):
           print "Current density too high."
           # Target has been bracketed. Decrease interval.
           if (self.increased_target_current):
@@ -523,7 +523,7 @@ class coilFourier:
           os.chdir('..')
           self.decreased_target_current = True
           self.evaluateRegcoil(omegas_sensitivity_new,self.target_value)
-        elif (self.target_option.strip() == 'chi2_B'):
+        elif (self.target_option == 'chi2_B'):
           print "chi2_B too low."
           # Target has been bracketed. Decrease interval.
           if (self.decreased_target_current):
@@ -535,7 +535,7 @@ class coilFourier:
           self.increased_target_current = True
           self.evaluateRegcoil(omegas_sensitivity_new,self.target_value)
         else:
-					print "Error! Incorrect target_option: "+str(self.target_option.strip())
+					print "Error! Incorrect target_option: "+str(self.target_option)
 					sys.exit(0)
       else:
         sys.exit(0)
