@@ -286,8 +286,8 @@ subroutine regcoil_build_matrices()
   ! Now compute g and h
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  inductance = 0.0_dp
-  h = 0.0_dp
+  inductance = 0
+  h = 0
   factor_for_h = net_poloidal_current_Amperes * drdtheta_coil - net_toroidal_current_Amperes * drdzeta_coil
 
   call system_clock(tic,countrate)
@@ -379,9 +379,9 @@ subroutine regcoil_build_matrices()
   LDC = M
   TRANSA = 'N' ! No transposes
   TRANSB = 'N'
-  g = 0.0_dp
+  g = 0
   BLAS_ALPHA=dtheta_coil*dzeta_coil
-  BLAS_BETA=0.0_dp
+  BLAS_BETA=0
   call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,inductance,LDA,basis_functions,LDB,BLAS_BETA,g,LDC)
 
   call system_clock(toc)
@@ -455,7 +455,7 @@ subroutine regcoil_build_matrices()
      f_Laplace_Beltrami_over_N_coil(:,j) = f_Laplace_Beltrami(:,j) * norm_normal_coil_inv1D
      basis_functions_sqrt_N_coil(:, j) = basis_functions(:,j) * sqrt(norm_normal_coil_1D)
   end do
-  matrix_B = 0.0_dp
+  matrix_B = 0
   deallocate(norm_normal_plasma_inv1D)
   deallocate(norm_normal_coil_inv1D)
   deallocate(norm_normal_coil_1D)
@@ -478,7 +478,7 @@ subroutine regcoil_build_matrices()
   TRANSA = 'T' ! DO take a transpose!
   TRANSB = 'N'
   BLAS_ALPHA = dtheta_plasma*dzeta_plasma
-  BLAS_BETA=0.0_dp
+  BLAS_BETA=0
   call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,g,LDA,g_over_N_plasma,LDB,BLAS_BETA,matrix_B,LDC)
 
   call system_clock(toc)
@@ -487,7 +487,7 @@ subroutine regcoil_build_matrices()
   deallocate(g_over_N_plasma)
     
 
-  matrix_regularization = 0.0_dp
+  matrix_regularization = 0
      
   select case (trim(regularization_term_option))
   case (regularization_term_option_chi2_K, regularization_term_option_K_xy)
@@ -506,7 +506,7 @@ subroutine regcoil_build_matrices()
      TRANSA = 'T' ! DO take a transpose!
      TRANSB = 'N'
      BLAS_ALPHA = dtheta_coil*dzeta_coil
-     BLAS_BETA=1.0_dp
+     BLAS_BETA=1
      call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_x,LDA,f_x_over_N_coil,LDB,BLAS_BETA,matrix_regularization,LDC)
      
      call system_clock(toc)
@@ -526,7 +526,7 @@ subroutine regcoil_build_matrices()
      TRANSA = 'T' ! DO take a transpose!
      TRANSB = 'N'
      BLAS_ALPHA = dtheta_coil*dzeta_coil
-     BLAS_BETA=1.0_dp
+     BLAS_BETA=1
      call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_y,LDA,f_y_over_N_coil,LDB,BLAS_BETA,matrix_regularization,LDC)
      
      call system_clock(toc)
@@ -547,7 +547,7 @@ subroutine regcoil_build_matrices()
         TRANSA = 'T' ! DO take a transpose!
         TRANSB = 'N'
         BLAS_ALPHA = dtheta_coil*dzeta_coil
-        BLAS_BETA=1.0_dp
+        BLAS_BETA=1
         call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_z,LDA,f_z_over_N_coil,LDB,BLAS_BETA,matrix_regularization,LDC)
         
         call system_clock(toc)
@@ -586,7 +586,7 @@ subroutine regcoil_build_matrices()
      TRANSA = 'T' ! DO take a transpose!
      TRANSB = 'N'
      BLAS_ALPHA = dtheta_coil*dzeta_coil
-     BLAS_BETA=1.0_dp
+     BLAS_BETA=1
      call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_Laplace_Beltrami,LDA,f_Laplace_Beltrami_over_N_coil,LDB,BLAS_BETA,matrix_regularization,LDC)
      
      call system_clock(toc)
@@ -617,7 +617,7 @@ subroutine regcoil_build_matrices()
      TRANSA = 'T' ! DO take a transpose!
      TRANSB = 'N'
      BLAS_ALPHA = dtheta_coil*dzeta_coil
-     BLAS_BETA=0.0_dp
+     BLAS_BETA=0
      call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,basis_functions,LDA,basis_functions_sqrt_N_coil,LDB,BLAS_BETA,matrix_regularization,LDC)
      
      call system_clock(toc)
