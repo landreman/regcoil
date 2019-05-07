@@ -8,24 +8,13 @@ subroutine regcoil_diagnostics(ilambda)
 
   integer, intent(in) :: ilambda
   integer :: tic, toc, countrate
-  real(dp) :: factor_theta, factor_zeta
-  integer :: itheta, izeta
-
 
   call system_clock(tic,countrate)
-
-  factor_zeta  = net_poloidal_current_Amperes / twopi
-  factor_theta = net_toroidal_current_Amperes / twopi
 
   single_valued_current_potential_mn(:,ilambda) = solution
   this_current_potential = reshape(matmul(basis_functions, solution), (/ ntheta_coil, nzeta_coil /)) ! Could use BLAS2 for this line for extra speed.
   single_valued_current_potential_thetazeta(:,:,ilambda) = this_current_potential
-  do izeta = 1,nzeta_coil
-     do itheta = 1,ntheta_coil
-        this_current_potential(itheta,izeta) = this_current_potential(itheta,izeta) &
-             + factor_zeta*zeta_coil(izeta) + factor_theta*theta_coil(itheta)
-     end do
-  end do
+  this_current_potential = this_current_potential + secular_current_potential
   current_potential(:,:,ilambda) = this_current_potential
   
   KDifference_x = d_x - matmul(f_x, solution)
@@ -49,11 +38,16 @@ subroutine regcoil_diagnostics(ilambda)
   
   chi2_B(ilambda) = nfp * dtheta_plasma * dzeta_plasma &
        * sum(Bnormal_total(:,:,ilambda) * Bnormal_total(:,:,ilambda) * norm_normal_plasma)
+
+  chi2_Phi(ilambda) = nfp * dtheta_plasma * dzeta_plasma &
+       * sum(current_potential(:,:,ilambda) * current_potential(:,:,ilambda) * norm_normal_plasma)
   
   call system_clock(toc)
   if (verbose) print *,"  Diagnostics: ",real(toc-tic)/countrate," sec."
-  if (verbose) print "(a,es10.3,a,es10.3,a,es10.3)","   chi2_B:",chi2_B(ilambda),",  chi2_K:",chi2_K(ilambda),",  chi2_Laplace_Beltrami:",chi2_Laplace_Beltrami(ilambda)
-  if (verbose) print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda),",  rms K:",sqrt(chi2_K(ilambda)/area_coil)
+  if (verbose) print "(4(a,es10.3))","   chi2_B:",chi2_B(ilambda),",  chi2_K:",chi2_K(ilambda), &
+       ",  chi2_Laplace_Beltrami:",chi2_Laplace_Beltrami(ilambda),",  chi2_Phi",chi2_Phi(ilambda)
+  if (verbose) print "(4(a,es10.3))","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda), &
+       ",  rms K:",sqrt(chi2_K(ilambda)/area_coil), ",   max(Phi):", maxval(abs(current_potential(:,:,ilambda)))
 
 
 end subroutine regcoil_diagnostics

@@ -73,8 +73,10 @@ subroutine regcoil_write_output
        vn_chi2_B = "chi2_B", &
        vn_chi2_K = "chi2_K", &
        vn_chi2_Laplace_Beltrami = "chi2_Laplace_Beltrami", &
+       vn_chi2_Phi = "chi2_Phi", &
        vn_max_Bnormal = "max_Bnormal", &
-       vn_max_K = "max_K"
+       vn_max_K = "max_K", &
+       vn_singular_values = "singular_values"
 
   ! Arrays with dimension 2
   character(len=*), parameter :: &
@@ -121,7 +123,8 @@ subroutine regcoil_write_output
        mnmax_coil_dim = (/'mnmax_coil'/), &
        nthetanzeta_plasma_dim = (/'ntheta_nzeta_plasma'/), &
        num_basis_functions_dim = (/'num_basis_functions'/), &
-       nlambda_dim = (/'nlambda'/)
+       nlambda_dim = (/'nlambda'/), &
+       nsingular_values_dim = (/'nsingular_values'/)
 
   ! Arrays with dimension 2:
   ! The form of the array declarations here is inspired by
@@ -338,11 +341,19 @@ subroutine regcoil_write_output
   call cdf_define(ncid, vn_chi2_Laplace_Beltrami, chi2_Laplace_Beltrami(1:Nlambda), dimname=nlambda_dim)
   call cdf_setatt(ncid, vn_chi2_Laplace_Beltrami, '')
 
+  call cdf_define(ncid, vn_chi2_Phi, chi2_Phi(1:Nlambda), dimname=nlambda_dim)
+  call cdf_setatt(ncid, vn_chi2_Phi, 'Values of chi^2_Phi (the area integral over the coil winding surface of current potential squared) that resulted for each value of lambda)')
+
   call cdf_define(ncid, vn_max_Bnormal, max_Bnormal(1:Nlambda), dimname=nlambda_dim)
   call cdf_setatt(ncid, vn_max_Bnormal, 'Maximum (over the plasma surface) magnetic field normal to the target plasma shape that resulted for each value of lambda, in Tesla.')
 
   call cdf_define(ncid, vn_max_K, max_K(1:Nlambda), dimname=nlambda_dim) ! We only write elements 1:Nlambda in case of a lambda search.
   call cdf_setatt(ncid, vn_max_K, 'Maximum (over the coil surface) current density that resulted for each value of lambda, in Amperes/meter.')
+
+  if (general_option == 3) then
+     call cdf_define(ncid, vn_singular_values, singular_values, dimname=nsingular_values_dim) ! We only write elements 1:Nlambda in case of a lambda search.
+     call cdf_setatt(ncid, vn_singular_values, 'Singular values in SVD option.')
+  endif
 
   ! Arrays with dimension 2
 
@@ -488,8 +499,10 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_chi2_B, chi2_B(1:Nlambda))
   call cdf_write(ncid, vn_chi2_K, chi2_K(1:Nlambda))
   call cdf_write(ncid, vn_chi2_Laplace_Beltrami, chi2_Laplace_Beltrami(1:Nlambda))
+  call cdf_write(ncid, vn_chi2_Phi, chi2_Phi(1:Nlambda))
   call cdf_write(ncid, vn_max_Bnormal, max_Bnormal(1:Nlambda))
   call cdf_write(ncid, vn_max_K, max_K(1:Nlambda))
+  if (general_option==3) call cdf_write(ncid, vn_singular_values, singular_values)
 
   ! Arrays with dimension 2
 

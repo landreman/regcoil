@@ -70,6 +70,12 @@ except:
     chi2_K = f.variables['chi2_J'][()]
     K2 = f.variables['J2'][()]
 
+# current potential regularization is recently added
+try:
+    chi2_Phi = f.variables['chi2_Phi'][()]
+except:
+    chi2_Phi = None
+
 print "ntheta_plasma: ",ntheta_plasma
 print "nzetal_plasma: ",nzetal_plasma
 print "r_plasma.shape: ",r_plasma.shape
@@ -218,6 +224,16 @@ plt.xlabel('lambda [T^2 m^2 / A^2]')
 plt.ylabel('chi2_B [T^2 m^2]')
 for j in range(numPlots):
     plt.plot(lambdas[ilambda_to_plot[j]-1], chi2_B[ilambda_to_plot[j]-1],'ob')
+
+if chi2_Phi is None:
+    pass
+else:
+    plt.subplot(numRows,numCols,4)
+    plt.loglog(chi2_Phi,chi2_B,'.-r')
+    plt.xlabel('chi2_Phi [A^2]')
+    plt.ylabel('chi2_B [T^2 m^2]')
+    for j in range(numPlots):
+        plt.plot(chi2_Phi[ilambda_to_plot[j]-1], chi2_B[ilambda_to_plot[j]-1],'ob')
 
 if nlambda>1:
     plt.subplot(numRows,numCols,5)

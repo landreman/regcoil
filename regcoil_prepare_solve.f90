@@ -36,7 +36,11 @@ subroutine regcoil_prepare_solve()
 
   if (allocated(chi2_Laplace_Beltrami)) deallocate(chi2_Laplace_Beltrami)
   allocate(chi2_Laplace_Beltrami(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 7!'
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 7+!'
+
+  if (allocated(chi2_Phi)) deallocate(chi2_Phi)
+  allocate(chi2_Phi(nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 7++!'
 
   if (allocated(max_Bnormal)) deallocate(max_Bnormal)
   allocate(max_Bnormal(nlambda), stat=iflag)

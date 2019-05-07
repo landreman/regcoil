@@ -11,7 +11,8 @@ module regcoil_variables
        regularization_term_option_chi2_K = "chi2_K", &
        regularization_term_option_Laplace_Beltrami = "Laplace-Beltrami", &
        regularization_term_option_K_xy = "K_xy", &
-       regularization_term_option_K_zeta = "K_zeta"
+       regularization_term_option_K_zeta = "K_zeta" , &
+       regularization_term_option_chi2_Phi = "chi2_Phi"
   character(len=200) :: regularization_term_option = regularization_term_option_chi2_K
 
   integer :: ntheta_plasma=64, nzeta_plasma=64, nzetal_plasma
@@ -46,7 +47,7 @@ module regcoil_variables
   real(dp), dimension(:), allocatable :: RHS_B, RHS_regularization
   real(dp), dimension(:,:,:), allocatable :: Bnormal_total
   real(dp), dimension(:,:,:), allocatable :: K2, Laplace_Beltrami2
-  real(dp), dimension(:), allocatable :: chi2_B, chi2_K, max_Bnormal, max_K, chi2_Laplace_Beltrami
+  real(dp), dimension(:), allocatable :: chi2_B, chi2_K, max_Bnormal, max_K, chi2_Laplace_Beltrami, chi2_Phi
 
   real(dp), dimension(:), allocatable :: theta_coil, zeta_coil, zetal_coil
   real(dp), dimension(:,:,:), allocatable :: r_coil, drdtheta_coil, drdzeta_coil, normal_coil
@@ -91,14 +92,16 @@ module regcoil_variables
   integer, dimension(:), allocatable :: bfn, bfm
   real(dp), dimension(:), allocatable :: bfs, bfc
 
-  integer :: nlambda = 4
+  integer :: nlambda = 4, nlambda_raw = 4
   real(dp) :: lambda_min = 1.0d-19, lambda_max = 1.0d-13
   real(dp), dimension(:), allocatable :: lambda
 
-  real(dp), dimension(:,:), allocatable :: matrix, this_current_potential
+  real(dp), dimension(:,:), allocatable :: matrix, this_current_potential, secular_current_potential
   real(dp), dimension(:), allocatable :: RHS, solution
   real(dp), dimension(:), allocatable :: KDifference_x, KDifference_y, KDifference_z, KDifference_Laplace_Beltrami
   real(dp), dimension(:,:), allocatable :: this_K2_times_N, this_Laplace_Beltrami2_times_N
+
+  real(dp), dimension(:), allocatable :: singular_values
 
   ! Variables needed by LAPACK:
   integer :: LAPACK_INFO, LAPACK_LWORK

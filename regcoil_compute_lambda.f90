@@ -20,4 +20,10 @@ subroutine regcoil_compute_lambda()
      print "(*(es10.3))",lambda
   end if
 
+  if (general_option==3) then
+     do j = 1,nlambda-1
+        lambda(j+1) = lambda_max - (lambda_max-lambda_min)*(j-1)/(nlambda-2)
+     end do
+  endif
+
 end subroutine regcoil_compute_lambda

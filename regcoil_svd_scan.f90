@@ -6,7 +6,8 @@ subroutine regcoil_svd_scan
   implicit none
 
   integer :: iflag, tic, toc, countrate
-  real(dp), dimension(:), allocatable :: singular_values, U_transpose_times_RHS
+  !real(dp), dimension(:), allocatable :: singular_values, U_transpose_times_RHS
+  real(dp), dimension(:), allocatable :: U_transpose_times_RHS
   real(dp), dimension(:,:), allocatable :: svd_matrix, U, VT
   real(dp) :: factor
   integer :: ilambda, itheta, izeta, index, n_singular_values
@@ -17,12 +18,12 @@ subroutine regcoil_svd_scan
   integer, dimension(:), allocatable :: IWORK
   character :: JOBZ
 
-  if (allocated(lambda)) deallocate(lambda)
+  ! if (allocated(lambda)) deallocate(lambda)
   ! Nescoil seems to require keeping at least 2 singular values in a svd scan. We will do the same to keep the number
   ! of solutions the same as nescoil.
   !nlambda = num_basis_functions-1
-  allocate(lambda(nlambda))
-  lambda=0
+  ! allocate(lambda(nlambda_raw))
+  ! lambda=0
 
   if (allocated(svd_matrix)) deallocate(svd_matrix)
   allocate(svd_matrix(ntheta_plasma*nzeta_plasma, num_basis_functions), stat=iflag)
@@ -121,15 +122,19 @@ subroutine regcoil_svd_scan
   !solution = 0
   ! Add the contribution from the ilambda-th singular vectors and singular value:
   solution = solution + VT(1,:) * (1/singular_values(1)) * U_transpose_times_RHS(1)
-  do ilambda = nlambda,1,-1
-     print "(a,es10.3,a,i6,a,i6,a)"," Solving system for lambda=",lambda(ilambda)," (",ilambda," of ",nlambda,")"
+  lambda(1) = n_singular_values
+  do ilambda = 1, nlambda_raw
+     print "(a,i6,a,i6,a,i6,a)"," Solving SVD for num_of_sigular_values=",int(lambda(ilambda))," (",ilambda," of ",nlambda_raw,")"
 
      ! Add the contribution from the ilambda-th singular vectors and singular value:
      !solution = solution + VT(ilambda,:) * (1/singular_values(ilambda)) * U_transpose_times_RHS(ilambda)
      ! Go in reverse order, like NESCOIL
-     index = num_basis_functions-ilambda+1
-     print *,"index=",index
-     solution = solution + VT(index,:) * (1/singular_values(index)) * U_transpose_times_RHS(index)
+     ! index = num_basis_functions-ilambda+1
+     ! print *,"index=",index
+     solution = 0
+     do index = 1, int(lambda(ilambda))
+        solution = solution + VT(index,:) * (1/singular_values(index)) * U_transpose_times_RHS(index)
+     enddo
 
      call regcoil_diagnostics(ilambda)
 

@@ -47,11 +47,12 @@ def read_winding_surface(filename):
         plas['n'] *= nfp
 	return plas
 
-def com_two_angles(a, b, tol=0.0628):
-    if abs(a[0] - b[0]) < tol or 2*np.pi-abs(a[0] - b[0]) < tol:
-        if abs(a[1] - b[1]) < tol or 2*np.pi-abs(a[1] - b[1]) < tol:
-	    return True
-    return False
+def com_two_angles(a, b, tol=0.0314):
+	# print "{:12.5E} {:12.5E} ; {:12.5E} {:12.5E} ; {:12.5E} {:12.5E} ;".format(a[0], a[1], b[0], b[1], abs(a[0] - b[0]), abs(a[1] - b[1]))
+	if abs(a[0] - b[0]) < tol or 2*np.pi-abs(a[0] - b[0]) < tol:
+		if abs(a[1] - b[1]) < tol or 2*np.pi-abs(a[1] - b[1]) < tol:
+			return True
+	return False
 
 def combine_lines(lines):
 	p_sta = [iline[ 0,:] for iline in lines] # starting points
@@ -62,22 +63,28 @@ def combine_lines(lines):
 	used_index = []
 	for i in range(len(lines)):
 		init_len = len(used_index)
-		if i not in used_index:
-			for j in range(len(lines)):
-				if j == i :
-					continue
-				if com_two_angles(p_sta[i], p_sta[j]):
-					print "find continued starting points of ", i, " and ", j
-					new_lines.append(np.concatenate((lines[i][::-1], lines[j])))
-					used_index.append(j)
-					continue
-				if  com_two_angles(p_sta[i], p_end[j]):
-					print "find continued starting points of ", i, " and ending points of ", j
-					new_lines.append(np.concatenate((lines[j], lines[i])))
-					used_index.append(j)
-					continue
-			if len(used_index) == init_len:	
-				new_lines.append(lines[i])
+		# if i not in used_index:
+		for j in range(len(lines)):
+			if j == i :
+				continue
+			if com_two_angles(p_sta[i], p_sta[j]):
+				print "find continued starting points of ", i, " and ", j
+				new_lines = list(np.delete(lines, [i,j], 0))
+				lines[j] = np.delete(lines[j], 0, axis=0)
+				new_lines.append(np.concatenate((lines[i][::-1], lines[j])))
+				return combine_lines(new_lines)
+				#used_index.append(j)
+				#continue
+			if  com_two_angles(p_sta[i], p_end[j]):
+				print "find continued starting points of ", i, " and ending points of ", j
+				new_lines = list(np.delete(lines, [i,j], 0))
+				lines[i] = np.delete(lines[i], 0, axis=0)
+				new_lines.append(np.concatenate((lines[j], lines[i])))
+				return combine_lines(new_lines)
+				#used_index.append(j)
+				#continue
+		if len(used_index) == init_len:	
+			new_lines.append(lines[i])
 	#raw_input('Enter something to continue...')
 	#print len(new_lines)
 	if used_index == [] :
@@ -93,13 +100,14 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import sys
 
-if len(sys.argv) != 4:
+if len(sys.argv) < 4:
    print "Error! Wrong number of arguments."
    exit(1)
 
 regcoilname = sys.argv[1]
 surfname = sys.argv[2]
 ilambda = int(sys.argv[3])
+symmetry = bool(sys.argv[4])
 #num_of_contours = int(sys.argv[4])
 
 print(sys.version)
@@ -136,6 +144,7 @@ Bnormal_from_net_coil_currents = f.variables['Bnormal_from_net_coil_currents'][(
 Bnormal_total = f.variables['Bnormal_total'][()]
 net_poloidal_current_Amperes = f.variables['net_poloidal_current_Amperes'][()]
 phi_mn = f.variables['single_valued_current_potential_mn'][()][ilambda,:]
+K2 =  f.variables['K2'][()][ilambda,:,:]
 f.close()
 
 mn_max = len(xm_potential)
@@ -206,8 +215,30 @@ def hess(x):
 
 ##### test ########
 
-current_potential_plot = np.transpose(current_potential[ilambda,:,:])
+fig = plt.figure()
+ax = fig.add_subplot(111)
+#ax.contour(zeta_coil, theta_coil, current_potential_plot, 500, cmap='jet')
+ax.contour(zeta_coil, theta_coil, K2, 10, linewidths=2.0, linestyles='dashed', color='w', alpha=0.99)
+ax.set_xlabel('zeta')
+ax.set_ylabel('theta')
 
+current_potential_plot = current_potential[ilambda,:,:]
+new_zeta = zeta_coil.copy()
+new_theta = theta_coil.copy()
+new_potential = current_potential_plot.copy()
+d = 2*np.pi/nfp
+for ifp in range(nfp-1):
+	new_zeta = np.concatenate((new_zeta,zeta_coil+d*(ifp+1)))
+	#new_theta = np.concatenate((new_theta,theta_coil))
+	new_potential = np.concatenate((new_potential, current_potential_plot))
+zeta_coil = np.append(new_zeta, 2.0*np.pi)
+theta_coil = np.append(new_theta, 2.0*np.pi)
+current_potential_plot = np.zeros([len(theta_coil), len(zeta_coil)])
+current_potential_plot[0:len(theta_coil)-1, 0:len(zeta_coil)-1] = np.transpose(new_potential)
+current_potential_plot[  len(theta_coil)-1, 0:len(zeta_coil)-1] = np.transpose(new_potential)[0,:]
+current_potential_plot[0:len(theta_coil)-1,   len(zeta_coil)-1] = np.transpose(new_potential)[:,0]
+current_potential_plot[  len(theta_coil)-1,   len(zeta_coil)-1] = np.transpose(new_potential)[0,0]
+print np.shape(zeta_coil), np.shape(theta_coil), np.shape(current_potential_plot)
 
 # loop
 surface_array = read_winding_surface(surfname)
@@ -224,11 +255,12 @@ level = []
 max_number = np.max(current_potential_plot) + 1E6
 
 # plot current_potential
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.contour(theta_coil, zeta_coil, current_potential_plot, 500, cmap='jet')
-ax.set_xlabel('zeta')
-ax.set_ylabel('theta')
+#fig = plt.figure()
+#ax = fig.add_subplot(111)
+ax.contour(zeta_coil, theta_coil, current_potential_plot, 500, cmap='jet', alpha=0.25)
+#ax.contour(zeta_coil, theta_coil, K2, 500, cmap='coolwarm', alpha=0.75)
+#ax.set_xlabel('zeta')
+#ax.set_ylabel('theta')
 #plt.show()
 
 
@@ -242,35 +274,29 @@ def onclick(event):
 	tmp_value = func([ydata,xdata])
 	print "clicked contour value :", tmp_value
 	level.append(tmp_value)
-   #tmp_level = np.array([level[num_contour], max_number])
-	tmp_level = np.array([tmp_value])
-   #tmp_level = np.array([-4000.0, -2000.0, 2000.0, 4000.0])
-   #print tmp_level
-   #print np.shape(current_potential_plot)
-	cdata = ax.contour(zeta_coil,theta_coil,current_potential_plot, tmp_level)
-   
-	lines = [p.vertices for p in cdata.collections[0].get_paths()[:]] # get all the lines
-	print "number of raw contour lines: ", len(lines)
-	new_lines = combine_lines(lines)
-	print "number of closed contour lines: ", len(new_lines)
-   #fig = plt.figure()
-	for icoil in new_lines:
-   #print "cdata.collections:", len(cdata.collections)
-   #print "len(cdata.collections[0].get_paths()) : ", len(cdata.collections[0].get_paths())
-   #print "len(cdata.collections[1].get_paths()) : ", len(cdata.collections[1].get_paths())
-		contour_zeta = icoil[:,0]
-		contour_theta = icoil[:,1]
-      #print "np.shape(contour_theta): ", np.shape(contour_theta)
-      
-      #plt.plot(contour_zeta,contour_theta)
-		X,Y,Z = real_space(surface_array,contour_theta,contour_zeta)
-      #ax.scatter(X[:],Y[:],Z[:])
+        if symmetry :
+                level.append(-tmp_value)
+                tmp_array = np.sort([tmp_value, -tmp_value])
+        else :
+                tmp_array = [tmp_value]
+        for tmp_value in tmp_array:
+                tmp_level = np.atleast_1d(tmp_value)
 
-		for ii in range(len(X)-1):
-			f.write('{:23.15E} {:23.15E} {:23.15E} {:23.15E}\n'.format(X[ii],Y[ii],Z[ii], tmp_value))
-   # Close the loop
-		ii=0
-		f.write('{:23.15E} {:23.15E} {:23.15E} {:23.15E} {:d} RMP \n'.format(X[ii],Y[ii],Z[ii], 0.0, 1))
+                cdata = ax.contour(zeta_coil,theta_coil,current_potential_plot, tmp_level)
+
+                lines = [p.vertices for p in cdata.collections[0].get_paths()[:]] # get all the lines
+                print "number of raw contour lines: ", len(lines)
+                new_lines = combine_lines(lines)
+                print "number of closed contour lines: ", len(new_lines)
+                for icoil in new_lines:
+                        contour_zeta = icoil[:,0]
+                        contour_theta = icoil[:,1]
+                        X,Y,Z = real_space(surface_array,contour_theta,contour_zeta)
+
+                        for ii in range(len(X)-1):
+                                f.write('{:23.15E} {:23.15E} {:23.15E} {:23.15E}\n'.format(X[ii],Y[ii],Z[ii], tmp_value))
+                        ii=0
+                        f.write('{:23.15E} {:23.15E} {:23.15E} {:23.15E} {:d} RMP \n'.format(X[ii],Y[ii],Z[ii], 0.0, 1))
 
 fig.canvas.mpl_connect('button_press_event', onclick)
 plt.show()
@@ -280,4 +306,5 @@ f.close()
 
 plt.figure()
 plt.contour(zeta_coil,theta_coil,current_potential_plot,np.sort(level))
+plt.savefig(regcoilname[12:-3]+'_cp.png')
 plt.show()

@@ -132,6 +132,7 @@ subroutine regcoil_validate_input
      nlambda = j
   else if (general_option==3) then
      ! Nlambda with the number of singular values
+     nlambda_raw = nlambda ! save for backup Nlambda 
      if (verbose) print *,"Nlambda will be replaced with the number of singular values."
   end if
 
@@ -180,6 +181,7 @@ subroutine regcoil_validate_input
   case (regularization_term_option_Laplace_Beltrami)
   case (regularization_term_option_K_xy)
   case (regularization_term_option_K_zeta)
+  case (regularization_term_option_chi2_Phi)
   case default
      print *,"Error! Unrecognized regularization_term_option: ",trim(regularization_term_option)
      stop
