@@ -1,0 +1,333 @@
+
+\chapter{Winding Surface Optimization with Adjoint \texttt{REGCOIL}}
+\label{ch:adjoint}
+
+In this section we describe winding surface optimization using the adjoint \texttt{REGCOIL} method. 
+
+\section{Overview}
+
+If an adjoint equation is solved in \texttt{REGCOIL}, (\parlink{sensitivity\_option} $> 1$), then analytic derivatives of $\chi^2_B$, $\norm{\bm{K}}_2$, or $K_{\max}$ are computed with respect to the Fourier coefficients defining the winding surface using the adjoint method. These derivatives are used for a gradient-based optimization method to find a winding surface which minimizes a user-defined objective function. The target plasma surface is held fixed during the optimization. The user has the option of holding a target function fixed during the optimization (such as $\chi^2_B$, $\norm{\bm{K}}_2$, or $K_{\max}$) to fix the regularization parameter $\lambda$. There are also options to impose constraints, such as on the minimum coil-plasma distance. The \texttt{NESCIN} convention is used, and the result of the optimization is a \texttt{NESCIN} file with the optimal winding surface Fourier coefficients. 
+
+\section{Optimization scripts}
+Additional parameters must be included in the \texttt{REGCOIL} input file outside the \texttt{regcoil\_nml} Fortran namelist. The parameters in this namelist are read by either the \texttt{scipy\_optimize} or \texttt{nlopt\_optimize} python scripts, found in the \texttt{windingSurfaceOptimization} directory. These scripts are called with the \texttt{REGCOIL} input file as an argument. The \texttt{REGCOIL} input file in addition to any geometry files (\texttt{nescin\_filename}, \texttt{efit\_filename}, \texttt{bnorm\_filename}, \texttt{shape\_filename\_plasma}) must be located in the directory from which these scripts are called. 
+
+The \texttt{nlopt} package must be installed in order to call \texttt{nlopt\_optimize}. See the \href{https://nlopt.readthedocs.io/en/latest/#download-and-installation}{nlopt documentation} for installation instructions. In general \texttt{nlopt\_optimize} should be used if one wants to perform constrained optimization. Once \texttt{nlopt} is installed, ensure that your \texttt{\$PYTHONPATH} includes the directory containing \texttt{libnlopt.so}. The directory where this is located is specified by \texttt{libdir} in the file \texttt{libnlopt.la}. At this time \texttt{nlopt\_optimize} has been used with \texttt{nlopt} 2.4.2. The \texttt{scipy\_optimze} script utilizes the \texttt{scipy.optimize} package. Details on installation of \texttt{scipy} can be found \href{https://scipy.org/install.html}{here}. The parameters relevant to each of these scripts are detailed below. 
+
+Each time that \texttt{REGCOIL} is called from one of the scripts, an \texttt{eval\_} directory will be created. The script will print the objective function and constraint functions diagnostics with each evaluation to standard output. The \texttt{compareRegcoilSurface} script (found in \texttt{regcoil/coilOptimizationTools}) can be called on two \texttt{REGCOIL} output files to compare the winding surfaces at 2 evaluations.
+\begin{verbatim}
+compareRegcoilSurface eval_0/regcoil_out.w7x.nc eval_10/regcoil_out.w7x.nc
+\end{verbatim}
+Several example input files can be found in the \texttt{adjointRegcoilExamples} directory.
+
+While \texttt{nlopt\_optimize} and \texttt{scipy\_optimize} are serial optimizers, the gradient computation in \texttt{REGCOIL} is performed in parallel with OpenMP. Multithreading is controlled with the \texttt{OMP\_NUM\_THREADS} environment variable.
+
+To run \texttt{scipy\_optimize} or \texttt{nlopt\_optimize} from any directory, add the \\ \texttt{regcoil/coilOptimizationTools} directory to your \texttt{\$PATH} and to your \texttt{\$PYTHONPATH}, and add the \texttt{regcoil} directory to your \texttt{\$PATH}.
+
+\section{Required \texttt{\&regcoil\_nml} namelist parameters}
+The following items in the \texttt{\&regcoil} namelist should be used when running adjoint \texttt{REGCOIL}. 
+\begin{itemize}
+\item \parlink{geometry\_option\_coil} = 3 or 4 
+    \begin{itemize}
+    \item A \parlink{nescin\_filename} must be specified. It is assumed that the $m=0$ mode only includes $n\geq0$ modes. 
+    \end{itemize}
+\item \parlink{sensitivity\_option} $>1$ denotes an adjoint solve must be performed. If $\chi^2_B$, $\norm{\bm{K}}_2$ or $K_{\text{max}}$ are included in the objective function, \parlink{sensitivity\_option} should be $>2$. If finite difference derivatives are used by setting \parlink{grad\_option} = 1 or if $\chi^2_B$, $\norm{\bm{K}}_2$ or $K_{\text{max}}$ are not included in the objective function, \parlink{sensitivity\_option} can be set to 1. 
+\item \parlink{nmax\_sensitivity} should be set to the largest value of $n$ that should be varied in the \texttt{NESCIN} file. This matters if \parlink{sensitivity\_option} $>1$.
+\item \parlink{nmax\_sensitivity} should be set to the largest value of $m$ that should be varied in the \texttt{NESCIN} file. This matters if \parlink{sensitivity\_option} $>1$.
+\item \parlink{sensitivity\_symmetry\_option} should be set to reflect the symmetry desired in the optimized winding surface. 
+\item If the coil-plasma distance is to be included in the objective function or constraints, then \parlink{coil\_plasma\_dist\_lse\_p} should be set to the desired value for the log-sum-exponent approximation. A value in the range $10^{2}$ - $10^4$ is typically sufficient. At very large values the function has very steep gradients, while at small values it does not approximate the minimum function well. 
+\item If the gradients of $\chi^2_B$, $\norm{\bm{K}}_2$ or $K_{\text{max}}$  are to be computed at fixed target function (specified by \parlink{target\_option}) (rather than at fixed $\lambda$), \parlink{fixed\_norm\_sensitivity\_option} should be $>1$. The following parameters matter when \parlink{fixed\_norm\_sensitivity\_option} $>1$. 
+	\begin{itemize}
+	\item \parlink{target\_option} must be \texttt{"max\_K\_lse"}, \texttt{"lp\_norm\_K"}, or \texttt{"chi2\_B"}
+	\item \parlink{target\_option\_p} is a parameter in the norm defined by \parlink{target\_option}
+	\end{itemize}
+\end{itemize}
+
+\section{Coil-winding Surface Optimization Parameters}
+
+\myhrule
+
+The parameters related to winding surface optimization are defined in the input file outside the \texttt{regcoil\_nml} namelist. 
+
+\myhrule
+
+\section{Winding Surface Optimization}
+
+The following objective function is used when \texttt{nlopt\_optimize} or \texttt{scipy\_optimize} is called.
+\begin{multline}
+f = \texttt{scale\_factor} \Bigg( -\alpha_V V_{\text{coil}} + \alpha_S S_p - \alpha_D d_{\text{min}} + \alpha_B \chi^2_B + \alpha_K \norm{\bm{K}}_2 \\ + \alpha_{D,\tanh} \left(1 + \tanh\left( \left( d_{\min}-\texttt{d\_min\_target} \right)/\texttt{alpha\_D\_tanh\_scale} \right) \right) \Bigg)
+\end{multline}
+Here $S_p$ is the spectral width,
+\begin{gather}
+S_p = \sum_{m,n} m^p \left( \left(r_{mn}^c\right)^2 + \left(z_{mn}^s\right)^2 \right),
+\label{spectral_width}
+\end{gather}
+$d_{\text{min}}$ is the minimum coil-plasma distance,
+\begin{gather}
+d_{\text{min}} = \min \left( \sqrt{ \left(\bm{r}_{\text{coil}} - \bm{r}_{\text{plasma}} \right)^2 } \right),
+\end{gather}
+and $\norm{\bm{K}}_2$ is the root-mean-squared current density,
+\begin{gather}
+\norm{\bm{K}}_2 = \sqrt{\chi^2_K/A_{\text{coil}}}.
+\end{gather}
+The coefficients in $f$ are defined by the user. 
+
+\myhrule
+
+\param{alphaV}
+{float}
+{0}
+{When \texttt{nlopt\_optimize} or \texttt{scipy\_optimize} is being called.}
+{Scaling factor for $V_{\text{coil}}$ in the objective function.}
+
+\myhrule
+
+\param{alphaS}
+{float}
+{0}
+{When \texttt{nlopt\_optimize} or \texttt{scipy\_optimize} is being called.}
+{Scaling factor for $S_p$ in the objective function.}
+
+\myhrule
+
+\param{alphaD}
+{float}
+{0}
+{When \texttt{nlopt\_optimize} or \texttt{scipy\_optimize} is being called.}
+{Scaling factor for $d_{\text{min}}$ in the objective function.}
+
+\myhrule
+
+\param{alphaB}
+{float}
+{0}
+{When \texttt{nlopt\_optimize} or \texttt{scipy\_optimize} is being called.}
+{Scaling factor for $\chi^2_B$ in the objective function.}
+
+\myhrule
+
+\param{alphaK}
+{float}
+{0}
+{When \texttt{nlopt\_optimize} or \texttt{scipy\_optimize} is being called.}
+{Scaling factor for $\norm{\bm{K}}_2$ in the objective function.}
+
+\myhrule
+
+\param{alphaD\_tanh}
+{float}
+{0}
+{When \texttt{nlopt\_optimize} or \texttt{scipy\_optimize} is being called.}
+{Scaling factor for the $\tanh$ function in the objective function, which acts as a `wall` in parameter space when $d_{\min}$ reaches \parlink{d\_min\_target}. The scaling is set by \parlink{alphaD\_tanh\_scale}.}
+
+\myhrule
+
+\param{alphaD\_tanh\_scale}
+{float}
+{1.0}
+{When \texttt{nlopt\_optimize} or \texttt{scipy\_optimize} is being called and \parlink{alphaD\_tanh\_scale} is non-zero.}
+{Sets the scale length for the $\tanh$ function in the objective function. When this value is large, the gradients are less sharp.}
+
+\myhrule
+
+\param{d\_min\_target}
+{float}
+{0.1}
+{When \texttt{nlopt\_optimize} or \texttt{scipy\_optimize} is being called and \parlink{alphaD\_tanh\_scale} is non-zero.}
+{Sets the location of the `wall' in parameter space due to the $\tanh$ function.}
+
+\myhrule
+
+\param{scaleFactor}
+{float}
+{1}
+{When \texttt{nlopt\_optimize} or \texttt{scipy\_optimize} is being called.}
+{Scaling factor for objective function.}
+
+\myhrule
+
+\subsection{Scipy Optimize}
+
+The following parameters are read if \texttt{scipy\_optimize} is being called. 
+
+\param{scipy\_optimize\_method}
+{string}
+{CG}
+{When \texttt{scipy\_optimize} is being called.}
+{The method used by \texttt{scipy\_optimize}. The following gradient-based methods are available: CG, BFGS, Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, and trust-ncp. See the \\
+\href{https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html}{scipy.optimize.minimize} documentation for more information.}
+
+\myhrule
+
+\param{grad\_option}
+{integer}
+{1}
+{When \texttt{scipy\_optimize} is being called.}
+{When \parlink{grad\_option} $ == 1$, the gradients computed by REGCOIL are used by \\ \texttt{scipy.optimize.minimize}. If \parlink{grad\_option} $ == 0$, a gradient function handle is not passed to \texttt{scipy.optimize}, and finite differencing is used.}
+
+\myhrule
+
+\param {maxiter}
+{integer}
+{1000}
+{When \texttt{scipy\_optimize} is being called.}
+{Maximum number of iteration to be taken by \texttt{scipy.optimize.minimize}.}
+
+\myhrule
+
+\param{norm}
+{integer}
+{2}
+{When \texttt{scipy\_optimize} is being called.}
+{Order of norm of the gradient used by \texttt{scipy.optimize.minimize} to determine successful termination.}
+
+\myhrule
+
+\param{gtol}
+{float}
+{$10^{-5}$}
+{When \texttt{scipy\_optimize} is being called.}
+{Tolerance for gradient norm required for termination.}
+
+\myhrule
+
+\param{nmax}
+{integer}
+{none}
+{When \texttt{scipy\_optimize} is being called.}
+{Maximum $n$ for Fourier modes of coil winding surface parameterization in \parlink{nescin\_filename}.}
+
+\myhrule
+
+\param{mmax}
+{integer}
+{none}
+{When \texttt{scipy\_optimize} is being called.}
+{Maximum $m$ for Fourier modes of coil winding surface parameterization in \parlink{nescin\_filename}.}
+
+\myhrule
+
+\param{nmax}
+{integer}
+{none}
+{When \texttt{nlopt\_optimize} is being called.}
+{Maximum $n$ value for winding surface Fourier modes in \texttt{nescin\_filename}.}
+
+\myhrule
+
+\param{mmax}
+{integer}
+{none}
+{When \texttt{nlopt\_optimize} is being called.}
+{Maximum $m$ value for winding surface Fourier modes in \texttt{nescin\_filename}.}
+
+\subsection{NLOPT Optimize}
+
+The following parameters are read if \texttt{nlopt\_optimize} is being called. 
+
+\param{constraint\_min}
+{integer}
+{0}
+{When \texttt{nlopt\_optimize} is being called.}
+{\texttt{constraint\_min} = 0: No constraint on a minimum coil-plasma distance is enforced. \\
+ \texttt{constraint\_min} = 1: Minimum coil-plasma distance is constrained to be $\leq$ \texttt{d\_min}. }
+ 
+\myhrule
+
+\param{d\_min}
+{float}
+{0.2}
+{When \texttt{nlopt\_optimize} is being called and \texttt{contraint\_min} = 1.}
+{Minimum coil-plasma allowed for optimized winding surface.}
+ 
+ \myhrule
+ 
+\param{constraint\_max\_K}
+{integer}
+{0}
+{When \texttt{nlopt\_optimize} is being called.}
+{\texttt{constraint\_max\_K} = 0: No constraint on $\max K$. \\
+ \texttt{constraint\_max\_K} = 1: Maximum current density is constraint to be $\leq$ \texttt{max\_K}}
+ 
+\myhrule
+
+\param{max\_K}
+{float}
+{7.1e6}
+{When \texttt{nlopt\_optimize} is being called and \texttt{contraint\_max\_K} = 1.}
+{Maximum current density allowed during winding surface optimization. }
+
+\myhrule
+
+\param{constraint\_rms\_K}
+{integer}
+{0}
+{When \texttt{nlopt\_optimize} is being called.}
+{\texttt{constraint\_rms\_K} = 0: No constraint on $\norm{K}_2$. \\
+ \texttt{constraint\_rms\_K} = 1: Maximum current density is constraint to be $\leq$ \texttt{rms\_K}}
+ 
+\myhrule
+
+\param{rms\_K}
+{float}
+{2.36e6}
+{When \texttt{nlopt\_optimize} is being called and \texttt{contraint\_rms\_K} = 1.}
+{Maximum current density allowed during winding surface optimization. }
+
+\myhrule
+
+\param{nlopt\_method}
+{string}
+{none}
+{When \texttt{nlopt\_optimize} is being called. }
+{Algorithm used for gradient based winding surface optimization. The following options are supported.
+\begin{itemize}
+\item \texttt{nlopt.G\_MLSL\_LDS}
+\item \texttt{nlopt.LD\_LBFGS}
+\item \texttt{nlopt.LD\_MMA}
+\item \texttt{nlopt.LD\_SLSQP} 
+\item \texttt{nlopt.LD\_CCSAQ}
+\item \texttt{nlopt.LD\_TNEWTON\_PRECOND\_RESTART}
+\item \texttt{nlopt.LD\_VAR1}
+\end{itemize}
+}
+
+\myhrule
+
+\param{omega\_min}
+{float}
+{-7}
+{When \texttt{nlopt\_optimize} is being called. }
+{Minimum value for $r_{mn}^c$ or $z_{mn}^s$ allowed for winding surface optimization.}
+
+\myhrule
+
+\param{omega\_max}
+{float}
+{7}
+{When \texttt{nlopt\_optimize} is being called. }
+{Maximum value for $r_{mn}^c$ or $z_{mn}^s$ allowed for winding surface optimization.}
+
+\myhrule
+
+\param{constraint\_tol}
+{float}
+{1e-6}
+{When \texttt{nlopt\_optimize} is being called and \texttt{constraint\_min} =1 or \texttt{constraint\_max\_K} = 1 or \texttt{constraint\_rms\_K}.}
+{Tolerance allowed for constraint equation to be satisfied.}
+
+\myhrule
+
+\param{ftol\_rel}
+{float}
+{1e-6}
+{When \texttt{nlopt\_optimize} is being called.}
+{Optimization will stop when the relative change in the objective function $f$ is less than \texttt{ftol\_rel} in successive steps.}
+
+\myhrule
+
+\section{General considerations and tips}
+\begin{itemize}
+\item The results of the optimization vary widely with the input parameters. It is suggested that a user perform low-resolution optimizations with varying parameters (such as $\alpha_B$, $\alpha_S$, $\alpha_{\max{K}}$, and $\alpha_V$). To begin, one can run the optimization for a few evaluations to ensure that it is descending in the desired direction. 
+\item If \parlink{general\_option} = 4 or 5 (a $\lambda$ search is performed for a target function), it is not always possible to obtain a solution for $\lambda$ if the current density is too low or high. In this case, the optimization scripts adjust the \parlink{target\_current\_density} and will print a message to standard output. If you see that the \parlink{target\_current\_density} is readjusted several times, it is probably a good idea to begin the optimization with a different \parlink{target\_current\_density} . 
+\item The SLSQP and CCSAQ algorithms in \texttt{nlopt} can be sensitive to the selection of \parlink{omega\_min} and \parlink{omega\_max}, as these set the initial step size for the optimization. If the winding surface wanders to far from the initial surface, these should be adjusted. 
+\end{itemize}
