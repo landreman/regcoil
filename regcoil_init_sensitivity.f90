@@ -8,12 +8,12 @@ subroutine regcoil_init_sensitivity()
   implicit none
 
   integer :: iomega, iflag, minSymmetry, maxSymmetry, offset, whichSymmetry, &
-		tic, toc, countrate,indexl_coil
+    tic, toc, countrate,indexl_coil
   real(dp) :: angle, angle2, sinangle, cosangle, sum_exp_min, sum_exp_max, &
-  	sinangle2, cosangle2, dxdtheta, dxdzeta, dydtheta, dydzeta, dzdtheta, dzdzeta, &
-		major_R_squared_half_grid, dzdtheta_coil_half_grid
+    sinangle2, cosangle2, dxdtheta, dxdzeta, dydtheta, dydzeta, dzdtheta, dzdzeta, &
+    major_R_squared_half_grid, dzdtheta_coil_half_grid
   integer :: izeta_plasma, itheta_plasma, izeta_coil, itheta_coil, index_coil, &
-		l_coil, izetal_coil, index_plasma, index_coil_first, index_coil_last
+    l_coil, izetal_coil, index_plasma, index_coil_first, index_coil_last
   real(dp), dimension(:), allocatable :: dR_squared_domega_half_grid, dsum_exp_mindomega
   real(dp), dimension(:,:,:), allocatable :: dmajor_R_squareddomega
   real(dp), dimension(:,:,:,:), allocatable :: dist,ones,normal_coil_fourd,normal_plasma_fourd
@@ -141,9 +141,9 @@ subroutine regcoil_init_sensitivity()
     enddo
   enddo
   call system_clock(toc)
-	if (verbose) then
-  	print *,"Loop over coil geom in regcoil_init_sensitivity:",real(toc-tic)/countrate," sec."
-	end if
+  if (verbose) then
+    print *,"Loop over coil geom in regcoil_init_sensitivity:",real(toc-tic)/countrate," sec."
+  end if
 
   call system_clock(tic,countrate)
 
@@ -206,9 +206,9 @@ subroutine regcoil_init_sensitivity()
   end do
   dvolume_coildomega = dvolume_coildomega*(0.5d+0)*dzeta_coil
   call system_clock(toc)
-	if (verbose) then
-  	print *,"Coil volume computation in regcoil_init_sensitivity :",real(toc-tic)/countrate," sec."
-	end if
+  if (verbose) then
+    print *,"Coil volume computation in regcoil_init_sensitivity :",real(toc-tic)/countrate," sec."
+  end if
   deallocate(dR_squared_domega_half_grid)
 
   call system_clock(tic)
@@ -234,18 +234,18 @@ subroutine regcoil_init_sensitivity()
     enddo
   enddo
   call system_clock(toc)
-	if (verbose) then
-  	print *,"d sensitivity loop in regcoil_init_sensitivity: ",real(toc-tic)/countrate," sec."
-	end if
+  if (verbose) then
+    print *,"d sensitivity loop in regcoil_init_sensitivity: ",real(toc-tic)/countrate," sec."
+  end if
 
   do iomega = 1, nomega_coil
     darea_coildomega(iomega) = dtheta_coil*dzeta_coil*nfp*sum(dnorm_normaldomega(iomega,:,:))
   end do
 
   call system_clock(tic,countrate)
-	if (verbose) then
-  	print *,"Beginning calculations of d_min in regcoil_init_sensitivity."
-	end if
+  if (verbose) then
+    print *,"Beginning calculations of d_min in regcoil_init_sensitivity."
+  end if
 
   allocate(dist(ntheta_coil,nzeta_coil,ntheta_plasma,nzeta_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
@@ -289,10 +289,10 @@ subroutine regcoil_init_sensitivity()
   coil_plasma_dist_min_lse = -log(sum_exp_min/(sum(normal_plasma_fourd*normal_coil_fourd)))/coil_plasma_dist_lse_p &
     + coil_plasma_dist_min
 
-	if (verbose) then
-		print *,"coil_plasma_dist_min: ", coil_plasma_dist_min
-		print *,"coil_plasma_dist_min_lse: ", coil_plasma_dist_min_lse
-	end if
+  if (verbose) then
+    print *,"coil_plasma_dist_min: ", coil_plasma_dist_min
+    print *,"coil_plasma_dist_min_lse: ", coil_plasma_dist_min_lse
+  end if
 
   dcoil_plasma_dist_mindomega = 0
   dsum_exp_mindomega = 0
@@ -317,10 +317,10 @@ subroutine regcoil_init_sensitivity()
     + darea_coildomega/(sum(norm_normal_plasma)*area_coil*coil_plasma_dist_lse_p)
 
   call system_clock(toc)
-	if (verbose) then
-  	print *,"Coil-plasma distance calculation in regcoil_init_sensitivity:",real(toc-tic)/countrate," sec."
-  	print *,"Init sensitivity complete."
-	end if
+  if (verbose) then
+    print *,"Coil-plasma distance calculation in regcoil_init_sensitivity:",real(toc-tic)/countrate," sec."
+    print *,"Init sensitivity complete."
+  end if
 
 end subroutine regcoil_init_sensitivity
 
