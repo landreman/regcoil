@@ -58,7 +58,7 @@ contains
   end subroutine regcoil_init_Fourier_modes
 
 subroutine regcoil_init_Fourier_modes_sensitivity &
-			(mpol,ntor,mnmax,nomega,xm,xn,omega,sensitivity_symmetry_option)
+      (mpol,ntor,mnmax,nomega,xm,xn,omega,sensitivity_symmetry_option)
 
     implicit none
 

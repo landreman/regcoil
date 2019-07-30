@@ -145,8 +145,10 @@ for j in range(numCoils):
    contour_Z.append(contour_zeta[j]*0)
 
 line = ''
-while "Number of fourier modes in table" not in line:
+#while "Number of fourier modes in table" not in line:
+while "------ Current Surface" not in line:
     line = f.readline()
+line = f.readline()
 line = f.readline()
 print "Number of Fourier modes in coil surface from nescin file: ",line
 nmodes = int(line)

@@ -49,24 +49,24 @@ subroutine regcoil_diagnostics(ilambda)
   chi2_B(ilambda) = nfp * dtheta_plasma * dzeta_plasma &
        * sum(Bnormal_total(:,:,ilambda) * Bnormal_total(:,:,ilambda) * norm_normal_plasma)
 
-	if (trim(target_option)=='max_K_lse') then
-		max_K_lse(ilambda) = (1/target_option_p)*log(sum(norm_normal_coil*dtheta_coil*dzeta_coil*nfp &
-				/area_coil*exp(target_option_p &
-      	*(K2(:,:,ilambda)**(0.5) - max_K(ilambda))))) + max_K(ilambda)
-	else if (trim(target_option)==target_option_lp_norm_K) then
-		lp_norm_K(ilambda) = (dtheta_coil*dzeta_coil*nfp*sum(norm_normal_coil* &
-				K2(:,:,ilambda)**(target_option_p/2.0))/area_coil)**(1.0/target_option_p)
-	end if
+  if (trim(target_option)=='max_K_lse') then
+    max_K_lse(ilambda) = (1/target_option_p)*log(sum(norm_normal_coil*dtheta_coil*dzeta_coil*nfp &
+        /area_coil*exp(target_option_p &
+        *(K2(:,:,ilambda)**(0.5) - max_K(ilambda))))) + max_K(ilambda)
+  else if (trim(target_option)==target_option_lp_norm_K) then
+    lp_norm_K(ilambda) = (dtheta_coil*dzeta_coil*nfp*sum(norm_normal_coil* &
+        K2(:,:,ilambda)**(target_option_p/2.0))/area_coil)**(1.0/target_option_p)
+  end if
   
   call system_clock(toc)
   if (verbose) print *,"  Diagnostics: ",real(toc-tic)/countrate," sec."
   if (verbose) print "(a,es10.3,a,es10.3,a,es10.3)","   chi2_B:",chi2_B(ilambda),",  chi2_K:",chi2_K(ilambda),",  chi2_Laplace_Beltrami:",chi2_Laplace_Beltrami(ilambda)
   if (verbose) print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda),",  rms K:",sqrt(chi2_K(ilambda)/area_coil)
-	if (trim(target_option)=='max_K_lse') then
-		if (verbose) print "(a,es10.3)","		max_K_lse:",max_K_lse(ilambda)
-	end if
-	if (trim(target_option)=='lp_norm_K') then
-		if (verbose) print "(a,es10.3)","		lp_norm_K:", lp_norm_K(ilambda)
-	end if
+  if (trim(target_option)=='max_K_lse') then
+    if (verbose) print "(a,es10.3)","    max_K_lse:",max_K_lse(ilambda)
+  end if
+  if (trim(target_option)=='lp_norm_K') then
+    if (verbose) print "(a,es10.3)","    lp_norm_K:", lp_norm_K(ilambda)
+  end if
 
 end subroutine regcoil_diagnostics

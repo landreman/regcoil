@@ -3,7 +3,7 @@
 program regcoil
 
   use regcoil_variables, only: total_time, output_filename, general_option, &
-		sensitivity_option, exit_code, fixed_norm_sensitivity_option
+    sensitivity_option, exit_code, fixed_norm_sensitivity_option
   use regcoil_init_plasma_mod
 
   implicit none
@@ -27,7 +27,7 @@ program regcoil
 
   !Initialize sensitivity arrays
   if (sensitivity_option > 1) then
-		call regcoil_init_sensitivity()
+    call regcoil_init_sensitivity()
   endif
 
   call regcoil_build_matrices()
@@ -53,9 +53,9 @@ program regcoil
      stop
   end select
 
-	if (fixed_norm_sensitivity_option .and. sensitivity_option > 1 .and. exit_code == 0) then
-		call regcoil_fixed_norm_sensitivity()
-	end if
+  if (fixed_norm_sensitivity_option .and. sensitivity_option > 1 .and. exit_code == 0) then
+    call regcoil_fixed_norm_sensitivity()
+  end if
 
   call system_clock(toc)
   total_time = real(toc-tic)/countrate

@@ -10,13 +10,13 @@ subroutine regcoil_adjoint_solve
   integer :: iflag, tic, toc, countrate
 
   real(dp), dimension(:,:), allocatable :: term1, term2, dBnormaldomega, &
-		adjoint_Ax, adjoint_Ay, adjoint_Az, dKDifferencedomega, dFKdomega, dFBdomega, &
-		dchi2Kdphi, dRHSdomega
+    adjoint_Ax, adjoint_Ay, adjoint_Az, dKDifferencedomega, dFKdomega, dFBdomega, &
+    dchi2Kdphi, dRHSdomega
   integer :: iomega
   real(dp), dimension(:), allocatable :: adjoint_bx, adjoint_by, adjoint_bz, &
-  	adjoint_c
+    adjoint_c
   integer :: minLambda, maxLambda
-	real(dp), dimension(:,:,:), allocatable :: dmatrixdomega
+  real(dp), dimension(:,:,:), allocatable :: dmatrixdomega
   ! Variables needed by LAPACK:
   integer :: INFO, LWORK
   real(dp), dimension(:), allocatable :: WORK
@@ -100,9 +100,9 @@ subroutine regcoil_adjoint_solve
   ! Call LAPACK's DSYSV in query mode to determine the optimal size of the work array
   call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, IPIV, RHS, num_basis_functions, WORK, -1, INFO)
   LWORK = WORK(1)
-	if (verbose) then
-  	print *,"Optimal LWORK:",LWORK
-	end if
+  if (verbose) then
+    print *,"Optimal LWORK:",LWORK
+  end if
   deallocate(WORK)
   allocate(WORK(LWORK), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
@@ -129,9 +129,9 @@ subroutine regcoil_adjoint_solve
     call system_clock(tic,countrate)
     !$OMP PARALLEL
     !$OMP MASTER
-		if (verbose) then
-    	print *,"  Number of OpenMP threads:",omp_get_num_threads()
-		end if
+    if (verbose) then
+      print *,"  Number of OpenMP threads:",omp_get_num_threads()
+    end if
     !$OMP END MASTER
     !$OMP DO PRIVATE(dKDifferencedomega,term1,term2)
     do iomega = 1, nomega_coil
@@ -147,9 +147,9 @@ subroutine regcoil_adjoint_solve
     !$OMP END DO
     !$OMP END PARALLEL
     call system_clock(toc)
-		if (verbose) then
-    	print *,"chi2_K sensitivity in regcoil_adjoint_solve :",real(toc-tic)/countrate," sec."
-		end if
+    if (verbose) then
+      print *,"chi2_K sensitivity in regcoil_adjoint_solve :",real(toc-tic)/countrate," sec."
+    end if
 
     if (sensitivity_option == 3 .or. sensitivity_option == 4 .or. fixed_norm_sensitivity_option) then
       ! Adjoint chi2_K calculation - compute dchi2Kdphi
@@ -173,17 +173,17 @@ subroutine regcoil_adjoint_solve
       end if
       q_K(:,ilambda) = dchi2Kdphi(ilambda,:)
       call system_clock(toc)
-			if (verbose) then
-      	print *,"Adjoint chi2_K calculation in regcoil_adjoint_solve:",real(toc-tic)/countrate," sec."
-			end if
+      if (verbose) then
+        print *,"Adjoint chi2_K calculation in regcoil_adjoint_solve:",real(toc-tic)/countrate," sec."
+      end if
     endif
 
     call system_clock(tic,countrate)
     !$OMP PARALLEL
     !$OMP MASTER
-		if (verbose) then
-    	print *,"  Number of OpenMP threads:",omp_get_num_threads()
-		end if
+    if (verbose) then
+      print *,"  Number of OpenMP threads:",omp_get_num_threads()
+    end if
     !$OMP END MASTER
     !$OMP DO PRIVATE(dBnormaldomega)
     do iomega = 1, nomega_coil
@@ -194,9 +194,9 @@ subroutine regcoil_adjoint_solve
     !$OMP END DO
     !$OMP END PARALLEL
     call system_clock(toc)
-		if (verbose) then
-    	print *,"chi2_B sensitivity in regcoil_adjoint_solve:",real(toc-tic)/countrate," sec."
-		end if
+    if (verbose) then
+      print *,"chi2_B sensitivity in regcoil_adjoint_solve:",real(toc-tic)/countrate," sec."
+    end if
     dchi2domega(:,ilambda) = dchi2Bdomega(:,ilambda) + lambda(ilambda)*dchi2Kdomega(:,ilambda)
 
     ! Compute dFdomega for adjoint solution
@@ -206,9 +206,9 @@ subroutine regcoil_adjoint_solve
         dFdomega(iomega,:) = matmul(dmatrixdomega(iomega,:,:),solution) - dRHSdomega(iomega,:)
       enddo
       call system_clock(toc)
-			if (verbose) then
-      	print *,"dFdomega in regcoil_adjoint_solve:", real(toc-tic)/countrate," sec."
-			end if
+      if (verbose) then
+        print *,"dFdomega in regcoil_adjoint_solve:", real(toc-tic)/countrate," sec."
+      end if
     endif
     if (sensitivity_option == 3 .or. sensitivity_option == 5 .or. fixed_norm_sensitivity_option) then
       adjoint_c = reshape(Bnormal_total(:,:,ilambda), (/ ntheta_plasma * nzeta_plasma /))
@@ -226,27 +226,27 @@ subroutine regcoil_adjoint_solve
       end if
       q_B(:,ilambda) = dchi2Bdphi(ilambda,:)
       call system_clock(toc)
-			if (verbose) then
-      	print *,"Adjoint chi2_B calculation in regcoil_adjoint_solve:",real(toc-tic)/countrate," sec."
-			end if
+      if (verbose) then
+        print *,"Adjoint chi2_B calculation in regcoil_adjoint_solve:",real(toc-tic)/countrate," sec."
+      end if
     endif
     if (sensitivity_option == 3) then
       call system_clock(tic,countrate)
       dchi2Kdomega(:,ilambda) = dchi2Kdomega(:,ilambda) - matmul(dFdomega, q_K(:,ilambda))
       dchi2Bdomega(:,ilambda) = dchi2Bdomega(:,ilambda) - matmul(dFdomega, q_B(:,ilambda))
       call system_clock(toc)
-			if (verbose) then
-      	print *,"dchi2K and dchi2B in regcoil_adjoint_solve:",real(toc-tic)/countrate," sec."
-			end if
+      if (verbose) then
+        print *,"dchi2K and dchi2B in regcoil_adjoint_solve:",real(toc-tic)/countrate," sec."
+      end if
     endif
     if (sensitivity_option == 4) then
       call system_clock(tic,countrate)
       dchi2Kdomega(:,ilambda) = dchi2Kdomega(:,ilambda) - matmul(dFdomega, q_K(:,ilambda))
       dchi2Bdomega(:,ilambda) = dchi2domega(:,ilambda) - lambda(ilambda)*dchi2Kdomega(:,ilambda)
       call system_clock(toc)
-			if (verbose) then
-      	print *,"dchi2K and dchi2B in regcoil_adjoint_solve:",real(toc-tic)/countrate," sec."
-			end if
+      if (verbose) then
+        print *,"dchi2K and dchi2B in regcoil_adjoint_solve:",real(toc-tic)/countrate," sec."
+      end if
     endif
     if (sensitivity_option == 5) then
       call system_clock(tic,countrate)
@@ -257,15 +257,15 @@ subroutine regcoil_adjoint_solve
         dchi2Kdomega(:,ilambda) = 0
       endif
       call system_clock(toc)
-			if (verbose) then
-      	print *,"dchi2K and dchi2B in regcoil_adjoint_solve:",real(toc-tic)/countrate," sec."
-			end if
+      if (verbose) then
+        print *,"dchi2K and dchi2B in regcoil_adjoint_solve:",real(toc-tic)/countrate," sec."
+      end if
     endif
     if (sensitivity_option > 2) then
       dRMSKdomega(:,ilambda)= 0.5*(chi2_K(ilambda)/area_coil)**(-0.5)*(dchi2Kdomega(:,ilambda)/area_coil - chi2_K(ilambda)*darea_coildomega/area_coil**2)
     end if
   end do
-	
+  
   deallocate(term1)
   deallocate(term2)
   deallocate(dBnormaldomega)

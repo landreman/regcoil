@@ -43,7 +43,7 @@ subroutine regcoil_write_output
        vn_total_time = "total_time", &
        vn_exit_code = "exit_code", &
        vn_chi2_B_target = "chi2_B_target", &
-			 vn_sensitivity_option = "sensitivity_option", &
+       vn_sensitivity_option = "sensitivity_option", &
        vn_nmax_sensitivity = "nmax_sensitivity", &
        vn_mmax_sensitivity = "mmax_sensitivity", &
        vn_mnmax_sensitivity = "mnmax_sensitivity", &
@@ -87,14 +87,14 @@ subroutine regcoil_write_output
        vn_chi2_Laplace_Beltrami = "chi2_Laplace_Beltrami", &
        vn_max_Bnormal = "max_Bnormal", &
        vn_max_K = "max_K", &
-			 vn_xn_sensitivity = "xn_sensitivity", &
+       vn_xn_sensitivity = "xn_sensitivity", &
        vn_xm_sensitivity = "xm_sensitivity", &
        vn_omega_coil = "omega_coil", &
        vn_dvolume_coildomega = "dvolume_coildomega", &
        vn_darea_coildomega = "darea_coildomega", &
        vn_dcoil_plasma_dist_mindomega = "dcoil_plasma_dist_mindomega", &
-			 vn_max_K_lse = "max_K_lse", &
-			 vn_lp_norm_K = "lp_norm_K"
+       vn_max_K_lse = "max_K_lse", &
+       vn_lp_norm_K = "lp_norm_K"
 
   ! Arrays with dimension 2
   character(len=*), parameter :: &
@@ -107,10 +107,10 @@ subroutine regcoil_write_output
        vn_matrix_B = "matrix_B", &
        vn_matrix_regularization = "matrix_regularization", &
        vn_single_valued_current_potential_mn = "single_valued_current_potential_mn", &
-			 vn_dchi2Bdomega = "dchi2Bdomega", &
-			 vn_dchi2Kdomega = "dchi2Kdomega", &
-			 vn_dchi2domega = "dchi2domega", &
-			 vn_dRMSKdomega = "dRMSKdomega"
+       vn_dchi2Bdomega = "dchi2Bdomega", &
+       vn_dchi2Kdomega = "dchi2Kdomega", &
+       vn_dchi2domega = "dchi2domega", &
+       vn_dRMSKdomega = "dRMSKdomega"
 
   ! Arrays with dimension 3
   character(len=*), parameter :: &
@@ -146,7 +146,7 @@ subroutine regcoil_write_output
        nthetanzeta_plasma_dim = (/'ntheta_nzeta_plasma'/), &
        num_basis_functions_dim = (/'num_basis_functions'/), &
        nlambda_dim = (/'nlambda'/), &
-			 nomega_coil_dim = (/'nomega_coil'/), &
+       nomega_coil_dim = (/'nomega_coil'/), &
        ntheta_times_nzeta_coil_dim = (/'ntheta_times_nzeta_coil'/)
 
   ! Arrays with dimension 2:
@@ -159,7 +159,7 @@ subroutine regcoil_write_output
        nthetanzeta_plasma_basis_dim = (/ character(len=50) :: 'ntheta_nzeta_plasma','num_basis_functions'/), &
        basis_basis_dim = (/ character(len=50) :: 'num_basis_functions','num_basis_functions'/), &
        basis_nlambda_dim = (/ character(len=50) :: 'num_basis_functions','nlambda'/), &
-			 nomega_coil_nlambda_dim = (/ character(len=50) :: 'nomega_coil', 'nlambda'/), &
+       nomega_coil_nlambda_dim = (/ character(len=50) :: 'nomega_coil', 'nlambda'/), &
        nthetanzeta_coil_basis_dim = (/ character(len=50) :: &
          'ntheta_times_nzeta_coil','num_basis_functions'/), &
        nomega_coil_nthetanzeta_plasma_dim = (/character(len=50) :: &
@@ -181,7 +181,7 @@ subroutine regcoil_write_output
        xyz_ntheta_nzetal_coil_dim = (/ character(len=50) :: 'xyz','ntheta_coil','nzetal_coil'/), &
        ntheta_nzeta_coil_nlambda_dim = (/ character(len=50) :: 'ntheta_coil','nzeta_coil','nlambda'/), &
        ntheta_nzeta_plasma_nlambda_dim = (/ character(len=50) :: 'ntheta_plasma','nzeta_plasma','nlambda'/), &
-			 nomega_coil_ntheta_nzeta_coil_dim = (/ character(len=50) :: 'nomega_coil', 'ntheta_coil', 'nzeta_coil'/), &
+       nomega_coil_ntheta_nzeta_coil_dim = (/ character(len=50) :: 'nomega_coil', 'ntheta_coil', 'nzeta_coil'/), &
        xyz_nomega_coil_ntheta_nzetal_coil_dim = (/character(len=50) :: 'xyz', 'nomega_coil', 'ntheta_times_nzetal_coil'/), &
        nomega_coil_ntheta_times_nzeta_num_basis_functions_dim = (/character(len=50) :: 'nomega_coil', 'ntheta_times_nzeta_plasma', 'num_basis_functions' /), &
        nomega_coil_ntheta_nzetal_coil_dim = (/character(len=50) :: 'nomega_coil', 'ntheta_coil', &
@@ -310,15 +310,15 @@ subroutine regcoil_write_output
           'Units = Tesla^2 meters^2.')
   end if
 
-	call cdf_define(ncid, vn_sensitivity_option, sensitivity_option)
-	if (sensitivity_option > 1) then
-		call cdf_define(ncid, vn_mmax_sensitivity, mmax_sensitivity)
-		call cdf_define(ncid, vn_nmax_sensitivity, nmax_sensitivity)
-		call cdf_define(ncid, vn_mnmax_sensitivity, mnmax_sensitivity)
-		call cdf_define(ncid, vn_nomega_coil, nomega_coil)
-		call cdf_define(ncid, vn_sensitivity_symmetry_option, sensitivity_symmetry_option)
-		call cdf_define(ncid, vn_fixed_norm_sensitivity_option, fixed_norm_sensitivity_option)
-	endif
+  call cdf_define(ncid, vn_sensitivity_option, sensitivity_option)
+  if (sensitivity_option > 1) then
+    call cdf_define(ncid, vn_mmax_sensitivity, mmax_sensitivity)
+    call cdf_define(ncid, vn_nmax_sensitivity, nmax_sensitivity)
+    call cdf_define(ncid, vn_mnmax_sensitivity, mnmax_sensitivity)
+    call cdf_define(ncid, vn_nomega_coil, nomega_coil)
+    call cdf_define(ncid, vn_sensitivity_symmetry_option, sensitivity_symmetry_option)
+    call cdf_define(ncid, vn_fixed_norm_sensitivity_option, fixed_norm_sensitivity_option)
+  endif
   if (sensitivity_option > 1) then
     call cdf_define(ncid, vn_coil_plasma_dist_min, coil_plasma_dist_min)
     call cdf_define(ncid, vn_coil_plasma_dist_max, coil_plasma_dist_max)
@@ -415,20 +415,20 @@ subroutine regcoil_write_output
 
   call cdf_define(ncid, vn_max_K, max_K(1:Nlambda), dimname=nlambda_dim) ! We only write elements 1:Nlambda in case of a lambda search.
   call cdf_setatt(ncid, vn_max_K, 'Maximum (over the coil surface) current density that resulted for each value of lambda, in Amperes/meter.')
-	if (sensitivity_option > 1) then
+  if (sensitivity_option > 1) then
     call cdf_define(ncid, vn_xn_sensitivity, xn_sensitivity, dimname=nomega_coil_dim)
     call cdf_define(ncid, vn_xm_sensitivity, xm_sensitivity, dimname=nomega_coil_dim)
     call cdf_define(ncid, vn_omega_coil, omega_coil, dimname=nomega_coil_dim)
     call cdf_define(ncid, vn_dvolume_coildomega, dvolume_coildomega, dimname=nomega_coil_dim)
-		call cdf_define(ncid, vn_darea_coildomega, darea_coildomega)
+    call cdf_define(ncid, vn_darea_coildomega, darea_coildomega)
     call cdf_define(ncid, vn_dcoil_plasma_dist_mindomega, dcoil_plasma_dist_mindomega, dimname=nomega_coil_dim)
   end if
-	if (trim(target_option)==target_option_max_K_lse) then
-		call cdf_define(ncid, vn_max_K_lse, max_K_lse, dimname=nlambda_dim)
-	end if
-	if (trim(target_option)==target_option_lp_norm_K) then
-		call cdf_define(ncid, vn_lp_norm_K, lp_norm_K, dimname=nlambda_dim)
-	end if
+  if (trim(target_option)==target_option_max_K_lse) then
+    call cdf_define(ncid, vn_max_K_lse, max_K_lse, dimname=nlambda_dim)
+  end if
+  if (trim(target_option)==target_option_lp_norm_K) then
+    call cdf_define(ncid, vn_lp_norm_K, lp_norm_K, dimname=nlambda_dim)
+  end if
 
   ! Arrays with dimension 2
 
@@ -461,7 +461,7 @@ subroutine regcoil_write_output
   call cdf_define(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda), &
        dimname=basis_nlambda_dim)
 
-	if (sensitivity_option > 1 .and. exit_code == 0) then
+  if (sensitivity_option > 1 .and. exit_code == 0) then
     call cdf_define(ncid, vn_dchi2domega, dchi2domega(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
   end if
   if (sensitivity_option > 2 .and. exit_code == 0) then
@@ -548,7 +548,7 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_total_time, total_time)
   call cdf_write(ncid, vn_exit_code, exit_code)
   if (general_option==4 .or. general_option==5) call cdf_write(ncid, vn_chi2_B_target, chi2_B_target)
-	call cdf_write(ncid, vn_sensitivity_option, sensitivity_option)
+  call cdf_write(ncid, vn_sensitivity_option, sensitivity_option)
   if (sensitivity_option > 1) then
     call cdf_write(ncid, vn_mmax_sensitivity, mmax_sensitivity)
     call cdf_write(ncid, vn_nmax_sensitivity, nmax_sensitivity)
@@ -600,7 +600,7 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_chi2_Laplace_Beltrami, chi2_Laplace_Beltrami(1:Nlambda))
   call cdf_write(ncid, vn_max_Bnormal, max_Bnormal(1:Nlambda))
   call cdf_write(ncid, vn_max_K, max_K(1:Nlambda))
-	if (sensitivity_option > 1) then
+  if (sensitivity_option > 1) then
     call cdf_write(ncid, vn_xn_sensitivity, xn_sensitivity)
     call cdf_write(ncid, vn_xm_sensitivity, xm_sensitivity)
     call cdf_write(ncid, vn_omega_coil, omega_coil)
@@ -609,12 +609,12 @@ subroutine regcoil_write_output
     call cdf_write(ncid, vn_dcoil_plasma_dist_mindomega, dcoil_plasma_dist_mindomega)
   end if
 
-	if (trim(target_option)==target_option_max_K_lse .and. exit_code==0) then
-		call cdf_write(ncid, vn_max_K_lse, max_K_lse)
-	end if
-	if (trim(target_option)==target_option_lp_norm_K .and. exit_code==0) then
-		call cdf_write(ncid, vn_lp_norm_K, lp_norm_K)
-	end if
+  if (trim(target_option)==target_option_max_K_lse .and. exit_code==0) then
+    call cdf_write(ncid, vn_max_K_lse, max_K_lse)
+  end if
+  if (trim(target_option)==target_option_lp_norm_K .and. exit_code==0) then
+    call cdf_write(ncid, vn_lp_norm_K, lp_norm_K)
+  end if
 
   ! Arrays with dimension 2
 
@@ -631,7 +631,7 @@ subroutine regcoil_write_output
   !call cdf_write(ncid, vn_matrix_B, matrix_B)
   !call cdf_write(ncid, vn_matrix_K, matrix_K)
   call cdf_write(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda))
-	if (sensitivity_option > 1 .and. exit_code == 0) then
+  if (sensitivity_option > 1 .and. exit_code == 0) then
     call cdf_write(ncid, vn_dchi2domega, dchi2domega(:,1:Nlambda))
   end if
   if (sensitivity_option > 2 .and. exit_code == 0) then
