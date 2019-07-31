@@ -860,8 +860,8 @@ subroutine regcoil_build_matrices()
       if (verbose) then
         print *,"matmul for dmatrix_Kdomega in regcoil_build_matrices :",real(toc-tic)/countrate,"sec."
       end if
+      dmatrix_Kdomega = dmatrix_Kdomega*dtheta_coil*dzeta_coil
     endif
-    dmatrix_Kdomega = dmatrix_Kdomega*dtheta_coil*dzeta_coil
 
   case (regularization_term_option_Laplace_Beltrami)
      ! ------------------------------------------------------------------
