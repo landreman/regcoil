@@ -46,7 +46,7 @@ module regcoil_variables
   real(dp), dimension(:), allocatable :: RHS_B, RHS_regularization
   real(dp), dimension(:,:,:), allocatable :: Bnormal_total
   real(dp), dimension(:,:,:), allocatable :: K2, Laplace_Beltrami2
-  real(dp), dimension(:), allocatable :: chi2_B, chi2_K, max_Bnormal, max_K, chi2_Laplace_Beltrami
+  real(dp), dimension(:), allocatable :: chi2_B, chi2_K, max_Bnormal, max_K, rms_K, chi2_Laplace_Beltrami
   real(dp), dimension(:), allocatable :: lp_norm_K, max_K_lse
 
   real(dp), dimension(:), allocatable :: theta_coil, zeta_coil, zetal_coil
@@ -109,7 +109,34 @@ module regcoil_variables
   real(dp) :: target_value = 8.0d+6
   real(dp) :: lambda_search_tolerance = 1.0d-5
   integer :: exit_code = 0
+
+  ! Variables exported for external optimizers (i.e. stellopt)
+  !  Notes on intended use
+  !  1. The (allocatable variables) are allocated in regcoil_prepare_solve.  
+  !  2. These variables will be assigned in auto_regularization_solve.
+  !  3. They will be accessed only after auto_regularization_solve is called
+  !  4. Stellopt (or other) will COPY the values into its local (internal)
+  !     variables as needed.
+  !  5. After that, they can be deallocated or re-used in regcoil.
+  !
+  ! The results from regcoil that are exported via these variables
+  !   are either:
+  !  Successful regcoil run: The results from the final iteration (Nlambda)
+  !      if regcoil was able to successfully find a current potential that
+  !      satisfied the target req's
+  !  Failed regcoil run: The results from the iteration with the infinite
+  !      regularization, i.e., the first index, or ilamda=1
   real(dp) :: chi2_B_target = 0
+  real(dp) :: max_K_target = 0
+  real(dp) :: max_Bnormal_target = 0
+  real(dp) :: chi2_K_target = 0
+  real(dp) :: rms_K_target = 0
+  real(dp) :: area_coil_target = 0
+  real(dp) :: area_plasma_target = 0
+  real(dp) :: volume_coil_target = 0
+  real(dp) :: volume_plasma_target = 0
+  real(dp), dimension(:,:), allocatable :: Bnormal_total_target
+  !  real(dp), dimension(:,:), allocatable :: K2_target
 
   ! Input parameters for adjoint
   logical :: fixed_norm_sensitivity_option = .false.
