@@ -45,6 +45,7 @@ subroutine regcoil_diagnostics(ilambda)
   
   max_Bnormal(ilambda) = maxval(abs(Bnormal_total(:,:,ilambda)))
   max_K(ilambda) = sqrt(maxval(K2(:,:,ilambda)))
+  rms_K(ilambda) = sqrt(chi2_K(ilambda) / area_coil)
   
   chi2_B(ilambda) = nfp * dtheta_plasma * dzeta_plasma &
        * sum(Bnormal_total(:,:,ilambda) * Bnormal_total(:,:,ilambda) * norm_normal_plasma)
@@ -61,7 +62,7 @@ subroutine regcoil_diagnostics(ilambda)
   call system_clock(toc)
   if (verbose) print *,"  Diagnostics: ",real(toc-tic)/countrate," sec."
   if (verbose) print "(a,es10.3,a,es10.3,a,es10.3)","   chi2_B:",chi2_B(ilambda),",  chi2_K:",chi2_K(ilambda),",  chi2_Laplace_Beltrami:",chi2_Laplace_Beltrami(ilambda)
-  if (verbose) print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda),",  rms K:",sqrt(chi2_K(ilambda)/area_coil)
+  if (verbose) print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda),",  rms K:",rms_K(ilambda) !sqrt(chi2_K(ilambda)/area_coil)
   if (trim(target_option)=='max_K_lse') then
     if (verbose) print "(a,es10.3)","    max_K_lse:",max_K_lse(ilambda)
   end if

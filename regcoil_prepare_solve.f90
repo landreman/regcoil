@@ -44,7 +44,11 @@ subroutine regcoil_prepare_solve()
 
   if (allocated(max_K)) deallocate(max_K)
   allocate(max_K(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 9!'
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 9a!'
+
+  if (allocated(rms_K)) deallocate(rms_K)
+  allocate(rms_K(nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 9b!'
 
   if (allocated(current_potential)) deallocate(current_potential)
   allocate(current_potential(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
@@ -63,6 +67,10 @@ subroutine regcoil_prepare_solve()
         deallocate(single_valued_current_potential_mn)
   allocate(single_valued_current_potential_mn(num_basis_functions,nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 13!'
+
+  if (allocated(Bnormal_total)) deallocate(Bnormal_total)
+  allocate(Bnormal_total(ntheta_plasma,nzeta_plasma,nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 14!'
 
   if (allocated(Bnormal_total)) deallocate(Bnormal_total)
   allocate(Bnormal_total(ntheta_plasma,nzeta_plasma,nlambda), stat=iflag)
@@ -111,6 +119,11 @@ subroutine regcoil_prepare_solve()
     allocate(lp_norm_K(nlambda), stat=iflag)
     if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 20!'
   end if
+
+  if (allocated(Bnormal_total_target)) deallocate(Bnormal_total_target)
+    allocate(Bnormal_total_target(ntheta_plasma,nzeta_plasma), stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 14!'
+
 
   ! Call LAPACK's DSYSV in query mode to determine the optimal size of the work array
   call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, LAPACK_IPIV, RHS, num_basis_functions, LAPACK_WORK, -1, LAPACK_INFO)
