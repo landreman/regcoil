@@ -135,6 +135,7 @@ module regcoil_variables
   real(dp) :: area_plasma_target = 0
   real(dp) :: volume_coil_target = 0
   real(dp) :: volume_plasma_target = 0
+  real(dp) :: coil_plasma_dist_min_target = 0
   real(dp), dimension(:,:), allocatable :: Bnormal_total_target
   !  real(dp), dimension(:,:), allocatable :: K2_target
 

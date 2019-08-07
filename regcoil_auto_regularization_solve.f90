@@ -155,6 +155,7 @@ subroutine regcoil_auto_regularization_solve()
         area_plasma_target = area_plasma
         volume_coil_target = volume_coil
         volume_plasma_target = volume_plasma
+        coil_plasma_dist_min_target = coil_plasma_dist_min
         Bnormal_total_target = Bnormal_total(:,:,1)
 
         exit
@@ -184,6 +185,7 @@ subroutine regcoil_auto_regularization_solve()
         area_plasma_target = area_plasma
         volume_coil_target = volume_coil
         volume_plasma_target = volume_plasma
+        coil_plasma_dist_min_target = coil_plasma_dist_min
         Bnormal_total_target = Bnormal_total(:,:,1)
 
 
@@ -235,6 +237,7 @@ subroutine regcoil_auto_regularization_solve()
            area_plasma_target = area_plasma
            volume_coil_target = volume_coil
            volume_plasma_target = volume_plasma
+           coil_plasma_dist_min_target = coil_plasma_dist_min
            Bnormal_total_target = Bnormal_total(:,:,Nlambda)
 
 
