@@ -60,27 +60,29 @@ subroutine regcoil_diagnostics(ilambda)
     lp_norm_K(ilambda) = (dtheta_coil*dzeta_coil*nfp*sum(norm_normal_coil* &
         K2(:,:,ilambda)**(target_option_p/2.0))/area_coil)**(1.0/target_option_p)
   end if
-  
-  allocate(dist(ntheta_coil,nzeta_coil,ntheta_plasma,nzeta_plasma),stat=iflag)
-  do itheta_coil = 1,ntheta_coil
-    do izeta_coil = 1,nzeta_coil
-      do itheta_plasma = 1,ntheta_plasma
-        do izeta_plasma = 1,nzeta_plasma
-          dist(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma) = &
-         sqrt((r_coil(1,itheta_coil,izeta_coil)-r_plasma(1,itheta_plasma,izeta_plasma))**2 &
-            + (r_coil(2,itheta_coil,izeta_coil)-r_plasma(2,itheta_plasma,izeta_plasma))**2 &
-            + (r_coil(3,itheta_coil,izeta_coil)-r_plasma(3,itheta_plasma,izeta_plasma))**2)
+
+  if (ilambda .eq. 1) then 
+    allocate(dist(ntheta_coil,nzeta_coil,ntheta_plasma,nzeta_plasma),stat=iflag)
+    do itheta_coil = 1,ntheta_coil
+      do izeta_coil = 1,nzeta_coil
+        do itheta_plasma = 1,ntheta_plasma
+          do izeta_plasma = 1,nzeta_plasma
+            dist(itheta_coil,izeta_coil,itheta_plasma,izeta_plasma) = &
+            sqrt((r_coil(1,itheta_coil,izeta_coil)-r_plasma(1,itheta_plasma,izeta_plasma))**2 &
+              + (r_coil(2,itheta_coil,izeta_coil)-r_plasma(2,itheta_plasma,izeta_plasma))**2 &
+              + (r_coil(3,itheta_coil,izeta_coil)-r_plasma(3,itheta_plasma,izeta_plasma))**2)
+          end do
         end do
       end do
     end do
-  end do
+    coil_plasma_dist_min = minval(dist)
+    deallocate(dist)
+  end if
 
-  coil_plasma_dist_min = minval(dist)
-  deallocate(dist)
 
   call system_clock(toc)
   if (verbose) print *,"  Diagnostics: ",real(toc-tic)/countrate," sec."
-  if (verbose) print *,"coil_plasma_dist_min: ", coil_plasma_dist_min
+  if (verbose) print *,"  coil_plasma_dist_min: ", coil_plasma_dist_min
   if (verbose) print "(a,es10.3,a,es10.3,a,es10.3)","   chi2_B:",chi2_B(ilambda),",  chi2_K:",chi2_K(ilambda),",  chi2_Laplace_Beltrami:",chi2_Laplace_Beltrami(ilambda)
   if (verbose) print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(K):",max_K(ilambda),",  rms K:",rms_K(ilambda) !sqrt(chi2_K(ilambda)/area_coil)
   if (trim(target_option)=='max_K_lse') then
