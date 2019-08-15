@@ -1,5 +1,3 @@
-%% E.J. Paul
-
 %% This is a script for computing coil metrics from a regcoil
 %% output file. There are several options at the beginning of the file
 %% for how to parameterize the filamentary curves and how to compute 
@@ -8,9 +6,8 @@
 clear
 clc
 
-regcoil_out_filename = '/Users/elizabethpaul/Documents/Research/Spring_2018/20180522_regcoilScan_QHS46_withbnorm/target_4.8e6/regcoil_out.QHS46.nc';
-nescin_filename = '/Users/elizabethpaul/Documents/Research/Spring_2018/20180522_regcoilScan_QHS46_withbnorm/target_4.8e6/nescin.offset';
-coilsPerHalfPeriod = 6;
+regcoil_out_filename = '/Users/elizabethpaul/Documents/Research/August_2019/20190812_summer_school_lab/regcoil/nfp_3/regcoil_out.rotating_ellipse.nc';
+coilsPerHalfPeriod = 4;
 
 %% Choice for parameterization angle of curve
 angleChoice = 1; % equal arclength
@@ -30,6 +27,11 @@ whichCurvature = 1; % FT
     
 % Read regcoil_out file:
 filename = regcoil_out_filename;
+
+rmnc_coil = ncread(filename,'rmnc_coil');
+zmns_coil = ncread(filename,'zmns_coil');
+xm_coil = double(ncread(filename,'xm_coil'));
+xn_coil = double(ncread(filename,'xn_coil'));
 
 nfp = double(ncread(filename,'nfp'));
 net_poloidal_current_Amperes = ncread(filename,'net_poloidal_current_Amperes');
@@ -52,37 +54,6 @@ potential1 = circshift(potential1,thetaShift,1);
 
 potential = kron(ones(1,nfp),potential1) + kron(((1:nfp)-1)*net_poloidal_current_Amperes/nfp,ones(numel(theta),nzeta));
 potential = potential / net_poloidal_current_Amperes * nfp;
-
-% Read surface from nescin file:
-filename = nescin_filename;
-fid = fopen(filename,'r');
-search_string = '------ Current Surface';
-while true
-line = fgetl(fid);
-    if strncmp(line,search_string,numel(search_string))
-        break
-    end
-end
-line = fgetl(fid); %Number of fourier modes in table
-line = fgetl(fid);
-mnmax_nescin = sscanf(line,'%d');
-line = fgetl(fid); %Table of fourier coefficients
-line = fgetl(fid); %m,n,crc2,czs2,crs2,czc2
-xm_nescin = zeros(mnmax_nescin,1);
-xn_nescin = zeros(mnmax_nescin,1);
-rmnc_nescin = zeros(mnmax_nescin,1);
-zmns_nescin = zeros(mnmax_nescin,1);
-for i=1:mnmax_nescin
-    line = fgetl(fid);
-    data = sscanf(line,'%d %d %g %g %g %g %g %g');
-    xm_nescin(i) = data(1);
-    xn_nescin(i) = data(2);
-    rmnc_nescin(i) = data(3);
-    zmns_nescin(i) = data(4);
-end
-
-fclose(fid);
-% Done reading nescin file.
 
 contours = linspace(0,nfp,1+coilsPerHalfPeriod*2*nfp);
 contours(end)= [];
@@ -136,32 +107,33 @@ dxdzeta = zeros(size(theta_2D));
 dydzeta = zeros(size(theta_2D));
 dzdzeta = zeros(size(theta_2D));
 
-for i = 1:mnmax_nescin
-    angle = xm_nescin(i)*theta_2D + xn_nescin(i)*zetal_2D*nfp;
+mnmax_coil = length(xm_coil);
+for i = 1:mnmax_coil
+    angle = xm_coil(i)*theta_2D - xn_coil(i)*zetal_2D;
     angle2 = zetal_2D; 
 
-    x = x + rmnc_nescin(i)*cos(angle).*cos(angle2);
-    y = y + rmnc_nescin(i)*cos(angle).*sin(angle2);
-    z = z + zmns_nescin(i)*sin(angle);
+    x = x + rmnc_coil(i)*cos(angle).*cos(angle2);
+    y = y + rmnc_coil(i)*cos(angle).*sin(angle2);
+    z = z + zmns_coil(i)*sin(angle);
 
     for j=1:coilsPerHalfPeriod
 
-        angle = xm_nescin(i)*contours_theta{j} + xn_nescin(i)*contours_zeta{j}*nfp;
+        angle = xm_coil(i)*contours_theta{j} - xn_coil(i)*contours_zeta{j};
         angle2 = contours_zeta{j};
 
-        contours_x{j} = contours_x{j} + rmnc_nescin(i)*cos(angle).*cos(angle2);
-        contours_y{j} = contours_y{j} + rmnc_nescin(i)*cos(angle).*sin(angle2);
-        contours_z{j} = contours_z{j} + zmns_nescin(i)*sin(angle);
+        contours_x{j} = contours_x{j} + rmnc_coil(i)*cos(angle).*cos(angle2);
+        contours_y{j} = contours_y{j} + rmnc_coil(i)*cos(angle).*sin(angle2);
+        contours_z{j} = contours_z{j} + zmns_coil(i)*sin(angle);
 
-        contours_dxdtheta{j} = contours_dxdtheta{j} - xm_nescin(i)*rmnc_nescin(i)*sin(angle).*cos(angle2);
-        contours_dydtheta{j} = contours_dydtheta{j} - xm_nescin(i)*rmnc_nescin(i)*sin(angle).*sin(angle2);
-        contours_dzdtheta{j} = contours_dzdtheta{j} + xm_nescin(i)*zmns_nescin(i)*cos(angle);
+        contours_dxdtheta{j} = contours_dxdtheta{j} - xm_coil(i)*rmnc_coil(i)*sin(angle).*cos(angle2);
+        contours_dydtheta{j} = contours_dydtheta{j} - xm_coil(i)*rmnc_coil(i)*sin(angle).*sin(angle2);
+        contours_dzdtheta{j} = contours_dzdtheta{j} + xm_coil(i)*zmns_coil(i)*cos(angle);
 
-        contours_dxdzeta{j} = contours_dxdzeta{j} - nfp*xn_nescin(i)*rmnc_nescin(i)*sin(angle).*cos(angle2) ...
-            - rmnc_nescin(i)*cos(angle).*sin(angle2);
-        contours_dydzeta{j} = contours_dydzeta{j} - nfp*xn_nescin(i)*rmnc_nescin(i)*sin(angle).*sin(angle2) ...
-            + rmnc_nescin(i)*cos(angle).*cos(angle2);
-        contours_dzdzeta{j} = contours_dzdzeta{j} + nfp*xn_nescin(i)*zmns_nescin(i)*cos(angle);
+        contours_dxdzeta{j} = contours_dxdzeta{j} + xn_coil(i)*rmnc_coil(i)*sin(angle).*cos(angle2) ...
+            - rmnc_coil(i)*cos(angle).*sin(angle2);
+        contours_dydzeta{j} = contours_dydzeta{j} + xn_coil(i)*rmnc_coil(i)*sin(angle).*sin(angle2) ...
+            + rmnc_coil(i)*cos(angle).*cos(angle2);
+        contours_dzdzeta{j} = contours_dzdzeta{j} - xn_coil(i)*zmns_coil(i)*cos(angle);
 
     end
 end
