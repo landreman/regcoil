@@ -127,6 +127,7 @@ module regcoil_variables
   !  Failed regcoil run: The results from the iteration with the infinite
   !      regularization, i.e., the first index, or ilamda=1
   real(dp) :: chi2_B_target = 0
+  real(dp) :: lambda_target = 0
   real(dp) :: max_K_target = 0
   real(dp) :: max_Bnormal_target = 0
   real(dp) :: chi2_K_target = 0

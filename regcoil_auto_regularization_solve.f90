@@ -147,6 +147,7 @@ subroutine regcoil_auto_regularization_solve()
         ! infinite regularization 
         ! Put the worst achieved chi2_B into the chi2_B_target variable for STELLOPT.
         chi2_B_target = chi2_B(1)    ! 'Worst' achieved chi2_B
+        lambda_target = lambda(1)
         max_K_target = max_K(1)
         max_Bnormal_target = max_Bnormal(1)
         chi2_K_target = chi2_K(1)
@@ -177,6 +178,7 @@ subroutine regcoil_auto_regularization_solve()
         ! infinite regularization 
         ! Put the worst achieved chi2_B into the chi2_B_target variable for STELLOPT.
         chi2_B_target = chi2_B(1)    ! 'Worst' achieved chi2_B
+        lambda_target = lambda(1)
         max_K_target = max_K(1)
         max_Bnormal_target = max_Bnormal(1)
         chi2_K_target = chi2_K(1)
@@ -229,6 +231,7 @@ subroutine regcoil_auto_regularization_solve()
            Nlambda = ilambda
            ! Assign variables for external optimizers
            chi2_B_target = chi2_B(Nlambda)
+           lambda_target = lambda(Nlambda)
            max_K_target = max_K(Nlambda)
            max_Bnormal_target = max_Bnormal(Nlambda)
            chi2_K_target = chi2_K(Nlambda)
