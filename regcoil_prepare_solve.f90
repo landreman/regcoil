@@ -121,7 +121,7 @@ subroutine regcoil_prepare_solve()
   end if
 
   if (allocated(Bnormal_total_target)) deallocate(Bnormal_total_target)
-    allocate(Bnormal_total_target(ntheta_plasma,nzeta_plasma), stat=iflag)
+    allocate(Bnormal_total_target(ntheta_plasma*nzeta_plasma), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 14!'
 
 

@@ -157,7 +157,8 @@ subroutine regcoil_auto_regularization_solve()
         volume_coil_target = volume_coil
         volume_plasma_target = volume_plasma
         coil_plasma_dist_min_target = coil_plasma_dist_min
-        Bnormal_total_target = Bnormal_total(:,:,1)
+        ! Reshape 2D Matrix into 1D Vector
+        Bnormal_total_target = reshape(Bnormal_total(:,:,1), (/ ntheta_plasma * nzeta_plasma /))
 
         exit
      end if
@@ -188,7 +189,8 @@ subroutine regcoil_auto_regularization_solve()
         volume_coil_target = volume_coil
         volume_plasma_target = volume_plasma
         coil_plasma_dist_min_target = coil_plasma_dist_min
-        Bnormal_total_target = Bnormal_total(:,:,1)
+        ! Reshape 2D Matrix into 1D Vector
+        Bnormal_total_target = reshape(Bnormal_total(:,:,1), (/ ntheta_plasma * nzeta_plasma /))
 
 
         exit
@@ -241,7 +243,8 @@ subroutine regcoil_auto_regularization_solve()
            volume_coil_target = volume_coil
            volume_plasma_target = volume_plasma
            coil_plasma_dist_min_target = coil_plasma_dist_min
-           Bnormal_total_target = Bnormal_total(:,:,Nlambda)
+           ! Reshape 2D Matrix into 1D Vector
+           Bnormal_total_target = reshape(Bnormal_total(:,:,Nlambda), (/ ntheta_plasma * nzeta_plasma /))
 
 
            exit
