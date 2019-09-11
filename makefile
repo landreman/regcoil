@@ -46,7 +46,7 @@ else ifeq ($(HOSTNAME),pppl)
         LIBSTELL_FOR_REGCOIL=/u/slazerso/bin/libstell.a
 	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -N 1 -n 1 -c 8 -p dawson
 else
-	FC = mpif90
+	FC = gfortran-mp-6
 	#EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none -cpp
 	EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none -O0 -g
 	EXTRA_LINK_FLAGS =  -fopenmp -L/opt/local/lib -lnetcdff  -lnetcdf -framework Accelerate
@@ -101,3 +101,4 @@ test_make:
 	@echo LIBSTELL_FOR_REGCOIL is $(LIBSTELL_FOR_REGCOIL)
 	@echo EXTRA_COMPILE_FLAGS is $(EXTRA_COMPILE_FLAGS)
 	@echo EXTRA_LINK_FLAGS is $(EXTRA_LINK_FLAGS)
+	@echo OBJ_FILES are $(OBJ_FILES)

@@ -155,6 +155,15 @@ module regcoil_variables
        target_option_lp_norm_K = "lp_norm_K"
   character(len=200) :: target_option = target_option_max_K
 
+    ! Single Fourier representation variables and derivatives
+    integer :: m_max = 32, n_max = 32, nmax_axis
+    real(dp) :: B_0
+    integer, allocatable, dimension(:) :: xn_axis
+    real(dp), allocatable, dimension(:) :: raxis_cc, zaxis_cs
+    real(dp), allocatable, dimension(:) :: lmnc, lmns
+    real(dp), allocatable, dimension(:) :: bmnc_plasma, bmns_plasma
+    character(len=200) :: singleFourierFilename = '/Users/arthurcarlton-jones/Documents/Spring2019/Plasma/regcoil_adjoint/regcoil/singleFourierSurface.nc'
+
   namelist / regcoil_nml / ntheta_plasma, nzeta_plasma, ntheta_coil, nzeta_coil, &
        geometry_option_plasma, geometry_option_coil, &
        R0_plasma, R0_coil, a_plasma, a_coil, &
@@ -169,7 +178,8 @@ module regcoil_variables
        target_option, target_value, lambda_search_tolerance, &
        sensitivity_option, nmax_sensitivity, mmax_sensitivity, &
        sensitivity_symmetry_option, target_option_p, &
-       fixed_norm_sensitivity_option, coil_plasma_dist_lse_p
+       fixed_norm_sensitivity_option, coil_plasma_dist_lse_p, &
+       m_max, n_max
 
 end module regcoil_variables
 

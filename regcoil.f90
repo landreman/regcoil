@@ -3,7 +3,8 @@
 program regcoil
 
   use regcoil_variables, only: total_time, output_filename, general_option, &
-    sensitivity_option, exit_code, fixed_norm_sensitivity_option
+    sensitivity_option, exit_code, fixed_norm_sensitivity_option, &
+    geometry_option_plasma, nzeta_plasma, lasym
   use regcoil_init_plasma_mod
 
   implicit none
@@ -15,11 +16,16 @@ program regcoil
   call system_clock(tic,countrate)
 
   call regcoil_read_input()
+  !geometry_option_plasma = 8
+  nzeta_plasma = 128
+  !lasym = .true.
   call regcoil_validate_input()
   call regcoil_compute_lambda()
 
+
   ! Define the position vector and normal vector at each grid point for the surfaces:
   call regcoil_init_plasma()
+  stop
   call regcoil_init_coil_surface()
 
   ! Initialize some of the vectors and matrices needed:

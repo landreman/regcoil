@@ -19,16 +19,19 @@ contains
     use regcoil_read_efit_mod
     use read_wout_mod, only: nfp_vmec => nfp, xm_vmec => xm, xn_vmec => xn, &
          rmnc_vmec => rmnc, zmns_vmec => zmns, rmns_vmec => rmns, zmnc_vmec => zmnc, &
-         lasym_vmec => lasym, mnmax_vmec => mnmax, ns, Rmajor, read_wout_file, &
+         bmnc_vmec => bmnc, bmns_vmec => bmns, lasym_vmec => lasym, mnmax_vmec => mnmax, ns, Rmajor, read_wout_file, &
          mpol_vmec => mpol, ntor_vmec => ntor, bvco, bsubvmnc
     use safe_open_mod
     use stel_constants
-    
+!    use regcoil_double_to_single
+!    use regcoil_read_single_Fourier
+
     implicit none
 
     integer :: i, itheta, izeta, imn, tic, toc, countrate, iflag, ierr, iopen, tic1, toc1, iunit
     real(dp) :: angle, sinangle, cosangle, dsinangledtheta, dsinangledzeta, dcosangledtheta, dcosangledzeta
     real(dp) :: angle2, sinangle2, cosangle2, dsinangle2dzeta, dcosangle2dzeta
+    real(dp) :: angle3, sinangle3, cosangle3, dsinangle3dtheta, dcosangle3dtheta
     real(dp) :: weight1, weight2, theta, r_temp, z_temp, dnorm
     integer :: ntheta_coordTransform, nzeta_coordTransform
     real(dp), dimension(:,:), allocatable :: r_coordTransform, z_coordTransform, major_R_squared
@@ -159,14 +162,16 @@ contains
        
        lasym = .true.
        
-    case (2,3)
+    case (2,3,8)
        ! VMEC, "original" theta coordinate which is not a straight-field-line coordinate
+       ! 8 switches to a Single Fourier series representation on a theta coordinate with respect to axis
+       wout_filename = "wout_iter2.nc"
        call read_wout_file(wout_filename, ierr, iopen)
        if (iopen .ne. 0) stop 'error opening wout file'
        if (ierr .ne. 0) stop 'error reading wout file'
        if (verbose) print *,"  Successfully read VMEC data from ",trim(wout_filename)
        
-       if (geometry_option_plasma == 2) then
+       if (geometry_option_plasma == 2 .or. geometry_option_plasma == 8) then
           ! Only use the outermost point in the full radial mesh:
           weight1 = 0
           weight2 = 1
@@ -191,11 +196,22 @@ contains
        if (verbose) print *,"size of rmnc_vmec:",size(rmnc_vmec,1),size(rmnc_vmec,2)
        rmnc_plasma = rmnc_vmec(:,ns-1) * weight1 + rmnc_vmec(:,ns) * weight2
        zmns_plasma = zmns_vmec(:,ns-1) * weight1 + zmns_vmec(:,ns) * weight2
+       bmnc_plasma = bmnc_vmec(:,ns-1) * weight1 + bmnc_vmec(:,ns) * weight2
        if (lasym) then
           rmns_plasma = rmns_vmec(:,ns-1) * weight1 + rmns_vmec(:,ns) * weight2
           zmnc_plasma = zmnc_vmec(:,ns-1) * weight1 + zmnc_vmec(:,ns) * weight2
+          bmns_plasma = bmns_vmec(:,ns-1) * weight1 + bmns_vmec(:,ns) * weight2
        end if
-       
+
+       if (geometry_option_plasma .eq. 8) then
+          call regcoil_double_to_single()
+       end if
+
+    case (9)
+       ! Single Fourier file, theta coordinate with respect to axis
+       call regcoil_read_single_Fourier()
+       R0_plasma = Rmajor
+
     case (4)
        ! VMEC, straight-field-line poloidal coordinate
        call read_wout_file(wout_filename, ierr, iopen)
@@ -411,11 +427,38 @@ contains
     if (allocated(normal_plasma)) deallocate(normal_plasma)
     allocate(normal_plasma(3,ntheta_plasma,nzetal_plasma),stat=iflag)
     if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
-    
+
     r_plasma=0
     drdtheta_plasma=0
     drdzeta_plasma=0
-    
+
+    if (geometry_option_plasma==8 .or. geometry_option_plasma==9) then
+        do izeta = 1, nzetal_plasma
+            angle2 = zetal_plasma(izeta)
+            sinangle2 = sin(angle2)
+            cosangle2 = cos(angle2)
+            dsinangle2dzeta = cosangle2
+            dcosangle2dzeta = -sinangle2
+            do itheta = 1, ntheta_plasma
+                do i=1,nmax_axis
+                    angle = -xn_axis(i)*zetal_plasma(izeta)
+                    sinangle = sin(angle)
+                    cosangle = cos(angle)
+                    dsinangledzeta = -cosangle*xn_axis(i)
+                    dcosangledzeta = sinangle*xn_axis(i)
+
+                    r_plasma(1,itheta,izeta) = r_plasma(1,itheta,izeta) + raxis_cc(i) * cosangle * cosangle2
+                    r_plasma(2,itheta,izeta) = r_plasma(2,itheta,izeta) + raxis_cc(i) * cosangle * sinangle2
+                    r_plasma(3,itheta,izeta) = r_plasma(3,itheta,izeta) + zaxis_cs(i) * sinangle
+
+                    drdzeta_plasma(1,itheta,izeta) = drdzeta_plasma(1,itheta,izeta) + raxis_cc(i) * (dcosangledzeta * cosangle2 + cosangle * dcosangle2dzeta)
+                    drdzeta_plasma(2,itheta,izeta) = drdzeta_plasma(2,itheta,izeta) + raxis_cc(i) * (dcosangledzeta * sinangle2 + cosangle * dsinangle2dzeta)
+                    drdzeta_plasma(3,itheta,izeta) = drdzeta_plasma(3,itheta,izeta) + zaxis_cs(i) * dsinangledzeta
+                end do
+            end do
+        end do
+    end if
+
     do izeta = 1,nzetal_plasma
        angle2 = zetal_plasma(izeta)
        sinangle2 = sin(angle2)
@@ -423,6 +466,11 @@ contains
        dsinangle2dzeta = cosangle2
        dcosangle2dzeta = -sinangle2
        do itheta = 1,ntheta_plasma
+          angle3 = theta_plasma(itheta)
+          sinangle3 = sin(angle3)
+          cosangle3 = cos(angle3)
+          dsinangle3dtheta = cosangle3
+          dcosangle3dtheta = -sinangle3
           do imn = 1,mnmax_plasma
              angle = xm_plasma(imn)*theta_plasma(itheta) - xn_plasma(imn)*zetal_plasma(izeta)
              sinangle = sin(angle)
@@ -431,32 +479,62 @@ contains
              dcosangledtheta = -sinangle*xm_plasma(imn)
              dsinangledzeta = -cosangle*xn_plasma(imn)
              dcosangledzeta = sinangle*xn_plasma(imn)
-             
-             r_plasma(1,itheta,izeta) = r_plasma(1,itheta,izeta) + rmnc_plasma(imn) * cosangle * cosangle2
-             r_plasma(2,itheta,izeta) = r_plasma(2,itheta,izeta) + rmnc_plasma(imn) * cosangle * sinangle2
-             r_plasma(3,itheta,izeta) = r_plasma(3,itheta,izeta) + zmns_plasma(imn) * sinangle
-             
-             drdtheta_plasma(1,itheta,izeta) = drdtheta_plasma(1,itheta,izeta) + rmnc_plasma(imn) * dcosangledtheta * cosangle2
-             drdtheta_plasma(2,itheta,izeta) = drdtheta_plasma(2,itheta,izeta) + rmnc_plasma(imn) * dcosangledtheta * sinangle2
-             drdtheta_plasma(3,itheta,izeta) = drdtheta_plasma(3,itheta,izeta) + zmns_plasma(imn) * dsinangledtheta
-             
-             drdzeta_plasma(1,itheta,izeta) = drdzeta_plasma(1,itheta,izeta) + rmnc_plasma(imn) * (dcosangledzeta * cosangle2 + cosangle * dcosangle2dzeta)
-             drdzeta_plasma(2,itheta,izeta) = drdzeta_plasma(2,itheta,izeta) + rmnc_plasma(imn) * (dcosangledzeta * sinangle2 + cosangle * dsinangle2dzeta)
-             drdzeta_plasma(3,itheta,izeta) = drdzeta_plasma(3,itheta,izeta) + zmns_plasma(imn) * dsinangledzeta
-             
-             if (lasym) then
-                r_plasma(1,itheta,izeta) = r_plasma(1,itheta,izeta) + rmns_plasma(imn) * sinangle * cosangle2
-                r_plasma(2,itheta,izeta) = r_plasma(2,itheta,izeta) + rmns_plasma(imn) * sinangle * sinangle2
-                r_plasma(3,itheta,izeta) = r_plasma(3,itheta,izeta) + zmnc_plasma(imn) * cosangle
-                
-                drdtheta_plasma(1,itheta,izeta) = drdtheta_plasma(1,itheta,izeta) + rmns_plasma(imn) * dsinangledtheta * cosangle2
-                drdtheta_plasma(2,itheta,izeta) = drdtheta_plasma(2,itheta,izeta) + rmns_plasma(imn) * dsinangledtheta * sinangle2
-                drdtheta_plasma(3,itheta,izeta) = drdtheta_plasma(3,itheta,izeta) + zmnc_plasma(imn) * dcosangledtheta
-                
-                drdzeta_plasma(1,itheta,izeta) = drdzeta_plasma(1,itheta,izeta) + rmns_plasma(imn) * (dsinangledzeta * cosangle2 + sinangle * dcosangle2dzeta)
-                drdzeta_plasma(2,itheta,izeta) = drdzeta_plasma(2,itheta,izeta) + rmns_plasma(imn) * (dsinangledzeta * sinangle2 + sinangle * dsinangle2dzeta)
-                drdzeta_plasma(3,itheta,izeta) = drdzeta_plasma(3,itheta,izeta) + zmnc_plasma(imn) * dcosangledzeta
-             end if
+
+             select case (geometry_option_plasma)
+             case (8,9)
+                 r_plasma(1,itheta,izeta) = r_plasma(1,itheta,izeta) + lmnc(imn) * cosangle * cosangle3 * cosangle2
+                 r_plasma(2,itheta,izeta) = r_plasma(2,itheta,izeta) + lmnc(imn) * cosangle * cosangle3 * sinangle2
+                 r_plasma(3,itheta,izeta) = r_plasma(3,itheta,izeta) + lmnc(imn) * cosangle * sinangle3
+
+                 drdtheta_plasma(1,itheta,izeta) = drdtheta_plasma(1,itheta,izeta) + lmnc(imn) * (dcosangledtheta * cosangle3 + cosangle * dcosangle3dtheta) * cosangle2
+                 drdtheta_plasma(2,itheta,izeta) = drdtheta_plasma(2,itheta,izeta) + lmnc(imn) * (dcosangledtheta * cosangle3 + cosangle * dcosangle3dtheta) * sinangle2
+                 drdtheta_plasma(3,itheta,izeta) = drdtheta_plasma(3,itheta,izeta) + lmnc(imn) * (dcosangledtheta * sinangle3 + cosangle * dsinangle3dtheta)
+                 
+                 drdzeta_plasma(1,itheta,izeta) = drdzeta_plasma(1,itheta,izeta) + lmnc(imn) * (dcosangledzeta * cosangle2 + cosangle * dcosangle2dzeta) * cosangle3
+                 drdzeta_plasma(2,itheta,izeta) = drdzeta_plasma(2,itheta,izeta) + lmnc(imn) * (dcosangledzeta * sinangle2 + cosangle * dsinangle2dzeta) * cosangle3
+                 drdzeta_plasma(3,itheta,izeta) = drdzeta_plasma(3,itheta,izeta) + lmnc(imn) * dcosangledzeta * sinangle3
+
+                 if (lasym) then
+                    r_plasma(1,itheta,izeta) = r_plasma(1,itheta,izeta) + lmns(imn) * sinangle * cosangle3 * cosangle2
+                    r_plasma(2,itheta,izeta) = r_plasma(2,itheta,izeta) + lmns(imn) * sinangle * cosangle3 * sinangle2
+                    r_plasma(3,itheta,izeta) = r_plasma(3,itheta,izeta) + lmns(imn) * sinangle * sinangle3
+
+                    drdtheta_plasma(1,itheta,izeta) = drdtheta_plasma(1,itheta,izeta) + lmns(imn) * (dsinangledtheta * cosangle3 + sinangle * dcosangle3dtheta) * cosangle2
+                    drdtheta_plasma(2,itheta,izeta) = drdtheta_plasma(2,itheta,izeta) + lmns(imn) * (dsinangledtheta * cosangle3 + sinangle * dcosangle3dtheta) * sinangle2
+                    drdtheta_plasma(3,itheta,izeta) = drdtheta_plasma(3,itheta,izeta) + lmns(imn) * (dsinangledtheta * sinangle3 + sinangle * dsinangle3dtheta)
+
+                    drdzeta_plasma(1,itheta,izeta) = drdzeta_plasma(1,itheta,izeta) + lmns(imn) * (dsinangledzeta * cosangle2 + sinangle * dcosangle2dzeta) * cosangle3
+                    drdzeta_plasma(2,itheta,izeta) = drdzeta_plasma(2,itheta,izeta) + lmns(imn) * (dsinangledzeta * sinangle2 + sinangle * dsinangle2dzeta) * cosangle3
+                    drdzeta_plasma(3,itheta,izeta) = drdzeta_plasma(3,itheta,izeta) + lmns(imn) * dsinangledzeta * sinangle3
+                 end if
+
+             case default
+                 r_plasma(1,itheta,izeta) = r_plasma(1,itheta,izeta) + rmnc_plasma(imn) * cosangle * cosangle2
+                 r_plasma(2,itheta,izeta) = r_plasma(2,itheta,izeta) + rmnc_plasma(imn) * cosangle * sinangle2
+                 r_plasma(3,itheta,izeta) = r_plasma(3,itheta,izeta) + zmns_plasma(imn) * sinangle
+                 
+                 drdtheta_plasma(1,itheta,izeta) = drdtheta_plasma(1,itheta,izeta) + rmnc_plasma(imn) * dcosangledtheta * cosangle2
+                 drdtheta_plasma(2,itheta,izeta) = drdtheta_plasma(2,itheta,izeta) + rmnc_plasma(imn) * dcosangledtheta * sinangle2
+                 drdtheta_plasma(3,itheta,izeta) = drdtheta_plasma(3,itheta,izeta) + zmns_plasma(imn) * dsinangledtheta
+                 
+                 drdzeta_plasma(1,itheta,izeta) = drdzeta_plasma(1,itheta,izeta) + rmnc_plasma(imn) * (dcosangledzeta * cosangle2 + cosangle * dcosangle2dzeta)
+                 drdzeta_plasma(2,itheta,izeta) = drdzeta_plasma(2,itheta,izeta) + rmnc_plasma(imn) * (dcosangledzeta * sinangle2 + cosangle * dsinangle2dzeta)
+                 drdzeta_plasma(3,itheta,izeta) = drdzeta_plasma(3,itheta,izeta) + zmns_plasma(imn) * dsinangledzeta
+                 
+                 if (lasym) then
+                    r_plasma(1,itheta,izeta) = r_plasma(1,itheta,izeta) + rmns_plasma(imn) * sinangle * cosangle2
+                    r_plasma(2,itheta,izeta) = r_plasma(2,itheta,izeta) + rmns_plasma(imn) * sinangle * sinangle2
+                    r_plasma(3,itheta,izeta) = r_plasma(3,itheta,izeta) + zmnc_plasma(imn) * cosangle
+                    
+                    drdtheta_plasma(1,itheta,izeta) = drdtheta_plasma(1,itheta,izeta) + rmns_plasma(imn) * dsinangledtheta * cosangle2
+                    drdtheta_plasma(2,itheta,izeta) = drdtheta_plasma(2,itheta,izeta) + rmns_plasma(imn) * dsinangledtheta * sinangle2
+                    drdtheta_plasma(3,itheta,izeta) = drdtheta_plasma(3,itheta,izeta) + zmnc_plasma(imn) * dcosangledtheta
+                    
+                    drdzeta_plasma(1,itheta,izeta) = drdzeta_plasma(1,itheta,izeta) + rmns_plasma(imn) * (dsinangledzeta * cosangle2 + sinangle * dcosangle2dzeta)
+                    drdzeta_plasma(2,itheta,izeta) = drdzeta_plasma(2,itheta,izeta) + rmns_plasma(imn) * (dsinangledzeta * sinangle2 + sinangle * dsinangle2dzeta)
+                    drdzeta_plasma(3,itheta,izeta) = drdzeta_plasma(3,itheta,izeta) + zmnc_plasma(imn) * dcosangledzeta
+                 end if
+             end select
           end do
        end do
     end do

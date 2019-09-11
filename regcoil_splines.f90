@@ -42,7 +42,7 @@ contains
     spl%x = x
     spl%y = y
     allocate (spl%y2(n))
-    call fitp_curv1 (n, x, y, 0.0_dp, 0.0_dp, 3, spl%y2, temp, 1.0_dp, ierr)
+    call fitp_curv1 (n, x, y, 0.0_dp, 0.0_dp, 3, spl%y2, temp, 0.0_dp, ierr) !Changed sigma from 1 to 0
   end subroutine new_spline
 
   subroutine new_periodic_spline (n, x, y, period, spl)
@@ -60,7 +60,7 @@ contains
     spl%x = x
     spl%y = y
     allocate (spl%y2(n))
-    call fitp_curvp1 (n,x,y,period,spl%y2,temp,1.0_dp,ierr)
+    call fitp_curvp1 (n,x,y,period,spl%y2,temp,0.0_dp,ierr) !Changed sigma from 1 to 0
   end subroutine new_periodic_spline
 
   subroutine delete_spline (spl)
@@ -92,7 +92,7 @@ contains
     type (spline), intent (in) :: spl
     real(dp) :: splint
 
-    splint = fitp_curv2 (x, spl%n, spl%x, spl%y, spl%y2, 1.0_dp)
+    splint = fitp_curv2 (x, spl%n, spl%x, spl%y, spl%y2, 0.0_dp) !Changed sigma from 1 to 0
   end function splint
 
   function periodic_splint (x, spl)
@@ -101,7 +101,7 @@ contains
     type (periodic_spline), intent (in) :: spl
     real(dp) :: periodic_splint
     periodic_splint = fitp_curvp2 &
-         (x, spl%n, spl%x, spl%y, spl%period, spl%y2, 1.0_dp)
+         (x, spl%n, spl%x, spl%y, spl%period, spl%y2, 0.0_dp) !Changed sigma from 1 to 0
   end function periodic_splint
 
   function dsplint (x, spl)
