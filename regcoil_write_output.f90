@@ -48,13 +48,18 @@ subroutine regcoil_write_output
        vn_mmax_sensitivity = "mmax_sensitivity", &
        vn_mnmax_sensitivity = "mnmax_sensitivity", &
        vn_nomega_coil = "nomega_coil", &
+       vn_nomega_plasma = "nomega_plasma", &
        vn_sensitivity_symmetry_option = "sensitivity_symmetry_option", &
        vn_fixed_norm_sensitivity_option = "fixed_norm_sensitivity_option", &
        vn_coil_plasma_dist_min = "coil_plasma_dist_min", &
        vn_coil_plasma_dist_max = "coil_plasma_dist_max", &
        vn_coil_plasma_dist_min_lse = "coil_plasma_dist_min_lse", &
        vn_coil_plasma_dist_max_lse = "coil_plasma_dist_max_lse", &
-       vn_coil_plasma_dist_lse_p = "coil_plasma_dist_lse_p"
+       vn_coil_plasma_dist_lse_p = "coil_plasma_dist_lse_p", &
+       vn_nmax_axis = "nmax_axis", &
+       vn_B_0 = "B_0", &
+       vn_theta_transform_refinement = "theta_transform_refinement", &
+       vn_zeta_transform_refinement = "zeta_transform_refinement"
 
   ! Arrays with dimension 1
   character(len=*), parameter :: &
@@ -70,14 +75,19 @@ subroutine regcoil_write_output
        vn_xn_plasma = "xn_plasma", &
        vn_xm_coil = "xm_coil", &
        vn_xn_coil = "xn_coil", &
+       vn_xn_axis = "xn_axis", &
        vn_rmnc_plasma = "rmnc_plasma", &
        vn_rmns_plasma = "rmns_plasma", &
        vn_zmnc_plasma = "zmnc_plasma", &
        vn_zmns_plasma = "zmns_plasma", &
+       vn_lmnc = "lmnc", &
+       vn_lmns = "lmns", &
        vn_rmnc_coil = "rmnc_coil", &
        vn_rmns_coil = "rmns_coil", &
        vn_zmnc_coil = "zmnc_coil", &
        vn_zmns_coil = "zmns_coil", &
+       vn_raxis_cc = "raxis_cc", &
+       vn_zaxis_cs = "zaxis_cs", &
        vn_h = "h", &
        vn_RHS_B = "RHS_B", &
        vn_RHS_regularization = "RHS_regularization", &
@@ -92,6 +102,7 @@ subroutine regcoil_write_output
        vn_omega_coil = "omega_coil", &
        vn_dvolume_coildomega = "dvolume_coildomega", &
        vn_darea_coildomega = "darea_coildomega", &
+       vn_darea_plasmadomega = "darea_plasmadomega", &
        vn_dcoil_plasma_dist_mindomega = "dcoil_plasma_dist_mindomega", &
        vn_max_K_lse = "max_K_lse", &
        vn_lp_norm_K = "lp_norm_K"
@@ -109,8 +120,11 @@ subroutine regcoil_write_output
        vn_single_valued_current_potential_mn = "single_valued_current_potential_mn", &
        vn_dchi2Bdomega = "dchi2Bdomega", &
        vn_dchi2Kdomega = "dchi2Kdomega", &
+       vn_dchi2Bdomega_withoutadjoint = "dchi2Bdomega_withoutadjoint", &
+       vn_dchi2Kdomega_withoutadjoint = "dchi2Kdomega_withoutadjoint", &
        vn_dchi2domega = "dchi2domega", &
-       vn_dRMSKdomega = "dRMSKdomega"
+       vn_dRMSKdomega = "dRMSKdomega", &
+       vn_dRMSBdomega = "dRMSBdomega"
 
   ! Arrays with dimension 3
   character(len=*), parameter :: &
@@ -122,6 +136,10 @@ subroutine regcoil_write_output
        vn_drdzeta_coil  = "drdzeta_coil", &
        vn_normal_plasma = "normal_plasma", &
        vn_normal_coil = "normal_coil", &
+       vn_dgdomega = "dgdomega", &
+       vn_dinductancedomega = "dinductancedomega", &
+       vn_dnorm_normaldomega = "dnorm_normaldomega", &
+       vn_dmatrix_Bdomega = "dmatrix_Bdomega", &
        vn_single_valued_current_potential_thetazeta = "single_valued_current_potential_thetazeta", &
        vn_current_potential = "current_potential", &
        vn_Bnormal_total = "Bnormal_total", &
@@ -143,6 +161,7 @@ subroutine regcoil_write_output
        mnmax_potential_dim = (/'mnmax_potential'/), &
        mnmax_plasma_dim = (/'mnmax_plasma'/), &
        mnmax_coil_dim = (/'mnmax_coil'/), &
+       nmax_axis_dim = (/'nmax_axis'/), &
        nthetanzeta_plasma_dim = (/'ntheta_nzeta_plasma'/), &
        num_basis_functions_dim = (/'num_basis_functions'/), &
        nlambda_dim = (/'nlambda'/), &
@@ -315,16 +334,31 @@ subroutine regcoil_write_output
     call cdf_define(ncid, vn_mmax_sensitivity, mmax_sensitivity)
     call cdf_define(ncid, vn_nmax_sensitivity, nmax_sensitivity)
     call cdf_define(ncid, vn_mnmax_sensitivity, mnmax_sensitivity)
-    call cdf_define(ncid, vn_nomega_coil, nomega_coil)
     call cdf_define(ncid, vn_sensitivity_symmetry_option, sensitivity_symmetry_option)
     call cdf_define(ncid, vn_fixed_norm_sensitivity_option, fixed_norm_sensitivity_option)
   endif
-  if (sensitivity_option > 1) then
+  if (sensitivity_option > 1 .and. sensitivity_option < 6) then
+    call cdf_define(ncid, vn_nomega_coil, nomega_coil)
+  else if (sensitivity_option == 6) then
+    call cdf_define(ncid, vn_nomega_plasma, nomega_plasma)
+  endif
+  if (sensitivity_option > 1 .and. sensitivity_option < 6) then
     call cdf_define(ncid, vn_coil_plasma_dist_min, coil_plasma_dist_min)
     call cdf_define(ncid, vn_coil_plasma_dist_max, coil_plasma_dist_max)
     call cdf_define(ncid, vn_coil_plasma_dist_lse_p, coil_plasma_dist_lse_p)
     call cdf_define(ncid, vn_coil_plasma_dist_min_lse, coil_plasma_dist_min_lse)
     call cdf_define(ncid, vn_coil_plasma_dist_max_lse, coil_plasma_dist_max_lse)
+  end if
+
+  if (geometry_option_plasma == 8 .or. geometry_option_plasma == 9) then
+        call cdf_define(ncid, vn_nmax_axis, nmax_axis)
+        call cdf_setatt(ncid, vn_nmax_axis, 'Number of n for the Fourier modes of the axis.')
+        call cdf_define(ncid, vn_B_0, B_0)
+        call cdf_setatt(ncid, vn_B_0, 'Constant with dimensions of magnetic field for calculating normalized quantities.')
+        call cdf_define(ncid, vn_theta_transform_refinement, theta_transform_refinement)
+        call cdf_setatt(ncid, vn_theta_transform_refinement, 'Factor of theta resolution increase for doing single Fourier transform.')
+        call cdf_define(ncid, vn_zeta_transform_refinement, zeta_transform_refinement)
+        call cdf_setatt(ncid, vn_zeta_transform_refinement, 'Factor of zeta resolution increase for doing single Fourier transform.')
   end if
 
   ! Arrays with dimension 1
@@ -364,20 +398,31 @@ subroutine regcoil_write_output
   call cdf_define(ncid, vn_xn_coil, xn_coil, dimname=mnmax_coil_dim)
   call cdf_setatt(ncid, vn_xm_coil, 'Values of toroidal mode number n used in the Fourier representation of the coil winding surface.')
 
-  call cdf_define(ncid, vn_rmnc_plasma, rmnc_plasma, dimname=mnmax_plasma_dim)
-  call cdf_setatt(ncid, vn_rmnc_plasma, 'Amplitudes of the cosine(m*theta-n*zeta) terms in a Fourier expansion of the cylindrical coordinate ' // &
-       'R(theta,zeta) defining the plasma surface. The corresponding mode numbers (m,n) are stored in xm_plasma and xn_plasma.')
-  if (lasym) then
-     call cdf_define(ncid, vn_rmns_plasma, rmns_plasma, dimname=mnmax_plasma_dim)
-     call cdf_setatt(ncid, vn_rmns_plasma, 'Amplitudes of the sine(m*theta-n*zeta) terms in a Fourier expansion of the cylindrical coordinate ' // &
-          'R(theta,zeta) defining the plasma surface. The corresponding mode numbers (m,n) are stored in xm_plasma and xn_plasma.')
-     call cdf_define(ncid, vn_zmnc_plasma, zmnc_plasma, dimname=mnmax_plasma_dim)
-     call cdf_setatt(ncid, vn_zmnc_plasma, 'Amplitudes of the cosine(m*theta-n*zeta) terms in a Fourier expansion of the coordinate ' // &
-          'Z(theta,zeta) defining the plasma surface. The corresponding mode numbers (m,n) are stored in xm_plasma and xn_plasma.')
+  if (geometry_option_plasma == 8 .or. geometry_option_plasma == 9) then
+      call cdf_define(ncid, vn_lmnc, lmnc, dimname=mnmax_plasma_dim)
+      call cdf_setatt(ncid, vn_lmnc, 'Amplitudes of the cosine(m*theta-n*zeta) terms in a Fourier expansion of the radial coordinate ' // &
+           'l(theta,zeta) defining the plasma surface. The corresponding mode numbers (m,n) are stored in xm_plasma and xn_plasma.')
+      if (lasym) then
+         call cdf_define(ncid, vn_lmns, lmns, dimname=mnmax_plasma_dim)
+         call cdf_setatt(ncid, vn_lmns, 'Amplitudes of the sine(m*theta-n*zeta) terms in a Fourier expansion of the radial coordinate ' // &
+              'l(theta,zeta) defining the plasma surface. The corresponding mode numbers (m,n) are stored in xm_plasma and xn_plasma.')
+      end if
+  else
+      call cdf_define(ncid, vn_rmnc_plasma, rmnc_plasma, dimname=mnmax_plasma_dim)
+      call cdf_setatt(ncid, vn_rmnc_plasma, 'Amplitudes of the cosine(m*theta-n*zeta) terms in a Fourier expansion of the cylindrical coordinate ' // &
+           'R(theta,zeta) defining the plasma surface. The corresponding mode numbers (m,n) are stored in xm_plasma and xn_plasma.')
+      if (lasym) then
+         call cdf_define(ncid, vn_rmns_plasma, rmns_plasma, dimname=mnmax_plasma_dim)
+         call cdf_setatt(ncid, vn_rmns_plasma, 'Amplitudes of the sine(m*theta-n*zeta) terms in a Fourier expansion of the cylindrical coordinate ' // &
+              'R(theta,zeta) defining the plasma surface. The corresponding mode numbers (m,n) are stored in xm_plasma and xn_plasma.')
+         call cdf_define(ncid, vn_zmnc_plasma, zmnc_plasma, dimname=mnmax_plasma_dim)
+         call cdf_setatt(ncid, vn_zmnc_plasma, 'Amplitudes of the cosine(m*theta-n*zeta) terms in a Fourier expansion of the coordinate ' // &
+              'Z(theta,zeta) defining the plasma surface. The corresponding mode numbers (m,n) are stored in xm_plasma and xn_plasma.')
+      end if
+      call cdf_define(ncid, vn_zmns_plasma, zmns_plasma, dimname=mnmax_plasma_dim)
+      call cdf_setatt(ncid, vn_zmns_plasma, 'Amplitudes of the sine(m*theta-n*zeta) terms in a Fourier expansion of the coordinate ' // &
+           'Z(theta,zeta) defining the plasma surface. The corresponding mode numbers (m,n) are stored in xm_plasma and xn_plasma.')
   end if
-  call cdf_define(ncid, vn_zmns_plasma, zmns_plasma, dimname=mnmax_plasma_dim)
-  call cdf_setatt(ncid, vn_zmns_plasma, 'Amplitudes of the sine(m*theta-n*zeta) terms in a Fourier expansion of the coordinate ' // &
-       'Z(theta,zeta) defining the plasma surface. The corresponding mode numbers (m,n) are stored in xm_plasma and xn_plasma.')
 
   call cdf_define(ncid, vn_rmnc_coil, rmnc_coil, dimname=mnmax_coil_dim)
   call cdf_setatt(ncid, vn_rmnc_coil, 'Amplitudes of the cosine(m*theta-n*zeta) terms in a Fourier expansion of the cylindrical coordinate ' // &
@@ -393,6 +438,17 @@ subroutine regcoil_write_output
   call cdf_define(ncid, vn_zmns_coil, zmns_coil, dimname=mnmax_coil_dim)
   call cdf_setatt(ncid, vn_zmns_coil, 'Amplitudes of the sine(m*theta-n*zeta) terms in a Fourier expansion of the coordinate ' // &
        'Z(theta,zeta) defining the coil surface. The corresponding mode numbers (m,n) are stored in xm_coil and xn_coil.')
+
+  if (geometry_option_plasma == 8 .or. geometry_option_plasma == 9) then
+      call cdf_define(ncid, vn_xn_axis, xn_axis, dimname=nmax_axis_dim)
+      call cdf_setatt(ncid, vn_xn_axis, 'Values of toroidal mode number n used in the Fourier representation of the axis.')
+      call cdf_define(ncid, vn_raxis_cc, raxis_cc, dimname=nmax_axis_dim)
+      call cdf_setatt(ncid, vn_raxis_cc, 'Amplitudes of the cosine(-n*zeta) terms in a Fourier expansion of the cylindrical coordinate ' // &
+      'R(theta,zeta) defining the axis. The corresponding mode numbers (m,n) are stored in xn_axis.')
+      call cdf_define(ncid, vn_zaxis_cs, zaxis_cs, dimname=nmax_axis_dim)
+      call cdf_setatt(ncid, vn_zaxis_cs, 'Amplitudes of the sine(-n*zeta) terms in a Fourier expansion of the coordinate ' // &
+      'Z(theta,zeta) defining the axis. The corresponding mode numbers (m,n) are stored in xn_axis.')
+  end if
 
   call cdf_define(ncid, vn_h, h, dimname=nthetanzeta_plasma_dim)
   call cdf_define(ncid, vn_RHS_B, RHS_B, dimname=num_basis_functions_dim)
@@ -418,10 +474,15 @@ subroutine regcoil_write_output
   if (sensitivity_option > 1) then
     call cdf_define(ncid, vn_xn_sensitivity, xn_sensitivity, dimname=nomega_coil_dim)
     call cdf_define(ncid, vn_xm_sensitivity, xm_sensitivity, dimname=nomega_coil_dim)
-    call cdf_define(ncid, vn_omega_coil, omega_coil, dimname=nomega_coil_dim)
-    call cdf_define(ncid, vn_dvolume_coildomega, dvolume_coildomega, dimname=nomega_coil_dim)
-    call cdf_define(ncid, vn_darea_coildomega, darea_coildomega)
-    call cdf_define(ncid, vn_dcoil_plasma_dist_mindomega, dcoil_plasma_dist_mindomega, dimname=nomega_coil_dim)
+    if (sensitivity_option < 6) then
+        call cdf_define(ncid, vn_omega_coil, omega_coil, dimname=nomega_coil_dim)
+        call cdf_define(ncid, vn_dvolume_coildomega, dvolume_coildomega, dimname=nomega_coil_dim)
+        call cdf_define(ncid, vn_darea_coildomega, darea_coildomega)
+        call cdf_define(ncid, vn_dcoil_plasma_dist_mindomega, dcoil_plasma_dist_mindomega, dimname=nomega_coil_dim)
+    end if
+  end if
+  if (sensitivity_option == 6) then
+    call cdf_define(ncid, vn_darea_plasmadomega, darea_plasmadomega)
   end if
   if (trim(target_option)==target_option_max_K_lse) then
     call cdf_define(ncid, vn_max_K_lse, max_K_lse, dimname=nlambda_dim)
@@ -467,6 +528,12 @@ subroutine regcoil_write_output
   if (sensitivity_option > 2 .and. exit_code == 0) then
     call cdf_define(ncid, vn_dchi2Bdomega, dchi2Bdomega(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
     call cdf_define(ncid, vn_dchi2Kdomega, dchi2Kdomega(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
+    call cdf_define(ncid, vn_dchi2Bdomega_withoutadjoint, dchi2Bdomega_withoutadjoint(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
+    call cdf_define(ncid, vn_dchi2Kdomega_withoutadjoint, dchi2Kdomega_withoutadjoint(:,1:Nlambda),dimname=nomega_coil_nlambda_dim)
+    call cdf_define(ncid, vn_dRMSKdomega, dRMSKdomega(:,1:Nlambda))
+    if (sensitivity_option == 6) then
+        call cdf_define(ncid, vn_dRMSBdomega, dRMSBdomega(:,1:Nlambda))
+    end if
   end if
 
   ! Arrays with dimension 3
@@ -489,7 +556,14 @@ subroutine regcoil_write_output
      call cdf_define(ncid, vn_normal_plasma,  normal_plasma,  dimname=xyz_ntheta_nzetal_plasma_dim)
      call cdf_define(ncid, vn_normal_coil,  normal_coil,  dimname=xyz_ntheta_nzetal_coil_dim)
 
+
   end if
+  call cdf_define(ncid, vn_dgdomega,  dgdomega)
+  call cdf_define(ncid, vn_dmatrix_Bdomega,  dmatrix_Bdomega)
+  if (save_level < 1) then
+    call cdf_define(ncid, vn_dinductancedomega,  dinductancedomega)
+  end if
+  call cdf_define(ncid, vn_dnorm_normaldomega,  dnorm_normaldomega)
 
   call cdf_define(ncid, vn_single_valued_current_potential_thetazeta, single_valued_current_potential_thetazeta(:,:,1:Nlambda), &
        dimname=ntheta_nzeta_coil_nlambda_dim)
@@ -553,16 +627,27 @@ subroutine regcoil_write_output
     call cdf_write(ncid, vn_mmax_sensitivity, mmax_sensitivity)
     call cdf_write(ncid, vn_nmax_sensitivity, nmax_sensitivity)
     call cdf_write(ncid, vn_mnmax_sensitivity, mnmax_sensitivity)
-    call cdf_write(ncid, vn_nomega_coil, nomega_coil)
+
     call cdf_write(ncid, vn_sensitivity_symmetry_option, sensitivity_symmetry_option)
     call cdf_write(ncid, vn_fixed_norm_sensitivity_option, fixed_norm_sensitivity_option)
   endif
-  if (sensitivity_option > 1) then
+  if (sensitivity_option > 1 .and. sensitivity_option < 6) then
+    call cdf_write(ncid, vn_nomega_coil, nomega_coil)
+  else if (sensitivity_option == 6) then
+    call cdf_write(ncid, vn_nomega_plasma, nomega_plasma)
+  endif
+  if (sensitivity_option > 1 .and. sensitivity_option < 6) then
     call cdf_write(ncid, vn_coil_plasma_dist_min, coil_plasma_dist_min)
     call cdf_write(ncid, vn_coil_plasma_dist_max, coil_plasma_dist_max)
     call cdf_write(ncid, vn_coil_plasma_dist_lse_p, coil_plasma_dist_lse_p)
     call cdf_write(ncid, vn_coil_plasma_dist_min_lse, coil_plasma_dist_min_lse)
     call cdf_write(ncid, vn_coil_plasma_dist_max_lse, coil_plasma_dist_max_lse)
+  end if
+  if (geometry_option_plasma == 8 .or. geometry_option_plasma == 9) then
+      call cdf_write(ncid, vn_nmax_axis, nmax_axis)
+      call cdf_write(ncid, vn_B_0, B_0)
+      call cdf_write(ncid, vn_theta_transform_refinement, theta_transform_refinement)
+      call cdf_write(ncid, vn_zeta_transform_refinement, zeta_transform_refinement)
   end if
 
   ! Arrays with dimension 1
@@ -579,18 +664,30 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_xn_plasma, xn_plasma)
   call cdf_write(ncid, vn_xm_coil, xm_coil)
   call cdf_write(ncid, vn_xn_coil, xn_coil)
-  call cdf_write(ncid, vn_rmnc_plasma, rmnc_plasma)
-  if (lasym) then
-     call cdf_write(ncid, vn_rmns_plasma, rmns_plasma)
-     call cdf_write(ncid, vn_zmnc_plasma, zmnc_plasma)
+  if (geometry_option_plasma == 8 .or. geometry_option_plasma == 9) then
+      call cdf_write(ncid, vn_lmnc, lmnc)
+      if (lasym) then
+         call cdf_write(ncid, vn_lmns, lmns)
+      end if
+  else
+      call cdf_write(ncid, vn_rmnc_plasma, rmnc_plasma)
+      if (lasym) then
+         call cdf_write(ncid, vn_rmns_plasma, rmns_plasma)
+         call cdf_write(ncid, vn_zmnc_plasma, zmnc_plasma)
+      end if
+      call cdf_write(ncid, vn_zmns_plasma, zmns_plasma)
   end if
-  call cdf_write(ncid, vn_zmns_plasma, zmns_plasma)
   call cdf_write(ncid, vn_rmnc_coil, rmnc_coil)
   if (lasym) then
      call cdf_write(ncid, vn_rmns_coil, rmns_coil)
      call cdf_write(ncid, vn_zmnc_coil, zmnc_coil)
   end if
   call cdf_write(ncid, vn_zmns_coil, zmns_coil)
+  if (geometry_option_plasma == 8 .or. geometry_option_plasma == 9) then
+      call cdf_write(ncid, vn_xn_axis, xn_axis)
+      call cdf_write(ncid, vn_raxis_cc, raxis_cc)
+      call cdf_write(ncid, vn_zaxis_cs, zaxis_cs)
+  end if
   call cdf_write(ncid, vn_h, h)
   call cdf_write(ncid, vn_RHS_B, RHS_B)
   call cdf_write(ncid, vn_RHS_regularization, RHS_regularization)
@@ -603,10 +700,15 @@ subroutine regcoil_write_output
   if (sensitivity_option > 1) then
     call cdf_write(ncid, vn_xn_sensitivity, xn_sensitivity)
     call cdf_write(ncid, vn_xm_sensitivity, xm_sensitivity)
-    call cdf_write(ncid, vn_omega_coil, omega_coil)
-    call cdf_write(ncid, vn_dvolume_coildomega, dvolume_coildomega)
-    call cdf_write(ncid, vn_darea_coildomega, darea_coildomega)
-    call cdf_write(ncid, vn_dcoil_plasma_dist_mindomega, dcoil_plasma_dist_mindomega)
+    if (sensitivity_option < 6) then
+        call cdf_write(ncid, vn_omega_coil, omega_coil)
+        call cdf_write(ncid, vn_dvolume_coildomega, dvolume_coildomega)
+        call cdf_write(ncid, vn_darea_coildomega, darea_coildomega)
+        call cdf_write(ncid, vn_dcoil_plasma_dist_mindomega, dcoil_plasma_dist_mindomega)
+    endif
+  end if
+  if (sensitivity_option > 1) then
+    call cdf_write(ncid, vn_darea_plasmadomega, darea_plasmadomega)
   end if
 
   if (trim(target_option)==target_option_max_K_lse .and. exit_code==0) then
@@ -637,7 +739,12 @@ subroutine regcoil_write_output
   if (sensitivity_option > 2 .and. exit_code == 0) then
     call cdf_write(ncid, vn_dchi2Kdomega, dchi2Kdomega(:,1:Nlambda))
     call cdf_write(ncid, vn_dchi2Bdomega, dchi2Bdomega(:,1:Nlambda))
+    call cdf_write(ncid, vn_dchi2Kdomega_withoutadjoint, dchi2Kdomega_withoutadjoint(:,1:Nlambda))
+    call cdf_write(ncid, vn_dchi2Bdomega_withoutadjoint, dchi2Bdomega_withoutadjoint(:,1:Nlambda))
     call cdf_write(ncid, vn_dRMSKdomega, dRMSKdomega(:,1:Nlambda))
+    if (sensitivity_option == 6) then
+        call cdf_write(ncid, vn_dRMSBdomega, dRMSBdomega(:,1:Nlambda))
+    end if
   end if
 
   ! Arrays with dimension 3
@@ -655,7 +762,14 @@ subroutine regcoil_write_output
      call cdf_write(ncid, vn_normal_plasma, normal_plasma)
      call cdf_write(ncid, vn_normal_coil, normal_coil)
 
+
   end if
+  call cdf_write(ncid, vn_dgdomega, dgdomega)
+  call cdf_write(ncid, vn_dmatrix_Bdomega, dmatrix_Bdomega)
+  if (save_level < 1) then
+    call cdf_write(ncid, vn_dinductancedomega, dinductancedomega)
+  end if
+  call cdf_write(ncid, vn_dnorm_normaldomega, dnorm_normaldomega)
 
   call cdf_write(ncid, vn_single_valued_current_potential_thetazeta, single_valued_current_potential_thetazeta(:,:,1:Nlambda))
   call cdf_write(ncid, vn_current_potential, current_potential(:,:,1:Nlambda))

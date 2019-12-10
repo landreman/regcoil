@@ -27,7 +27,8 @@ subroutine regcoil_solve(ilambda)
      !stop
   end if
   solution = RHS
-
+!print *,sum(solution)
+!stop
   call system_clock(toc)
   if (verbose) print *,"  DSYSV: ",real(toc-tic)/countrate," sec."
   call system_clock(tic)

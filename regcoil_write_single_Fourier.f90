@@ -1,8 +1,9 @@
 subroutine regcoil_write_single_Fourier
     ! Write the single Fourier series amplitudes to a file.
     use safe_open_mod
-    use regcoil_variables, only: nfp, B_0, lasym, nmax_axis, mnmax_plasma, xn_axis, xm_plasma, xn_plasma, &
-        raxis_cc, zaxis_cs, lmnc, lmns, singleFourierFilename
+    use regcoil_variables
+!    use regcoil_variables, only: nfp, B_0, lasym, nmax_axis, mnmax_plasma, xn_axis, xm_plasma, xn_plasma, &
+!        raxis_cc, zaxis_cs, lmnc, lmns, curpol, R0_plasma, singleFourierFilename
 
     implicit none
 
@@ -14,8 +15,8 @@ subroutine regcoil_write_single_Fourier
         stop 'Error opening nescin file: file exsited or something wrong.'
     end if
 
-    write (iunit, '(a)') 'nfp,    B_0,               lasym'
-    write (iunit, '(1I6,1p1e20.12,1L2)') nfp, B_0, lasym
+    write (iunit, '(a)') 'nfp,    B_0,      net_poloidal_current_amperes, curpol,             R0_plasma,lasym'
+    write (iunit, '(1I6,1p4e20.12,1L2)') nfp, B_0, net_poloidal_current_amperes, curpol, R0_plasma, lasym
     write (iunit, *)
 
     write (iunit, '(a)') 'nmax_axis'

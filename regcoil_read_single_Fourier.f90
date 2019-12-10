@@ -15,7 +15,7 @@ subroutine regcoil_read_single_Fourier()
 
     ! Skip the first line
     read (iunit, *)
-    read (iunit, *) nfp, B_0, lasym
+    read (iunit, *) nfp, B_0, net_poloidal_current_amperes, curpol, R0_plasma, lasym
 
     ! Skip the next 2 lines
     read (iunit, *)

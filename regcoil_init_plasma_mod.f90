@@ -165,7 +165,6 @@ contains
     case (2,3,8)
        ! VMEC, "original" theta coordinate which is not a straight-field-line coordinate
        ! 8 switches to a Single Fourier series representation on a theta coordinate with respect to axis
-       wout_filename = "wout_iter2.nc"
        call read_wout_file(wout_filename, ierr, iopen)
        if (iopen .ne. 0) stop 'error opening wout file'
        if (ierr .ne. 0) stop 'error reading wout file'
@@ -210,7 +209,6 @@ contains
     case (9)
        ! Single Fourier file, theta coordinate with respect to axis
        call regcoil_read_single_Fourier()
-       R0_plasma = Rmajor
 
     case (4)
        ! VMEC, straight-field-line poloidal coordinate
@@ -572,7 +570,7 @@ contains
     if (verbose) print "(a,es10.3,a,es10.3,a)"," Plasma surface area:",area_plasma," m^2. Volume:",volume_plasma," m^3."
     
     select case (geometry_option_plasma)
-    case (2,3,4)
+    case (2,3,4,8)
        ! A VMEC wout file is available
        ! VMEC stores the toroidal Boozer component B_zeta as "bvco", using the HALF mesh
        net_poloidal_current_Amperes = 2*pi/mu0*(1.5_dp*bvco(ns)-0.5_dp*bvco(ns-1))
@@ -581,6 +579,9 @@ contains
 
        if (verbose) print *,"Overriding net_poloidal_current_Amperes with value from the VMEC wout file."
        if (verbose) print *,"G = ", net_poloidal_current_Amperes, " ; curpol = ", curpol
+    case (9)
+       if (verbose) print *,"Overriding net_poloidal_current_Amperes with value from the single Fourier file."
+       if (verbose) print *,"G = ", net_poloidal_current_Amperes, " ; curpol = ", curpol
     case default
        if (abs(net_poloidal_current_Amperes-1)<1e-12) then
           if (verbose) print *,"No VMEC file is available, and the default value of net_poloidal_current_Amperes (=1) will be used."
@@ -588,6 +589,11 @@ contains
           if (verbose) print *,"No VMEC file is available, so net_poloidal_current_Amperes will be taken from the bdistrib input file."
        end if
     end select
+
+    !Save the necessary quantities to describe the single Fourier representation
+    if (geometry_option_plasma .eq. 8) then
+        call regcoil_write_single_Fourier()
+    end if
 
     call system_clock(toc)
     if (verbose) print *,"Done initializing plasma surface. Took ",real(toc-tic)/countrate," sec."

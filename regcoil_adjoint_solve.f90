@@ -21,6 +21,10 @@ subroutine regcoil_adjoint_solve
   integer :: INFO, LWORK
   real(dp), dimension(:), allocatable :: WORK
   integer, dimension(:), allocatable :: IPIV
+  real(dp), dimension(:,:), allocatable :: B_nonSV
+  real(dp), dimension(:), allocatable :: temp_vec
+  real(dp) :: temp_num
+  
 
   ! In case of a lambda search, sensitivity only computed for Nlambda
   if (general_option == 1) then
@@ -31,18 +35,38 @@ subroutine regcoil_adjoint_solve
     maxLambda = NLambda
   end if
 
-  allocate(dRMSKdomega(nomega_coil,nlambda),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dchi2domega(nomega_coil,nlambda),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dchi2Kdomega(nomega_coil,nlambda),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dchi2Kdomega_withoutadjoint(nomega_coil,nlambda),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dchi2Bdomega(nomega_coil,nlambda),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dchi2Bdomega_withoutadjoint(nomega_coil,nlambda),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (sensitivity_option < 6) then
+    allocate(dRMSKdomega(nomega_coil,nlambda),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+  else if (sensitivity_option == 6) then
+    allocate(dRMSBdomega(nomega_plasma,nlambda),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dRMSKdomega(nomega_plasma,nlambda),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+  end if
+  if (sensitivity_option < 6) then
+      allocate(dchi2domega(nomega_coil,nlambda),stat=iflag)
+      if (iflag .ne. 0) stop 'Allocation error!'
+      allocate(dchi2Kdomega(nomega_coil,nlambda),stat=iflag)
+      if (iflag .ne. 0) stop 'Allocation error!'
+      allocate(dchi2Kdomega_withoutadjoint(nomega_coil,nlambda),stat=iflag)
+      if (iflag .ne. 0) stop 'Allocation error!'
+      allocate(dchi2Bdomega(nomega_coil,nlambda),stat=iflag)
+      if (iflag .ne. 0) stop 'Allocation error!'
+      allocate(dchi2Bdomega_withoutadjoint(nomega_coil,nlambda),stat=iflag)
+      if (iflag .ne. 0) stop 'Allocation error!'
+  else if (sensitivity_option == 6) then
+      allocate(dchi2domega(nomega_plasma,nlambda),stat=iflag)
+      if (iflag .ne. 0) stop 'Allocation error!'
+      allocate(dchi2Kdomega(nomega_plasma,nlambda),stat=iflag)
+      if (iflag .ne. 0) stop 'Allocation error!'
+      allocate(dchi2Kdomega_withoutadjoint(nomega_plasma,nlambda),stat=iflag)
+      if (iflag .ne. 0) stop 'Allocation error!'
+      allocate(dchi2Bdomega(nomega_plasma,nlambda),stat=iflag)
+      if (iflag .ne. 0) stop 'Allocation error!'
+      allocate(dchi2Bdomega_withoutadjoint(nomega_plasma,nlambda),stat=iflag)
+      if (iflag .ne. 0) stop 'Allocation error!'
+  end if
   allocate(dKDifferencedomega(3,ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(term1(ntheta_coil,nzeta_coil),stat=iflag)
@@ -71,7 +95,7 @@ subroutine regcoil_adjoint_solve
     allocate(q_K(num_basis_functions,nlambda),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
   endif
-  if (sensitivity_option == 3 .or. sensitivity_option == 5 .or. fixed_norm_sensitivity_option) then
+  if ((sensitivity_option == 3 .or. sensitivity_option == 5 .or. fixed_norm_sensitivity_option) .and. sensitivity_option /= 6) then
     allocate(dchi2Bdphi(nlambda,num_basis_functions),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(adjoint_c(ntheta_coil*nzeta_coil),stat=iflag)
@@ -81,16 +105,43 @@ subroutine regcoil_adjoint_solve
     allocate(q_B(num_basis_functions,nlambda),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
   endif
-  if (sensitivity_option > 2 .or. fixed_norm_sensitivity_option) then
+  if (sensitivity_option == 6) then
+    allocate(dchi2Kdphi(nlambda, num_basis_functions),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dchi2Bdphi(nlambda,num_basis_functions),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(q_K(num_basis_functions,nlambda),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(q_B(num_basis_functions,nlambda),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+  endif
+  if ((sensitivity_option > 2 .or. fixed_norm_sensitivity_option) .and. sensitivity_option < 6) then
     allocate(dmatrixdomega(nomega_coil,num_basis_functions,num_basis_functions),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(dRHSdomega(nomega_coil,num_basis_functions),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
   end if
-  if (sensitivity_option > 2 .or. fixed_norm_sensitivity_option) then
+  if ((sensitivity_option > 2 .or. fixed_norm_sensitivity_option) .and. sensitivity_option < 6) then
     allocate(dFdomega(nomega_coil,num_basis_functions),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
   endif
+  if (sensitivity_option == 6) then
+    allocate(dmatrixdomega(nomega_plasma,num_basis_functions,num_basis_functions),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dRHSdomega(nomega_plasma,num_basis_functions),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+    allocate(dFdomega(nomega_plasma,num_basis_functions),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+  endif
+  if (sensitivity_option == 6) then
+    allocate(B_nonSV(ntheta_plasma,nzeta_plasma),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+
+    allocate(temp_vec(num_basis_functions),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+  endif
+
+  B_nonSV = Bnormal_from_plasma_current + Bnormal_from_net_coil_currents
 
   allocate(WORK(1), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
@@ -118,40 +169,48 @@ subroutine regcoil_adjoint_solve
     KDifference_z = d_z - matmul(f_z, solution)
 
     ! dmatrixdomega and dRHSdomega needed for adjoint solve
-    if (sensitivity_option > 2 .or. fixed_norm_sensitivity_option) then
+    if ((sensitivity_option > 2 .or. fixed_norm_sensitivity_option) .and. sensitivity_option < 6) then
       dmatrixdomega = dmatrix_Bdomega + lambda(ilambda)*dmatrix_Kdomega
       dRHSdomega = dRHS_Bdomega + lambda(ilambda)*dRHS_Kdomega
+    else if (sensitivity_option == 6) then
+      dmatrixdomega = dmatrix_Bdomega
+      dRHSdomega = dRHS_Bdomega
     endif
 
     this_K2_times_N = reshape(KDifference_x*KDifference_x + KDifference_y*KDifference_y + KDifference_z*KDifference_z, (/ ntheta_coil, nzeta_coil /)) &
         / norm_normal_coil
 
     call system_clock(tic,countrate)
-    !$OMP PARALLEL
-    !$OMP MASTER
-    if (verbose) then
-      print *,"  Number of OpenMP threads:",omp_get_num_threads()
+    if (sensitivity_option < 6) then
+        !$OMP PARALLEL
+        !$OMP MASTER
+        if (verbose) then
+          print *,"  Number of OpenMP threads:",omp_get_num_threads()
+        end if
+        !$OMP END MASTER
+        !$OMP DO PRIVATE(dKDifferencedomega,term1,term2)
+        do iomega = 1, nomega_coil
+          dKDifferencedomega(1,:) = dddomega(1,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfxdomega(iomega,:,:), solution)
+          dKDifferencedomega(2,:) = dddomega(2,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfydomega(iomega,:,:), solution)
+          dKDifferencedomega(3,:) = dddomega(3,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfzdomega(iomega,:,:), solution)
+          term1 = -dnorm_normaldomega(iomega,:,:)*this_K2_times_N/norm_normal_coil
+          term2 = reshape(KDifference_x*dKDifferencedomega(1,:) + KDifference_y*dKDifferencedomega(2,:) &
+            + KDifference_z*dKDifferencedomega(3,:),(/ ntheta_coil, nzeta_coil/))*(2/norm_normal_coil)
+          dchi2Kdomega_withoutadjoint(iomega,ilambda) = nfp*dtheta_coil*dzeta_coil*(sum(term1) + sum(term2))
+          dchi2Kdomega(iomega,ilambda) = dchi2Kdomega_withoutadjoint(iomega,ilambda)
+        enddo
+        !$OMP END DO
+        !$OMP END PARALLEL
+    else if (sensitivity_option == 6) then
+        dchi2Kdomega_withoutadjoint(:,ilambda) = 0
+        dchi2Kdomega(:,ilambda) = dchi2Kdomega_withoutadjoint(:,ilambda)
     end if
-    !$OMP END MASTER
-    !$OMP DO PRIVATE(dKDifferencedomega,term1,term2)
-    do iomega = 1, nomega_coil
-      dKDifferencedomega(1,:) = dddomega(1,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfxdomega(iomega,:,:), solution)
-      dKDifferencedomega(2,:) = dddomega(2,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfydomega(iomega,:,:), solution)
-      dKDifferencedomega(3,:) = dddomega(3,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfzdomega(iomega,:,:), solution)
-      term1 = -dnorm_normaldomega(iomega,:,:)*this_K2_times_N/norm_normal_coil
-      term2 = reshape(KDifference_x*dKDifferencedomega(1,:) + KDifference_y*dKDifferencedomega(2,:) &
-        + KDifference_z*dKDifferencedomega(3,:),(/ ntheta_coil, nzeta_coil/))*(2/norm_normal_coil)
-      dchi2Kdomega_withoutadjoint(iomega,ilambda) = nfp*dtheta_coil*dzeta_coil*(sum(term1) + sum(term2))
-      dchi2Kdomega(iomega,ilambda) = dchi2Kdomega_withoutadjoint(iomega,ilambda)
-    enddo
-    !$OMP END DO
-    !$OMP END PARALLEL
     call system_clock(toc)
     if (verbose) then
       print *,"chi2_K sensitivity in regcoil_adjoint_solve :",real(toc-tic)/countrate," sec."
     end if
 
-    if (sensitivity_option == 3 .or. sensitivity_option == 4 .or. fixed_norm_sensitivity_option) then
+    if ((sensitivity_option == 3 .or. sensitivity_option == 4 .or. fixed_norm_sensitivity_option) .and. sensitivity_option /= 6) then
       ! Adjoint chi2_K calculation - compute dchi2Kdphi
       adjoint_bx = Kdifference_x/reshape(norm_normal_coil, (/ ntheta_coil*nzeta_coil /))
       adjoint_by = Kdifference_y/reshape(norm_normal_coil, (/ ntheta_coil*nzeta_coil /))
@@ -160,9 +219,12 @@ subroutine regcoil_adjoint_solve
       adjoint_Ay = transpose(f_y)
       adjoint_Az = transpose(f_z)
       dchi2Kdphi(ilambda,:) = -2*nfp*dtheta_coil*dzeta_coil*(matmul(adjoint_Ax,adjoint_bx) + matmul(adjoint_Ay,adjoint_by) + matmul(adjoint_Az,adjoint_bz))
+    else if (sensitivity_option == 6) then
+      dchi2Kdphi(ilambda,:) = 2*nfp*(matmul(matrix_regularization,solution) - RHS_regularization)
+      dchi2Bdphi(ilambda,:) = -lambda(ilambda)*dchi2Kdphi(ilambda,:)
     end if
 
-    if (sensitivity_option == 3 .or. sensitivity_option == 4) then
+    if (sensitivity_option == 3 .or. sensitivity_option == 4 .or. sensitivity_option == 6) then
       call system_clock(tic,countrate)
       ! Solve Adjoint Equation
       ! matrix was overwritten previously
@@ -177,22 +239,45 @@ subroutine regcoil_adjoint_solve
         print *,"Adjoint chi2_K calculation in regcoil_adjoint_solve:",real(toc-tic)/countrate," sec."
       end if
     endif
+    if (sensitivity_option == 6) then
+      q_B(:,ilambda) = -lambda(ilambda)*q_K(:,ilambda)
+    end if
 
     call system_clock(tic,countrate)
-    !$OMP PARALLEL
-    !$OMP MASTER
-    if (verbose) then
-      print *,"  Number of OpenMP threads:",omp_get_num_threads()
+    if (sensitivity_option < 6) then
+        !$OMP PARALLEL
+        !$OMP MASTER
+        if (verbose) then
+          print *,"  Number of OpenMP threads:",omp_get_num_threads()
+        end if
+        !$OMP END MASTER
+        !$OMP DO PRIVATE(dBnormaldomega)
+        do iomega = 1, nomega_coil
+         dBnormaldomega = reshape(matmul(dgdomega(:,:,iomega),solution),(/ ntheta_plasma, nzeta_plasma /))/norm_normal_plasma + reshape(dhdomega(iomega,:),(/ ntheta_plasma, nzeta_plasma /))/norm_normal_plasma
+         dchi2Bdomega_withoutadjoint(iomega,ilambda) = 2*nfp*dtheta_plasma*dzeta_plasma*sum(Bnormal_total(:,:,ilambda)*dBnormaldomega*norm_normal_plasma)
+         dchi2Bdomega(iomega,ilambda) = dchi2Bdomega_withoutadjoint(iomega,ilambda)
+        enddo
+        !$OMP END DO
+        !$OMP END PARALLEL
+    else if (sensitivity_option == 6) then
+        !$OMP PARALLEL
+        !$OMP MASTER
+        if (verbose) then
+          print *,"  Number of OpenMP threads:",omp_get_num_threads()
+        end if
+        !$OMP END MASTER
+        !$OMP DO PRIVATE(temp_vec)
+        do iomega = 1, nomega_plasma
+         temp_vec = matmul(dmatrixdomega(iomega,:,:),solution)
+         !temp_num = reshape(1/2*matmul(reshape(solution, (/ 1,num_basis_functions /)), reshape(temp_vec, (/ num_basis_functions, 1 /))), (/ 0 /))
+         dchi2Bdomega_withoutadjoint(iomega,ilambda) = nfp*dtheta_plasma*dzeta_plasma * sum(dnorm_normaldomega(iomega,:,:) * B_nonSV**2 + 2*norm_normal_plasma * B_nonSV * dBnormaldomega_from_net_coil_currents(iomega,:,:)) &
+            - 2*nfp*sum(solution*dRHSdomega(iomega,:)) &
+            + nfp*sum(solution*temp_vec)!matmul(solution, reshape(temp_vec, (/ num_basis_functions, 1 /))) )
+         dchi2Bdomega(iomega,ilambda) = dchi2Bdomega_withoutadjoint(iomega,ilambda)
+        enddo
+        !$OMP END DO
+        !$OMP END PARALLEL
     end if
-    !$OMP END MASTER
-    !$OMP DO PRIVATE(dBnormaldomega)
-    do iomega = 1, nomega_coil
-     dBnormaldomega = reshape(matmul(dgdomega(:,:,iomega),solution),(/ ntheta_plasma, nzeta_plasma /))/norm_normal_plasma + reshape(dhdomega(iomega,:),(/ ntheta_plasma, nzeta_plasma /))/norm_normal_plasma
-     dchi2Bdomega_withoutadjoint(iomega,ilambda) = 2*nfp*dtheta_plasma*dzeta_plasma*sum(Bnormal_total(:,:,ilambda)*dBnormaldomega*norm_normal_plasma)
-     dchi2Bdomega(iomega,ilambda) = dchi2Bdomega_withoutadjoint(iomega,ilambda)
-    enddo
-    !$OMP END DO
-    !$OMP END PARALLEL
     call system_clock(toc)
     if (verbose) then
       print *,"chi2_B sensitivity in regcoil_adjoint_solve:",real(toc-tic)/countrate," sec."
@@ -200,7 +285,7 @@ subroutine regcoil_adjoint_solve
     dchi2domega(:,ilambda) = dchi2Bdomega(:,ilambda) + lambda(ilambda)*dchi2Kdomega(:,ilambda)
 
     ! Compute dFdomega for adjoint solution
-    if (sensitivity_option > 2 .or. fixed_norm_sensitivity_option) then
+    if ((sensitivity_option > 2 .or. fixed_norm_sensitivity_option) .and. sensitivity_option < 6) then
       call system_clock(tic,countrate)
       do iomega = 1, nomega_coil
         dFdomega(iomega,:) = matmul(dmatrixdomega(iomega,:,:),solution) - dRHSdomega(iomega,:)
@@ -209,11 +294,22 @@ subroutine regcoil_adjoint_solve
       if (verbose) then
         print *,"dFdomega in regcoil_adjoint_solve:", real(toc-tic)/countrate," sec."
       end if
+    else if (sensitivity_option == 6) then
+      call system_clock(tic,countrate)
+      do iomega = 1, nomega_plasma
+        dFdomega(iomega,:) = matmul(dmatrixdomega(iomega,:,:),solution) - dRHSdomega(iomega,:)
+      enddo
+      call system_clock(toc)
+      if (verbose) then
+        print *,"dFdomega in regcoil_adjoint_solve:", real(toc-tic)/countrate," sec."
+      end if
     endif
-    if (sensitivity_option == 3 .or. sensitivity_option == 5 .or. fixed_norm_sensitivity_option) then
+    if ((sensitivity_option == 3 .or. sensitivity_option == 5 .or. fixed_norm_sensitivity_option) .and. sensitivity_option /= 6) then
       adjoint_c = reshape(Bnormal_total(:,:,ilambda), (/ ntheta_plasma * nzeta_plasma /))
       dchi2Bdphi(ilambda,:) = 2*nfp*dtheta_plasma*dzeta_plasma*matmul(transpose(g), adjoint_c)
     end if
+    ! For sensitivity option 6, dchi2Bdphi and q_B are related to the corresponding values for K,
+    ! so these are done earlier with the corresponding values for K
     if (sensitivity_option == 3 .or. sensitivity_option == 5) then
       ! Compute dchi2Bdphi and q_B
       call system_clock(tic,countrate)
@@ -230,7 +326,7 @@ subroutine regcoil_adjoint_solve
         print *,"Adjoint chi2_B calculation in regcoil_adjoint_solve:",real(toc-tic)/countrate," sec."
       end if
     endif
-    if (sensitivity_option == 3) then
+    if (sensitivity_option == 3 .or. sensitivity_option == 6) then
       call system_clock(tic,countrate)
       dchi2Kdomega(:,ilambda) = dchi2Kdomega(:,ilambda) - matmul(dFdomega, q_K(:,ilambda))
       dchi2Bdomega(:,ilambda) = dchi2Bdomega(:,ilambda) - matmul(dFdomega, q_B(:,ilambda))
@@ -261,11 +357,15 @@ subroutine regcoil_adjoint_solve
         print *,"dchi2K and dchi2B in regcoil_adjoint_solve:",real(toc-tic)/countrate," sec."
       end if
     endif
-    if (sensitivity_option > 2) then
+    if (sensitivity_option < 6 .and. sensitivity_option > 2) then
       dRMSKdomega(:,ilambda)= 0.5*(chi2_K(ilambda)/area_coil)**(-0.5)*(dchi2Kdomega(:,ilambda)/area_coil - chi2_K(ilambda)*darea_coildomega/area_coil**2)
+    else if (sensitivity_option == 6) then
+      dRMSBdomega(:,ilambda) = 1/(2*sqrt(chi2_B(ilambda)*B_0**2*area_plasma)) * (dchi2Bdomega(:,ilambda) &
+       - (chi2_B(ilambda)/area_plasma) * darea_plasmadomega);
+      dRMSKdomega(:,ilambda) = 1/(2*sqrt(chi2_K(ilambda)*area_coil)) * dchi2Kdomega(:,ilambda);
     end if
   end do
-  
+
   deallocate(term1)
   deallocate(term2)
   deallocate(dBnormaldomega)

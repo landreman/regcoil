@@ -122,20 +122,21 @@ module regcoil_variables
 
   ! Needed for sensitivity calculation
   real(dp), dimension(:), allocatable :: L_p_norm_with_area
-  real(dp), dimension(:,:), allocatable :: dRMSKdomega
-  real(dp), dimension(:), allocatable :: darea_coildomega
+  real(dp), dimension(:,:), allocatable :: dRMSKdomega, dRMSBdomega
+  real(dp), dimension(:), allocatable :: darea_coildomega, darea_plasmadomega
   integer :: mnmax_sensitivity
-  integer :: nomega_coil
-  integer, dimension(:), allocatable :: omega_coil
+  integer :: nomega_coil, nomega_plasma
+  integer, dimension(:), allocatable :: omega_coil, omega_plasma
   integer, dimension(:), allocatable :: xm_sensitivity, xn_sensitivity
   real(dp), dimension(:,:), allocatable :: dchi2Bdphi
   real(dp), dimension(:,:,:), allocatable :: dddomega, dfxdomega, dfydomega, dfzdomega
-  real(dp), dimension(:,:,:), allocatable :: dnorm_normaldomega, dgdomega
+  real(dp), dimension(:,:,:), allocatable :: dnorm_normaldomega, dgdomega, dinductancedomega
   real(dp), dimension(:,:,:), allocatable :: dnormxdomega, dnormydomega, dnormzdomega
   real(dp), dimension(:,:), allocatable :: dchi2domega, dchi2Kdomega, dchi2Bdomega, dchi2Kdomega_withoutadjoint, dchi2Bdomega_withoutadjoint
   real(dp), dimension(:,:,:,:), allocatable :: drdomega
   real(dp), dimension(:,:,:), allocatable :: domegadxdtheta, domegadxdzeta, domegadydtheta, domegadydzeta, domegadzdtheta, domegadzdzeta
   real(dp), dimension(:,:), allocatable :: dhdomega
+  real(dp), dimension(:,:,:), allocatable :: dBnormaldomega_from_net_coil_currents
   real(dp), dimension(:,:), allocatable :: domegadx, domegady, domegadz
   real(dp), dimension(:,:), allocatable :: q_K, q_B, dFdomega, dRHS_Bdomega, dRHS_Kdomega
   real(dp), dimension(:,:,:), allocatable :: dmatrix_Kdomega, dmatrix_Bdomega
@@ -157,6 +158,7 @@ module regcoil_variables
 
     ! Single Fourier representation variables and derivatives
     integer :: m_max = 32, n_max = 32, nmax_axis
+    integer :: theta_transform_refinement=2, zeta_transform_refinement=2
     real(dp) :: B_0
     integer, allocatable, dimension(:) :: xn_axis
     real(dp), allocatable, dimension(:) :: raxis_cc, zaxis_cs
