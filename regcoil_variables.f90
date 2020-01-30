@@ -138,7 +138,7 @@ module regcoil_variables
   real(dp) :: volume_plasma_target = 0
   real(dp) :: coil_plasma_dist_min_target = 0
   real(dp), dimension(:), allocatable :: Bnormal_total_target
-  !  real(dp), dimension(:,:), allocatable :: K2_target
+  real(dp), dimension(:), allocatable :: K2_target
 
   ! Input parameters for adjoint
   logical :: fixed_norm_sensitivity_option = .false.
