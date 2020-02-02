@@ -129,6 +129,7 @@ module regcoil_variables
   real(dp) :: chi2_B_target = 0
   real(dp) :: lambda_target = 0
   real(dp) :: max_K_target = 0
+  real(dp) :: max_current_potential_target = 0
   real(dp) :: max_Bnormal_target = 0
   real(dp) :: chi2_K_target = 0
   real(dp) :: rms_K_target = 0
@@ -139,6 +140,7 @@ module regcoil_variables
   real(dp) :: coil_plasma_dist_min_target = 0
   real(dp), dimension(:), allocatable :: Bnormal_total_target
   real(dp), dimension(:), allocatable :: K2_target
+  real(dp), dimension(:), allocatable :: current_potential_target
 
   ! Input parameters for adjoint
   logical :: fixed_norm_sensitivity_option = .false.

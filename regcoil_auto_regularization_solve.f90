@@ -160,6 +160,8 @@ subroutine regcoil_auto_regularization_solve()
         ! Reshape 2D Matrix into 1D Vector
         Bnormal_total_target = reshape(Bnormal_total(:,:,1), (/ ntheta_plasma * nzeta_plasma /))
         K2_target = reshape(K2(:,:,1), (/ ntheta_plasma * nzeta_plasma /))
+        current_potential_target = reshape(current_potential(:,:,1), (/ ntheta_coil * nzeta_coil /))
+        max_current_potential_target = maxval(abs(current_potential_target))
 
         exit
      end if
@@ -193,6 +195,8 @@ subroutine regcoil_auto_regularization_solve()
         ! Reshape 2D Matrix into 1D Vector
         Bnormal_total_target = reshape(Bnormal_total(:,:,1), (/ ntheta_plasma * nzeta_plasma /))
         K2_target = reshape(K2(:,:,1), (/ ntheta_plasma * nzeta_plasma /))
+        current_potential_target = reshape(current_potential(:,:,1), (/ ntheta_coil * nzeta_coil /))
+        max_current_potential_target = maxval(abs(current_potential_target))
 
 
         exit
@@ -248,6 +252,8 @@ subroutine regcoil_auto_regularization_solve()
            ! Reshape 2D Matrix into 1D Vector
            Bnormal_total_target = reshape(Bnormal_total(:,:,Nlambda), (/ ntheta_plasma * nzeta_plasma /))
            K2_target = reshape(K2(:,:,Nlambda), (/ ntheta_plasma * nzeta_plasma /))
+           current_potential_target = reshape(current_potential(:,:,Nlambda), (/ ntheta_coil * nzeta_coil /))
+           max_current_potential_target = maxval(abs(current_potential_target))
 
 
            exit
