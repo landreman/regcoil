@@ -36,20 +36,15 @@ else ifeq ($(HOSTNAME),cori)
 	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -n 1 -c 32
 
 else ifneq (,$(findstring pppl,$(HOSTNAME)))
-	NETCDF_F = /usr/pppl/gcc/6.1-pkgs/netcdf-fortran-4.4.4
-	NETCDF_C = /usr/pppl/gcc/6.1-pkgs/netcdf-c-4.4.1
+	NETCDF_F = $(NETCDF_FORTRAN_HOME)
+	NETCDF_C = $(NETCDF_C_HOME)
 	FC = mpifort
 	EXTRA_COMPILE_FLAGS = -O2 -ffree-line-length-none -fexternal-blas -fopenmp -I$(NETCDF_F)/include -I$(NETCDF_C)/include
-	EXTRA_LINK_FLAGS =  -fopenmp -L$(ACML_HOME)/lib -lacml -L$(NETCDF_C)/lib -lnetcdf -L$(NETCDF_F)/lib -lnetcdff
+	EXTRA_LINK_FLAGS = -fopenmp -lopenblas -L$(NETCDF_C)/lib -lnetcdf -L$(NETCDF_F)/lib -lnetcdff
 	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -n 1 -c 32
-	# The LIBSTELL directories should point to a valid libstell_dir and libstell.a file
-	# The ones in /u/slazerso/bin should always work
-	# The ones in /p/.../jschmitt/bin are for development purposes (modify the path if neccessary)
-        # LIBSTELL_DIR=/u/slazerso/bin/libstell_dir
-        # LIBSTELL_FOR_REGCOIL=/u/slazerso/bin/libstell.a
-        LIBSTELL_DIR=/p/stellopt/ANALYSIS/jschmitt/bin/libstell_dir
-        LIBSTELL_FOR_REGCOIL=/p/stellopt/ANALYSIS/jschmitt/bin/libstell.a
-	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -N 1 -n 1 -c 8 -p dawson
+        LIBSTELL_DIR=/p/stellopt/ANALYSIS/czhu/stellopt_test/STELLOPT/LIBSTELL/Release
+        LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/libstell.a
+	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -N 1 -n 1 -c 8 -p general
 else
 	FC = mpif90
 	#EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none -cpp
