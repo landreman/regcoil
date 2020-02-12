@@ -76,7 +76,8 @@ subroutine regcoil_read_bnorm()
   ! BNORM scales B_n by curpol=(2*pi/nfp)*bsubv(m=0,n=0)
   ! where bsubv is the extrapolation to the last full mesh point of
   ! bsubvmnc.  Let's undo this scaling now.
-  Bnormal_from_plasma_current = Bnormal_from_plasma_current * curpol
+  ! minus sign because BNORM uses the inward normal (czhu).
+  Bnormal_from_plasma_current = Bnormal_from_plasma_current * curpol * -1 
 
 !!$  ! I'll use an explicit loop here so there is no ambiguity about the order of theta vs zeta in the 1D vector:
 !!$  do izeta = 1,nzeta_plasma
