@@ -29,7 +29,8 @@ OBJ_FILES =  \
 	regcoil_variables.o \
 	regcoil_write_input.o \
 	regcoil_write_output.o \
-	regcoil_write_nescin.o
+	regcoil_write_nescin.o \
+        regcoil_toroidal_field.o
 
 # Dependencies:
 regcoil.o: regcoil_variables.o regcoil_init_plasma_mod.o
@@ -62,3 +63,4 @@ regcoil_variables.o:
 regcoil_write_input.o: regcoil_variables.o
 regcoil_write_output.o: regcoil_variables.o
 regcoil_write_nescin.o: regcoil_variables.o
+regcoil_toroidal_field.o: regcoil_variables.o
