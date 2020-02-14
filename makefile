@@ -40,6 +40,8 @@ else ifneq (,$(findstring pppl,$(HOSTNAME)))
 	NETCDF_C = $(NETCDF_C_HOME)
 	FC = mpifort
 	EXTRA_COMPILE_FLAGS = -O2 -ffree-line-length-none -fexternal-blas -fopenmp -I$(NETCDF_F)/include -I$(NETCDF_C)/include
+  	#EXTRA_COMPILE_FLAGS = -g -O0 -fexternal-blas -fcheck=all -fbacktrace -Wextra -ffree-line-length-none \
+   	-Wtarget-lifetime -fbounds-check -ffpe-trap=zero -finit-real=snan -fopenmp -I$(NETCDF_F)/include -I$(NETCDF_C)/include
 	EXTRA_LINK_FLAGS = -fopenmp -lopenblas -L$(NETCDF_C)/lib -lnetcdf -L$(NETCDF_F)/lib -lnetcdff
 	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -n 1 -c 32
         LIBSTELL_DIR=/p/stellopt/ANALYSIS/czhu/stellopt_test/STELLOPT/LIBSTELL/Release
