@@ -15,6 +15,10 @@ else
         HOSTNAME?="laptop"
 endif
 
+ifdef MACHINE
+	HOSTNAME = $(MACHINE)
+endif
+
 ifeq ($(HOSTNAME),edison)
 	FC = ftn
 	## NERSC documentation recommends against specifying -O3
@@ -34,6 +38,16 @@ else ifeq ($(HOSTNAME),cori)
 	# Above, the link flag "-Wl,-ydgemm_" causes the linker to report which version of DGEMM (the BLAS3 matrix-matrix-multiplication subroutine) is used.
 	# For batch systems, set the following variable to the command used to run jobs. This variable is used by 'make test'.
 	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -n 1 -c 32
+
+else ifeq ($(HOSTNAME),marconi)
+	FC = mpiifort
+	EXTRA_COMPILE_FLAGS = -qopenmp -mkl $(shell nc-config --fflags)
+	EXTRA_LINK_FLAGS =  -qopenmp -mkl $(shell nc-config --flibs)
+	# Above, the link flag "-Wl,-ydgemm_" causes the linker to report which version of DGEMM (the BLAS3 matrix-matrix-multiplication subroutine) is used.
+	# For batch systems, set the following variable to the command used to run jobs. This variable is used by 'make test'.
+	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -n 1 -c 32
+	LIBSTELL_DIR=~/bin/libstell_dir
+	LIBSTELL_FOR_REGCOIL=~/bin/libstell.a
 
 else ifeq ($(HOSTNAME),pppl)
 	NETCDF_F = /usr/pppl/gcc/6.1-pkgs/netcdf-fortran-4.4.4
