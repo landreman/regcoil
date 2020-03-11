@@ -14,7 +14,7 @@ jobs:
       run: sudo apt-get install texlive texlive-science
     - name: Generate manual
       working-directory: ./manual
-      run: make && cp mkdir deploy && cp regcoilManual.pdf deploy
+      run: make && mkdir deploy && cp regcoilManual.pdf deploy
     - name: Deploy docs
       uses: peaceiris/actions-gh-pages@v3
       with:
