@@ -1,0 +1,21 @@
+name: Publish manual
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  manual:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Generate manual
+      working-directory: ./manual
+      run: make && cp mkdir deploy && cp regcoilManual.pdf deploy
+    - name: Deploy docs
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./manual/deploy
+        force_orphan: true
