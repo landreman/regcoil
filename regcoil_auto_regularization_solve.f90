@@ -344,6 +344,7 @@ subroutine regcoil_optimal_lambda
      endif
   enddo
 
+  if (verbose) print *, "optimal lambda is ", this_lambda
   current_potential_target = reshape(current_potential(:,:,this_lambda), (/ ntheta_coil * nzeta_coil /))
   max_current_potential_target = maxval(abs(current_potential_target))
 

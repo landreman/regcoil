@@ -94,6 +94,6 @@ subroutine regcoil_diagnostics(ilambda)
   if (trim(target_option)=='lp_norm_K') then
     if (verbose) print "(a,es10.3)","    lp_norm_K:", lp_norm_K(ilambda)
   end if
-  if (verbose) print *, "  chi2_Phi: ",chi2_Phi(ilambda), ",   max(Phi):", maxval(abs(current_potential(:,:,ilambda)))
+  if (verbose) print "(a,es10.3,a,es10.3)", "  chi2_Phi: ",chi2_Phi(ilambda), ",  max(Phi):", maxval(abs(current_potential(:,:,ilambda)))
 
 end subroutine regcoil_diagnostics
