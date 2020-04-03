@@ -46,7 +46,9 @@ module regcoil_variables
   real(dp), dimension(:), allocatable :: RHS_B, RHS_regularization
   real(dp), dimension(:,:,:), allocatable :: Bnormal_total
   real(dp), dimension(:,:,:), allocatable :: K2, Laplace_Beltrami2
-  real(dp), dimension(:), allocatable :: chi2_B, chi2_K, max_Bnormal, max_K, rms_K, chi2_Laplace_Beltrami
+  real(dp), dimension(:), allocatable :: chi2_B, chi2_K, max_Bnormal, max_K, rms_K, &
+       chi2_Laplace_Beltrami, chi2_Phi
+
   real(dp), dimension(:), allocatable :: lp_norm_K, max_K_lse
 
   real(dp), dimension(:), allocatable :: theta_coil, zeta_coil, zetal_coil

@@ -10,7 +10,7 @@ subroutine regcoil_auto_regularization_solve()
   logical :: initial_above_target, last_above_target, targeted_quantity_increases_with_lambda
   real(dp) :: Brendt_a, Brendt_b, Brendt_c, Brendt_fa, Brendt_fb, Brendt_fc, Brendt_d, Brendt_e
   real(dp) :: Brendt_p, Brendt_q, Brendt_r, Brendt_s, Brendt_tol1, Brendt_xm, Brendt_EPS, factor
-
+  
   if (general_option==4) then
      stage = 1
   else
@@ -324,3 +324,30 @@ contains
   end function target_function
 
 end subroutine regcoil_auto_regularization_solve
+
+
+subroutine regcoil_optimal_lambda
+  use regcoil_variables
+  use stel_kinds
+
+  implicit none
+ 
+  integer :: i, this_lambda
+  real(dp) :: log, min_log
+
+  min_log = 1E20
+  do i = 1, Nlambda
+     log = log10(chi2_B(i)) + log10(chi2_Phi(i))
+     if (log<min_log .and. chi2_B(i)<1E-3) then
+        min_log = log
+        this_lambda = i
+     endif
+  enddo
+
+  current_potential_target = reshape(current_potential(:,:,this_lambda), (/ ntheta_coil * nzeta_coil /))
+  max_current_potential_target = maxval(abs(current_potential_target))
+
+  return
+end subroutine regcoil_optimal_lambda
+
+  

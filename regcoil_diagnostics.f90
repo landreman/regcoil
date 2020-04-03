@@ -52,6 +52,9 @@ subroutine regcoil_diagnostics(ilambda)
   chi2_B(ilambda) = nfp * dtheta_plasma * dzeta_plasma &
        * sum(Bnormal_total(:,:,ilambda) * Bnormal_total(:,:,ilambda) * norm_normal_plasma)
 
+  chi2_Phi(ilambda) = nfp * dtheta_plasma * dzeta_plasma &
+       * sum(current_potential(:,:,ilambda) * current_potential(:,:,ilambda) * norm_normal_plasma)
+
   if (trim(target_option)=='max_K_lse') then
     max_K_lse(ilambda) = (1/target_option_p)*log(sum(norm_normal_coil*dtheta_coil*dzeta_coil*nfp &
         /area_coil*exp(target_option_p &
@@ -91,5 +94,6 @@ subroutine regcoil_diagnostics(ilambda)
   if (trim(target_option)=='lp_norm_K') then
     if (verbose) print "(a,es10.3)","    lp_norm_K:", lp_norm_K(ilambda)
   end if
+  if (verbose) print *, "  chi2_Phi: ",chi2_Phi(ilambda), ",   max(Phi):", maxval(abs(current_potential(:,:,ilambda)))
 
 end subroutine regcoil_diagnostics

@@ -6,6 +6,10 @@ subroutine regcoil_prepare_solve()
 
   integer :: iflag
 
+  if (allocated(current_potential_target)) deallocate(current_potential_target)
+  allocate(current_potential_target(ntheta_coil*nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 0!'
+
   if (allocated(matrix)) deallocate(matrix)
   allocate(matrix(num_basis_functions, num_basis_functions), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 1!'
@@ -36,7 +40,11 @@ subroutine regcoil_prepare_solve()
 
   if (allocated(chi2_Laplace_Beltrami)) deallocate(chi2_Laplace_Beltrami)
   allocate(chi2_Laplace_Beltrami(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 7!'
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 7+!'
+
+  if (allocated(chi2_Phi)) deallocate(chi2_Phi)
+  allocate(chi2_Phi(nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 7++!'
 
   if (allocated(max_Bnormal)) deallocate(max_Bnormal)
   allocate(max_Bnormal(nlambda), stat=iflag)
