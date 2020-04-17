@@ -764,12 +764,14 @@ subroutine regcoil_write_output
 
 
   end if
-  call cdf_write(ncid, vn_dgdomega, dgdomega)
-  call cdf_write(ncid, vn_dmatrix_Bdomega, dmatrix_Bdomega)
-  if (save_level < 1) then
+  if (sensitivity_option == 6) then
+    call cdf_write(ncid, vn_dgdomega, dgdomega)
+    call cdf_write(ncid, vn_dmatrix_Bdomega, dmatrix_Bdomega)
+    if (save_level < 1) then
     call cdf_write(ncid, vn_dinductancedomega, dinductancedomega)
+    end if
+    call cdf_write(ncid, vn_dnorm_normaldomega, dnorm_normaldomega)
   end if
-  call cdf_write(ncid, vn_dnorm_normaldomega, dnorm_normaldomega)
 
   call cdf_write(ncid, vn_single_valued_current_potential_thetazeta, single_valued_current_potential_thetazeta(:,:,1:Nlambda))
   call cdf_write(ncid, vn_current_potential, current_potential(:,:,1:Nlambda))

@@ -2,6 +2,7 @@ module regcoil_init_plasma_mod
 
 
   use stel_kinds
+  use omp_lib
 
   implicit none
 
@@ -431,6 +432,13 @@ contains
     drdzeta_plasma=0
 
     if (geometry_option_plasma==8 .or. geometry_option_plasma==9) then
+        !$OMP PARALLEL
+        !$OMP MASTER
+        if (verbose) then
+          print *,"  Number of OpenMP threads:",omp_get_num_threads()
+        end if
+        !$OMP END MASTER
+        !$OMP DO PRIVATE(angle,angle2,sinangle,cosangle,sinangle2,cosangle2,dsinangledzeta,dcosangledzeta,dsinangle2dzeta,dcosangle2dzeta)
         do izeta = 1, nzetal_plasma
             angle2 = zetal_plasma(izeta)
             sinangle2 = sin(angle2)
@@ -455,8 +463,17 @@ contains
                 end do
             end do
         end do
+    !$OMP END DO
+    !$OMP END PARALLEL
     end if
 
+    !$OMP PARALLEL
+    !$OMP MASTER
+    if (verbose) then
+      print *,"  Number of OpenMP threads:",omp_get_num_threads()
+    end if
+    !$OMP END MASTER
+    !$OMP DO PRIVATE(angle,angle2,angle3,sinangle,cosangle,sinangle2,cosangle2,sinangle3,cosangle3,dsinangledtheta,dcosangledtheta,dsinangledzeta,dcosangledzeta,dsinangle2dzeta,dcosangle2dzeta,dsinangle3dtheta,dcosangle3dtheta)
     do izeta = 1,nzetal_plasma
        angle2 = zetal_plasma(izeta)
        sinangle2 = sin(angle2)
@@ -536,6 +553,8 @@ contains
           end do
        end do
     end do
+    !$OMP END DO
+    !$OMP END PARALLEL
     
     ! Evaluate cross product
     normal_plasma(1,:,:) = drdzeta_plasma(2,:,:) * drdtheta_plasma(3,:,:) - drdtheta_plasma(2,:,:) * drdzeta_plasma(3,:,:)

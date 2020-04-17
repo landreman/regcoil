@@ -75,7 +75,7 @@ subroutine regcoil_adjoint_solve
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dBnormaldomega(ntheta_plasma,nzeta_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  if (sensitivity_option == 3 .or. sensitivity_option == 4 .or. fixed_norm_sensitivity_option) then
+if ((sensitivity_option == 3 .or. sensitivity_option == 4 .or. fixed_norm_sensitivity_option) .and. sensitivity_option /= 6) then
     allocate(dchi2Kdphi(nlambda, num_basis_functions),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(adjoint_bx(ntheta_coil*nzeta_coil),stat=iflag)
@@ -361,8 +361,8 @@ subroutine regcoil_adjoint_solve
       dRMSKdomega(:,ilambda)= 0.5*(chi2_K(ilambda)/area_coil)**(-0.5)*(dchi2Kdomega(:,ilambda)/area_coil - chi2_K(ilambda)*darea_coildomega/area_coil**2)
     else if (sensitivity_option == 6) then
       dRMSBdomega(:,ilambda) = 1/(2*sqrt(chi2_B(ilambda)*B_0**2*area_plasma)) * (dchi2Bdomega(:,ilambda) &
-       - (chi2_B(ilambda)/area_plasma) * darea_plasmadomega);
-      dRMSKdomega(:,ilambda) = 1/(2*sqrt(chi2_K(ilambda)*area_coil)) * dchi2Kdomega(:,ilambda);
+       - (chi2_B(ilambda)/area_plasma) * darea_plasmadomega)
+      dRMSKdomega(:,ilambda) = 1/(2*sqrt(chi2_K(ilambda)*area_coil)) * dchi2Kdomega(:,ilambda)
     end if
   end do
 

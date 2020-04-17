@@ -170,6 +170,16 @@ subroutine regcoil_fixed_norm_sensitivity()
         * (dtarget_optiondOmega(iomega,ilambda) - q_tilde_num)
     end if
   end do
+if (sensitivity_option == 6 .and. &
+        (trim(target_option)=='chi2_K' .or. trim(target_option)=='rms_K')) then !meant for target function = chi2_K or RMS_K
+    do iomega=1,nomega_plasma
+      dchi2Bdomega(iomega,ilambda) = dchi2Bdomega_withoutadjoint(iomega,ilambda)
+    end do
+    dchi2Kdomega(:,ilambda) = 0
+    dRMSBdomega(:,ilambda) = 1/(2*sqrt(chi2_B(ilambda)*B_0**2*area_plasma)) * (dchi2Bdomega(:,ilambda) &
+       - (chi2_B(ilambda)/area_plasma) * darea_plasmadomega)
+    dRMSKdomega(:,ilambda) = 0
+  end if
   
   call system_clock(toc)
   if (verbose) then

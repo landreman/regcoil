@@ -223,7 +223,7 @@ subroutine regcoil_validate_input
 
   if ((general_option==4 .or. general_option==5) .and. fixed_norm_sensitivity_option) then
      select case (trim(target_option))
-       case (target_option_max_K_lse,target_option_lp_norm_K,target_option_chi2_B)
+       case (target_option_max_K_lse,target_option_lp_norm_K,target_option_chi2_B,target_option_rms_K)
        case default
       print *,"fixed_norm_sensitivity_option must be used with target_option = 'max_K_lse', 'lp_norm_K', or 'chi2_B'"
         stop

@@ -124,7 +124,9 @@ subroutine regcoil_double_to_single()
     dtheta = theta(2)-theta(1)
     dzeta = zeta(2)-zeta(1)
 
-    B_0 = sqrt(nfp * dtheta * dzeta * sum(B**2 * norm_normal))
+    B_0 = sqrt(sum(B**2 * norm_normal) / sum(norm_normal))
+!print *,B_0
+!stop
 
     raxis_cc = raxis(:,1)
     zaxis_cs = zaxis(:,1)
