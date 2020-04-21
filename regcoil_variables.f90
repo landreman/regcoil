@@ -181,7 +181,7 @@ module regcoil_variables
        sensitivity_option, nmax_sensitivity, mmax_sensitivity, &
        sensitivity_symmetry_option, target_option_p, &
        fixed_norm_sensitivity_option, coil_plasma_dist_lse_p, &
-       m_max, n_max
+       m_max, n_max, singleFourierFilename
 
 end module regcoil_variables
 

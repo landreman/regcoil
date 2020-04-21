@@ -152,12 +152,12 @@ subroutine regcoil_build_matrices()
       allocate(dRHS_Bdomega(nomega_coil,num_basis_functions),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error!'
     else if (sensitivity_option == 6) then
-      allocate(dmatrix_Kdomega(nomega_plasma,num_basis_functions,num_basis_functions),stat=iflag)
-      if (iflag .ne. 0) stop 'Allocation error!'
+      !allocate(dmatrix_Kdomega(nomega_plasma,num_basis_functions,num_basis_functions),stat=iflag)
+      !if (iflag .ne. 0) stop 'Allocation error!'
       allocate(dmatrix_Bdomega(nomega_plasma,num_basis_functions,num_basis_functions),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error!'
-      allocate(dRHS_Kdomega(nomega_plasma,num_basis_functions),stat=iflag)
-      if (iflag .ne. 0) stop 'Allocation error!'
+      !allocate(dRHS_Kdomega(nomega_plasma,num_basis_functions),stat=iflag)
+      !if (iflag .ne. 0) stop 'Allocation error!'
       allocate(dRHS_Bdomega(nomega_plasma,num_basis_functions),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error!'
     endif
@@ -886,16 +886,23 @@ subroutine regcoil_build_matrices()
     do iomega = 1, nomega_plasma
       call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,dgdomega(:,:,iomega),LDA,g_over_N_plasma,LDB,BLAS_BETA,dmatrix_Bdomega(iomega,:,:),LDC)
       call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,g_over_N_plasma,LDA,dgdomega(:,:,iomega),LDB,BLAS_BETA,dmatrix_Bdomega(iomega,:,:),LDC)
-      call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,-g_over_N_plasma(:,:),LDA,g_dNdomega_over_N_plasma(:,:,iomega),LDB,BLAS_BETA,dmatrix_Bdomega(iomega,:,:),LDC)
     enddo
     !$OMP END DO
     !$OMP END PARALLEL
+	 BLAS_ALPHA = -BLAS_ALPHA
+	 !$OMP PARALLEL
+    !$OMP DO
+    do iomega = 1, nomega_plasma
+      call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,g_over_N_plasma,LDA,g_dNdomega_over_N_plasma(:,:,iomega),LDB,BLAS_BETA,dmatrix_Bdomega(iomega,:,:),LDC)
+    enddo
+    !$OMP END DO
+    !$OMP END PARALLEL
+	 BLAS_ALPHA = -BLAS_ALPHA
     call system_clock(toc)
     if (verbose) then
       print *,"matmul for dmatrix_Bdomega:",real(toc-tic)/countrate,"sec."
     end if
   endif
-
   deallocate(g_over_N_plasma)
   deallocate(dnorm_normaldomega_sqrt)
   deallocate(g_dNdomega_over_N_plasma)

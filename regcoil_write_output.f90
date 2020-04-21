@@ -100,6 +100,7 @@ subroutine regcoil_write_output
        vn_xn_sensitivity = "xn_sensitivity", &
        vn_xm_sensitivity = "xm_sensitivity", &
        vn_omega_coil = "omega_coil", &
+       vn_omega_plasma = "omega_plasma", &
        vn_dvolume_coildomega = "dvolume_coildomega", &
        vn_darea_coildomega = "darea_coildomega", &
        vn_darea_plasmadomega = "darea_plasmadomega", &
@@ -166,6 +167,7 @@ subroutine regcoil_write_output
        num_basis_functions_dim = (/'num_basis_functions'/), &
        nlambda_dim = (/'nlambda'/), &
        nomega_coil_dim = (/'nomega_coil'/), &
+       nomega_plasma_dim = (/'nomega_plasma'/), &
        ntheta_times_nzeta_coil_dim = (/'ntheta_times_nzeta_coil'/)
 
   ! Arrays with dimension 2:
@@ -483,6 +485,7 @@ subroutine regcoil_write_output
   end if
   if (sensitivity_option == 6) then
     call cdf_define(ncid, vn_darea_plasmadomega, darea_plasmadomega)
+    call cdf_define(ncid, vn_omega_plasma, omega_plasma)
   end if
   if (trim(target_option)==target_option_max_K_lse) then
     call cdf_define(ncid, vn_max_K_lse, max_K_lse, dimname=nlambda_dim)
@@ -558,12 +561,16 @@ subroutine regcoil_write_output
 
 
   end if
-  call cdf_define(ncid, vn_dgdomega,  dgdomega)
-  call cdf_define(ncid, vn_dmatrix_Bdomega,  dmatrix_Bdomega)
-  if (save_level < 1) then
-    call cdf_define(ncid, vn_dinductancedomega,  dinductancedomega)
+  if (sensitivity_option == 6) then
+    if (save_level < 2) then
+      call cdf_define(ncid, vn_dgdomega,  dgdomega)
+      call cdf_define(ncid, vn_dmatrix_Bdomega,  dmatrix_Bdomega)
+      call cdf_define(ncid, vn_dnorm_normaldomega,  dnorm_normaldomega)
+    end if
+    if (save_level < 1) then
+      call cdf_define(ncid, vn_dinductancedomega,  dinductancedomega)
+    end if
   end if
-  call cdf_define(ncid, vn_dnorm_normaldomega,  dnorm_normaldomega)
 
   call cdf_define(ncid, vn_single_valued_current_potential_thetazeta, single_valued_current_potential_thetazeta(:,:,1:Nlambda), &
        dimname=ntheta_nzeta_coil_nlambda_dim)
@@ -707,8 +714,9 @@ subroutine regcoil_write_output
         call cdf_write(ncid, vn_dcoil_plasma_dist_mindomega, dcoil_plasma_dist_mindomega)
     endif
   end if
-  if (sensitivity_option > 1) then
+  if (sensitivity_option == 6) then
     call cdf_write(ncid, vn_darea_plasmadomega, darea_plasmadomega)
+    call cdf_write(ncid, vn_omega_plasma, omega_plasma)
   end if
 
   if (trim(target_option)==target_option_max_K_lse .and. exit_code==0) then
@@ -765,12 +773,14 @@ subroutine regcoil_write_output
 
   end if
   if (sensitivity_option == 6) then
-    call cdf_write(ncid, vn_dgdomega, dgdomega)
-    call cdf_write(ncid, vn_dmatrix_Bdomega, dmatrix_Bdomega)
-    if (save_level < 1) then
-    call cdf_write(ncid, vn_dinductancedomega, dinductancedomega)
+    if (save_level < 2) then
+      call cdf_write(ncid, vn_dgdomega, dgdomega)
+      call cdf_write(ncid, vn_dmatrix_Bdomega, dmatrix_Bdomega)
+      call cdf_write(ncid, vn_dnorm_normaldomega, dnorm_normaldomega)
     end if
-    call cdf_write(ncid, vn_dnorm_normaldomega, dnorm_normaldomega)
+    if (save_level < 1) then
+      call cdf_write(ncid, vn_dinductancedomega, dinductancedomega)
+    end if
   end if
 
   call cdf_write(ncid, vn_single_valued_current_potential_thetazeta, single_valued_current_potential_thetazeta(:,:,1:Nlambda))
