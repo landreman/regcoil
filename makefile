@@ -49,13 +49,28 @@ else ifeq ($(HOSTNAME),marconi)
 	LIBSTELL_DIR=~/bin/libstell_dir
 	LIBSTELL_FOR_REGCOIL=~/bin/libstell.a
 
-else ifeq ($(HOSTNAME),pppl)
+else ifeq ($(HOSTNAME),pppl_gcc)
 	NETCDF_F = $(NETCDF_FORTRAN_HOME)
 	NETCDF_C = $(NETCDF_C_HOME)
 	FC = mpifort
 	EXTRA_COMPILE_FLAGS = -O2 -ffree-line-length-none -fexternal-blas -fopenmp -I$(NETCDF_F)/include -I$(NETCDF_C)/include
 	EXTRA_LINK_FLAGS = -fopenmp -lopenblas -L$(NETCDF_C)/lib -lnetcdf -L$(NETCDF_F)/lib -lnetcdff
     LIBSTELL_DIR=$(STELLOPT_PATH)/LIBSTELL/Release
+    LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/libstell.a
+	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -N 1 -n 1 -c 8 -q debug --mem 8G
+
+else ifeq ($(HOSTNAME),pppl_intel)
+	FC = mpifort
+	NETCDF_F = $(NETCDF_FORTRAN_HOME)
+	NETCDF_C = $(NETCDF_C_HOME)
+	EXTRA_COMPILE_FLAGS =-mcmodel=large -O3 -m64 -unroll0 -fno-alias -ip -traceback \
+		-Wl,--end-group \
+		-qopenmp \
+		-lpthread \
+		-I$(NETCDF_F)/include -I$(NETCDF_C)/include \
+		-mkl	
+	EXTRA_LINK_FLAGS = -qopenmp -mkl -L$(NETCDF_C)/lib -lnetcdf -L$(NETCDF_F)/lib -lnetcdff
+	    LIBSTELL_DIR=$(STELLOPT_PATH)/LIBSTELL/Release
     LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/libstell.a
 	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -N 1 -n 1 -c 8 -q debug --mem 8G
 
@@ -90,7 +105,7 @@ export
 
 all: $(TARGET)
 
-include makefile.depend
+include $(REGCOIL_PATH)/makefile.depend
 
 %.o: %.f90 ${LIBSTELL_FOR_REGCOIL}
 	$(FC) $(EXTRA_COMPILE_FLAGS) -I $(LIBSTELL_DIR) -c $<
