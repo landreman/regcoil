@@ -15,6 +15,8 @@ else
         HOSTNAME?="laptop"
 endif
 
+HOSTNAME=draco
+
 ifeq ($(HOSTNAME),edison)
 	FC = ftn
 	## NERSC documentation recommends against specifying -O3
@@ -45,6 +47,15 @@ else ifeq ($(HOSTNAME),pppl)
         LIBSTELL_DIR=/u/slazerso/bin/libstell_dir
         LIBSTELL_FOR_REGCOIL=/u/slazerso/bin/libstell.a
 	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -N 1 -n 1 -c 8 -p dawson
+else ifeq ($(HOSTNAME),draco)
+	FC = mpiifort
+	#EXTRA_COMPILE_FLAGS = -qopenmp -mkl -I${NETCDF_HOME}/include
+	#EXTRA_LINK_FLAGS =  -qopenmp -mkl -Wl,-ydgemm_ -L${NETCDF_HOME}/lib -lnetcdf -lnetcdff
+	EXTRA_COMPILE_FLAGS = -qopenmp  -I${MKLROOT}/include -I${NETCDF_HOME}/include
+	EXTRA_LINK_FLAGS =  -qopenmp  -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl -Wl,-ydgemm_ -L${NETCDF_HOME}/lib -lnetcdf -lnetcdff
+	# For batch systems, set the following variable to the command used to run jobs. This variable is used by 'make test'.
+	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun
+
 else
 	FC = mpif90
 	#EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none -cpp
