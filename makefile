@@ -105,7 +105,7 @@ export
 
 all: $(TARGET)
 
-include $(REGCOIL_PATH)/makefile.depend
+include makefile.depend
 
 %.o: %.f90 ${LIBSTELL_FOR_REGCOIL}
 	$(FC) $(EXTRA_COMPILE_FLAGS) -I $(LIBSTELL_DIR) -c $<
