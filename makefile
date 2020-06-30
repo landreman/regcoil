@@ -55,8 +55,8 @@ else ifeq ($(HOSTNAME),pppl_gcc)
 	FC = mpifort
 	EXTRA_COMPILE_FLAGS = -O2 -ffree-line-length-none -fexternal-blas -fopenmp -I$(NETCDF_F)/include -I$(NETCDF_C)/include
 	EXTRA_LINK_FLAGS = -fopenmp -lopenblas -L$(NETCDF_C)/lib -lnetcdf -L$(NETCDF_F)/lib -lnetcdff
-    LIBSTELL_DIR=$(STELLOPT_PATH)/LIBSTELL/Release
-    LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/libstell.a
+	LIBSTELL_DIR=$(STELLOPT_PATH)/LIBSTELL/Release
+	LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/libstell.a
 	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -N 1 -n 1 -c 8 -q debug --mem 8G
 
 else ifeq ($(HOSTNAME),pppl_intel)
@@ -70,8 +70,8 @@ else ifeq ($(HOSTNAME),pppl_intel)
 		-I$(NETCDF_F)/include -I$(NETCDF_C)/include \
 		-mkl	
 	EXTRA_LINK_FLAGS = -qopenmp -mkl -L$(NETCDF_C)/lib -lnetcdf -L$(NETCDF_F)/lib -lnetcdff
-	    LIBSTELL_DIR=$(STELLOPT_PATH)/LIBSTELL/Release
-    LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/libstell.a
+	LIBSTELL_DIR=$(STELLOPT_PATH)/LIBSTELL/Release
+	LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/libstell.a
 	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -N 1 -n 1 -c 8 -q debug --mem 8G
 
 else ifeq ($(HOSTNAME),osx_brew)
