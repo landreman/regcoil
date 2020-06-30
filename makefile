@@ -50,15 +50,25 @@ else ifeq ($(HOSTNAME),marconi)
 	LIBSTELL_FOR_REGCOIL=~/bin/libstell.a
 
 else ifeq ($(HOSTNAME),pppl)
-	NETCDF_F = /usr/pppl/gcc/6.1-pkgs/netcdf-fortran-4.4.4
-	NETCDF_C = /usr/pppl/gcc/6.1-pkgs/netcdf-c-4.4.1
+	NETCDF_F = $(NETCDF_FORTRAN_HOME)
+	NETCDF_C = $(NETCDF_C_HOME)
 	FC = mpifort
 	EXTRA_COMPILE_FLAGS = -O2 -ffree-line-length-none -fexternal-blas -fopenmp -I$(NETCDF_F)/include -I$(NETCDF_C)/include
-	EXTRA_LINK_FLAGS =  -fopenmp -L$(ACML_HOME)/lib -lacml -L$(NETCDF_C)/lib -lnetcdf -L$(NETCDF_F)/lib -lnetcdff
-	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -n 1 -c 32
-        LIBSTELL_DIR=/u/slazerso/bin/libstell_dir
-        LIBSTELL_FOR_REGCOIL=/u/slazerso/bin/libstell.a
-	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -N 1 -n 1 -c 8 -p dawson
+	EXTRA_LINK_FLAGS = -fopenmp -lopenblas -L$(NETCDF_C)/lib -lnetcdf -L$(NETCDF_F)/lib -lnetcdff
+    LIBSTELL_DIR=$(STELLOPT_PATH)/LIBSTELL/Release
+    LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/libstell.a
+	REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -N 1 -n 1 -c 8 -q debug --mem 8G
+
+else ifeq ($(HOSTNAME),osx_brew)
+	NETCDF_HOME ?= /usr/local/lib/netcdf
+	LAPACK_HOME ?= /usr/local/lib/lapack
+	FC = mpifort 
+	EXTRA_COMPILE_FLAGS = -O2 -ffree-line-length-none -fopenmp -I$(NETCDF_HOME)/include
+	EXTRA_LINK_FLAGS =  -fopenmp -L$(NETCDF_HOME)/lib -lnetcdf -lnetcdff -L$(LAPACK_HOME)/lib -lblas -llapack
+	LIBSTELL_DIR = $(STELLOPT_PATH)/LIBSTELL/Release
+	LIBSTELL_FOR_REGCOIL = $(LIBSTELL_DIR)/libstell.a
+	REGCOIL_COMMAND_TO_SUBMIT_JOB = 
+
 else
 	FC = mpif90
 	#EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none -cpp
@@ -82,10 +92,10 @@ all: $(TARGET)
 
 include makefile.depend
 
-%.o: %.f90 $(LIBSTELL_DIR)/mini_libstell.a
+%.o: %.f90 ${LIBSTELL_FOR_REGCOIL}
 	$(FC) $(EXTRA_COMPILE_FLAGS) -I $(LIBSTELL_DIR) -c $<
 
-%.o: %.f $(LIBSTELL_DIR)/mini_libstell.a
+%.o: %.f ${LIBSTELL_FOR_REGCOIL}
 	$(FC) $(EXTRA_COMPILE_FLAGS) -I $(LIBSTELL_DIR) -c $<
 
 lib$(TARGET).a: $(OBJ_FILES)
@@ -95,7 +105,7 @@ $(TARGET): lib$(TARGET).a $(TARGET).o $(LIBSTELL_FOR_REGCOIL)
 	$(FC) -o $(TARGET) $(TARGET).o lib$(TARGET).a $(LIBSTELL_FOR_REGCOIL) $(EXTRA_LINK_FLAGS)
 #	$(FC) -o $(TARGET) $(OBJ_FILES) $(LIBSTELL_DIR)/libstell.a $(EXTRA_LINK_FLAGS)
 
-$(LIBSTELL_DIR)/mini_libstell.a:
+mini_libstell/mini_libstell.a:
 	$(MAKE) -C mini_libstell
 
 clean:
