@@ -100,6 +100,17 @@ subroutine regcoil_prepare_solve()
   allocate(this_Laplace_Beltrami2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 19!'
 
+  if (trim(target_option)==target_option_max_K_lse) then
+    if (allocated(max_K_lse)) deallocate(max_K_lse)
+    allocate(max_K_lse(nlambda), stat=iflag)
+    if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 20!'
+  end if
+
+  if (trim(target_option)==target_option_lp_norm_K) then
+    if (allocated(lp_norm_K)) deallocate(lp_norm_K)
+    allocate(lp_norm_K(nlambda), stat=iflag)
+    if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 20!'
+  end if
 
   ! Call LAPACK's DSYSV in query mode to determine the optimal size of the work array
   call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, LAPACK_IPIV, RHS, num_basis_functions, LAPACK_WORK, -1, LAPACK_INFO)

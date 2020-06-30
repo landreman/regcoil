@@ -257,6 +257,14 @@ contains
        target_function = chi2_B(jlambda)
        targeted_quantity_increases_with_lambda = .true.
 
+    case (target_option_max_K_lse)
+       target_function = max_K_lse(jlambda)
+       targeted_quantity_increases_with_lambda = .false.
+
+    case (target_option_lp_norm_K)
+       target_function = lp_norm_K(jlambda)
+       targeted_quantity_increases_with_lambda = .false.
+
     case default
        print *,"Invalid target_option: ",target_option
        stop

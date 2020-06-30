@@ -473,7 +473,27 @@ $\vect{B}\cdot\vect{n}$ over the plasma surface equals \parlink{target\_value}.\
 {\ttfamily target\_option = "rms\_Bnormal"}: Search for the $\lambda$ value such that the root-mean-square value of $\vect{B}\cdot\vect{n}$, i.e.
 $\left( \int d^2a\; B_n^2 \right)^{1/2}$ (where the integral is over the plasma surface) equals \parlink{target\_value}.
 
+{\ttfamily target\_option = "max\_K\_lse"}: Search for the $\lambda$ value such that $K_{\max,\text{lse}}$ (the maximum approximated using the log-sum-exponent norm) equals \parlink{target\_value}.
+\begin{gather}
+K_{\max,\text{lse}} = \frac{1}{\texttt{target\_option\_p}} \log \left( \frac{\int_{\text{coil}} d^2 A \exp \left( \texttt{target\_option\_p}K \right)}{A_{\text{coil}}} \right)
+\end{gather}
+See \parlink{target\_option\_p}.
+
+{\ttfamily target\_option = "lp\_norm\_K"}: Search for the $\lambda$ value such that $|| \bm{K} ||_p$ ( the $L^p$ norm of $K$) equals \parlink{target\_value}.
+\begin{gather}
+|| {\bm{K}} ||_p = \left( \frac{\int_{\text{coil}} d^2 A \, K^{\texttt{target\_option\_p}} }{A_{\text{coil}}} \right)^{1/p}
+\end{gather}
+See \parlink{target\_option\_p}.
+
 }
+
+\myhrule
+
+\param{target\_option\_p}
+{real}
+{4.0}
+{Only when \parlink{target\_option} = {\ttfamily "lp\_norm\_K"} or {\ttfamily "max\_K\_lse"}.}
+{The value of $p$ used for the $L^p$ norm or log-sum-exponent norm of $K$.}
 
 \myhrule
 
@@ -492,3 +512,69 @@ by varying $\lambda$.
 {1.0e-5}
 {Only when \parlink{general\_option} = 4 or 5.}
 {Relative tolerance for the lambda root-finding.}
+
+\myhrule
+
+\section{Parameters related to adjoint solve}
+
+\param{sensitivity\_option}
+{integer}
+{1}
+{Only when one wishes to compute derivatives of output quantities with respect to the coil winding surface parameters. Note that {\ttfamily sensitivity\_option > 1} must be used with \parlink{general\_option} = 1, 4, or 5. {\ttfamily sensitivity\_option = 3, 4, 5} should give the same results, although 4 or 5 tend to be more efficient. }
+{\\
+{\ttfamily sensitivity\_option = 1}: Derivatives are not computed. \\
+{\ttfamily sensitivity\_option = 2}: Derivative of $\chi^2$ is computed. \\
+{\ttfamily sensitivity\_option = 3}: Derivatives of $\chi^2_K$, $\chi^2_B$, and $\chi^2$ are computed. This requires two adjoint solves. \\
+{\ttfamily sensitivity\_option = 4}: Derivatives of $\chi^2_K$, $\chi^2_B$, and $\chi^2$ are computed. An adjoint solve is used to compute the derivative of $\chi^2_K$ and the derivative of $\chi^2_B$ is computed from it. This requires one adjoint solve. \\
+{\ttfamily sensitivity\_option = 5}: Derivatives of $\chi^2_K$, $\chi^2_B$, and $\chi^2$ are computed. An adjoint solve is used to compute the derivative of $\chi^2_B$ and the derivative of $\chi^2_K$ is computed from it. This requires one adjoint solve. 
+}
+
+\myhrule
+
+\param{fixed\_norm\_sensitivity\_option}
+{logical}
+{false}
+{When \parlink{sensitivity\_option} $> 1$.}
+{If true, derivatives of $\chi^2$, $\chi^2_B$, and $\chi^2_K$ are computed at fixed target (indicated by \parlink{target\_option}) rather than at fixed $\lambda$. This option must be used with \parlink{general\_option} $> 3$ and \parlink{target\_option} = \texttt{"chi2\_B"}, \texttt{"lp\_norm\_K"} or \texttt{"max\_K\_lse"}.}
+
+\myhrule
+
+\param{sensitivity\_symmetry\_option}
+{integer}
+{1}
+{Symmetry assumed when computing derivative with respect to coil geometry parameters. This does not need to be the same as \parlink{symmetry\_option}.}
+{\\
+{\ttfamily sensitivity\_symmetry\_option = 1}: Only compute derivatives with respect to $r_{mn}^c$ and $z_{mn}^s$ of the winding surface using the \texttt{NESCIN} convention. This option corresponds to stellarator symmetry. \\
+{\ttfamily sensitivity\_symmetry\_option = 2}: Only compute derivatives with respect to $r_{mn}^s$ and $z_{mn}^c$ of the winding surface using the \texttt{NESCIN} convention. \\
+{\ttfamily sensitivity\_symmetry\_option = 3}: No symmetry in the winding surface is imposed.}
+
+\myhrule
+
+\param{nmax\_sensitivity}
+{integer}
+{1}
+{When \parlink{sensitivity\_option} $> 1$.}
+{Derivatives of $\chi^2$, $\chi^2_B$, and $\chi^2_K$ are computed with respect to winding surface Fourier modes with $\abs{n} \leq$ \texttt{nmax\_sensitivity}.}
+
+\myhrule
+
+\param{mmax\_sensitivity}
+{integer}
+{1}
+{When \parlink{sensitivity\_option} $> 1$.}
+{Derivatives of $\chi^2$, $\chi^2_B$, and $\chi^2_K$ are computed with respect to winding surface Fourier modes with $\abs{m} \leq$ \texttt{mmax\_sensitivity}.}
+
+\myhrule
+
+\param{coil\_plasma\_dist\_lse\_p}
+{real}
+{1.0d4}
+{When \parlink{sensitivity\_option}$> 1$.}
+{If \parlink{sensitivity\_option} $> 1$, the derivative of the log-sum-exponent approximation to the coil-plasma distance will be computed. The value of \texttt{coil\_plasma\_dist\_lse\_p} determines the scaling, $p$, in the exponent for this form of the distance approximation.
+\begin{gather}
+d_{\min,\text{lse}} = - \frac{1}{p} \log \left( \frac{ \int_{\text{coil}} d^2 A \int_{\text{plasma}} d^2 A \, \exp \left( - p \sqrt{ (\bm{r}_{\text{coil}}- \bm{r}_{\text{plasma}})^2} \right)}{A_{\text{coil}} A_{\text{plasma}}} \right)
+\end{gather}
+ }
+
+\myhrule
+
