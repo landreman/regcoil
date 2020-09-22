@@ -6,8 +6,9 @@
 #   module unload cray-libsci
 # to avoid warning messages about libsci during compiling.
 
-LIBSTELL_DIR = mini_libstell
-LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/mini_libstell.a
+LIBSTELL_DIR ?= mini_libstell
+#LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/mini_libstell.a
+LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/libstell.a
 
 ifdef NERSC_HOST
   HOSTNAME = $(NERSC_HOST)
@@ -86,6 +87,14 @@ else ifeq ($(CLUSTER),DRACO)
   #EXTRA_LINK_FLAGS =  -qopenmp -mkl -Wl,-ydgemm_ -L${NETCDF_HOME}/lib -lnetcdf -lnetcdff
   EXTRA_COMPILE_FLAGS = -qopenmp  -I${MKLROOT}/include -I${NETCDF_HOME}/include
   EXTRA_LINK_FLAGS =  -qopenmp  -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl -Wl,-ydgemm_ -L${NETCDF_HOME}/lib -lnetcdf -lnetcdff
+  # For batch systems, set the following variable to the command used to run jobs. This variable is used by 'make test'.
+  REGCOIL_COMMAND_TO_SUBMIT_JOB = srun
+
+else ifeq ($(CLUSTER),RAVEN)
+  REGCOIL_HOST=raven
+  FC = mpiifort
+  EXTRA_COMPILE_FLAGS = -qopenmp  -I${MKLROOT}/include $(shell nc-config --fflags)
+  EXTRA_LINK_FLAGS =  -qopenmp  -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl -Wl,-ydgemm_ $(shell nc-config --flibs)
   # For batch systems, set the following variable to the command used to run jobs. This variable is used by 'make test'.
   REGCOIL_COMMAND_TO_SUBMIT_JOB = srun
 
