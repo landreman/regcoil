@@ -33,7 +33,7 @@ contains
     real(dp) :: angle, sinangle, cosangle, dsinangledtheta, dsinangledzeta, dcosangledtheta, dcosangledzeta, d2sinangledtheta2, d2sinangledthetadzeta, d2sinangledzeta2, d2cosangledtheta2, d2cosangledthetadzeta, d2cosangledzeta2
     real(dp) :: angle2, sinangle2, cosangle2, dsinangle2dzeta, dcosangle2dzeta, d2sinangle2dzeta2, d2cosangle2dzeta2
     real(dp) :: angle3, sinangle3, cosangle3, dsinangle3dtheta, dsinangle3dzeta, dcosangle3dtheta, dcosangle3dzeta, d2sinangle3dtheta2, d2sinangle3dthetadzeta, d2sinangle3dzeta2, d2cosangle3dtheta2, d2cosangle3dthetadzeta, d2cosangle3dzeta2
-    real(dp) :: weight1, weight2, theta, r_temp, z_temp, dnorm
+    real(dp) :: weight1, weight2, weight3, weight4, theta, r_temp, z_temp, dnorm
     integer :: ntheta_coordTransform, nzeta_coordTransform
     real(dp), dimension(:,:), allocatable :: r_coordTransform, z_coordTransform, major_R_squared
     real(dp), dimension(:), allocatable :: rmnc_vmecLast, zmns_vmecLast
@@ -177,12 +177,16 @@ contains
           ! Only use the outermost point in the full radial mesh:
           weight1 = 0
           weight2 = 1
+          weight3 = 1.5
+          weight4 = -0.5
           if (verbose) print *,"  Using outermost grid point in VMEC's FULL radial grid."
        else
           ! Average the two outermost points in the full radial mesh 
           ! to get a value on the outermost point of the half radial mesh:
           weight1 = 0.5_dp
           weight2 = 0.5_dp
+          weight3 = 1.0
+          weight4 = 0
           if (verbose) print *,"  Using outermost grid point in VMEC's HALF radial grid."
        end if
        
@@ -198,11 +202,15 @@ contains
        if (verbose) print *,"size of rmnc_vmec:",size(rmnc_vmec,1),size(rmnc_vmec,2)
        rmnc_plasma = rmnc_vmec(:,ns-1) * weight1 + rmnc_vmec(:,ns) * weight2
        zmns_plasma = zmns_vmec(:,ns-1) * weight1 + zmns_vmec(:,ns) * weight2
-       bmnc_plasma = bmnc_vmec(:,ns-1) * weight1 + bmnc_vmec(:,ns) * weight2
+       if (sensitivity_option == 6) then
+         bmnc_plasma = bmnc_vmec(:,ns-1) * weight4 + bmnc_vmec(:,ns) * weight3
+       end if
        if (lasym) then
           rmns_plasma = rmns_vmec(:,ns-1) * weight1 + rmns_vmec(:,ns) * weight2
           zmnc_plasma = zmnc_vmec(:,ns-1) * weight1 + zmnc_vmec(:,ns) * weight2
-          bmns_plasma = bmns_vmec(:,ns-1) * weight1 + bmns_vmec(:,ns) * weight2
+          if (sensitivity_option == 6) then
+            bmns_plasma = bmns_vmec(:,ns-1) * weight4 + bmns_vmec(:,ns) * weight3
+          end if
        end if
 
        if (geometry_option_plasma .eq. 8) then
@@ -232,6 +240,8 @@ contains
        ! to get R and Z on the outermost point of vmec's half mesh:
        weight1 = 0.5_dp
        weight2 = 0.5_dp
+       weight3 = 1.0
+       weight4 = 0
 
        if (allocated(rmnc_vmecLast)) deallocate(rmnc_vmecLast)
        allocate(rmnc_vmecLast(mnmax_vmec),stat=iflag)
@@ -243,7 +253,13 @@ contains
 
        rmnc_vmecLast = rmnc_vmec(:,ns-1) * weight1 + rmnc_vmec(:,ns) * weight2
        zmns_vmecLast = zmns_vmec(:,ns-1) * weight1 + zmns_vmec(:,ns) * weight2
-       
+       if (sensitivity_option==6) then
+         bmnc_plasma = bmnc_vmec(:,ns-1) * weight4 + bmnc_vmec(:,ns) * weight3
+         if (lasym) then
+           bmns_plasma = bmns_vmec(:,ns-1) * weight4 + bmnc_vmec(:,ns) * weight3
+         end if
+       end if
+
        ! Since the "original" vmec poloidal angle is chosen to have a very condensed
        ! Fourier spectrum, we probably need more Fourier modes to represent the surface using the
        ! straight-field-line coordinate.
@@ -711,7 +727,7 @@ contains
                  drdzeta_plasma(1,itheta,izeta) = drdzeta_plasma(1,itheta,izeta) + rmnc_plasma(imn) * (dcosangledzeta * cosangle2 + cosangle * dcosangle2dzeta)
                  drdzeta_plasma(2,itheta,izeta) = drdzeta_plasma(2,itheta,izeta) + rmnc_plasma(imn) * (dcosangledzeta * sinangle2 + cosangle * dsinangle2dzeta)
                  drdzeta_plasma(3,itheta,izeta) = drdzeta_plasma(3,itheta,izeta) + zmns_plasma(imn) * dsinangledzeta
-                 
+
                  if (lasym) then
                     r_plasma(1,itheta,izeta) = r_plasma(1,itheta,izeta) + rmns_plasma(imn) * sinangle * cosangle2
                     r_plasma(2,itheta,izeta) = r_plasma(2,itheta,izeta) + rmns_plasma(imn) * sinangle * sinangle2

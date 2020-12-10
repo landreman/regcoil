@@ -60,6 +60,8 @@ contains
 subroutine regcoil_init_Fourier_modes_sensitivity &
       (mpol,ntor,mnmax,nomega,xm,xn,omega,sensitivity_symmetry_option,sensitivity_option)
 
+    use regcoil_variables, only: geometry_option_plasma
+
     implicit none
 
     integer :: mpol, ntor, mnmax, iomega, i, nomega
@@ -76,20 +78,37 @@ subroutine regcoil_init_Fourier_modes_sensitivity &
     ! nomega is the length of the number of fourier coefficients
     if (sensitivity_option == 6) then !----- Plasma derivatives -----
 
-        select case (sensitivity_symmetry_option)
-          case (1) ! stellarator symmetric
-            nomega = mnmax
-            minSymmetry = 1
-            maxSymmetry = 1
-    !      case (2) ! even in theta and zeta
-    !        nomega = mnmax
-    !        minSymmetry = 2
-    !        maxSymmetry = 2
-          case (3) ! no symmetry
-            nomega = mnmax*2
-            minSymmetry = 1
-            maxSymmetry = 2
-        end select
+        if (geometry_option_plasma>7) then
+          select case (sensitivity_symmetry_option)
+            case (1) ! stellarator symmetric
+              nomega = mnmax
+              minSymmetry = 1
+              maxSymmetry = 1
+      !      case (2) ! even in theta and zeta
+      !        nomega = mnmax
+      !        minSymmetry = 2
+      !        maxSymmetry = 2
+            case (3) ! no symmetry
+              nomega = mnmax*2
+              minSymmetry = 1
+              maxSymmetry = 2
+          end select
+        else
+          select case (sensitivity_symmetry_option)
+              case (1) ! stellarator symmetric
+              nomega = 2*mnmax
+              minSymmetry = 1
+              maxSymmetry = 2
+            !      case (2) ! even in theta and zeta
+            !        nomega = mnmax
+            !        minSymmetry = 2
+            !        maxSymmetry = 2
+            case (3) ! no symmetry
+              nomega = mnmax*4
+              minSymmetry = 1
+              maxSymmetry = 4
+          end select
+        endif
 
     else !----- Coil derivatives -----
 

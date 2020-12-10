@@ -203,9 +203,9 @@ subroutine regcoil_validate_input
     stop "sensitivity_option must be 1, 2, 3, 4, 5, or 6."
   end if
 
-  if (sensitivity_option == 6 .and. .not.(geometry_option_plasma == 8 .or. geometry_option_plasma == 9)) then
-    stop "sensitivity_option 6 can only be used with geometry_option_plasma 8 or 9."
-  end if
+!  if (sensitivity_option == 6 .and. .not.(geometry_option_plasma == 8 .or. geometry_option_plasma == 9)) then
+!    stop "sensitivity_option 6 can only be used with geometry_option_plasma 8 or 9."
+!  end if
 
   if (nmax_sensitivity<0) then
     stop "nmax_sensitivity must be >=0."
