@@ -9,17 +9,19 @@ subroutine regcoil_init_sensitivity()
 
   integer :: iomega, iflag, minSymmetry, maxSymmetry, offset, whichSymmetry, &
     tic, toc, countrate,indexl_coil
-  real(dp) :: angle, angle2, sinangle, cosangle, sum_exp_min, sum_exp_max, &
-    sinangle2, cosangle2, dxdtheta, dxdzeta, dydtheta, dydzeta, dzdtheta, dzdzeta, &
-    major_R_squared_half_grid, dzdtheta_coil_half_grid
-  real(dp) :: angle3, cosangle3, sinangle3, dsinangledzeta, dsinangledtheta, dsinangle3dtheta, dcosangledzeta, dcosangledtheta, dcosangle3dtheta
-  real(dp) :: R, dRdzeta, dRdtheta
+  real(dp) :: dxdtheta, dxdzeta, dydtheta, dydzeta, dzdtheta, dzdzeta, &
+    d2xdtheta2, d2xdthetadzeta, d2xdzeta2, d2ydtheta2, d2ydthetadzeta, d2ydzeta2, d2zdtheta2, d2zdthetadzeta, d2zdzeta2, &
+    major_R_squared_half_grid, dzdtheta_coil_half_grid, sum_exp_min, sum_exp_max
+  real(dp) :: angle, sinangle, cosangle, dsinangledtheta, dsinangledzeta, dcosangledtheta, dcosangledzeta, d2sinangledtheta2, d2sinangledthetadzeta, d2sinangledzeta2, d2cosangledtheta2, d2cosangledthetadzeta, d2cosangledzeta2
+  real(dp) :: angle2, sinangle2, cosangle2, dsinangle2dzeta, dcosangle2dzeta, d2sinangle2dzeta2, d2cosangle2dzeta2
+  real(dp) :: angle3, sinangle3, cosangle3, dsinangle3dtheta, dsinangle3dzeta, dcosangle3dtheta, dcosangle3dzeta, d2sinangle3dtheta2, d2sinangle3dthetadzeta, d2sinangle3dzeta2, d2cosangle3dtheta2, d2cosangle3dthetadzeta, d2cosangle3dzeta2
+!  real(dp) :: R, dRdzeta, dRdtheta
   integer :: izeta_plasma, itheta_plasma, izeta_coil, itheta_coil, index_coil, &
     l_coil, l_plasma, izetal_coil, izetal_plasma, index_plasma, index_coil_first, index_coil_last
   real(dp), dimension(:), allocatable :: dR_squared_domega_half_grid, dsum_exp_mindomega
   real(dp), dimension(:,:,:), allocatable :: dmajor_R_squareddomega
-  real(dp), dimension(:,:,:), allocatable :: dRRdomega
-  real(dp), dimension(:,:,:), allocatable :: dRdomegadzeta, dRdomegadtheta, dZdomega, dZdomegadzeta, dZdomegadtheta
+!  real(dp), dimension(:,:,:), allocatable :: dRRdomega
+!  real(dp), dimension(:,:,:), allocatable :: dRdomegadzeta, dRdomegadtheta, dZdomega, dZdomegadzeta, dZdomegadtheta
   real(dp), dimension(:,:,:,:), allocatable :: dist,ones,normal_coil_fourd,normal_plasma_fourd
 
 
@@ -33,28 +35,81 @@ subroutine regcoil_init_sensitivity()
       if (iflag .ne. 0) stop 'Allocation error!'
       allocate(drdomega(3,ntheta_plasma*nzeta_plasma,nfp,nomega_plasma),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error!'
+      allocate(d2rdthetadomega(3,ntheta_plasma*nzeta_plasma,nfp,nomega_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'Allocation error!'
+      allocate(d2rdzetadomega(3,ntheta_plasma*nzeta_plasma,nfp,nomega_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'Allocation error!'
+
       allocate(dnorm_normaldomega(nomega_plasma,ntheta_plasma,nzeta_plasma),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error!'
-      allocate(dddomega(3, nomega_plasma,ntheta_coil*nzetal_coil),stat=iflag)
-      if (iflag .ne. 0) stop 'Allocation error!'
+      
       allocate(dnormxdomega(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error!'
       allocate(dnormydomega(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error!'
       allocate(dnormzdomega(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error!'
-      allocate(dRRdomega(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
-      if (iflag .ne. 0) stop 'Allocation error!'
-      allocate(dRdomegadzeta(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
-      if (iflag .ne. 0) stop 'Allocation error!'
-      allocate(dRdomegadtheta(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
-      if (iflag .ne. 0) stop 'Allocation error!'
-      allocate(dZdomega(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
-      if (iflag .ne. 0) stop 'Allocation error!'
-      allocate(dZdomegadzeta(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
-      if (iflag .ne. 0) stop 'Allocation error!'
-      allocate(dZdomegadtheta(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
-      if (iflag .ne. 0) stop 'Allocation error!'
+!      allocate(dRRdomega(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
+!      if (iflag .ne. 0) stop 'Allocation error!'
+!      allocate(dRdomegadzeta(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
+!      if (iflag .ne. 0) stop 'Allocation error!'
+!      allocate(dRdomegadtheta(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
+!      if (iflag .ne. 0) stop 'Allocation error!'
+!      allocate(dZdomega(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
+!      if (iflag .ne. 0) stop 'Allocation error!'
+!      allocate(dZdomegadzeta(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
+!      if (iflag .ne. 0) stop 'Allocation error!'
+!      allocate(dZdomegadtheta(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
+!      if (iflag .ne. 0) stop 'Allocation error!'
+      
+      if (geometry_option_coil == 5) then
+        allocate(d3rdtheta2domega(3,ntheta_plasma*nzeta_plasma,nfp,nomega_plasma),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(d3rdzeta2domega(3,ntheta_plasma*nzeta_plasma,nfp,nomega_plasma),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(d3rdthetadzetadomega(3,ntheta_plasma*nzeta_plasma,nfp,nomega_plasma),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+
+        allocate(d2normxdthetadomega(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(d2normydthetadomega(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(d2normzdthetadomega(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(d2normxdzetadomega(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(d2normydzetadomega(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(d2normzdzetadomega(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+
+        allocate(d2norm_normaldthetadomega(nomega_plasma,ntheta_plasma,nzeta_plasma),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(d2norm_normaldzetadomega(nomega_plasma,ntheta_plasma,nzeta_plasma),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+
+        allocate(darea_coildomega(nomega_plasma),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(drdomega_coil(3,ntheta_coil*nzeta_coil,nfp,nomega_plasma),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(d2rdthetadomega_coil(3,ntheta_coil*nzeta_coil,nfp,nomega_plasma),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(d2rdzetadomega_coil(3,ntheta_coil*nzeta_coil,nfp,nomega_plasma),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+
+        allocate(dnorm_normaldomega_coil(nomega_plasma,ntheta_coil,nzeta_coil),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        
+        allocate(dnormxdomega_coil(nomega_plasma,ntheta_coil*nzeta_coil,nfp),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(dnormydomega_coil(nomega_plasma,ntheta_coil*nzeta_coil,nfp),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(dnormzdomega_coil(nomega_plasma,ntheta_coil*nzeta_coil,nfp),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+
+        allocate(dddomega(3, nomega_plasma,ntheta_coil*nzetal_coil),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+      end if
 
   else !----- Coil derivatives -----
 
@@ -104,11 +159,41 @@ subroutine regcoil_init_sensitivity()
             angle2 = zetal_plasma(izetal_plasma)
             sinangle2 = sin(angle2)
             cosangle2 = cos(angle2)
-            angle3 = theta_plasma(itheta_plasma)
-            sinangle3 = sin(angle3)
-            cosangle3 = cos(angle3)
-            dsinangle3dtheta = cosangle3
-            dcosangle3dtheta = -sinangle3
+            dsinangle2dzeta = cosangle2
+            dcosangle2dzeta = -sinangle2
+            d2sinangle2dzeta2 = -sinangle2
+            d2cosangle2dzeta2 = -cosangle2
+            if (use_arclength_angle) then
+              angle3 = theta_plasma(itheta_plasma) - omega_arclength(itheta_plasma,izetal_plasma)
+              sinangle3 = sin(angle3)
+              cosangle3 = cos(angle3)
+              dsinangle3dtheta = cosangle3 * (1 - domegadtheta_arclength(itheta_plasma,izetal_plasma))
+              dcosangle3dtheta = -sinangle3 * (1 - domegadtheta_arclength(itheta_plasma,izetal_plasma))
+              dsinangle3dzeta = cosangle3 * (- domegadzeta_arclength(itheta_plasma,izetal_plasma))
+              dcosangle3dzeta = -sinangle3 * (- domegadzeta_arclength(itheta_plasma,izetal_plasma))
+              if (geometry_option_coil == 5) then
+                d2sinangle3dtheta2 = dcosangle3dtheta * (1 - domegadtheta_arclength(itheta_plasma,izetal_plasma)) + cosangle3 * (- d2omegadtheta2_arclength(itheta_plasma,izetal_plasma))
+                d2cosangle3dtheta2 = -dsinangle3dtheta * (1 - domegadtheta_arclength(itheta_plasma,izetal_plasma)) - sinangle3 * (- d2omegadtheta2_arclength(itheta_plasma,izetal_plasma))
+                d2sinangle3dthetadzeta = dcosangle3dzeta * (1 - domegadtheta_arclength(itheta_plasma,izetal_plasma)) + cosangle3 * (- d2omegadthetadzeta_arclength(itheta_plasma,izetal_plasma))
+                d2cosangle3dthetadzeta = -dsinangle3dzeta * (1 - domegadtheta_arclength(itheta_plasma,izetal_plasma)) - sinangle3 * (- d2omegadthetadzeta_arclength(itheta_plasma,izetal_plasma))
+                d2sinangle3dzeta2 = dcosangle3dzeta * (- domegadzeta_arclength(itheta_plasma,izetal_plasma)) + cosangle3 * (- d2omegadzeta2_arclength(itheta_plasma,izetal_plasma))
+                d2cosangle3dzeta2 = -dsinangle3dzeta * (- domegadzeta_arclength(itheta_plasma,izetal_plasma)) - sinangle3 * (- d2omegadzeta2_arclength(itheta_plasma,izetal_plasma))
+              end if
+            else
+              angle3 = theta_plasma(itheta_plasma)
+              sinangle3 = sin(angle3)
+              cosangle3 = cos(angle3)
+              dsinangle3dtheta = cosangle3
+              dcosangle3dtheta = -sinangle3
+              dsinangle3dzeta = 0
+              dcosangle3dzeta = 0
+              d2sinangle3dtheta2 = dcosangle3dtheta
+              d2cosangle3dtheta2 = -dsinangle3dtheta
+              d2sinangle3dthetadzeta = 0
+              d2cosangle3dthetadzeta = 0
+              d2sinangle3dzeta2 = 0
+              d2cosangle3dzeta2 = 0
+            end if
 
             do iomega = 1,nomega_plasma
               ! Opposite convention for angle as used by nescin input file
@@ -119,30 +204,66 @@ subroutine regcoil_init_sensitivity()
               dsinangledzeta  = -nfp*xn_sensitivity(iomega)*cosangle
               dcosangledtheta = -xm_sensitivity(iomega)*sinangle
               dcosangledzeta  = nfp*xn_sensitivity(iomega)*sinangle
+              d2sinangledtheta2 = -sinangle*xm_sensitivity(iomega)**2
+              d2cosangledtheta2 = -cosangle*xm_sensitivity(iomega)**2
+              d2sinangledthetadzeta = sinangle*xm_sensitivity(iomega)*nfp*xn_sensitivity(iomega)
+              d2cosangledthetadzeta = cosangle*xm_sensitivity(iomega)*nfp*xn_sensitivity(iomega)
+              d2sinangledzeta2 = -sinangle*(nfp*xn_sensitivity(iomega))**2
+              d2cosangledzeta2 = -cosangle*(nfp*xn_sensitivity(iomega))**2
 
               ! omega = lmnc
               if (omega_plasma(iomega) == 1) then
-                dRRdomega(iomega,index_plasma,l_plasma+1) = cosangle*cosangle3
-                dRdomegadzeta(iomega,index_plasma,l_plasma+1) = dcosangledzeta*cosangle3
-                dRdomegadtheta(iomega,index_plasma,l_plasma+1) = dcosangledtheta*cosangle3 + cosangle*dcosangle3dtheta
-                dZdomega(iomega,index_plasma,l_plasma+1) = cosangle*sinangle3
-                dZdomegadzeta(iomega,index_plasma,l_plasma+1) = dcosangledzeta*sinangle3
-                dZdomegadtheta(iomega,index_plasma,l_plasma+1) = dcosangledtheta*sinangle3 + cosangle*dsinangle3dtheta
-                drdomega(1,index_plasma,l_plasma+1,iomega) = dRRdomega(iomega,index_plasma,l_plasma+1)*cosangle2
-                drdomega(2,index_plasma,l_plasma+1,iomega) = dRRdomega(iomega,index_plasma,l_plasma+1)*sinangle2
-                drdomega(3,index_plasma,l_plasma+1,iomega) = dZdomega(iomega,index_plasma,l_plasma+1)
+!                dRRdomega(iomega,index_plasma,l_plasma+1) = cosangle*cosangle3
+!                dRdomegadzeta(iomega,index_plasma,l_plasma+1) = dcosangledzeta*cosangle3
+!                dRdomegadtheta(iomega,index_plasma,l_plasma+1) = dcosangledtheta*cosangle3 + cosangle*dcosangle3dtheta
+!                dZdomega(iomega,index_plasma,l_plasma+1) = cosangle*sinangle3
+!                dZdomegadzeta(iomega,index_plasma,l_plasma+1) = dcosangledzeta*sinangle3
+!                dZdomegadtheta(iomega,index_plasma,l_plasma+1) = dcosangledtheta*sinangle3 + cosangle*dsinangle3dtheta
+!                drdomega(1,index_plasma,l_plasma+1,iomega) = dRRdomega(iomega,index_plasma,l_plasma+1)*cosangle2
+!                drdomega(2,index_plasma,l_plasma+1,iomega) = dRRdomega(iomega,index_plasma,l_plasma+1)*sinangle2
+!                drdomega(3,index_plasma,l_plasma+1,iomega) = dZdomega(iomega,index_plasma,l_plasma+1)
+                drdomega(1,index_plasma,l_plasma+1,iomega) = cosangle * cosangle3 * cosangle2
+                drdomega(2,index_plasma,l_plasma+1,iomega) = cosangle * cosangle3 * sinangle2
+                drdomega(3,index_plasma,l_plasma+1,iomega) = cosangle * sinangle3
+
+                d2rdthetadomega(1,index_plasma,l_plasma+1,iomega) = (dcosangledtheta * cosangle3 + cosangle * dcosangle3dtheta) * cosangle2
+                d2rdthetadomega(2,index_plasma,l_plasma+1,iomega) = (dcosangledtheta * cosangle3 + cosangle * dcosangle3dtheta) * sinangle2
+                d2rdthetadomega(3,index_plasma,l_plasma+1,iomega) = (dcosangledtheta * sinangle3 + cosangle * dsinangle3dtheta)
+                
+                d2rdzetadomega(1,index_plasma,l_plasma+1,iomega) = (dcosangledzeta * cosangle3 * cosangle2 + cosangle * dcosangle3dzeta * cosangle2 + cosangle * cosangle3 * dcosangle2dzeta)
+                d2rdzetadomega(2,index_plasma,l_plasma+1,iomega) = (dcosangledzeta * cosangle3 * sinangle2 + cosangle * dcosangle3dzeta * sinangle2 + cosangle * cosangle3 * dsinangle2dzeta)
+                d2rdzetadomega(3,index_plasma,l_plasma+1,iomega) = (dcosangledzeta * sinangle3 + cosangle * dsinangle3dzeta)
+
+                if (geometry_option_coil == 5) then
+                  d3rdtheta2domega(1,index_plasma,l_plasma+1,iomega) = (d2cosangledtheta2 * cosangle3 + 2*dcosangledtheta * dcosangle3dtheta + cosangle * d2cosangle3dtheta2) * cosangle2
+                  d3rdtheta2domega(2,index_plasma,l_plasma+1,iomega) = (d2cosangledtheta2 * cosangle3 + 2*dcosangledtheta * dcosangle3dtheta + cosangle * d2cosangle3dtheta2) * sinangle2
+                  d3rdtheta2domega(3,index_plasma,l_plasma+1,iomega) = (d2cosangledtheta2 * sinangle3 + 2*dcosangledtheta * dsinangle3dtheta + cosangle * d2sinangle3dtheta2)
+
+                  d3rdthetadzetadomega(1,index_plasma,l_plasma+1,iomega) = ( (d2cosangledthetadzeta * cosangle3 + dcosangledtheta * dcosangle3dzeta + dcosangledzeta * dcosangle3dtheta + cosangle * d2cosangle3dthetadzeta) * cosangle2 &
+                   + (dcosangledtheta * cosangle3 + cosangle * dcosangle3dtheta) * dcosangle2dzeta )
+                  d3rdthetadzetadomega(2,index_plasma,l_plasma+1,iomega) = ( (d2cosangledthetadzeta * cosangle3 + dcosangledtheta * dcosangle3dzeta + dcosangledzeta * dcosangle3dtheta + cosangle * d2cosangle3dthetadzeta) * sinangle2 &
+                   + (dcosangledtheta * cosangle3 + cosangle * dcosangle3dtheta) * dsinangle2dzeta )
+                  d3rdthetadzetadomega(3,index_plasma,l_plasma+1,iomega) = (d2cosangledthetadzeta * sinangle3 + dcosangledtheta * dsinangle3dzeta + dcosangledzeta * dsinangle3dtheta + cosangle * d2sinangle3dthetadzeta)
+
+                  d3rdzeta2domega(1,index_plasma,l_plasma+1,iomega) = ( (d2cosangledzeta2 * cosangle3 + 2*dcosangledzeta * dcosangle3dzeta + cosangle * d2cosangle3dzeta2) * cosangle2 + 2*(dcosangledzeta * cosangle3 + cosangle * dcosangle3dzeta)*dcosangle2dzeta + cosangle * cosangle3 * d2cosangle2dzeta2 )
+                  d3rdzeta2domega(2,index_plasma,l_plasma+1,iomega) = ( (d2cosangledzeta2 * cosangle3 + 2*dcosangledzeta * dcosangle3dzeta + cosangle * d2cosangle3dzeta2) * sinangle2 + 2*(dcosangledzeta * cosangle3 + cosangle * dcosangle3dzeta)*dsinangle2dzeta + cosangle * cosangle3 * d2sinangle2dzeta2 )
+                  d3rdzeta2domega(3,index_plasma,l_plasma+1,iomega) = (d2cosangledzeta2 * sinangle3 + 2*dcosangledzeta * dsinangle3dzeta + cosangle * d2sinangle3dzeta2)
+                end if
               endif
               ! omega = lmns
               if (omega_plasma(iomega) == 2) then
-                dRRdomega(iomega,index_plasma,l_plasma+1) = sinangle*cosangle3
-                dRdomegadzeta(iomega,index_plasma,l_plasma+1) = dsinangledzeta*cosangle3
-                dRdomegadtheta(iomega,index_plasma,l_plasma+1) = dsinangledtheta*cosangle3 + sinangle*dcosangle3dtheta
-                dZdomega(iomega,index_plasma,l_plasma+1) = sinangle*sinangle3
-                dZdomegadzeta(iomega,index_plasma,l_plasma+1) = dsinangledzeta*sinangle3
-                dZdomegadtheta(iomega,index_plasma,l_plasma+1) = dsinangledtheta*sinangle3 + sinangle*dsinangle3dtheta
-                drdomega(1,index_plasma,l_plasma+1,iomega) = dRRdomega(iomega,index_plasma,l_plasma+1)*cosangle2
-                drdomega(2,index_plasma,l_plasma+1,iomega) = dRRdomega(iomega,index_plasma,l_plasma+1)*sinangle2
-                drdomega(3,index_plasma,l_plasma+1,iomega) = dZdomega(iomega,index_plasma,l_plasma+1)
+!                dRRdomega(iomega,index_plasma,l_plasma+1) = sinangle*cosangle3
+!                dRdomegadzeta(iomega,index_plasma,l_plasma+1) = dsinangledzeta*cosangle3
+!                dRdomegadtheta(iomega,index_plasma,l_plasma+1) = dsinangledtheta*cosangle3 + sinangle*dcosangle3dtheta
+!                dZdomega(iomega,index_plasma,l_plasma+1) = sinangle*sinangle3
+!                dZdomegadzeta(iomega,index_plasma,l_plasma+1) = dsinangledzeta*sinangle3
+!                dZdomegadtheta(iomega,index_plasma,l_plasma+1) = dsinangledtheta*sinangle3 + sinangle*dsinangle3dtheta
+!                drdomega(1,index_plasma,l_plasma+1,iomega) = dRRdomega(iomega,index_plasma,l_plasma+1)*cosangle2
+!                drdomega(2,index_plasma,l_plasma+1,iomega) = dRRdomega(iomega,index_plasma,l_plasma+1)*sinangle2
+!                drdomega(3,index_plasma,l_plasma+1,iomega) = dZdomega(iomega,index_plasma,l_plasma+1)
+                drdomega(1,index_plasma,l_plasma+1,iomega) = sinangle * cosangle3 * cosangle2
+                drdomega(2,index_plasma,l_plasma+1,iomega) = sinangle * cosangle3 * sinangle2
+                drdomega(3,index_plasma,l_plasma+1,iomega) = sinangle * sinangle3
               endif
 
               dxdtheta = drdtheta_plasma(1,itheta_plasma,izetal_plasma)
@@ -151,18 +272,72 @@ subroutine regcoil_init_sensitivity()
               dxdzeta = drdzeta_plasma(1,itheta_plasma,izetal_plasma)
               dydzeta = drdzeta_plasma(2,itheta_plasma,izetal_plasma)
               dzdzeta = drdzeta_plasma(3,itheta_plasma,izetal_plasma)
-              R = sqrt((r_plasma(1,itheta_plasma,izetal_plasma))**2 + (r_plasma(2,itheta_plasma,izetal_plasma))**2)
-              dRdzeta = (r_plasma(1,itheta_plasma,izetal_plasma)*dxdzeta + r_plasma(2,itheta_plasma,izetal_plasma)*dydzeta)/R
-              dRdtheta = (r_plasma(1,itheta_plasma,izetal_plasma)*dxdtheta + r_plasma(2,itheta_plasma,izetal_plasma)*dydtheta)/R
+              if (geometry_option_coil == 5) then
+                d2xdtheta2 = d2rdtheta2_plasma(1,itheta_plasma,izetal_plasma)
+                d2ydtheta2 = d2rdtheta2_plasma(2,itheta_plasma,izetal_plasma)
+                d2zdtheta2 = d2rdtheta2_plasma(3,itheta_plasma,izetal_plasma)
+                d2xdthetadzeta = d2rdthetadzeta_plasma(1,itheta_plasma,izetal_plasma)
+                d2ydthetadzeta = d2rdthetadzeta_plasma(2,itheta_plasma,izetal_plasma)
+                d2zdthetadzeta = d2rdthetadzeta_plasma(3,itheta_plasma,izetal_plasma)
+                d2xdzeta2 = d2rdzeta2_plasma(1,itheta_plasma,izetal_plasma)
+                d2ydzeta2 = d2rdzeta2_plasma(2,itheta_plasma,izetal_plasma)
+                d2zdzeta2 = d2rdzeta2_plasma(3,itheta_plasma,izetal_plasma)
+              end if
+!              R = sqrt((r_plasma(1,itheta_plasma,izetal_plasma))**2 + (r_plasma(2,itheta_plasma,izetal_plasma))**2)
+!              dRdzeta = (r_plasma(1,itheta_plasma,izetal_plasma)*dxdzeta + r_plasma(2,itheta_plasma,izetal_plasma)*dydzeta)/R
+!              dRdtheta = (r_plasma(1,itheta_plasma,izetal_plasma)*dxdtheta + r_plasma(2,itheta_plasma,izetal_plasma)*dydtheta)/R
+!              dnormxdomega(iomega,index_plasma,l_plasma+1) = &
+!                  (dRRdomega(iomega,index_plasma,l_plasma+1)*cosangle2 + dRdomegadzeta(iomega,index_plasma,l_plasma+1)*sinangle2)*dzdtheta &
+!                + (R*cosangle2 + dRdzeta*sinangle2)*dZdomegadtheta(iomega,index_plasma,l_plasma+1) &
+!                - (dRdomegadtheta(iomega,index_plasma,l_plasma+1)*dzdzeta + dRdtheta*dZdomegadzeta(iomega,index_plasma,l_plasma+1))*sinangle2
+!              dnormydomega(iomega,index_plasma,l_plasma+1) = &
+!                  (dRRdomega(iomega,index_plasma,l_plasma+1)*sinangle2 - dRdomegadzeta(iomega,index_plasma,l_plasma+1)*cosangle2)*dzdtheta &
+!                + (R*sinangle2 - dRdzeta*cosangle2)*dZdomegadtheta(iomega,index_plasma,l_plasma+1) &
+!                + (dRdomegadtheta(iomega,index_plasma,l_plasma+1)*dzdzeta + dRdtheta*dZdomegadzeta(iomega,index_plasma,l_plasma+1))*cosangle2
+!              dnormzdomega(iomega,index_plasma,l_plasma+1) = -dRRdomega(iomega,index_plasma,l_plasma+1)*dRdtheta - R*dRdomegadtheta(iomega,index_plasma,l_plasma+1)
               dnormxdomega(iomega,index_plasma,l_plasma+1) = &
-                  (dRRdomega(iomega,index_plasma,l_plasma+1)*cosangle2 + dRdomegadzeta(iomega,index_plasma,l_plasma+1)*sinangle2)*dzdtheta &
-                + (R*cosangle2 + dRdzeta*sinangle2)*dZdomegadtheta(iomega,index_plasma,l_plasma+1) &
-                - (dRdomegadtheta(iomega,index_plasma,l_plasma+1)*dzdzeta + dRdtheta*dZdomegadzeta(iomega,index_plasma,l_plasma+1))*sinangle2
+                  d2rdzetadomega(2,index_plasma,l_plasma+1,iomega) * dzdtheta + dydzeta * d2rdthetadomega(3,index_plasma,l_plasma+1,iomega) &
+                - d2rdthetadomega(2,index_plasma,l_plasma+1,iomega) * dzdzeta - dydtheta * d2rdzetadomega(3,index_plasma,l_plasma+1,iomega)
               dnormydomega(iomega,index_plasma,l_plasma+1) = &
-                  (dRRdomega(iomega,index_plasma,l_plasma+1)*sinangle2 - dRdomegadzeta(iomega,index_plasma,l_plasma+1)*cosangle2)*dzdtheta &
-                + (R*sinangle2 - dRdzeta*cosangle2)*dZdomegadtheta(iomega,index_plasma,l_plasma+1) &
-                + (dRdomegadtheta(iomega,index_plasma,l_plasma+1)*dzdzeta + dRdtheta*dZdomegadzeta(iomega,index_plasma,l_plasma+1))*cosangle2
-              dnormzdomega(iomega,index_plasma,l_plasma+1) = -dRRdomega(iomega,index_plasma,l_plasma+1)*dRdtheta - R*dRdomegadtheta(iomega,index_plasma,l_plasma+1)
+                  d2rdzetadomega(3,index_plasma,l_plasma+1,iomega) * dxdtheta + dzdzeta * d2rdthetadomega(1,index_plasma,l_plasma+1,iomega) &
+                - d2rdthetadomega(3,index_plasma,l_plasma+1,iomega) * dxdzeta - dzdtheta * d2rdzetadomega(1,index_plasma,l_plasma+1,iomega)
+              dnormzdomega(iomega,index_plasma,l_plasma+1) = &
+                  d2rdzetadomega(1,index_plasma,l_plasma+1,iomega) * dydtheta + dxdzeta * d2rdthetadomega(2,index_plasma,l_plasma+1,iomega) &
+                - d2rdthetadomega(1,index_plasma,l_plasma+1,iomega) * dydzeta - dxdtheta * d2rdzetadomega(2,index_plasma,l_plasma+1,iomega)
+
+              if (geometry_option_coil == 5) then
+                d2normxdthetadomega(iomega,index_plasma,l_plasma+1) = &
+                    d3rdthetadzetadomega(2,index_plasma,l_plasma+1,iomega) * dzdtheta + d2rdzetadomega(2,index_plasma,l_plasma+1,iomega) * d2zdtheta2 &
+                  - d3rdtheta2domega(2,index_plasma,l_plasma+1,iomega) * dzdzeta - d2rdthetadomega(2,index_plasma,l_plasma+1,iomega) * d2zdthetadzeta &
+                  + d2ydthetadzeta * d2rdthetadomega(3,index_plasma,l_plasma+1,iomega) + dydzeta * d3rdtheta2domega(3,index_plasma,l_plasma+1,iomega) &
+                  - d2ydtheta2 * d2rdzetadomega(3,index_plasma,l_plasma+1,iomega) - dydtheta * d3rdthetadzetadomega(3,index_plasma,l_plasma+1,iomega)
+                d2normydthetadomega(iomega,index_plasma,l_plasma+1) = &
+                   d3rdthetadzetadomega(3,index_plasma,l_plasma+1,iomega) * dxdtheta + d2rdzetadomega(3,index_plasma,l_plasma+1,iomega) * d2xdtheta2 &
+                 - d3rdtheta2domega(3,index_plasma,l_plasma+1,iomega) * dxdzeta - d2rdthetadomega(3,index_plasma,l_plasma+1,iomega) * d2xdthetadzeta &
+                 + d2zdthetadzeta * d2rdthetadomega(1,index_plasma,l_plasma+1,iomega) + dzdzeta * d3rdtheta2domega(1,index_plasma,l_plasma+1,iomega) &
+                 - d2zdtheta2 * d2rdzetadomega(1,index_plasma,l_plasma+1,iomega) - dzdtheta * d3rdthetadzetadomega(1,index_plasma,l_plasma+1,iomega)
+                d2normzdthetadomega(iomega,index_plasma,l_plasma+1) = &
+                   d3rdthetadzetadomega(1,index_plasma,l_plasma+1,iomega) * dydtheta + d2rdzetadomega(1,index_plasma,l_plasma+1,iomega) * d2ydtheta2 &
+                 - d3rdtheta2domega(1,index_plasma,l_plasma+1,iomega) * dydzeta - d2rdthetadomega(1,index_plasma,l_plasma+1,iomega) * d2ydthetadzeta &
+                 + d2xdthetadzeta * d2rdthetadomega(2,index_plasma,l_plasma+1,iomega) + dxdzeta * d3rdtheta2domega(2,index_plasma,l_plasma+1,iomega) &
+                 - d2xdtheta2 * d2rdzetadomega(2,index_plasma,l_plasma+1,iomega) - dxdtheta * d3rdthetadzetadomega(2,index_plasma,l_plasma+1,iomega)
+                
+                d2normxdzetadomega(iomega,index_plasma,l_plasma+1) = &
+                    d3rdzeta2domega(2,index_plasma,l_plasma+1,iomega) * dzdtheta + d2rdzetadomega(2,index_plasma,l_plasma+1,iomega) * d2zdthetadzeta &
+                  - d3rdthetadzetadomega(2,index_plasma,l_plasma+1,iomega) * dzdzeta - d2rdthetadomega(2,index_plasma,l_plasma+1,iomega) * d2zdzeta2 &
+                  + d2ydzeta2 * d2rdthetadomega(3,index_plasma,l_plasma+1,iomega) + dydzeta * d3rdthetadzetadomega(3,index_plasma,l_plasma+1,iomega) &
+                  - d2ydthetadzeta * d2rdzetadomega(3,index_plasma,l_plasma+1,iomega) - dydtheta * d3rdzeta2domega(3,index_plasma,l_plasma+1,iomega)
+                d2normydzetadomega(iomega,index_plasma,l_plasma+1) = &
+                    d3rdzeta2domega(3,index_plasma,l_plasma+1,iomega) * dxdtheta + d2rdzetadomega(3,index_plasma,l_plasma+1,iomega) * d2xdthetadzeta &
+                  - d3rdthetadzetadomega(3,index_plasma,l_plasma+1,iomega) * dxdzeta - d2rdthetadomega(3,index_plasma,l_plasma+1,iomega) * d2xdzeta2 &
+                  + d2zdzeta2 * d2rdthetadomega(1,index_plasma,l_plasma+1,iomega) + dzdzeta * d3rdthetadzetadomega(1,index_plasma,l_plasma+1,iomega) &
+                  - d2zdthetadzeta * d2rdzetadomega(1,index_plasma,l_plasma+1,iomega) - dzdtheta * d3rdzeta2domega(1,index_plasma,l_plasma+1,iomega)
+                d2normzdzetadomega(iomega,index_plasma,l_plasma+1) = &
+                    d3rdzeta2domega(1,index_plasma,l_plasma+1,iomega) * dydtheta + d2rdzetadomega(1,index_plasma,l_plasma+1,iomega) * d2ydthetadzeta &
+                  - d3rdthetadzetadomega(1,index_plasma,l_plasma+1,iomega) * dydzeta - d2rdthetadomega(1,index_plasma,l_plasma+1,iomega) * d2ydzeta2 &
+                  + d2xdzeta2 * d2rdthetadomega(2,index_plasma,l_plasma+1,iomega) + dxdzeta * d3rdthetadzetadomega(2,index_plasma,l_plasma+1,iomega) &
+                  - d2xdthetadzeta * d2rdzetadomega(2,index_plasma,l_plasma+1,iomega) - dxdtheta * d3rdzeta2domega(2,index_plasma,l_plasma+1,iomega)
+              end if
             enddo
           enddo
           dnorm_normaldomega(:,itheta_plasma,izeta_plasma) = &
@@ -170,6 +345,25 @@ subroutine regcoil_init_sensitivity()
             + normal_plasma(2, itheta_plasma, izeta_plasma)*dnormydomega(:,index_plasma,1) &
             + normal_plasma(3, itheta_plasma, izeta_plasma)*dnormzdomega(:,index_plasma,1)) &
               /norm_normal_plasma(itheta_plasma,izeta_plasma)
+          
+          if (geometry_option_coil == 5) then
+            d2norm_normaldthetadomega(:,itheta_plasma,izeta_plasma) = ( &
+                d2normxdthetadomega(:,index_plasma,1) * normal_plasma(1,itheta_plasma,izeta_plasma) &
+              + d2normydthetadomega(:,index_plasma,1) * normal_plasma(2,itheta_plasma,izeta_plasma) &
+              + d2normzdthetadomega(:,index_plasma,1) * normal_plasma(3,itheta_plasma,izeta_plasma) &
+              + dnormaldtheta_plasma(1,itheta_plasma,izeta_plasma) * dnormxdomega(:,index_plasma,1) &
+              + dnormaldtheta_plasma(2,itheta_plasma,izeta_plasma) * dnormydomega(:,index_plasma,1) &
+              + dnormaldtheta_plasma(3,itheta_plasma,izeta_plasma) * dnormzdomega(:,index_plasma,1) &
+              - dnorm_normaldtheta_plasma(itheta_plasma,izeta_plasma) * dnorm_normaldomega(:,itheta_plasma,izeta_plasma)  )/norm_normal_plasma(itheta_plasma,izeta_plasma)
+            d2norm_normaldzetadomega(:,itheta_plasma,izeta_plasma) = ( &
+                d2normxdzetadomega(:,index_plasma,1) * normal_plasma(1,itheta_plasma,izeta_plasma) &
+              + d2normydzetadomega(:,index_plasma,1) * normal_plasma(2,itheta_plasma,izeta_plasma) &
+              + d2normzdzetadomega(:,index_plasma,1) * normal_plasma(3,itheta_plasma,izeta_plasma) &
+              + dnormaldzeta_plasma(1,itheta_plasma,izeta_plasma) * dnormxdomega(:,index_plasma,1) &
+              + dnormaldzeta_plasma(2,itheta_plasma,izeta_plasma) * dnormydomega(:,index_plasma,1) &
+              + dnormaldzeta_plasma(3,itheta_plasma,izeta_plasma) * dnormzdomega(:,index_plasma,1) &
+              - dnorm_normaldzeta_plasma(itheta_plasma,izeta_plasma) * dnorm_normaldomega(:,itheta_plasma,izeta_plasma)  )/norm_normal_plasma(itheta_plasma,izeta_plasma)
+          end if
         enddo
       enddo
       do iomega = 1, nomega_plasma
@@ -280,9 +474,196 @@ subroutine regcoil_init_sensitivity()
 
   if (sensitivity_option == 6) then !----- Plasma derivatives -----
 
+      if (geometry_option_coil == 5) then
+        do izeta_coil = 1,nzeta_coil
+          do itheta_coil = 1,ntheta_coil
+            index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
+            do l_coil = 0, (nfp-1)
+              izetal_coil = izeta_coil + l_coil*nzeta_coil
+              indexl_coil = (izetal_coil-1)*ntheta_coil + itheta_coil
+
+              do iomega = 1,nomega_plasma
+                drdomega_coil(1,index_coil,l_coil+1,iomega) = drdomega(1,index_coil,l_coil+1,iomega) + separation * ( &
+                    dnormxdomega(iomega,index_coil,l_coil+1) - dnorm_normaldomega(iomega,itheta_coil,izeta_coil) &
+                  * normal_plasma(1,itheta_coil,izetal_coil) / norm_normal_plasma(itheta_coil,izeta_coil) ) &
+                  / norm_normal_plasma(itheta_coil,izeta_coil)
+                drdomega_coil(2,index_coil,l_coil+1,iomega) = drdomega(2,index_coil,l_coil+1,iomega) + separation * ( &
+                    dnormydomega(iomega,index_coil,l_coil+1) - dnorm_normaldomega(iomega,itheta_coil,izeta_coil) &
+                  * normal_plasma(2,itheta_coil,izetal_coil) / norm_normal_plasma(itheta_coil,izeta_coil) ) &
+                  / norm_normal_plasma(itheta_coil,izeta_coil)
+                drdomega_coil(3,index_coil,l_coil+1,iomega) = drdomega(3,index_coil,l_coil+1,iomega) + separation * ( &
+                    dnormzdomega(iomega,index_coil,l_coil+1) - dnorm_normaldomega(iomega,itheta_coil,izeta_coil) &
+                  * normal_plasma(3,itheta_coil,izetal_coil) / norm_normal_plasma(itheta_coil,izeta_coil) ) &
+                  / norm_normal_plasma(itheta_coil,izeta_coil)
+
+                d2rdthetadomega_coil(1,index_coil,l_coil+1,iomega) = d2rdthetadomega(1,index_coil,l_coil+1,iomega) + separation * ( &
+                    norm_normal_plasma(itheta_coil,izeta_coil) * d2normxdthetadomega(iomega,index_coil,l_coil+1) &
+                  - d2norm_normaldthetadomega(iomega,itheta_coil,izeta_coil) * normal_plasma(1,itheta_coil,izetal_coil) &
+                  - (dnorm_normaldtheta_plasma(itheta_coil,izeta_coil) * dnormxdomega(iomega,index_coil,l_coil+1) + dnorm_normaldomega(iomega,itheta_coil,izeta_coil) * dnormaldtheta_plasma(1,itheta_coil,izetal_coil)) &
+                  + 2*dnorm_normaldtheta_plasma(itheta_coil,izeta_coil) * dnorm_normaldomega(iomega,itheta_coil,izeta_coil) * normal_plasma(1,itheta_coil,izetal_coil)/norm_normal_plasma(itheta_coil,izeta_coil)) &
+                  /(norm_normal_plasma(itheta_coil,izeta_coil)**2)
+                d2rdthetadomega_coil(2,index_coil,l_coil+1,iomega) = d2rdthetadomega(2,index_coil,l_coil+1,iomega) + separation * ( &
+                    norm_normal_plasma(itheta_coil,izeta_coil) * d2normydthetadomega(iomega,index_coil,l_coil+1) &
+                  - d2norm_normaldthetadomega(iomega,itheta_coil,izeta_coil) * normal_plasma(2,itheta_coil,izetal_coil) &
+                  - (dnorm_normaldtheta_plasma(itheta_coil,izeta_coil) * dnormydomega(iomega,index_coil,l_coil+1) + dnorm_normaldomega(iomega,itheta_coil,izeta_coil) * dnormaldtheta_plasma(2,itheta_coil,izetal_coil)) &
+                  + 2*dnorm_normaldtheta_plasma(itheta_coil,izeta_coil) * dnorm_normaldomega(iomega,itheta_coil,izeta_coil) * normal_plasma(2,itheta_coil,izetal_coil)/norm_normal_plasma(itheta_coil,izeta_coil)) &
+                  /(norm_normal_plasma(itheta_coil,izeta_coil)**2)
+                d2rdthetadomega_coil(3,index_coil,l_coil+1,iomega) = d2rdthetadomega(3,index_coil,l_coil+1,iomega) + separation * ( &
+                    norm_normal_plasma(itheta_coil,izeta_coil) * d2normzdthetadomega(iomega,index_coil,l_coil+1) &
+                  - d2norm_normaldthetadomega(iomega,itheta_coil,izeta_coil) * normal_plasma(3,itheta_coil,izetal_coil) &
+                  - (dnorm_normaldtheta_plasma(itheta_coil,izeta_coil) * dnormzdomega(iomega,index_coil,l_coil+1) + dnorm_normaldomega(iomega,itheta_coil,izeta_coil) * dnormaldtheta_plasma(3,itheta_coil,izetal_coil)) &
+                  + 2*dnorm_normaldtheta_plasma(itheta_coil,izeta_coil) * dnorm_normaldomega(iomega,itheta_coil,izeta_coil) * normal_plasma(3,itheta_coil,izetal_coil)/norm_normal_plasma(itheta_coil,izeta_coil)) &
+                  /(norm_normal_plasma(itheta_coil,izeta_coil)**2)
+                
+                d2rdzetadomega_coil(1,index_coil,l_coil+1,iomega) = d2rdzetadomega(1,index_coil,l_coil+1,iomega) + separation * ( &
+                    norm_normal_plasma(itheta_coil,izeta_coil) * d2normxdzetadomega(iomega,index_coil,l_coil+1) &
+                  - d2norm_normaldzetadomega(iomega,itheta_coil,izeta_coil) * normal_plasma(1,itheta_coil,izetal_coil) &
+                  - (dnorm_normaldzeta_plasma(itheta_coil,izeta_coil) * dnormxdomega(iomega,index_coil,l_coil+1) + dnorm_normaldomega(iomega,itheta_coil,izeta_coil) * dnormaldzeta_plasma(1,itheta_coil,izetal_coil)) &
+                  + 2*dnorm_normaldzeta_plasma(itheta_coil,izeta_coil) * dnorm_normaldomega(iomega,itheta_coil,izeta_coil) * normal_plasma(1,itheta_coil,izetal_coil)/norm_normal_plasma(itheta_coil,izeta_coil)) &
+                  /(norm_normal_plasma(itheta_coil,izeta_coil)**2)
+                d2rdzetadomega_coil(2,index_coil,l_coil+1,iomega) = d2rdzetadomega(2,index_coil,l_coil+1,iomega) + separation * ( &
+                    norm_normal_plasma(itheta_coil,izeta_coil) * d2normydzetadomega(iomega,index_coil,l_coil+1) &
+                  - d2norm_normaldzetadomega(iomega,itheta_coil,izeta_coil) * normal_plasma(2,itheta_coil,izetal_coil) &
+                  - (dnorm_normaldzeta_plasma(itheta_coil,izeta_coil) * dnormydomega(iomega,index_coil,l_coil+1) + dnorm_normaldomega(iomega,itheta_coil,izeta_coil) * dnormaldzeta_plasma(2,itheta_coil,izetal_coil)) &
+                  + 2*dnorm_normaldzeta_plasma(itheta_coil,izeta_coil) * dnorm_normaldomega(iomega,itheta_coil,izeta_coil) * normal_plasma(2,itheta_coil,izetal_coil)/norm_normal_plasma(itheta_coil,izeta_coil)) &
+                  /(norm_normal_plasma(itheta_coil,izeta_coil)**2)
+                d2rdzetadomega_coil(3,index_coil,l_coil+1,iomega) = d2rdzetadomega(3,index_coil,l_coil+1,iomega) + separation * ( &
+                    norm_normal_plasma(itheta_coil,izeta_coil) * d2normzdzetadomega(iomega,index_coil,l_coil+1) &
+                  - d2norm_normaldzetadomega(iomega,itheta_coil,izeta_coil) * normal_plasma(3,itheta_coil,izetal_coil) &
+                  - (dnorm_normaldzeta_plasma(itheta_coil,izeta_coil) * dnormzdomega(iomega,index_coil,l_coil+1) + dnorm_normaldomega(iomega,itheta_coil,izeta_coil) * dnormaldzeta_plasma(3,itheta_coil,izetal_coil)) &
+                  + 2*dnorm_normaldzeta_plasma(itheta_coil,izeta_coil) * dnorm_normaldomega(iomega,itheta_coil,izeta_coil) * normal_plasma(3,itheta_coil,izetal_coil)/norm_normal_plasma(itheta_coil,izeta_coil)) &
+                  /(norm_normal_plasma(itheta_coil,izeta_coil)**2)
+
+                dxdtheta = drdtheta_coil(1,itheta_coil,izetal_coil)
+                dydtheta = drdtheta_coil(2,itheta_coil,izetal_coil)
+                dzdtheta = drdtheta_coil(3,itheta_coil,izetal_coil)
+                dxdzeta = drdzeta_coil(1,itheta_coil,izetal_coil)
+                dydzeta = drdzeta_coil(2,itheta_coil,izetal_coil)
+                dzdzeta = drdzeta_coil(3,itheta_coil,izetal_coil)
+
+                dnormxdomega_coil(iomega,index_coil,l_coil+1) = &
+                    d2rdzetadomega_coil(2,index_coil,l_coil+1,iomega) * dzdtheta + dydzeta * d2rdthetadomega_coil(3,index_coil,l_coil+1,iomega) &
+                  - d2rdthetadomega_coil(2,index_coil,l_coil+1,iomega) * dzdzeta - dydtheta * d2rdzetadomega_coil(3,index_coil,l_coil+1,iomega)
+                dnormydomega_coil(iomega,index_coil,l_coil+1) = &
+                    d2rdzetadomega_coil(3,index_coil,l_coil+1,iomega) * dxdtheta + dzdzeta * d2rdthetadomega_coil(1,index_coil,l_coil+1,iomega) &
+                  - d2rdthetadomega_coil(3,index_coil,l_coil+1,iomega) * dxdzeta - dzdtheta * d2rdzetadomega_coil(1,index_coil,l_coil+1,iomega)
+                dnormzdomega_coil(iomega,index_coil,l_coil+1) = &
+                    d2rdzetadomega_coil(1,index_coil,l_coil+1,iomega) * dydtheta + dxdzeta * d2rdthetadomega_coil(2,index_coil,l_coil+1,iomega) &
+                  - d2rdthetadomega_coil(1,index_coil,l_coil+1,iomega) * dydzeta - dxdtheta * d2rdzetadomega_coil(2,index_coil,l_coil+1,iomega)
+              end do
+              dddomega(1, :, indexl_coil) = (net_poloidal_current_Amperes*d2rdthetadomega_coil(1,index_coil,l_coil+1,:) &
+                - net_toroidal_current_Amperes*d2rdzetadomega_coil(1,index_coil,l_coil+1,:))/twopi
+              dddomega(2, :, indexl_coil) = (net_poloidal_current_Amperes*d2rdthetadomega_coil(2,index_coil,l_coil+1,:) &
+                - net_toroidal_current_Amperes*d2rdzetadomega_coil(2,index_coil,l_coil+1,:))/twopi
+              dddomega(3, :, indexl_coil) = (net_poloidal_current_Amperes*d2rdthetadomega_coil(3,index_coil,l_coil+1,:) &
+                - net_toroidal_current_Amperes*d2rdzetadomega_coil(3,index_coil,l_coil+1,:))/twopi
+            end do
+            dnorm_normaldomega_coil(:,itheta_coil,izeta_coil) = &
+               (normal_coil(1, itheta_coil, izeta_coil)*dnormxdomega_coil(:,index_coil,1) &
+              + normal_coil(2, itheta_coil, izeta_coil)*dnormydomega_coil(:,index_coil,1) &
+              + normal_coil(3, itheta_coil, izeta_coil)*dnormzdomega_coil(:,index_coil,1)) &
+                /norm_normal_coil(itheta_coil,izeta_coil)
+          end do
+        end do
+
+        do iomega = 1, nomega_plasma
+          darea_coildomega(iomega) = dtheta_coil*dzeta_coil*nfp*sum(dnorm_normaldomega_coil(iomega,:,:))
+        end do
+
+      end if
+
       if (verbose) then
+        print *,"Coil surface and d sensitivity loop in regcoil_init_sensitivity: ",real(toc-tic)/countrate," sec."
         print *,"Init sensitivity complete."
       end if
+
+!print *, maxval(abs(sum(sum(d2rdthetadomega(1,:,:,:),1),1)))
+!print *, maxval(abs(sum(sum(d2rdthetadomega(2,:,:,:),1),1)))
+!print *, maxval(abs(sum(sum(d2rdthetadomega(3,:,:,:),1),1)))
+!print *, ""
+!print *, maxval(abs(sum(sum(d2rdzetadomega(1,:,:,:),1),1)))
+!print *, maxval(abs(sum(sum(d2rdzetadomega(2,:,:,:),1),1)))
+!print *, maxval(abs(sum(sum(d2rdzetadomega(3,:,:,:),1),1)))
+!print *, ""
+!print *, maxval(abs(sum(sum(d3rdtheta2domega(1,:,:,:),1),1)))
+!print *, maxval(abs(sum(sum(d3rdtheta2domega(2,:,:,:),1),1)))
+!print *, maxval(abs(sum(sum(d3rdtheta2domega(3,:,:,:),1),1)))
+!print *, ""
+!print *, maxval(abs(sum(sum(d3rdthetadzetadomega(1,:,:,:),1),1)))
+!print *, maxval(abs(sum(sum(d3rdthetadzetadomega(2,:,:,:),1),1)))
+!print *, maxval(abs(sum(sum(d3rdthetadzetadomega(3,:,:,:),1),1)))
+!print *, ""
+!print *, maxval(abs(sum(sum(d3rdzeta2domega(1,:,:,:),1),1)))
+!print *, maxval(abs(sum(sum(d3rdzeta2domega(2,:,:,:),1),1)))
+!print *, maxval(abs(sum(sum(d3rdzeta2domega(3,:,:,:),1),1)))
+!print *, ""
+!print *, maxval(abs(sum(sum(d2normxdthetadomega(:,:,:),2),2)))
+!print *, maxval(abs(sum(sum(d2normydthetadomega(:,:,:),2),2)))
+!print *, maxval(abs(sum(sum(d2normzdthetadomega(:,:,:),2),2)))
+!print *, ""
+!print *, maxval(abs(sum(sum(d2normxdzetadomega(:,:,:),2),2)))
+!print *, maxval(abs(sum(sum(d2normydzetadomega(:,:,:),2),2)))
+!print *, maxval(abs(sum(sum(d2normzdzetadomega(:,:,:),2),2)))
+!print *, ""
+!print *, maxval(abs(sum(d2norm_normaldthetadomega(:,:,:),2)))
+!print *, maxval(abs(sum(d2norm_normaldzetadomega(:,:,:),3)))
+!print *, ""
+!print *, sum(sum(abs(dnormxdomega(:,:,:)),2),2)
+!print *, sum(sum(abs(dnormydomega(:,:,:)),2),2)
+!print *, sum(sum(abs(dnormzdomega(:,:,:)),2),2)
+!print *,""
+!print *, xm_sensitivity
+!print *, xn_sensitivity
+!print *, darea_plasmadomega
+!print *, darea_coildomega
+
+!print *, sum(sum(abs(d2rdthetadomega(1,:,:,:)),1),1)
+!print *, sum(sum(abs(d2rdthetadomega(2,:,:,:)),1),1)!!
+!print *, sum(sum(abs(d2rdthetadomega(3,:,:,:)),1),1)
+!print *, ""
+!print *, sum(sum(abs(d2rdzetadomega(1,:,:,:)),1),1)!
+!print *, sum(sum(abs(d2rdzetadomega(2,:,:,:)),1),1)!
+!print *, sum(sum(abs(d2rdzetadomega(3,:,:,:)),1),1)!
+!print *, ""
+!print *, sum(sum(abs(d3rdtheta2domega(1,:,:,:)),1),1)!
+!print *, sum(sum(abs(d3rdtheta2domega(2,:,:,:)),1),1)!
+!print *, sum(sum(abs(d3rdtheta2domega(3,:,:,:)),1),1)!
+!print *, ""
+!print *, sum(sum(abs(d3rdthetadzetadomega(1,:,:,:)),1),1)
+!print *, sum(sum(abs(d3rdthetadzetadomega(2,:,:,:)),1),1)!
+!print *, sum(sum(abs(d3rdthetadzetadomega(3,:,:,:)),1),1)
+!print *, ""
+!print *, sum(sum(abs(d3rdzeta2domega(1,:,:,:)),1),1)!
+!print *, sum(sum(abs(d3rdzeta2domega(2,:,:,:)),1),1)!
+!print *, sum(sum(abs(d3rdzeta2domega(3,:,:,:)),1),1)!
+!print *, ""
+!print *, sum(sum(abs(d2normxdthetadomega(:,:,:)),2),2)!
+!print *, sum(sum(abs(d2normydthetadomega(:,:,:)),2),2)!
+!print *, sum(sum(abs(d2normzdthetadomega(:,:,:)),2),2)!
+!print *, ""
+!print *, sum(sum(abs(d2normxdzetadomega(:,:,:)),2),2)
+!print *, sum(sum(abs(d2normydzetadomega(:,:,:)),2),2)
+!print *, sum(sum(abs(d2normzdzetadomega(:,:,:)),2),2)
+!print *, ""
+!print *, sum(sum(abs(d2norm_normaldthetadomega(:,:,:)),2),2)!!!!!!
+!print *, sum(sum(abs(d2norm_normaldzetadomega(:,:,:)),2),2)!!!!!!
+!print *, ""
+
+!print *, sum(sum(abs(d2rdthetadomega_coil(1,:,:,:)),1),1)
+!print *, sum(sum(abs(d2rdthetadomega_coil(2,:,:,:)),1),1)
+!print *, sum(sum(abs(d2rdthetadomega_coil(3,:,:,:)),1),1)
+!print *, ""
+!print *, sum(sum(abs(d2rdzetadomega_coil(1,:,:,:)),1),1)
+!print *, sum(sum(abs(d2rdzetadomega_coil(2,:,:,:)),1),1)
+!print *, sum(sum(abs(d2rdzetadomega_coil(3,:,:,:)),1),1)
+!print *, ""
+!print *, sum(sum(abs(dnormxdomega_coil(:,:,:)),2),2)
+!print *, sum(sum(abs(dnormydomega_coil(:,:,:)),2),2)!
+!print *, sum(sum(abs(dnormzdomega_coil(:,:,:)),2),2)!
+!print *, ""
+!print *, sum(sum(abs(dnorm_normaldomega_coil(:,:,:)),2),2)
+!print *, ""
+!stop
 
   else !----- Coil derivatives -----
 

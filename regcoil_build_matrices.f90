@@ -32,8 +32,8 @@ subroutine regcoil_build_matrices()
   real(dp) :: dy_norm3, dy_norm1, dx_norm2, dx_norm3, dz_norm1, dz_norm2, this_h
   integer :: iomega, indexl_coil
   !real(dp), dimension(:,:,:), allocatable :: dinductancedomega
-  real(dp), dimension(:), allocatable :: v1x, v1y, v1z, v2x, v2y, v2z, this_dhdomega
-  real(dp), dimension(:), allocatable :: dr_dot_drdOhm,dNpdOhm_dot_Nc,vx,vy,vz,dr_dot_dNpdOhm,drdOhm_dot_Nc,temp
+  real(dp), dimension(:), allocatable :: v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, this_dhdomega
+  real(dp), dimension(:), allocatable :: dr_dot_drdOhm,dNpdOhm_dot_Nc,vx,vy,vz,dr_dot_dNpdOhm,drdOhm_dot_Nc,dNcdOhm_dot_Np,dr_dot_dNcdOhm,drdOhm_dot_Np,temp
   real(dp) :: Np_dot_Nc,dr_dot_Nc,dr_dot_Np
 
 
@@ -160,6 +160,22 @@ subroutine regcoil_build_matrices()
       if (iflag .ne. 0) stop 'Allocation error!'
       allocate(dRHS_Bdomega(nomega_plasma,num_basis_functions),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error!'
+
+      if (geometry_option_coil == 5) then
+        allocate(dfxdomega(nomega_plasma, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(dfydomega(nomega_plasma, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(dfzdomega(nomega_plasma, ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+
+        allocate(f_xdNdomega_over_N_coil2(nomega_plasma,ntheta_coil*nzeta_coil,num_basis_functions),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(f_ydNdomega_over_N_coil2(nomega_plasma,ntheta_coil*nzeta_coil,num_basis_functions),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+        allocate(f_zdNdomega_over_N_coil2(nomega_plasma,ntheta_coil*nzeta_coil,num_basis_functions),stat=iflag)
+        if (iflag .ne. 0) stop 'Allocation error!'
+      end if
     endif
     if ((sensitivity_option > 2 .or. fixed_norm_sensitivity_option) .and. sensitivity_option < 6) then
       allocate(f_xdNdomega_over_N_coil2(nomega_coil,ntheta_coil*nzeta_coil,num_basis_functions),stat=iflag)
@@ -292,6 +308,16 @@ subroutine regcoil_build_matrices()
                     dfzdomega(:, index_coil,imn) = &
                       cosangle_xn*domegadzdtheta(:,itheta_coil,izeta_coil) &
                       + cosangle_xm*domegadzdzeta(:,itheta_coil,izeta_coil)
+                 else if (sensitivity_option == 6 .and. geometry_option_coil == 5) then
+                    dfxdomega(:, index_coil,imn) = &
+                      cosangle_xn*d2rdthetadomega_coil(1,index_coil,1,:) &
+                      + cosangle_xm*d2rdzetadomega_coil(1,index_coil,1,:)
+                    dfydomega(:, index_coil,imn) = &
+                      cosangle_xn*d2rdthetadomega_coil(2,index_coil,1,:) &
+                      + cosangle_xm*d2rdzetadomega_coil(2,index_coil,1,:)
+                    dfzdomega(:, index_coil,imn) = &
+                      cosangle_xn*d2rdthetadomega_coil(3,index_coil,1,:) &
+                      + cosangle_xm*d2rdzetadomega_coil(3,index_coil,1,:)
                  endif
               else
                  basis_functions(index_coil, imn+offset) = cosangle
@@ -314,6 +340,16 @@ subroutine regcoil_build_matrices()
                   dfzdomega(:, index_coil,imn+offset) = &
                     -sinangle_xn*domegadzdtheta(:,itheta_coil,izeta_coil) &
                     -sinangle_xm*domegadzdzeta(:,itheta_coil,izeta_coil)
+                else if (sensitivity_option == 6 .and. geometry_option_coil == 5) then
+                  dfxdomega(:, index_coil,imn+offset) = &
+                    -sinangle_xn*d2rdthetadomega_coil(1,index_coil,1,:) &
+                    -sinangle_xm*d2rdzetadomega_coil(1,index_coil,1,:)
+                  dfydomega(:, index_coil,imn+offset) = &
+                    -sinangle_xn*d2rdthetadomega_coil(2,index_coil,1,:) &
+                    -sinangle_xm*d2rdzetadomega_coil(2,index_coil,1,:)
+                  dfzdomega(:, index_coil,imn+offset) = &
+                    -sinangle_xn*d2rdthetadomega_coil(3,index_coil,1,:) &
+                    -sinangle_xm*d2rdzetadomega_coil(3,index_coil,1,:)
                 endif
               end if
            end do
@@ -387,6 +423,21 @@ subroutine regcoil_build_matrices()
     allocate(temp(nomega_plasma),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
 
+    if (geometry_option_coil == 5) then
+      allocate(v3x(nomega_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'Allocation error!'
+      allocate(v3y(nomega_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'Allocation error!'
+      allocate(v3z(nomega_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'Allocation error!'
+      allocate(dNcdOhm_dot_Np(nomega_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'Allocation error!'
+      allocate(dr_dot_dNcdOhm(nomega_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'Allocation error!'
+      allocate(drdOhm_dot_Np(nomega_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'Allocation error!'
+    end if
+
     allocate(this_dhdomega(nomega_plasma),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
     allocate(dinductancedomega(ntheta_plasma*nzeta_plasma, &
@@ -423,7 +474,7 @@ subroutine regcoil_build_matrices()
   ! Note: the outermost loop below must be over the plasma variables rather than over the coil variables.
   ! This ensures the multiple threads write to different indices in h() rather than to the same indices in h(),
   ! in which case the h(index+plasma)=h(index_plasma)+... update does not work properly.
-  !$OMP DO PRIVATE(index_plasma,index_coil,x,y,z,izetal_coil,dx,dy,dz,dr2inv,dr32inv,indexl_coil,dr52inv,dr_dot_norm_coil,dr_dot_norm_plasma,norm_plasma_dot_norm_coil,dx_norm2,dx_norm3,dy_norm1,dy_norm3,dz_norm1,dz_norm2,this_h,Np_dot_Nc,dr_dot_drdOhm,dNpdOhm_dot_Nc,vx,vy,vz,dr_dot_dNpdOhm,dr_dot_Nc,dr_dot_Np,drdOhm_dot_Nc,temp,v1x,v1y,v1z,v2x,v2y,v2z,this_dhdomega)
+  !$OMP DO PRIVATE(index_plasma,index_coil,x,y,z,izetal_coil,dx,dy,dz,dr2inv,dr32inv,indexl_coil,dr52inv,dr_dot_norm_coil,dr_dot_norm_plasma,norm_plasma_dot_norm_coil,dx_norm2,dx_norm3,dy_norm1,dy_norm3,dz_norm1,dz_norm2,this_h,Np_dot_Nc,dr_dot_drdOhm,dNpdOhm_dot_Nc,vx,vy,vz,dr_dot_dNpdOhm,dr_dot_Nc,dr_dot_Np,drdOhm_dot_Nc,dNcdOhm_dot_Np,dr_dot_dNcdOhm,drdOhm_dot_Np,temp,v1x,v1y,v1z,v2x,v2y,v2z,v3x,v3y,v3z,this_dhdomega)
   do izeta_plasma = 1, nzeta_plasma
      do itheta_plasma = 1, ntheta_plasma
         index_plasma = (izeta_plasma-1)*ntheta_plasma + itheta_plasma
@@ -554,6 +605,30 @@ subroutine regcoil_build_matrices()
                     - 3*dr_dot_dNpdOhm*dr2inv) * dr_dot_Nc &
                     - (3*dr_dot_Np*dr2inv) * drdOhm_dot_Nc )*dr32inv
 
+                  if (geometry_option_coil == 5) then
+                    dr_dot_drdOhm = dx*drdomega_coil(1,index_coil,l_coil+1,:) &
+                      + dy*drdomega_coil(2,index_coil,l_coil+1,:) &
+                      + dz*drdomega_coil(3,index_coil,l_coil+1,:)
+                    dNcdOhm_dot_Np = dnormxdomega_coil(:,index_coil,l_coil+1)*normal_plasma(1,itheta_plasma,izeta_plasma) &
+                      + dnormydomega_coil(:,index_coil,l_coil+1)*normal_plasma(2,itheta_plasma,izeta_plasma) &
+                      + dnormzdomega_coil(:,index_coil,l_coil+1)*normal_plasma(3,itheta_plasma,izeta_plasma)
+                    vx = 15*dr_dot_drdOhm*dx*(dr2inv**2) - 3*drdomega_coil(1,index_coil,l_coil+1,:)*dr2inv
+                    vy = 15*dr_dot_drdOhm*dy*(dr2inv**2) - 3*drdomega_coil(2,index_coil,l_coil+1,:)*dr2inv
+                    vz = 15*dr_dot_drdOhm*dz*(dr2inv**2) - 3*drdomega_coil(3,index_coil,l_coil+1,:)*dr2inv
+                    dr_dot_dNcdOhm = dx*dnormxdomega_coil(:,index_coil,l_coil+1) &
+                      + dy*dnormydomega_coil(:,index_coil,l_coil+1) &
+                      + dz*dnormzdomega_coil(:,index_coil,l_coil+1)
+                    drdOhm_dot_Np = drdomega_coil(1,index_coil,l_coil+1,:)*normal_plasma(1,itheta_plasma,izeta_plasma) &
+                      + drdomega_coil(2,index_coil,l_coil+1,:)*normal_plasma(2,itheta_plasma,izeta_plasma) &
+                      + drdomega_coil(3,index_coil,l_coil+1,:)*normal_plasma(3,itheta_plasma,izeta_plasma)
+
+                    temp = temp + ( &
+                        3*dr2inv * dr_dot_drdOhm * Np_dot_Nc + dNcdOhm_dot_Np &
+                      - (vx*normal_coil(1,itheta_coil,izetal_coil)+vy*normal_coil(2,itheta_coil,izetal_coil)+vz*normal_coil(3,itheta_coil,izetal_coil) &
+                      + 3*dr_dot_dNcdOhm*dr2inv) * dr_dot_Np &
+                      + (3*dr_dot_Nc*dr2inv) * drdOhm_dot_Np )*dr32inv
+                  end if
+
                   dinductancedomega(index_plasma,index_coil,:) = dinductancedomega(index_plasma,index_coil,:) + temp
 
 
@@ -591,6 +666,37 @@ subroutine regcoil_build_matrices()
                     - factor_for_h(3,itheta_coil,izetal_coil)*dy*v2x &
                     - factor_for_h(1,itheta_coil,izetal_coil)*dz*v2y &
                     - factor_for_h(2,itheta_coil,izetal_coil)*dx*v2z) * dr32inv
+
+                  if (geometry_option_coil == 5) then
+                    indexl_coil = (izetal_coil-1)*ntheta_coil + itheta_coil
+                    v3x = drdomega_coil(1,index_coil,l_coil+1,:) &
+                      - 3*(dx*drdomega_coil(1,index_coil,l_coil+1,:) &
+                      + dy*drdomega_coil(2,index_coil,l_coil+1,:) &
+                      + dz*drdomega_coil(3,index_coil,l_coil+1,:))*dx*dr2inv
+                    v3y = drdomega_coil(2,index_coil,l_coil+1,:) &
+                      - 3*(dx*drdomega_coil(1,index_coil,l_coil+1,:) &
+                      + dy*drdomega_coil(2,index_coil,l_coil+1,:) &
+                      + dz*drdomega_coil(3,index_coil,l_coil+1,:))*dy*dr2inv
+                    v3z = drdomega_coil(3,index_coil,l_coil+1,:) &
+                      - 3*(dx*drdomega_coil(1,index_coil,l_coil+1,:) &
+                      + dy*drdomega_coil(2,index_coil,l_coil+1,:) &
+                      + dz*drdomega_coil(3,index_coil,l_coil+1,:))*dz*dr2inv
+
+                    this_dhdomega = this_dhdomega + ( &
+                      - factor_for_h(1,itheta_coil,izetal_coil)*v3y*normal_plasma(3,itheta_plasma,izeta_plasma) &
+                      - factor_for_h(2,itheta_coil,izetal_coil)*v3z*normal_plasma(1,itheta_plasma,izeta_plasma) &
+                      - factor_for_h(3,itheta_coil,izetal_coil)*v3x*normal_plasma(2,itheta_plasma,izeta_plasma) &
+                      + factor_for_h(3,itheta_coil,izetal_coil)*v3y*normal_plasma(1,itheta_plasma,izeta_plasma) &
+                      + factor_for_h(1,itheta_coil,izetal_coil)*v3z*normal_plasma(2,itheta_plasma,izeta_plasma) &
+                      + factor_for_h(2,itheta_coil,izetal_coil)*v3x*normal_plasma(3,itheta_plasma,izeta_plasma) &
+                      +(dddomega(1,:,indexl_coil)*dy*normal_plasma(3,itheta_plasma,izeta_plasma) &
+                      + dddomega(2,:,indexl_coil)*dz*normal_plasma(1,itheta_plasma,izeta_plasma) &
+                      + dddomega(3,:,indexl_coil)*dx*normal_plasma(2,itheta_plasma,izeta_plasma) &
+                      - dddomega(3,:,indexl_coil)*dy*normal_plasma(1,itheta_plasma,izeta_plasma) &
+                      - dddomega(1,:,indexl_coil)*dz*normal_plasma(2,itheta_plasma,izeta_plasma) &
+                      - dddomega(2,:,indexl_coil)*dx*normal_plasma(3,itheta_plasma,izeta_plasma))*twopi ) * dr32inv
+                  end if
+
                   dhdomega(:,index_plasma) = dhdomega(:,index_plasma) + this_dhdomega
                 endif
               end do
@@ -605,6 +711,9 @@ subroutine regcoil_build_matrices()
   if (allocated(drdomega)) deallocate(drdomega)
   if (sensitivity_option == 6) then
     deallocate(v1x, v1y, v1z, v2x, v2y, v2z, this_dhdomega)
+    if (geometry_option_coil == 5) then
+      deallocate(v3x, v3y, v3z)
+    end if
   end if
 
   call system_clock(toc)
@@ -635,7 +744,6 @@ subroutine regcoil_build_matrices()
         !print *,sum(abs(dBnormaldomega_from_net_coil_currents(iomega,:,:)))
     end do
   end if
-  !stop
 
   deallocate(this_dhdomega)
   
@@ -700,6 +808,13 @@ subroutine regcoil_build_matrices()
 
   call system_clock(toc)
   if (verbose) print *,"inductance*basis_functions:",real(toc-tic)/countrate,"sec."
+
+!print *, sum(abs(dddomega(1,:,1:ntheta_coil*nzeta_coil)),2)
+!print *, sum(abs(dddomega(2,:,1:ntheta_coil*nzeta_coil)),2)
+!print *, sum(abs(dddomega(3,:,1:ntheta_coil*nzeta_coil)),2)
+!print *, sum(sum(abs(dBnormaldomega_from_net_coil_currents),3),2)
+!print *, sum(sum(abs(dgdomega),2),1)
+!stop
 
   if (allocated(matrix_B)) deallocate(matrix_B)
   allocate(matrix_B(num_basis_functions, num_basis_functions),stat=iflag)
@@ -785,6 +900,14 @@ subroutine regcoil_build_matrices()
         do iomega = 1, nomega_plasma
           g_dNdomega_over_N_plasma(:,j,iomega) = reshape(dnorm_normaldomega(iomega,:,:), (/ ntheta_plasma*nzeta_plasma /)) &
            * g_over_N_plasma(:,j)
+          if (geometry_option_coil == 5) then
+            f_xdNdomega_over_N_coil2(iomega,:,j) = f_x(:,j)*norm_normal_coil_inv1D*norm_normal_coil_inv1D &
+            * reshape(dnorm_normaldomega_coil(iomega,:,:), (/ntheta_coil*nzeta_coil/))
+            f_ydNdomega_over_N_coil2(iomega,:,j) = f_y(:,j)*norm_normal_coil_inv1D*norm_normal_coil_inv1D &
+            * reshape(dnorm_normaldomega_coil(iomega,:,:), (/ntheta_coil*nzeta_coil/))
+            f_zdNdomega_over_N_coil2(iomega,:,j) = f_z(:,j)*norm_normal_coil_inv1D*norm_normal_coil_inv1D &
+            * reshape(dnorm_normaldomega_coil(iomega,:,:), (/ntheta_coil*nzeta_coil/))
+          end if
         enddo
      endif
   end do
@@ -902,7 +1025,7 @@ subroutine regcoil_build_matrices()
     
 
   matrix_regularization = 0
-  if ((sensitivity_option > 2 .or. fixed_norm_sensitivity_option) .and. sensitivity_option < 6) then
+  if (sensitivity_option > 2 .or. fixed_norm_sensitivity_option) then
     dmatrix_Kdomega = 0
   end if
      
@@ -1012,6 +1135,36 @@ subroutine regcoil_build_matrices()
       if (verbose) then
         print *,"Matmuls for dRHS_Kdomega:",real(toc-tic)/countrate,"sec."
       end if
+    else if (sensitivity_option == 6) then
+      dRHS_Kdomega = 0
+      call system_clock(tic)
+      if (geometry_option_coil == 5) then
+        !$OMP PARALLEL
+        !$OMP MASTER
+        if (verbose) then
+          print *,"  Number of OpenMP threads:",omp_get_num_threads()
+        end if
+        !$OMP END MASTER
+        !$OMP DO
+        ! This would be faster with LAPACK, but constructing dinductancematrixdomega is much more expensive
+        do iomega = 1,nomega_plasma
+          dRHS_Kdomega(iomega,:) = dtheta_coil*dzeta_coil*(matmul(dddomega(1,iomega,1:ntheta_coil*nzeta_coil),f_x_over_N_coil) &
+            + matmul(dddomega(2,iomega,1:ntheta_coil*nzeta_coil),f_y_over_N_coil) &
+            + matmul(dddomega(3,iomega,1:ntheta_coil*nzeta_coil),f_z_over_N_coil) &
+            - matmul(transpose(f_xdNdomega_over_N_coil2(iomega,:,:)),d_x) &
+            - matmul(transpose(f_ydNdomega_over_N_coil2(iomega,:,:)),d_y) &
+            - matmul(transpose(f_zdNdomega_over_N_coil2(iomega,:,:)),d_z) &
+            + matmul(transpose(dfxdomega(iomega,:,:)),d_x/reshape(norm_normal_coil, (/ntheta_coil*nzeta_coil/))) &
+            + matmul(transpose(dfydomega(iomega,:,:)),d_y/reshape(norm_normal_coil, (/ntheta_coil*nzeta_coil/))) &
+            + matmul(transpose(dfzdomega(iomega,:,:)),d_z/reshape(norm_normal_coil, (/ntheta_coil*nzeta_coil/))))
+        enddo
+        !$OMP END DO
+        !$OMP END PARALLEL
+      end if
+      call system_clock(toc)
+      if (verbose) then
+        print *,"Matmuls for dRHS_Kdomega:",real(toc-tic)/countrate,"sec."
+      end if
     endif
 
     ! Construct dmatrix_Kdomega
@@ -1074,6 +1227,37 @@ subroutine regcoil_build_matrices()
         print *,"matmul for dmatrix_Kdomega in regcoil_build_matrices :",real(toc-tic)/countrate,"sec."
       end if
       dmatrix_Kdomega = dmatrix_Kdomega*dtheta_coil*dzeta_coil
+    else if (sensitivity_option == 6 .and. geometry_option_coil == 5) then
+      call system_clock(tic)
+      !$OMP PARALLEL
+      !$OMP MASTER
+      if (verbose) then
+        print *,"  Number of OpenMP threads:",omp_get_num_threads()
+      end if
+      !$OMP END MASTER
+      !$OMP DO
+      do iomega = 1, nomega_plasma
+        do j = 1,num_basis_functions
+
+          dmatrix_Kdomega(iomega,:,j) = matmul(transpose(dfxdomega(iomega,:,:)),f_x_over_N_coil(:,j)) &
+          + matmul(transpose(dfydomega(iomega,:,:)),f_y_over_N_coil(:,j)) &
+          + matmul(transpose(dfzdomega(iomega,:,:)),f_z_over_N_coil(:,j)) &
+          + matmul(transpose(f_x_over_n_coil(:,:)),dfxdomega(iomega,:,j)) &
+          + matmul(transpose(f_y_over_n_coil(:,:)),dfydomega(iomega,:,j)) &
+          + matmul(transpose(f_z_over_n_coil(:,:)),dfzdomega(iomega,:,j)) &
+          - matmul(transpose(f_x(:,:)),f_xdNdomega_over_N_coil2(iomega,:,j)) &
+          - matmul(transpose(f_y(:,:)),f_ydNdomega_over_N_coil2(iomega,:,j)) &
+          - matmul(transpose(f_z(:,:)),f_zdNdomega_over_N_coil2(iomega,:,j))
+
+        end do
+      enddo
+      !$OMP END DO
+      !$OMP END PARALLEL
+      call system_clock(toc)
+      if (verbose) then
+        print *,"matmul for dmatrix_Kdomega in regcoil_build_matrices :",real(toc-tic)/countrate,"sec."
+      end if
+      dmatrix_Kdomega = dmatrix_Kdomega*dtheta_coil*dzeta_coil
     endif
 
   case (regularization_term_option_Laplace_Beltrami)
@@ -1124,6 +1308,35 @@ subroutine regcoil_build_matrices()
   deallocate(d_g_zeta_zeta_d_theta, d_g_zeta_zeta_d_zeta)
   deallocate(d_N_d_theta, d_N_d_zeta)
   deallocate(Laplace_Beltrami_d_Phi_d_theta_coefficient, Laplace_Beltrami_d_Phi_d_zeta_coefficient)
+
+!print *, sum(abs(drdtheta_coil(1,:,:)))
+!print *, sum(abs(drdtheta_coil(2,:,:)))
+!print *, sum(abs(drdtheta_coil(3,:,:)))
+!print *, sum(abs(drdzeta_coil(1,:,:)))
+!print *, sum(abs(drdzeta_coil(2,:,:)))
+!print *, sum(abs(drdzeta_coil(3,:,:)))
+!stop
+!print *, sum(abs(d_x))
+!print *, sum(abs(d_y))
+!print *, sum(abs(d_z))
+!print *, sum(abs(f_x))
+!print *, sum(abs(f_y))
+!print *, sum(abs(f_z))
+!print *, ""
+!print *, sum(sum(abs(dfxdomega),2),2)
+!print *, sum(sum(abs(dfydomega),2),2)
+!print *, sum(sum(abs(dfzdomega),2),2)
+!print *, ""
+!print *, sum(sum(abs(dnorm_normaldomega),2),2)
+!print *, ""
+!print *, sum(abs(RHS_regularization))
+!print *, sum(abs(dRHS_Bdomega),2)
+!print *, sum(abs(dRHS_Kdomega),2)
+!print *, ""
+!print *, sum(abs(matrix_regularization))
+!print *, sum(sum(abs(dmatrix_Bdomega),3),2)
+!print *, sum(sum(abs(dmatrix_Kdomega),3),2)
+!stop
 
 end subroutine regcoil_build_matrices
 

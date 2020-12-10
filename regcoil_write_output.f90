@@ -134,6 +134,9 @@ subroutine regcoil_write_output
        vn_drdtheta_coil  = "drdtheta_coil", &
        vn_drdzeta_plasma  = "drdzeta_plasma", &
        vn_drdzeta_coil  = "drdzeta_coil", &
+       vn_d2rdtheta2_plasma  = "d2rdtheta2_plasma", &
+       vn_d2rdthetadzeta_plasma  = "d2rdthetadzeta_plasma", &
+       vn_d2rdzeta2_plasma  = "d2rdzeta2_plasma", &
        vn_normal_plasma = "normal_plasma", &
        vn_normal_coil = "normal_coil", &
        vn_dgdomega = "dgdomega", &
@@ -553,6 +556,12 @@ subroutine regcoil_write_output
      call cdf_define(ncid, vn_drdzeta_plasma,  drdzeta_plasma,  dimname=xyz_ntheta_nzetal_plasma_dim)
      call cdf_define(ncid, vn_drdzeta_coil,  drdzeta_coil,  dimname=xyz_ntheta_nzetal_coil_dim)
 
+     if (geometry_option_coil == 5) then
+       call cdf_define(ncid, vn_d2rdtheta2_plasma,  d2rdtheta2_plasma,  dimname=xyz_ntheta_nzetal_plasma_dim)
+       call cdf_define(ncid, vn_d2rdthetadzeta_plasma,  d2rdthetadzeta_plasma,  dimname=xyz_ntheta_nzetal_plasma_dim)
+       call cdf_define(ncid, vn_d2rdzeta2_plasma,  d2rdzeta2_plasma,  dimname=xyz_ntheta_nzetal_plasma_dim)
+     end if
+
      call cdf_define(ncid, vn_normal_plasma,  normal_plasma,  dimname=xyz_ntheta_nzetal_plasma_dim)
      call cdf_define(ncid, vn_normal_coil,  normal_coil,  dimname=xyz_ntheta_nzetal_coil_dim)
 
@@ -662,8 +671,10 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_xn_potential, xn_potential)
   call cdf_write(ncid, vn_xm_plasma, xm_plasma)
   call cdf_write(ncid, vn_xn_plasma, xn_plasma)
-  call cdf_write(ncid, vn_xm_coil, xm_coil)
-  call cdf_write(ncid, vn_xn_coil, xn_coil)
+  if (geometry_option_coil .ne. 5) then
+    call cdf_write(ncid, vn_xm_coil, xm_coil)
+    call cdf_write(ncid, vn_xn_coil, xn_coil)
+  end if
   if (geometry_option_plasma == 8 .or. geometry_option_plasma == 9) then
       call cdf_write(ncid, vn_lmnc, lmnc)
       if (lasym) then
@@ -677,12 +688,14 @@ subroutine regcoil_write_output
       end if
       call cdf_write(ncid, vn_zmns_plasma, zmns_plasma)
   end if
-  call cdf_write(ncid, vn_rmnc_coil, rmnc_coil)
+  if (geometry_option_coil .ne. 5) then
+    call cdf_write(ncid, vn_rmnc_coil, rmnc_coil)
+    call cdf_write(ncid, vn_zmns_coil, zmns_coil)
+  end if
   if (lasym) then
      call cdf_write(ncid, vn_rmns_coil, rmns_coil)
      call cdf_write(ncid, vn_zmnc_coil, zmnc_coil)
   end if
-  call cdf_write(ncid, vn_zmns_coil, zmns_coil)
   if (geometry_option_plasma == 8 .or. geometry_option_plasma == 9) then
       call cdf_write(ncid, vn_xn_axis, xn_axis)
       call cdf_write(ncid, vn_raxis_cc, raxis_cc)
@@ -758,6 +771,12 @@ subroutine regcoil_write_output
 
      call cdf_write(ncid, vn_drdzeta_plasma, drdzeta_plasma)
      call cdf_write(ncid, vn_drdzeta_coil, drdzeta_coil)
+
+     if (geometry_option_coil == 5) then
+       call cdf_write(ncid, vn_d2rdtheta2_plasma, d2rdtheta2_plasma)
+       call cdf_write(ncid, vn_d2rdthetadzeta_plasma, d2rdthetadzeta_plasma)
+       call cdf_write(ncid, vn_d2rdzeta2_plasma, d2rdzeta2_plasma)
+     end if
 
      call cdf_write(ncid, vn_normal_plasma, normal_plasma)
      call cdf_write(ncid, vn_normal_coil, normal_coil)

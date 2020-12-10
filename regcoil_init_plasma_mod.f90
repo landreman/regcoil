@@ -30,15 +30,17 @@ contains
     implicit none
 
     integer :: i, itheta, izeta, imn, tic, toc, countrate, iflag, ierr, iopen, tic1, toc1, iunit
-    real(dp) :: angle, sinangle, cosangle, dsinangledtheta, dsinangledzeta, dcosangledtheta, dcosangledzeta
-    real(dp) :: angle2, sinangle2, cosangle2, dsinangle2dzeta, dcosangle2dzeta
-    real(dp) :: angle3, sinangle3, cosangle3, dsinangle3dtheta, dcosangle3dtheta
+    real(dp) :: angle, sinangle, cosangle, dsinangledtheta, dsinangledzeta, dcosangledtheta, dcosangledzeta, d2sinangledtheta2, d2sinangledthetadzeta, d2sinangledzeta2, d2cosangledtheta2, d2cosangledthetadzeta, d2cosangledzeta2
+    real(dp) :: angle2, sinangle2, cosangle2, dsinangle2dzeta, dcosangle2dzeta, d2sinangle2dzeta2, d2cosangle2dzeta2
+    real(dp) :: angle3, sinangle3, cosangle3, dsinangle3dtheta, dsinangle3dzeta, dcosangle3dtheta, dcosangle3dzeta, d2sinangle3dtheta2, d2sinangle3dthetadzeta, d2sinangle3dzeta2, d2cosangle3dtheta2, d2cosangle3dthetadzeta, d2cosangle3dzeta2
     real(dp) :: weight1, weight2, theta, r_temp, z_temp, dnorm
     integer :: ntheta_coordTransform, nzeta_coordTransform
     real(dp), dimension(:,:), allocatable :: r_coordTransform, z_coordTransform, major_R_squared
     real(dp), dimension(:), allocatable :: rmnc_vmecLast, zmns_vmecLast
     real(dp) :: rootSolve_abserr, rootSolve_relerr, theta_rootSolve_min, theta_rootSolve_max, theta_rootSolve_soln
     integer :: fzeroFlag, mpol, ntor, jm, jn, index
+    real(dp), dimension(:,:), allocatable :: E_big, F_big, G_big, e_small, f_small, g_small, K_curvature, kappa1, kappa2
+    real(dp), dimension(:,:,:), allocatable :: f_test
     
     call system_clock(tic, countrate)
     if (verbose) print *,"Initializing plasma surface."
@@ -427,9 +429,74 @@ contains
     allocate(normal_plasma(3,ntheta_plasma,nzetal_plasma),stat=iflag)
     if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
 
+    if (use_arclength_angle) then
+      if (allocated(omega_arclength)) deallocate(omega_arclength)
+      allocate(omega_arclength(ntheta_plasma,nzetal_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+
+      if (allocated(domegadtheta_arclength)) deallocate(domegadtheta_arclength)
+      allocate(domegadtheta_arclength(ntheta_plasma,nzetal_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+
+      if (allocated(domegadzeta_arclength)) deallocate(domegadzeta_arclength)
+      allocate(domegadzeta_arclength(ntheta_plasma,nzetal_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+
+      if (geometry_option_coil == 5) then
+        if (allocated(d2omegadtheta2_arclength)) deallocate(d2omegadtheta2_arclength)
+        allocate(d2omegadtheta2_arclength(ntheta_plasma,nzetal_plasma),stat=iflag)
+        if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+
+        if (allocated(d2omegadthetadzeta_arclength)) deallocate(d2omegadthetadzeta_arclength)
+        allocate(d2omegadthetadzeta_arclength(ntheta_plasma,nzetal_plasma),stat=iflag)
+        if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+
+        if (allocated(d2omegadzeta2_arclength)) deallocate(d2omegadzeta2_arclength)
+        allocate(d2omegadzeta2_arclength(ntheta_plasma,nzetal_plasma),stat=iflag)
+        if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+      end if
+    end if
+
+    if (geometry_option_coil == 5) then
+      if (allocated(d2rdtheta2_plasma)) deallocate(d2rdtheta2_plasma)
+      allocate(d2rdtheta2_plasma(3,ntheta_plasma,nzetal_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+
+      if (allocated(d2rdthetadzeta_plasma)) deallocate(d2rdthetadzeta_plasma)
+      allocate(d2rdthetadzeta_plasma(3,ntheta_plasma,nzetal_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+
+      if (allocated(d2rdzeta2_plasma)) deallocate(d2rdzeta2_plasma)
+      allocate(d2rdzeta2_plasma(3,ntheta_plasma,nzetal_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+
+      if (allocated(dnormaldtheta_plasma)) deallocate(dnormaldtheta_plasma)
+      allocate(dnormaldtheta_plasma(3,ntheta_plasma,nzetal_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+
+      if (allocated(dnormaldzeta_plasma)) deallocate(dnormaldzeta_plasma)
+      allocate(dnormaldzeta_plasma(3,ntheta_plasma,nzetal_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+    end if
+
     r_plasma=0
     drdtheta_plasma=0
     drdzeta_plasma=0
+    if (geometry_option_coil == 5) then
+      d2rdtheta2_plasma=0
+      d2rdthetadzeta_plasma=0
+      d2rdzeta2_plasma=0
+    end if
+    if (use_arclength_angle) then
+      omega_arclength=0
+      domegadtheta_arclength=0
+      domegadzeta_arclength=0
+      if (geometry_option_coil == 5) then
+        d2omegadtheta2_arclength=0
+        d2omegadthetadzeta_arclength=0
+        d2omegadzeta2_arclength=0
+      end if
+    end if
 
     if (geometry_option_plasma==8 .or. geometry_option_plasma==9) then
         !$OMP PARALLEL
@@ -438,13 +505,15 @@ contains
           print *,"  Number of OpenMP threads:",omp_get_num_threads()
         end if
         !$OMP END MASTER
-        !$OMP DO PRIVATE(angle,angle2,sinangle,cosangle,sinangle2,cosangle2,dsinangledzeta,dcosangledzeta,dsinangle2dzeta,dcosangle2dzeta)
+        !$OMP DO PRIVATE(angle,angle2,sinangle,cosangle,sinangle2,cosangle2,dsinangle2dzeta,dcosangle2dzeta,d2sinangle2dzeta2,d2cosangle2dzeta2,dsinangledzeta,dcosangledzeta,d2sinangledzeta2,d2cosangledzeta2)
         do izeta = 1, nzetal_plasma
             angle2 = zetal_plasma(izeta)
             sinangle2 = sin(angle2)
             cosangle2 = cos(angle2)
             dsinangle2dzeta = cosangle2
             dcosangle2dzeta = -sinangle2
+            d2sinangle2dzeta2 = -sinangle2
+            d2cosangle2dzeta2 = -cosangle2
             do itheta = 1, ntheta_plasma
                 do i=1,nmax_axis
                     angle = -xn_axis(i)*zetal_plasma(izeta)
@@ -452,6 +521,8 @@ contains
                     cosangle = cos(angle)
                     dsinangledzeta = -cosangle*xn_axis(i)
                     dcosangledzeta = sinangle*xn_axis(i)
+                    d2sinangledzeta2 = -sinangle*xn_axis(i)**2
+                    d2cosangledzeta2 = -cosangle*xn_axis(i)**2
 
                     r_plasma(1,itheta,izeta) = r_plasma(1,itheta,izeta) + raxis_cc(i) * cosangle * cosangle2
                     r_plasma(2,itheta,izeta) = r_plasma(2,itheta,izeta) + raxis_cc(i) * cosangle * sinangle2
@@ -460,11 +531,63 @@ contains
                     drdzeta_plasma(1,itheta,izeta) = drdzeta_plasma(1,itheta,izeta) + raxis_cc(i) * (dcosangledzeta * cosangle2 + cosangle * dcosangle2dzeta)
                     drdzeta_plasma(2,itheta,izeta) = drdzeta_plasma(2,itheta,izeta) + raxis_cc(i) * (dcosangledzeta * sinangle2 + cosangle * dsinangle2dzeta)
                     drdzeta_plasma(3,itheta,izeta) = drdzeta_plasma(3,itheta,izeta) + zaxis_cs(i) * dsinangledzeta
+                    
+                    if (geometry_option_coil == 5) then
+                      d2rdzeta2_plasma(1,itheta,izeta) = d2rdzeta2_plasma(1,itheta,izeta) &
+                        + raxis_cc(i) * (d2cosangledzeta2 * cosangle2 + 2*dcosangledzeta * dcosangle2dzeta + cosangle * d2cosangle2dzeta2)
+                      d2rdzeta2_plasma(2,itheta,izeta) = d2rdzeta2_plasma(2,itheta,izeta) &
+                        + raxis_cc(i) * (d2cosangledzeta2 * sinangle2 + 2*dcosangledzeta * dsinangle2dzeta + cosangle * d2sinangle2dzeta2)
+                      d2rdzeta2_plasma(3,itheta,izeta) = d2rdzeta2_plasma(3,itheta,izeta) + zaxis_cs(i) * d2sinangledzeta2
+                    endif
                 end do
             end do
         end do
-    !$OMP END DO
-    !$OMP END PARALLEL
+        !$OMP END DO
+        !$OMP END PARALLEL
+    end if
+
+    allocate(f_test(mnmax_plasma,ntheta_plasma,nzetal_plasma),stat=iflag)
+    if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+    f_test = 0
+
+    if (use_arclength_angle) then
+        !$OMP PARALLEL
+        !$OMP MASTER
+        if (verbose) then
+          print *,"  Number of OpenMP threads:",omp_get_num_threads()
+        end if
+        !$OMP END MASTER
+        !$OMP DO PRIVATE(angle,sinangle,cosangle,dsinangledtheta,dsinangledzeta,d2sinangledtheta2,d2sinangledthetadzeta,d2sinangledzeta2)
+        do izeta = 1,nzetal_plasma
+          do itheta = 1,ntheta_plasma
+            do imn = 1,mnmax_plasma
+              angle = xm_plasma(imn)*theta_plasma(itheta) - xn_plasma(imn)*zetal_plasma(izeta)
+              sinangle = sin(angle)
+              cosangle = cos(angle)
+              dsinangledtheta = cosangle*xm_plasma(imn)
+              dsinangledzeta = -cosangle*xn_plasma(imn)
+              d2sinangledtheta2 = -sinangle*xm_plasma(imn)**2
+              d2sinangledthetadzeta = sinangle*xm_plasma(imn)*xn_plasma(imn)
+              d2sinangledzeta2 = -sinangle*xn_plasma(imn)**2
+
+!              f_test(imn,itheta,izeta) = dsinangledtheta
+
+              omega_arclength(itheta,izeta) = omega_arclength(itheta,izeta) + omns(imn) * sinangle
+
+              domegadtheta_arclength(itheta,izeta) = domegadtheta_arclength(itheta,izeta) + omns(imn) * dsinangledtheta
+              domegadzeta_arclength(itheta,izeta) = domegadzeta_arclength(itheta,izeta) + omns(imn) * dsinangledzeta
+
+              if (geometry_option_coil == 5) then
+                d2omegadtheta2_arclength(itheta,izeta) = d2omegadtheta2_arclength(itheta,izeta) + omns(imn) * d2sinangledtheta2
+                d2omegadthetadzeta_arclength(itheta,izeta) = d2omegadthetadzeta_arclength(itheta,izeta) + omns(imn) * d2sinangledthetadzeta
+                d2omegadzeta2_arclength(itheta,izeta) = d2omegadzeta2_arclength(itheta,izeta) + omns(imn) * d2sinangledzeta2
+              end if
+            end do
+          end do
+        end do
+
+        !$OMP END DO
+        !$OMP END PARALLEL
     end if
 
     !$OMP PARALLEL
@@ -473,19 +596,47 @@ contains
       print *,"  Number of OpenMP threads:",omp_get_num_threads()
     end if
     !$OMP END MASTER
-    !$OMP DO PRIVATE(angle,angle2,angle3,sinangle,cosangle,sinangle2,cosangle2,sinangle3,cosangle3,dsinangledtheta,dcosangledtheta,dsinangledzeta,dcosangledzeta,dsinangle2dzeta,dcosangle2dzeta,dsinangle3dtheta,dcosangle3dtheta)
+    !$OMP DO PRIVATE(angle,angle2,angle3,sinangle,cosangle,sinangle2,cosangle2,sinangle3,cosangle3,dsinangledtheta,dcosangledtheta,dsinangledzeta,dcosangledzeta,dsinangle2dzeta,dcosangle2dzeta,d2sinangle2dzeta2,d2cosangle2dzeta2,d2sinangledtheta2,d2cosangledtheta2,d2sinangledthetadzeta,d2cosangledthetadzeta,d2sinangledzeta2,d2cosangledzeta2,dsinangle3dtheta,dcosangle3dtheta,dsinangle3dzeta,dcosangle3dzeta,d2sinangle3dtheta2,d2cosangle3dtheta2,d2sinangle3dthetadzeta,d2cosangle3dthetadzeta,d2sinangle3dzeta2,d2cosangle3dzeta2)
     do izeta = 1,nzetal_plasma
        angle2 = zetal_plasma(izeta)
        sinangle2 = sin(angle2)
        cosangle2 = cos(angle2)
        dsinangle2dzeta = cosangle2
        dcosangle2dzeta = -sinangle2
+       d2sinangle2dzeta2 = -sinangle2
+       d2cosangle2dzeta2 = -cosangle2
        do itheta = 1,ntheta_plasma
-          angle3 = theta_plasma(itheta)
-          sinangle3 = sin(angle3)
-          cosangle3 = cos(angle3)
-          dsinangle3dtheta = cosangle3
-          dcosangle3dtheta = -sinangle3
+          if (use_arclength_angle) then
+            angle3 = theta_plasma(itheta) - omega_arclength(itheta,izeta)
+            sinangle3 = sin(angle3)
+            cosangle3 = cos(angle3)
+            dsinangle3dtheta = cosangle3 * (1 - domegadtheta_arclength(itheta,izeta))!
+            dcosangle3dtheta = -sinangle3 * (1 - domegadtheta_arclength(itheta,izeta))!
+            dsinangle3dzeta = cosangle3 * (- domegadzeta_arclength(itheta,izeta))!
+            dcosangle3dzeta = -sinangle3 * (- domegadzeta_arclength(itheta,izeta))!
+            if (geometry_option_coil == 5) then
+              d2sinangle3dtheta2 = dcosangle3dtheta * (1 - domegadtheta_arclength(itheta,izeta)) + cosangle3 * (- d2omegadtheta2_arclength(itheta,izeta))
+              d2cosangle3dtheta2 = -dsinangle3dtheta * (1 - domegadtheta_arclength(itheta,izeta)) - sinangle3 * (- d2omegadtheta2_arclength(itheta,izeta))
+              d2sinangle3dthetadzeta = dcosangle3dzeta * (1 - domegadtheta_arclength(itheta,izeta)) + cosangle3 * (- d2omegadthetadzeta_arclength(itheta,izeta))
+              d2cosangle3dthetadzeta = -dsinangle3dzeta * (1 - domegadtheta_arclength(itheta,izeta)) - sinangle3 * (- d2omegadthetadzeta_arclength(itheta,izeta))
+              d2sinangle3dzeta2 = dcosangle3dzeta * (- domegadzeta_arclength(itheta,izeta)) + cosangle3 * (- d2omegadzeta2_arclength(itheta,izeta))
+              d2cosangle3dzeta2 = -dsinangle3dzeta * (- domegadzeta_arclength(itheta,izeta)) - sinangle3 * (- d2omegadzeta2_arclength(itheta,izeta))
+            end if
+          else
+            angle3 = theta_plasma(itheta)
+            sinangle3 = sin(angle3)
+            cosangle3 = cos(angle3)
+            dsinangle3dtheta = cosangle3
+            dcosangle3dtheta = -sinangle3
+            dsinangle3dzeta = 0
+            dcosangle3dzeta = 0
+            d2sinangle3dtheta2 = dcosangle3dtheta
+            d2cosangle3dtheta2 = -dsinangle3dtheta
+            d2sinangle3dthetadzeta = 0
+            d2cosangle3dthetadzeta = 0
+            d2sinangle3dzeta2 = 0
+            d2cosangle3dzeta2 = 0
+          end if
           do imn = 1,mnmax_plasma
              angle = xm_plasma(imn)*theta_plasma(itheta) - xn_plasma(imn)*zetal_plasma(izeta)
              sinangle = sin(angle)
@@ -494,20 +645,45 @@ contains
              dcosangledtheta = -sinangle*xm_plasma(imn)
              dsinangledzeta = -cosangle*xn_plasma(imn)
              dcosangledzeta = sinangle*xn_plasma(imn)
+             d2sinangledtheta2 = -sinangle*xm_plasma(imn)**2
+             d2cosangledtheta2 = -cosangle*xm_plasma(imn)**2!!
+             d2sinangledthetadzeta = sinangle*xm_plasma(imn)*xn_plasma(imn)
+             d2cosangledthetadzeta = cosangle*xm_plasma(imn)*xn_plasma(imn)
+             d2sinangledzeta2 = -sinangle*xn_plasma(imn)**2
+             d2cosangledzeta2 = -cosangle*xn_plasma(imn)**2
 
              select case (geometry_option_plasma)
              case (8,9)
+!                  if ((xm_plasma(imn) > 10) .or. (abs(xn_plasma(imn)) > 10*nfp)) cycle
+!                  f_test(imn,itheta,izeta) = (dcosangle3dtheta)
                  r_plasma(1,itheta,izeta) = r_plasma(1,itheta,izeta) + lmnc(imn) * cosangle * cosangle3 * cosangle2
                  r_plasma(2,itheta,izeta) = r_plasma(2,itheta,izeta) + lmnc(imn) * cosangle * cosangle3 * sinangle2
                  r_plasma(3,itheta,izeta) = r_plasma(3,itheta,izeta) + lmnc(imn) * cosangle * sinangle3
 
                  drdtheta_plasma(1,itheta,izeta) = drdtheta_plasma(1,itheta,izeta) + lmnc(imn) * (dcosangledtheta * cosangle3 + cosangle * dcosangle3dtheta) * cosangle2
                  drdtheta_plasma(2,itheta,izeta) = drdtheta_plasma(2,itheta,izeta) + lmnc(imn) * (dcosangledtheta * cosangle3 + cosangle * dcosangle3dtheta) * sinangle2
-                 drdtheta_plasma(3,itheta,izeta) = drdtheta_plasma(3,itheta,izeta) + lmnc(imn) * (dcosangledtheta * sinangle3 + cosangle * dsinangle3dtheta)
+                 drdtheta_plasma(3,itheta,izeta) = drdtheta_plasma(3,itheta,izeta) + lmnc(imn) * (dcosangledtheta * sinangle3 + cosangle * dsinangle3dtheta)!
                  
-                 drdzeta_plasma(1,itheta,izeta) = drdzeta_plasma(1,itheta,izeta) + lmnc(imn) * (dcosangledzeta * cosangle2 + cosangle * dcosangle2dzeta) * cosangle3
-                 drdzeta_plasma(2,itheta,izeta) = drdzeta_plasma(2,itheta,izeta) + lmnc(imn) * (dcosangledzeta * sinangle2 + cosangle * dsinangle2dzeta) * cosangle3
-                 drdzeta_plasma(3,itheta,izeta) = drdzeta_plasma(3,itheta,izeta) + lmnc(imn) * dcosangledzeta * sinangle3
+                 drdzeta_plasma(1,itheta,izeta) = drdzeta_plasma(1,itheta,izeta) + lmnc(imn) * (dcosangledzeta * cosangle3 * cosangle2 + cosangle * dcosangle3dzeta * cosangle2 + cosangle * cosangle3 * dcosangle2dzeta)
+                 drdzeta_plasma(2,itheta,izeta) = drdzeta_plasma(2,itheta,izeta) + lmnc(imn) * (dcosangledzeta * cosangle3 * sinangle2 + cosangle * dcosangle3dzeta * sinangle2 + cosangle * cosangle3 * dsinangle2dzeta)
+                 drdzeta_plasma(3,itheta,izeta) = drdzeta_plasma(3,itheta,izeta) + lmnc(imn) * (dcosangledzeta * sinangle3 + cosangle * dsinangle3dzeta)!
+
+                 if (geometry_option_coil == 5) then
+                    d2rdtheta2_plasma(1,itheta,izeta) = d2rdtheta2_plasma(1,itheta,izeta) + lmnc(imn) * (d2cosangledtheta2 * cosangle3 + 2*dcosangledtheta * dcosangle3dtheta + cosangle * d2cosangle3dtheta2) * cosangle2!!
+                    d2rdtheta2_plasma(2,itheta,izeta) = d2rdtheta2_plasma(2,itheta,izeta) + lmnc(imn) * (d2cosangledtheta2 * cosangle3 + 2*dcosangledtheta * dcosangle3dtheta + cosangle * d2cosangle3dtheta2) * sinangle2
+                    d2rdtheta2_plasma(3,itheta,izeta) = d2rdtheta2_plasma(3,itheta,izeta) + lmnc(imn) * (d2cosangledtheta2 * sinangle3 + 2*dcosangledtheta * dsinangle3dtheta + cosangle * d2sinangle3dtheta2)
+
+                    d2rdthetadzeta_plasma(1,itheta,izeta) = d2rdthetadzeta_plasma(1,itheta,izeta) + lmnc(imn) * ( (d2cosangledthetadzeta * cosangle3 + dcosangledtheta * dcosangle3dzeta + dcosangledzeta * dcosangle3dtheta + cosangle * d2cosangle3dthetadzeta) * cosangle2 &
+                      + (dcosangledtheta * cosangle3 + cosangle * dcosangle3dtheta) * dcosangle2dzeta )!
+                    d2rdthetadzeta_plasma(2,itheta,izeta) = d2rdthetadzeta_plasma(2,itheta,izeta) + lmnc(imn) * ( (d2cosangledthetadzeta * cosangle3 + dcosangledtheta * dcosangle3dzeta + dcosangledzeta * dcosangle3dtheta + cosangle * d2cosangle3dthetadzeta) * sinangle2 &
+                      + (dcosangledtheta * cosangle3 + cosangle * dcosangle3dtheta) * dsinangle2dzeta )
+                    d2rdthetadzeta_plasma(3,itheta,izeta) = d2rdthetadzeta_plasma(3,itheta,izeta) + lmnc(imn) * (d2cosangledthetadzeta * sinangle3 + dcosangledtheta * dsinangle3dzeta + dcosangledzeta * dsinangle3dtheta + cosangle * d2sinangle3dthetadzeta)
+
+                    d2rdzeta2_plasma(1,itheta,izeta) = d2rdzeta2_plasma(1,itheta,izeta) + lmnc(imn) * ( (d2cosangledzeta2 * cosangle3 + 2*dcosangledzeta * dcosangle3dzeta + cosangle * d2cosangle3dzeta2) * cosangle2 + 2*(dcosangledzeta * cosangle3 + cosangle * dcosangle3dzeta)*dcosangle2dzeta + cosangle * cosangle3 * d2cosangle2dzeta2 )
+                    d2rdzeta2_plasma(2,itheta,izeta) = d2rdzeta2_plasma(2,itheta,izeta) + lmnc(imn) * ( (d2cosangledzeta2 * cosangle3 + 2*dcosangledzeta * dcosangle3dzeta + cosangle * d2cosangle3dzeta2) * sinangle2 + 2*(dcosangledzeta * cosangle3 + cosangle * dcosangle3dzeta)*dsinangle2dzeta + cosangle * cosangle3 * d2sinangle2dzeta2 )
+                    d2rdzeta2_plasma(3,itheta,izeta) = d2rdzeta2_plasma(3,itheta,izeta) + lmnc(imn) * (d2cosangledzeta2 * sinangle3 + 2*dcosangledzeta * dsinangle3dzeta + cosangle * d2sinangle3dzeta2)!!
+                    f_test(imn,itheta,izeta) = d2sinangle3dzeta2
+                 end if
 
                  if (lasym) then
                     r_plasma(1,itheta,izeta) = r_plasma(1,itheta,izeta) + lmns(imn) * sinangle * cosangle3 * cosangle2
@@ -560,18 +736,152 @@ contains
     normal_plasma(1,:,:) = drdzeta_plasma(2,:,:) * drdtheta_plasma(3,:,:) - drdtheta_plasma(2,:,:) * drdzeta_plasma(3,:,:)
     normal_plasma(2,:,:) = drdzeta_plasma(3,:,:) * drdtheta_plasma(1,:,:) - drdtheta_plasma(3,:,:) * drdzeta_plasma(1,:,:)
     normal_plasma(3,:,:) = drdzeta_plasma(1,:,:) * drdtheta_plasma(2,:,:) - drdtheta_plasma(1,:,:) * drdzeta_plasma(2,:,:)
-    
+
+    if (geometry_option_coil == 5) then
+      dnormaldtheta_plasma(1,:,:) = d2rdthetadzeta_plasma(2,:,:) * drdtheta_plasma(3,:,:) + drdzeta_plasma(2,:,:) * d2rdtheta2_plasma(3,:,:) &
+        - d2rdtheta2_plasma(2,:,:) * drdzeta_plasma(3,:,:) - drdtheta_plasma(2,:,:) * d2rdthetadzeta_plasma(3,:,:)
+      dnormaldtheta_plasma(2,:,:) = d2rdthetadzeta_plasma(3,:,:) * drdtheta_plasma(1,:,:) + drdzeta_plasma(3,:,:) * d2rdtheta2_plasma(1,:,:) &
+        - d2rdtheta2_plasma(3,:,:) * drdzeta_plasma(1,:,:) - drdtheta_plasma(3,:,:) * d2rdthetadzeta_plasma(1,:,:)
+      dnormaldtheta_plasma(3,:,:) = d2rdthetadzeta_plasma(1,:,:) * drdtheta_plasma(2,:,:) + drdzeta_plasma(1,:,:) * d2rdtheta2_plasma(2,:,:) &
+        - d2rdtheta2_plasma(1,:,:) * drdzeta_plasma(2,:,:) - drdtheta_plasma(1,:,:) * d2rdthetadzeta_plasma(2,:,:)
+
+      dnormaldzeta_plasma(1,:,:) = d2rdzeta2_plasma(2,:,:) * drdtheta_plasma(3,:,:) + drdzeta_plasma(2,:,:) * d2rdthetadzeta_plasma(3,:,:) &
+        - d2rdthetadzeta_plasma(2,:,:) * drdzeta_plasma(3,:,:) - drdtheta_plasma(2,:,:) * d2rdzeta2_plasma(3,:,:)
+      dnormaldzeta_plasma(2,:,:) = d2rdzeta2_plasma(3,:,:) * drdtheta_plasma(1,:,:) + drdzeta_plasma(3,:,:) * d2rdthetadzeta_plasma(1,:,:) &
+        - d2rdthetadzeta_plasma(3,:,:) * drdzeta_plasma(1,:,:) - drdtheta_plasma(3,:,:) * d2rdzeta2_plasma(1,:,:)
+      dnormaldzeta_plasma(3,:,:) = d2rdzeta2_plasma(1,:,:) * drdtheta_plasma(2,:,:) + drdzeta_plasma(1,:,:) * d2rdthetadzeta_plasma(2,:,:) &
+        - d2rdthetadzeta_plasma(1,:,:) * drdzeta_plasma(2,:,:) - drdtheta_plasma(1,:,:) * d2rdzeta2_plasma(2,:,:)
+    end if
+   
+!do imn = 1,mnmax_plasma
+!  if (maxval(abs(sum(f_test(imn,:,:),2))) > 1e-10) then
+!    print *, xm_plasma(imn), xn_plasma(imn), maxval(abs(sum(f_test(imn,:,:),2)))
+!  end if
+!end do
+!do imn = 1,mnmax_plasma
+!  print *, xm_plasma(imn), xn_plasma(imn), maxval(abs(f_test(imn,:,:)))
+!end do
+!print *, ""
+!stop
+!print *, maxval(sum(domegadtheta_arclength,1))
+!print *, maxval(sum(domegadzeta_arclength,2))
+!print *, maxval(sum(d2omegadtheta2_arclength,1))
+!print *, maxval(sum(d2omegadzeta2_arclength,2))
+!print *, maxval(sum(d2omegadthetadzeta_arclength,1))
+!print *, maxval(sum(d2omegadthetadzeta_arclength,2))
+!print *, ""
+!print *, maxval(abs(sum(drdtheta_plasma(1,:,:),1)))!
+!print *, maxval(abs(sum(drdtheta_plasma(2,:,:),1)))!
+!print *, maxval(abs(sum(drdtheta_plasma(3,:,:),1)))!
+!print *, ""
+!print *, maxval(abs(sum(drdzeta_plasma(1,:,:),2)))
+!print *, maxval(abs(sum(drdzeta_plasma(2,:,:),2)))
+!print *, maxval(abs(sum(drdzeta_plasma(3,:,:),2)))!
+!print *, ""
+!print *, maxval(abs(sum(d2rdtheta2_plasma(1,:,:),1)))!!
+!print *, maxval(abs(sum(d2rdtheta2_plasma(2,:,:),1)))
+!print *, maxval(abs(sum(d2rdtheta2_plasma(3,:,:),1)))
+!print *, ""
+!print *, maxval(abs(sum(d2rdzeta2_plasma(1,:,:),2)))
+!print *, maxval(abs(sum(d2rdzeta2_plasma(2,:,:),2)))
+!print *, maxval(abs(sum(d2rdzeta2_plasma(3,:,:),2)))!!!!!!
+!print *, ""
+!print *, maxval(abs(sum(d2rdthetadzeta_plasma(1,:,:),1)))!
+!print *, maxval(abs(sum(d2rdthetadzeta_plasma(2,:,:),1)))
+!print *, maxval(abs(sum(d2rdthetadzeta_plasma(3,:,:),1)))
+!print *,""
+!print *, maxval(abs(sum(d2rdthetadzeta_plasma(1,:,:),2)))
+!print *, maxval(abs(sum(d2rdthetadzeta_plasma(2,:,:),2)))
+!print *, maxval(abs(sum(d2rdthetadzeta_plasma(3,:,:),2)))
+!print *,""
+!print *, maxval(abs(sum(dnormaldtheta_plasma(1,:,:),1)))
+!print *, maxval(abs(sum(dnormaldtheta_plasma(2,:,:),1)))!!
+!print *, maxval(abs(sum(dnormaldtheta_plasma(3,:,:),1)))!!
+!print *, maxval(abs(sum(dnormaldzeta_plasma(1,:,:),2)))
+!print *, maxval(abs(sum(dnormaldzeta_plasma(2,:,:),2)))
+!print *, maxval(abs(sum(dnormaldzeta_plasma(3,:,:),2)))!
+!print *,""
+!stop
     if (allocated(norm_normal_plasma)) deallocate(norm_normal_plasma)
     allocate(norm_normal_plasma(ntheta_plasma, nzeta_plasma),stat=iflag)
     if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
     norm_normal_plasma = sqrt(normal_plasma(1,:,1:nzeta_plasma)**2 &
          + normal_plasma(2,:,1:nzeta_plasma)**2 &
          + normal_plasma(3,:,1:nzeta_plasma)**2)
+
+    if (geometry_option_coil == 5) then
+      if (allocated(norm_normal_plasma_full)) deallocate(norm_normal_plasma_full)
+      allocate(norm_normal_plasma_full(ntheta_plasma, nzetal_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+      norm_normal_plasma_full = sqrt(normal_plasma(1,:,:)**2 &
+        + normal_plasma(2,:,:)**2 &
+        + normal_plasma(3,:,:)**2)
+    end if
+
+    if (geometry_option_coil == 5) then
+      if (allocated(dnorm_normaldtheta_plasma)) deallocate(dnorm_normaldtheta_plasma)
+      allocate(dnorm_normaldtheta_plasma(ntheta_plasma, nzetal_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+      if (allocated(dnorm_normaldzeta_plasma)) deallocate(dnorm_normaldzeta_plasma)
+      allocate(dnorm_normaldzeta_plasma(ntheta_plasma, nzetal_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+      dnorm_normaldtheta_plasma = (dnormaldtheta_plasma(1,:,:) * normal_plasma(1,:,:) &
+        + dnormaldtheta_plasma(2,:,:) * normal_plasma(2,:,:) &
+        + dnormaldtheta_plasma(3,:,:) * normal_plasma(3,:,:) ) / norm_normal_plasma_full
+      dnorm_normaldzeta_plasma = (dnormaldzeta_plasma(1,:,:) * normal_plasma(1,:,:) &
+        + dnormaldzeta_plasma(2,:,:) * normal_plasma(2,:,:) &
+        + dnormaldzeta_plasma(3,:,:) * normal_plasma(3,:,:) ) / norm_normal_plasma_full
+    end if
+
+!print *, maxval(abs(sum(dnorm_normaldtheta_plasma,1)))!
+!print *, maxval(abs(sum(dnorm_normaldzeta_plasma,2)))!
+!print *,""
+!print *, sum(abs(d2omegadtheta2_arclength))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(d2omegadthetadzeta_arclength))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(d2omegadzeta2_arclength))/(ntheta_plasma*nzetal_plasma)
+!print *,""
+!print *, sum(abs(dnormaldtheta_plasma(1,:,:) * normal_plasma(1,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(dnormaldtheta_plasma(2,:,:) * normal_plasma(2,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(dnormaldtheta_plasma(3,:,:) * normal_plasma(3,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(dnormaldzeta_plasma(1,:,:) * normal_plasma(1,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(dnormaldzeta_plasma(2,:,:) * normal_plasma(2,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(dnormaldzeta_plasma(3,:,:) * normal_plasma(3,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *,""
+!stop
+!print *, sum(abs(drdtheta_plasma(1,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(drdtheta_plasma(2,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(drdtheta_plasma(3,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(drdzeta_plasma(1,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(drdzeta_plasma(2,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(drdzeta_plasma(3,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *,""
+!stop
+!print *, sum(abs(d2rdtheta2_plasma(1,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(d2rdtheta2_plasma(2,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(d2rdtheta2_plasma(3,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(d2rdthetadzeta_plasma(1,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(d2rdthetadzeta_plasma(2,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(d2rdthetadzeta_plasma(3,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(d2rdzeta2_plasma(1,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(d2rdzeta2_plasma(2,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(d2rdzeta2_plasma(3,:,:)))/(ntheta_plasma*nzetal_plasma)!
+!print *,""
+!stop
+!print *, sum(abs(dnormaldtheta_plasma(1,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(dnormaldtheta_plasma(2,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(dnormaldtheta_plasma(3,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *, sum(abs(dnormaldzeta_plasma(1,:,:)))/(ntheta_plasma*nzetal_plasma)!
+!print *, sum(abs(dnormaldzeta_plasma(2,:,:)))/(ntheta_plasma*nzetal_plasma)!
+!print *, sum(abs(dnormaldzeta_plasma(3,:,:)))/(ntheta_plasma*nzetal_plasma)
+!print *,""
+!stop
     
     dtheta_plasma = theta_plasma(2)-theta_plasma(1)
     dzeta_plasma = zeta_plasma(2)-zeta_plasma(1)
     
     area_plasma = nfp * dtheta_plasma * dzeta_plasma * sum(norm_normal_plasma)
+!print *, area_plasma
+!print *, dtheta_plasma * dzeta_plasma * sum(norm_normal_plasma_full)
 
     ! Compute plasma volume using \int (1/2) R^2 dZ dzeta.
     ! These quantities will be evaluated on the half theta grid, which is the natural grid for dZ,
@@ -588,6 +898,47 @@ contains
     deallocate(major_R_squared)
     if (verbose) print "(a,es10.3,a,es10.3,a)"," Plasma surface area:",area_plasma," m^2. Volume:",volume_plasma," m^3."
     
+    if (geometry_option_coil == 5) then
+      if (allocated(mean_curvature)) deallocate(mean_curvature)
+      allocate(mean_curvature(ntheta_plasma, nzetal_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+      
+      allocate(E_big(ntheta_plasma, nzetal_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+      allocate(F_big(ntheta_plasma, nzetal_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+      allocate(G_big(ntheta_plasma, nzetal_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+      allocate(e_small(ntheta_plasma, nzetal_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+      allocate(f_small(ntheta_plasma, nzetal_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+      allocate(g_small(ntheta_plasma, nzetal_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+      allocate(K_curvature(ntheta_plasma, nzetal_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+      allocate(kappa1(ntheta_plasma, nzetal_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+      allocate(kappa2(ntheta_plasma, nzetal_plasma),stat=iflag)
+      if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
+
+      E_big = drdtheta_plasma(1,:,:)**2 + drdtheta_plasma(2,:,:)**2 + drdtheta_plasma(3,:,:)**2
+      F_big = drdtheta_plasma(1,:,:)*drdzeta_plasma(1,:,:) + drdtheta_plasma(2,:,:)*drdzeta_plasma(2,:,:) + drdtheta_plasma(3,:,:)*drdzeta_plasma(3,:,:)
+      G_big = drdzeta_plasma(1,:,:)**2 + drdzeta_plasma(2,:,:)**2 + drdzeta_plasma(3,:,:)**2
+      e_small = -(d2rdtheta2_plasma(1,:,:)*normal_plasma(1,:,:) + d2rdtheta2_plasma(2,:,:)*normal_plasma(2,:,:) + d2rdtheta2_plasma(3,:,:)*normal_plasma(3,:,:)) / norm_normal_plasma_full
+      f_small = -(d2rdthetadzeta_plasma(1,:,:)*normal_plasma(1,:,:) + d2rdthetadzeta_plasma(2,:,:)*normal_plasma(2,:,:) + d2rdthetadzeta_plasma(3,:,:)*normal_plasma(3,:,:)) / norm_normal_plasma_full
+      g_small = -(d2rdzeta2_plasma(1,:,:)*normal_plasma(1,:,:) + d2rdzeta2_plasma(2,:,:)*normal_plasma(2,:,:) + d2rdzeta2_plasma(3,:,:)*normal_plasma(3,:,:)) / norm_normal_plasma_full
+
+      mean_curvature = (e_small*G_big - 2*f_small*F_big + g_small*E_big)/(2*(E_big*G_big-F_big*F_big))
+      K_curvature = (e_small*g_small - f_small*f_small)/(E_big*G_big-F_big*F_big)
+      kappa1 = mean_curvature + sqrt(mean_curvature**2 - K_curvature)
+      kappa2 = mean_curvature - sqrt(mean_curvature**2 - K_curvature)
+
+      max_separation = 1/abs(minval(kappa2(:,1:nzeta_plasma)))
+      
+      mean_curvature = -mean_curvature
+    end if
+
     select case (geometry_option_plasma)
     case (2,3,4,8)
        ! A VMEC wout file is available

@@ -23,6 +23,9 @@ module regcoil_variables
   real(dp) :: R0_plasma = 10.0, R0_coil = 10.0
   real(dp) :: a_plasma = 0.5, a_coil = 1.0
   real(dp) :: separation=0.2
+  real(dp) :: arclength_separation=0.2
+  real(dp) :: max_separation
+  logical :: use_arclength_angle = .false.
 
   character(len=200) :: wout_filename=""
   character(len=200) :: shape_filename_plasma=""
@@ -32,7 +35,10 @@ module regcoil_variables
   character(len=200) :: output_filename
 
   real(dp), dimension(:), allocatable :: theta_plasma, zeta_plasma, zetal_plasma
+  real(dp), dimension(:,:), allocatable :: omega_arclength, domegadtheta_arclength, domegadzeta_arclength, d2omegadtheta2_arclength, d2omegadthetadzeta_arclength, d2omegadzeta2_arclength
   real(dp), dimension(:,:,:), allocatable :: r_plasma, drdtheta_plasma, drdzeta_plasma, normal_plasma
+  real(dp), dimension(:,:,:), allocatable :: d2rdtheta2_plasma, d2rdthetadzeta_plasma, d2rdzeta2_plasma, dnormaldtheta_plasma, dnormaldzeta_plasma
+  real(dp), dimension(:,:), allocatable :: mean_curvature
 
   real(dp), dimension(:,:), allocatable :: g, f_x, f_y, f_z, f_Laplace_Beltrami
   real(dp), dimension(:), allocatable :: h, d_x, d_y, d_z, d_Laplace_Beltrami
@@ -54,6 +60,7 @@ module regcoil_variables
   real(dp), dimension(:,:,:), allocatable :: d2rdtheta2_coil, d2rdthetadzeta_coil, d2rdzeta2_coil
 
   real(dp), dimension(:,:), allocatable :: norm_normal_plasma, norm_normal_coil
+  real(dp), dimension(:,:), allocatable :: norm_normal_plasma_full, norm_normal_coil_full, dnorm_normaldtheta_plasma, dnorm_normaldzeta_plasma
   real(dp), dimension(:,:), allocatable :: basis_functions
 
   real(dp) :: dtheta_plasma, dzeta_plasma, dtheta_coil, dzeta_coil
@@ -132,8 +139,11 @@ module regcoil_variables
   real(dp), dimension(:,:,:), allocatable :: dddomega, dfxdomega, dfydomega, dfzdomega
   real(dp), dimension(:,:,:), allocatable :: dnorm_normaldomega, dgdomega, dinductancedomega
   real(dp), dimension(:,:,:), allocatable :: dnormxdomega, dnormydomega, dnormzdomega
+  real(dp), dimension(:,:,:), allocatable :: d2normxdzetadomega, d2normydzetadomega, d2normzdzetadomega, d2normxdthetadomega, d2normydthetadomega, d2normzdthetadomega, d2norm_normaldzetadomega, d2norm_normaldthetadomega
+  real(dp), dimension(:,:,:,:), allocatable :: drdomega_coil, d2rdthetadomega_coil, d2rdzetadomega_coil
+  real(dp), dimension(:,:,:), allocatable :: dnormxdomega_coil, dnormydomega_coil, dnormzdomega_coil, dnorm_normaldomega_coil
   real(dp), dimension(:,:), allocatable :: dchi2domega, dchi2Kdomega, dchi2Bdomega, dchi2Kdomega_withoutadjoint, dchi2Bdomega_withoutadjoint
-  real(dp), dimension(:,:,:,:), allocatable :: drdomega
+  real(dp), dimension(:,:,:,:), allocatable :: drdomega, d2rdthetadomega, d2rdzetadomega, d3rdtheta2domega, d3rdthetadzetadomega, d3rdzeta2domega
   real(dp), dimension(:,:,:), allocatable :: domegadxdtheta, domegadxdzeta, domegadydtheta, domegadydzeta, domegadzdtheta, domegadzdzeta
   real(dp), dimension(:,:), allocatable :: dhdomega
   real(dp), dimension(:,:,:), allocatable :: dBnormaldomega_from_net_coil_currents
@@ -162,7 +172,7 @@ module regcoil_variables
     real(dp) :: B_0
     integer, allocatable, dimension(:) :: xn_axis
     real(dp), allocatable, dimension(:) :: raxis_cc, zaxis_cs
-    real(dp), allocatable, dimension(:) :: lmnc, lmns
+    real(dp), allocatable, dimension(:) :: lmnc, lmns, omns
     real(dp), allocatable, dimension(:) :: bmnc_plasma, bmns_plasma
     character(len=200) :: singleFourierFilename = '/Users/arthurcarlton-jones/Documents/Spring2019/Plasma/regcoil_adjoint/regcoil/singleFourierSurface.nc'
 
@@ -181,7 +191,7 @@ module regcoil_variables
        sensitivity_option, nmax_sensitivity, mmax_sensitivity, &
        sensitivity_symmetry_option, target_option_p, &
        fixed_norm_sensitivity_option, coil_plasma_dist_lse_p, &
-       m_max, n_max
+       m_max, n_max, singleFourierFilename, use_arclength_angle, arclength_separation
 
 end module regcoil_variables
 

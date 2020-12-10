@@ -12,11 +12,11 @@ subroutine regcoil_write_single_Fourier
 
     call safe_open(iunit, istat, trim(singleFourierFilename), 'replace', 'formatted')
     if (istat .ne. 0) then
-        stop 'Error opening nescin file: file exsited or something wrong.'
+        stop 'Error opening single Fourier file: file exsited or something wrong.'
     end if
 
-    write (iunit, '(a)') 'nfp,    B_0,      net_poloidal_current_amperes, curpol,             R0_plasma,lasym'
-    write (iunit, '(1I6,1p4e20.12,1L2)') nfp, B_0, net_poloidal_current_amperes, curpol, R0_plasma, lasym
+    write (iunit, '(a)') 'nfp,    B_0,      net_poloidal_current_amperes, curpol,             R0_plasma,         lasym, use_arclength_angle'
+    write (iunit, '(1I6,1p4e20.12,2L2)') nfp, B_0, net_poloidal_current_amperes, curpol, R0_plasma, lasym, use_arclength_angle
     write (iunit, *)
 
     write (iunit, '(a)') 'nmax_axis'
@@ -29,10 +29,22 @@ subroutine regcoil_write_single_Fourier
 
     write (iunit, '(a)') 'mnmax_plasma'
     write (iunit, '(1I6)') mnmax_plasma   ! write the number of plasma modes
-    write (iunit, '(a)') '      xm,  xn, lmnc,               lmns'
+    if (lasym .and. (.not. use_arclength_angle)) then
+      write (iunit, '(a)') '      xm,  xn, lmnc,               lmns'
+    else if ((.not. lasym) .and. use_arclength_angle) then
+      write (iunit, '(a)') '      xm,  xn, lmnc,               omns'
+    else if (lasym .and. use_arclength_angle) then
+      write (iunit, '(a)') '      xm,  xn, lmnc,               lmns,               omns'
+    else
+      write (iunit, '(a)') '      xm,  xn, lmnc,'
+    end if
     do i = 1,mnmax_plasma
-        if (lasym) then
-            write (iunit,'(x,2I6,1p2e20.12)') xm_plasma(i), xn_plasma(i), lmnc(i), lmns(i)
+        if (lasym .and. (.not. use_arclength_angle)) then
+          write (iunit,'(x,2I6,1p2e20.12)') xm_plasma(i), xn_plasma(i), lmnc(i), lmns(i)
+        else if ((.not. lasym) .and. use_arclength_angle) then
+          write (iunit,'(x,2I6,1p2e20.12)') xm_plasma(i), xn_plasma(i), lmnc(i), omns(i)
+        else if (lasym .and. use_arclength_angle) then
+          write (iunit,'(x,2I6,1p3e20.12)') xm_plasma(i), xn_plasma(i), lmnc(i), lmns(i), omns(i)
         else
             write (iunit,'(x,2I6,1p1e20.12)') xm_plasma(i), xn_plasma(i), lmnc(i)
         end if

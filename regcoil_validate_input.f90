@@ -70,12 +70,18 @@ subroutine regcoil_validate_input
      stop "Error! geometry_option_coil must be >= 0."
   end if
 
-  if (geometry_option_coil > 4) then
-     stop "Error! geometry_option_coil must be <= 4."
+  if (geometry_option_coil > 5) then
+     stop "Error! geometry_option_coil must be <= 5."
   end if
 
   if (separation < 0) then
      stop "Error! separation must be >= 0."
+  end if
+
+  if (geometry_option_coil == 5) then
+    if ((ntheta_plasma .ne. ntheta_coil) .or. (nzeta_plasma .ne. nzeta_coil)) then
+      stop "Plasma and coil grids must have the same resolution for geometry_option_coil = 5."
+    end if
   end if
 
 

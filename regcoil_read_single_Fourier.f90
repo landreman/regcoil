@@ -15,7 +15,7 @@ subroutine regcoil_read_single_Fourier()
 
     ! Skip the first line
     read (iunit, *)
-    read (iunit, *) nfp, B_0, net_poloidal_current_amperes, curpol, R0_plasma, lasym
+    read (iunit, *) nfp, B_0, net_poloidal_current_amperes, curpol, R0_plasma, lasym, use_arclength_angle
 
     ! Skip the next 2 lines
     read (iunit, *)
@@ -44,14 +44,23 @@ subroutine regcoil_read_single_Fourier()
 !    if (allocated(lmns)) deallocate(lmns)
 
     allocate(lmnc(mnmax_plasma))
-    allocate(lmns(mnmax_plasma))
+    if (lasym) then
+      allocate(lmns(mnmax_plasma))
+    end if
+    if (use_arclength_angle) then
+      allocate(omns(mnmax_plasma))
+    end if
     allocate(xm_plasma(mnmax_plasma))
     allocate(xn_plasma(mnmax_plasma))
 
     read (iunit, *)
     do k = 1, mnmax_plasma
-        if (lasym) then
-            read (iunit, *) xm_plasma(k), xn_plasma(k), lmnc(k), lmns(k)
+        if (lasym .and. (.not. use_arclength_angle)) then
+          read (iunit, *) xm_plasma(k), xn_plasma(k), lmnc(k), lmns(k)
+        else if ((.not. lasym) .and. use_arclength_angle) then
+          read (iunit, *) xm_plasma(k), xn_plasma(k), lmnc(k), omns(k)
+        else if (lasym .and. use_arclength_angle) then
+          read (iunit, *) xm_plasma(k), xn_plasma(k), lmnc(k), lmns(k), omns(k)
         else
             read (iunit, *) xm_plasma(k), xn_plasma(k), lmnc(k)
         end if

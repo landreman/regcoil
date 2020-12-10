@@ -26,6 +26,7 @@ subroutine regcoil_init_coil_surface()
   real(dp), allocatable, dimension(:) :: theta_plasma_corresponding_to_theta_coil, dl, R_slice, z_slice
   real(dp), allocatable, dimension(:) :: constant_arclength_theta_on_old_theta_grid
   type (periodic_spline) :: theta_spline
+  real(dp), dimension(:,:), allocatable :: major_R_squared
 
   call system_clock(tic,countrate)
   if (verbose) print *,"Initializing coil surface."
@@ -238,6 +239,9 @@ subroutine regcoil_init_coil_surface()
      call regcoil_read_nescin()
      call regcoil_filter_coil_surface()
      
+  case (5)
+     if (verbose) print "(a,f10.4,a)","   Constructing a surface offset from the plasma by ",separation," meters."
+
   case default
      print *,"Invalid setting for geometry_option_coil: ",geometry_option_coil
      stop
@@ -275,13 +279,85 @@ subroutine regcoil_init_coil_surface()
   allocate(d2rdzeta2_coil(3,ntheta_coil,nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 10'
 
-  ! Convert Fourier representation of the coil winding surface to Cartesian coordinates:
-  call regcoil_evaluate_coil_surface()
+  if (geometry_option_coil == 5) then
+    ! Generate coil winding surface in Cartesian coordinates from plasma surface:
+
+    call system_clock(tic,countrate)
+
+    r_coil(1,:,:) = r_plasma(1,:,:) + separation * normal_plasma(1,:,:)/norm_normal_plasma_full
+    r_coil(2,:,:) = r_plasma(2,:,:) + separation * normal_plasma(2,:,:)/norm_normal_plasma_full
+    r_coil(3,:,:) = r_plasma(3,:,:) + separation * normal_plasma(3,:,:)/norm_normal_plasma_full
+
+    drdtheta_coil(1,:,:) = drdtheta_plasma(1,:,:) + separation * (dnormaldtheta_plasma(1,:,:) - dnorm_normaldtheta_plasma * normal_plasma(1,:,:)/norm_normal_plasma_full) / norm_normal_plasma_full
+    drdtheta_coil(2,:,:) = drdtheta_plasma(2,:,:) + separation * (dnormaldtheta_plasma(2,:,:) - dnorm_normaldtheta_plasma * normal_plasma(2,:,:)/norm_normal_plasma_full) / norm_normal_plasma_full
+    drdtheta_coil(3,:,:) = drdtheta_plasma(3,:,:) + separation * (dnormaldtheta_plasma(3,:,:) - dnorm_normaldtheta_plasma * normal_plasma(3,:,:)/norm_normal_plasma_full) / norm_normal_plasma_full
+
+    drdzeta_coil(1,:,:) = drdzeta_plasma(1,:,:) + separation * (dnormaldzeta_plasma(1,:,:) - dnorm_normaldzeta_plasma * normal_plasma(1,:,:)/norm_normal_plasma_full) / norm_normal_plasma_full
+    drdzeta_coil(2,:,:) = drdzeta_plasma(2,:,:) + separation * (dnormaldzeta_plasma(2,:,:) - dnorm_normaldzeta_plasma * normal_plasma(2,:,:)/norm_normal_plasma_full) / norm_normal_plasma_full
+    drdzeta_coil(3,:,:) = drdzeta_plasma(3,:,:) + separation * (dnormaldzeta_plasma(3,:,:) - dnorm_normaldzeta_plasma * normal_plasma(3,:,:)/norm_normal_plasma_full) / norm_normal_plasma_full
+
+!print *, maxval(abs(sum(drdtheta_coil(1,:,:),1)))!
+!print *, maxval(abs(sum(drdtheta_coil(2,:,:),1)))!
+!print *, maxval(abs(sum(drdtheta_coil(3,:,:),1)))!
+!print *, ""
+!print *, maxval(abs(sum(drdzeta_coil(1,:,:),2)))
+!print *, maxval(abs(sum(drdzeta_coil(2,:,:),2)))
+!print *, maxval(abs(sum(drdzeta_coil(3,:,:),2)))!
+!print *, ""
+
+    d2rdtheta2_coil = 0     ! 2nd derivatives of coil position not implemented yet for geometry_option_coil == 5
+    d2rdthetadzeta_coil = 0
+    d2rdzeta2_coil = 0
+
+    call system_clock(toc)
+    if (verbose) print *,"  Evaluating coil surface & derivatives:",real(toc-tic)/countrate," sec."
+
+    ! Evaluate cross product:
+    normal_coil(1,:,:) = drdzeta_coil(2,:,:) * drdtheta_coil(3,:,:) - drdtheta_coil(2,:,:) * drdzeta_coil(3,:,:)
+    normal_coil(2,:,:) = drdzeta_coil(3,:,:) * drdtheta_coil(1,:,:) - drdtheta_coil(3,:,:) * drdzeta_coil(1,:,:)
+    normal_coil(3,:,:) = drdzeta_coil(1,:,:) * drdtheta_coil(2,:,:) - drdtheta_coil(1,:,:) * drdzeta_coil(2,:,:)
+    
+    if (allocated(norm_normal_coil)) deallocate(norm_normal_coil)
+    allocate(norm_normal_coil(ntheta_coil, nzeta_coil),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 11'
+    norm_normal_coil = sqrt(normal_coil(1,:,1:nzeta_coil)**2 + normal_coil(2,:,1:nzeta_coil)**2 &
+         +  normal_coil(3,:,1:nzeta_coil)**2)
+
+    if (allocated(norm_normal_coil_full)) deallocate(norm_normal_coil_full)
+    allocate(norm_normal_coil_full(ntheta_coil, nzetal_coil),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 12'
+    norm_normal_coil_full = sqrt(normal_coil(1,:,:)**2 + normal_coil(2,:,:)**2 &
+         +  normal_coil(3,:,:)**2)
+    
+    area_coil = nfp * dtheta_coil * dzeta_coil * sum(norm_normal_coil)
+    
+    ! Compute coil surface volume using \int (1/2) R^2 dZ dzeta.
+    ! These quantities will be evaluated on the half theta grid, which is the natural grid for dZ,
+    ! but we will need to interpolate R^2 from the full to half grid.
+    allocate(major_R_squared(ntheta_coil,nzetal_coil))
+    major_R_squared = r_coil(1,:,:)*r_coil(1,:,:) + r_coil(2,:,:)*r_coil(2,:,:)
+    ! First handle the interior of the theta grid:
+    volume_coil = sum((major_R_squared(1:ntheta_coil-1,:) + major_R_squared(2:ntheta_coil,:)) * (0.5d+0) & ! R^2, interpolated from full to half grid
+         * (r_coil(3,2:ntheta_coil,:)-r_coil(3,1:ntheta_coil-1,:))) ! dZ
+    ! Add the contribution from the ends of the theta grid:
+    volume_coil = volume_coil + sum((major_R_squared(1,:) + major_R_squared(ntheta_coil,:)) * (0.5d+0) & ! R^2, interpolated from full to half grid
+         * (r_coil(3,1,:)-r_coil(3,ntheta_coil,:))) ! dZ
+    volume_coil = abs(volume_coil * dzeta_coil / 2) ! r includes all nfp periods already, so no factor of nfp needed.
+    deallocate(major_R_squared)
+    if (verbose) print "(a,es10.3,a,es10.3,a)"," Coil surface area:",area_coil," m^2. Volume:",volume_coil," m^3."
+
+  else
+    ! Convert Fourier representation of the coil winding surface to Cartesian coordinates:
+    call regcoil_evaluate_coil_surface()
+  end if
 
 
   call system_clock(toc)
   if (verbose) print *,"Done initializing coil surface. Took ",real(toc-tic)/countrate," sec."
   
+!print *, area_plasma
+!print *, area_coil
+!print *, max_separation
 end subroutine regcoil_init_coil_surface
 
 subroutine regcoil_filter_coil_surface()

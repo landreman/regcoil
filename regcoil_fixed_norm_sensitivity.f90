@@ -19,8 +19,10 @@ subroutine regcoil_fixed_norm_sensitivity()
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(IPIV(num_basis_functions), stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dtarget_optiondOmega(nomega_coil,nlambda))
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (sensitivity_option /= 6) then
+    allocate(dtarget_optiondOmega(nomega_coil,nlambda))
+    if (iflag .ne. 0) stop 'Allocation error!'
+  end if
   allocate(dtarget_optiondPhi(num_basis_functions,nlambda))
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(dnorm_Kdomega(ntheta_coil,nzeta_coil),stat=iflag)
@@ -31,8 +33,10 @@ subroutine regcoil_fixed_norm_sensitivity()
   if (iflag .ne. 0) stop 'Allocation error!'
   allocate(q_tilde(num_basis_functions,nlambda),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
-  allocate(dlambdadomega(nomega_coil,nlambda),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error!'
+  if (sensitivity_option /= 6) then
+    allocate(dlambdadomega(nomega_coil,nlambda),stat=iflag)
+    if (iflag .ne. 0) stop 'Allocation error!'
+  end if
   allocate(dKDifferencedomega(3,ntheta_coil*nzeta_coil),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
 
@@ -66,29 +70,31 @@ subroutine regcoil_fixed_norm_sensitivity()
 
   call system_clock(tic, countrate)
 
-  do iomega = 1, nomega_coil
-    dKDifferencedomega(1,:) = dddomega(1,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfxdomega(iomega,:,:), solution)
-    dKDifferencedomega(2,:) = dddomega(2,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfydomega(iomega,:,:), solution)
-    dKDifferencedomega(3,:) = dddomega(3,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfzdomega(iomega,:,:), solution)
-    dnorm_Kdomega = (1/(norm_K*(norm_normal_coil**2))) &
-      * reshape(KDifference_x*dKDifferencedomega(1,:) + KDifference_y*dKDifferencedomega(2,:) &
-      + KDifference_z*dKDifferencedomega(3,:),(/ ntheta_coil, nzeta_coil/)) &
-      - norm_K*dnorm_normaldomega(iomega,:,:)/norm_normal_coil
-    select case (trim(target_option))
-      case("max_K_lse")
-        dsum_expdomega = sum(dtheta_coil*dzeta_coil*nfp*exp(target_option_p*(norm_K-max_K(ilambda))) &
-          *(dnorm_normaldomega(iomega,:,:)/area_coil &
-          - norm_normal_coil*darea_coildomega(iomega)/(area_coil**2) &
-          + norm_normal_coil*dnorm_Kdomega*target_option_p/(area_coil)))
-        dtarget_optiondOmega(iomega,ilambda) = (1/target_option_p) * &
-          dsum_expdomega/sum_exp
-      case ("lp_norm_K")
-        dintKpdomega = sum(dtheta_coil*dzeta_coil*nfp*(target_option_p*norm_normal_coil*norm_K**(target_option_p-1)*dnorm_kdomega + dnorm_normaldomega(iomega,:,:)*norm_K**(target_option_p)))
-        dtarget_optiondOmega(iomega,ilambda) = -(1/target_option_p)*lp_norm_K(ilambda)*darea_coildomega(iomega)/area_coil + lp_norm_K(ilambda)**(1-target_option_p)*dintKpdomega/(area_coil*target_option_p)
-      case ("chi2_B")
-        dtarget_optiondOmega(iomega,ilambda) = dchi2Bdomega_withoutadjoint(iomega,ilambda)
-    end select
-  end do
+  if (sensitivity_option /= 6) then
+    do iomega = 1, nomega_coil
+      dKDifferencedomega(1,:) = dddomega(1,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfxdomega(iomega,:,:), solution)
+      dKDifferencedomega(2,:) = dddomega(2,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfydomega(iomega,:,:), solution)
+      dKDifferencedomega(3,:) = dddomega(3,iomega,1:ntheta_coil*nzeta_coil)-matmul(dfzdomega(iomega,:,:), solution)
+      dnorm_Kdomega = (1/(norm_K*(norm_normal_coil**2))) &
+        * reshape(KDifference_x*dKDifferencedomega(1,:) + KDifference_y*dKDifferencedomega(2,:) &
+        + KDifference_z*dKDifferencedomega(3,:),(/ ntheta_coil, nzeta_coil/)) &
+        - norm_K*dnorm_normaldomega(iomega,:,:)/norm_normal_coil
+      select case (trim(target_option))
+        case("max_K_lse")
+          dsum_expdomega = sum(dtheta_coil*dzeta_coil*nfp*exp(target_option_p*(norm_K-max_K(ilambda))) &
+            *(dnorm_normaldomega(iomega,:,:)/area_coil &
+            - norm_normal_coil*darea_coildomega(iomega)/(area_coil**2) &
+            + norm_normal_coil*dnorm_Kdomega*target_option_p/(area_coil)))
+          dtarget_optiondOmega(iomega,ilambda) = (1/target_option_p) * &
+            dsum_expdomega/sum_exp
+        case ("lp_norm_K")
+          dintKpdomega = sum(dtheta_coil*dzeta_coil*nfp*(target_option_p*norm_normal_coil*norm_K**(target_option_p-1)*dnorm_kdomega + dnorm_normaldomega(iomega,:,:)*norm_K**(target_option_p)))
+          dtarget_optiondOmega(iomega,ilambda) = -(1/target_option_p)*lp_norm_K(ilambda)*darea_coildomega(iomega)/area_coil + lp_norm_K(ilambda)**(1-target_option_p)*dintKpdomega/(area_coil*target_option_p)
+        case ("chi2_B")
+          dtarget_optiondOmega(iomega,ilambda) = dchi2Bdomega_withoutadjoint(iomega,ilambda)
+      end select
+    end do
+  end if
 
   call system_clock(toc)
   if (verbose) then
@@ -141,44 +147,63 @@ subroutine regcoil_fixed_norm_sensitivity()
 
   call system_clock(tic)
 
-  do iomega=1,nomega_coil
-    q_tilde_num = dot_product(dFdomega(iomega,:), q_tilde(:,ilambda))
-    dlambdadomega(iomega,ilambda) = (1/q_tilde_denom)*(dtarget_optiondOmega(iomega,ilambda) - q_tilde_num)
-    dchi2domega(iomega,ilambda) = dchi2domega(iomega,ilambda) + dlambdadomega(iomega,ilambda)*chi2_K(ilambda)
-    if (sensitivity_option == 3) then
-      dchi2Kdomega(iomega,ilambda) = dchi2Kdomega(iomega,ilambda) &
-        - dot_product((matmul(matrix_regularization,solution) - RHS_regularization),q_K(:,ilambda))/q_tilde_denom &
-        * (dtarget_optiondOmega(iomega,ilambda) - q_tilde_num)
-      dchi2Bdomega(iomega,ilambda) = dchi2Bdomega(iomega,ilambda) &
-        - dot_product((matmul(matrix_regularization,solution) - RHS_regularization),q_B(:,ilambda))/q_tilde_denom &
-        * (dtarget_optiondOmega(iomega,ilambda) - q_tilde_num)
-    end if
-    if (sensitivity_option == 4) then
-      dchi2Kdomega(iomega,ilambda) = dchi2Kdomega(iomega,ilambda) &
-        -dot_product((matmul(matrix_regularization,solution) - RHS_regularization),q_K(:,ilambda))/q_tilde_denom &
-        * (dtarget_optiondOmega(iomega,ilambda) - q_tilde_num)
-      dchi2Bdomega(iomega,ilambda) = dchi2Bdomega(iomega,ilambda) &
-        - dot_product((matmul(matrix_regularization,solution) - RHS_regularization),-lambda(ilambda)*q_K(:,ilambda))/q_tilde_denom &
-        * (dtarget_optiondOmega(iomega,ilambda) - q_tilde_num)
-    end if
-    if (sensitivity_option == 5) then
-      dchi2Bdomega(iomega,ilambda) = dchi2Bdomega(iomega,ilambda) &
-        - dot_product((matmul(matrix_regularization,solution) - RHS_regularization),q_B(:,ilambda))/q_tilde_denom &
-        * (dtarget_optiondOmega(iomega,ilambda) - q_tilde_num)
-      dchi2Kdomega(iomega,ilambda) = dchi2Kdomega(iomega,ilambda) &
-        - dot_product((matmul(matrix_regularization,solution) - RHS_regularization),-q_B(:,ilambda)/lambda(ilambda))/q_tilde_denom &
-        * (dtarget_optiondOmega(iomega,ilambda) - q_tilde_num)
-    end if
-  end do
-if (sensitivity_option == 6 .and. &
-        (trim(target_option)=='chi2_K' .or. trim(target_option)=='rms_K')) then !meant for target function = chi2_K or RMS_K
-    do iomega=1,nomega_plasma
-      dchi2Bdomega(iomega,ilambda) = dchi2Bdomega_withoutadjoint(iomega,ilambda)
+  if (sensitivity_option /= 6) then
+    do iomega=1,nomega_coil
+      q_tilde_num = dot_product(dFdomega(iomega,:), q_tilde(:,ilambda))
+      dlambdadomega(iomega,ilambda) = (1/q_tilde_denom)*(dtarget_optiondOmega(iomega,ilambda) - q_tilde_num)
+      dchi2domega(iomega,ilambda) = dchi2domega(iomega,ilambda) + dlambdadomega(iomega,ilambda)*chi2_K(ilambda)
+      if (sensitivity_option == 3) then
+        dchi2Kdomega(iomega,ilambda) = dchi2Kdomega(iomega,ilambda) &
+          - dot_product((matmul(matrix_regularization,solution) - RHS_regularization),q_K(:,ilambda))/q_tilde_denom &
+          * (dtarget_optiondOmega(iomega,ilambda) - q_tilde_num)
+        dchi2Bdomega(iomega,ilambda) = dchi2Bdomega(iomega,ilambda) &
+          - dot_product((matmul(matrix_regularization,solution) - RHS_regularization),q_B(:,ilambda))/q_tilde_denom &
+          * (dtarget_optiondOmega(iomega,ilambda) - q_tilde_num)
+      end if
+      if (sensitivity_option == 4) then
+        dchi2Kdomega(iomega,ilambda) = dchi2Kdomega(iomega,ilambda) &
+          -dot_product((matmul(matrix_regularization,solution) - RHS_regularization),q_K(:,ilambda))/q_tilde_denom &
+          * (dtarget_optiondOmega(iomega,ilambda) - q_tilde_num)
+        dchi2Bdomega(iomega,ilambda) = dchi2Bdomega(iomega,ilambda) &
+          - dot_product((matmul(matrix_regularization,solution) - RHS_regularization),-lambda(ilambda)*q_K(:,ilambda))/q_tilde_denom &
+          * (dtarget_optiondOmega(iomega,ilambda) - q_tilde_num)
+      end if
+      if (sensitivity_option == 5) then
+        dchi2Bdomega(iomega,ilambda) = dchi2Bdomega(iomega,ilambda) &
+          - dot_product((matmul(matrix_regularization,solution) - RHS_regularization),q_B(:,ilambda))/q_tilde_denom &
+          * (dtarget_optiondOmega(iomega,ilambda) - q_tilde_num)
+        dchi2Kdomega(iomega,ilambda) = dchi2Kdomega(iomega,ilambda) &
+          - dot_product((matmul(matrix_regularization,solution) - RHS_regularization),-q_B(:,ilambda)/lambda(ilambda))/q_tilde_denom &
+          * (dtarget_optiondOmega(iomega,ilambda) - q_tilde_num)
+      end if
     end do
-    dchi2Kdomega(:,ilambda) = 0
-    dRMSBdomega(:,ilambda) = 1/(2*sqrt(chi2_B(ilambda)*B_0**2*area_plasma)) * (dchi2Bdomega(:,ilambda) &
-       - (chi2_B(ilambda)/area_plasma) * darea_plasmadomega)
-    dRMSKdomega(:,ilambda) = 0
+  end if
+  if (sensitivity_option == 6) then !meant for target function = chi2_K or L2_norm_K
+    if (trim(target_option)=='lp_norm_K' .and. target_option_p == 2) then
+      if (geometry_option_coil == 5) then
+        dchi2Kdomega(:,ilambda) = chi2_K(ilambda)*darea_coildomega/area_coil
+        dchi2Bdomega(:,ilambda) = dchi2Bdomega_withoutadjoint(:,ilambda) &
+          - lambda(ilambda)*(dchi2Kdomega(:,ilambda) - dchi2Kdomega_withoutadjoint(:,ilambda))
+      else
+        dchi2Kdomega(:,ilambda) = 0
+        dchi2Bdomega(:,ilambda) = dchi2Bdomega_withoutadjoint(:,ilambda)
+      end if
+      dRMSBdomega(:,ilambda) = 1/(2*sqrt(chi2_B(ilambda)*B_0**2*area_plasma)) * (dchi2Bdomega(:,ilambda) &
+         - (chi2_B(ilambda)/area_plasma) * darea_plasmadomega)
+      dRMSKdomega(:,ilambda) = 0
+    else if (trim(target_option)=='chi2_K') then
+      dchi2Kdomega(:,ilambda) = 0
+      if (geometry_option_coil == 5) then
+        dchi2Bdomega(:,ilambda) = dchi2Bdomega_withoutadjoint(:,ilambda) &
+          + lambda(ilambda)*dchi2Kdomega_withoutadjoint(:,ilambda)
+        dRMSKdomega(:,ilambda) = - chi2_K(ilambda)*darea_coildomega/(2*sqrt(chi2_K(ilambda)/area_coil)*area_coil**2)
+      else
+        dchi2Bdomega(:,ilambda) = dchi2Bdomega_withoutadjoint(:,ilambda)
+        dRMSKdomega(:,ilambda) = 0
+      end if
+      dRMSBdomega(:,ilambda) = 1/(2*sqrt(chi2_B(ilambda)*B_0**2*area_plasma)) * (dchi2Bdomega(:,ilambda) &
+         - (chi2_B(ilambda)/area_plasma) * darea_plasmadomega)
+    end if
   end if
   
   call system_clock(toc)
@@ -190,6 +215,15 @@ if (sensitivity_option == 6 .and. &
   if (verbose) then
     print *,"total time in regcoil_fixed_norm_sensitivity: ",real(toc-tic_begin)/countrate," sec."
   end if
+
+!print *, lambda(nlambda)
+!print *, dchi2Bdomega_withoutadjoint(:,nlambda)
+!print *, dchi2Bdomega(:,nlambda)
+!print *, dchi2Kdomega_withoutadjoint(:,nlambda)
+!print *, dchi2Kdomega(:,nlambda)
+!print *, dRMSBdomega(:,nlambda)
+!print *, dRMSKdomega(:,nlambda)
+!stop
 
 contains
 
