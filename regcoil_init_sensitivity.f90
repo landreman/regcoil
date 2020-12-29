@@ -15,13 +15,10 @@ subroutine regcoil_init_sensitivity()
   real(dp) :: angle, sinangle, cosangle, dsinangledtheta, dsinangledzeta, dcosangledtheta, dcosangledzeta, d2sinangledtheta2, d2sinangledthetadzeta, d2sinangledzeta2, d2cosangledtheta2, d2cosangledthetadzeta, d2cosangledzeta2
   real(dp) :: angle2, sinangle2, cosangle2, dsinangle2dzeta, dcosangle2dzeta, d2sinangle2dzeta2, d2cosangle2dzeta2
   real(dp) :: angle3, sinangle3, cosangle3, dsinangle3dtheta, dsinangle3dzeta, dcosangle3dtheta, dcosangle3dzeta, d2sinangle3dtheta2, d2sinangle3dthetadzeta, d2sinangle3dzeta2, d2cosangle3dtheta2, d2cosangle3dthetadzeta, d2cosangle3dzeta2
-!  real(dp) :: R, dRdzeta, dRdtheta
   integer :: izeta_plasma, itheta_plasma, izeta_coil, itheta_coil, index_coil, &
     l_coil, l_plasma, izetal_coil, izetal_plasma, index_plasma, index_coil_first, index_coil_last
   real(dp), dimension(:), allocatable :: dR_squared_domega_half_grid, dsum_exp_mindomega
   real(dp), dimension(:,:,:), allocatable :: dmajor_R_squareddomega
-!  real(dp), dimension(:,:,:), allocatable :: dRRdomega
-!  real(dp), dimension(:,:,:), allocatable :: dRdomegadzeta, dRdomegadtheta, dZdomega, dZdomegadzeta, dZdomegadtheta
   real(dp), dimension(:,:,:,:), allocatable :: dist,ones,normal_coil_fourd,normal_plasma_fourd
 
 
@@ -49,18 +46,6 @@ subroutine regcoil_init_sensitivity()
       if (iflag .ne. 0) stop 'Allocation error!'
       allocate(dnormzdomega(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error!'
-!      allocate(dRRdomega(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
-!      if (iflag .ne. 0) stop 'Allocation error!'
-!      allocate(dRdomegadzeta(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
-!      if (iflag .ne. 0) stop 'Allocation error!'
-!      allocate(dRdomegadtheta(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
-!      if (iflag .ne. 0) stop 'Allocation error!'
-!      allocate(dZdomega(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
-!      if (iflag .ne. 0) stop 'Allocation error!'
-!      allocate(dZdomegadzeta(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
-!      if (iflag .ne. 0) stop 'Allocation error!'
-!      allocate(dZdomegadtheta(nomega_plasma,ntheta_plasma*nzeta_plasma,nfp),stat=iflag)
-!      if (iflag .ne. 0) stop 'Allocation error!'
       
       if (geometry_option_coil == 5) then
         allocate(d3rdtheta2domega(3,ntheta_plasma*nzeta_plasma,nfp,nomega_plasma),stat=iflag)
@@ -258,18 +243,6 @@ subroutine regcoil_init_sensitivity()
                 d2ydzeta2 = d2rdzeta2_plasma(2,itheta_plasma,izetal_plasma)
                 d2zdzeta2 = d2rdzeta2_plasma(3,itheta_plasma,izetal_plasma)
               end if
-!              R = sqrt((r_plasma(1,itheta_plasma,izetal_plasma))**2 + (r_plasma(2,itheta_plasma,izetal_plasma))**2)
-!              dRdzeta = (r_plasma(1,itheta_plasma,izetal_plasma)*dxdzeta + r_plasma(2,itheta_plasma,izetal_plasma)*dydzeta)/R
-!              dRdtheta = (r_plasma(1,itheta_plasma,izetal_plasma)*dxdtheta + r_plasma(2,itheta_plasma,izetal_plasma)*dydtheta)/R
-!              dnormxdomega(iomega,index_plasma,l_plasma+1) = &
-!                  (dRRdomega(iomega,index_plasma,l_plasma+1)*cosangle2 + dRdomegadzeta(iomega,index_plasma,l_plasma+1)*sinangle2)*dzdtheta &
-!                + (R*cosangle2 + dRdzeta*sinangle2)*dZdomegadtheta(iomega,index_plasma,l_plasma+1) &
-!                - (dRdomegadtheta(iomega,index_plasma,l_plasma+1)*dzdzeta + dRdtheta*dZdomegadzeta(iomega,index_plasma,l_plasma+1))*sinangle2
-!              dnormydomega(iomega,index_plasma,l_plasma+1) = &
-!                  (dRRdomega(iomega,index_plasma,l_plasma+1)*sinangle2 - dRdomegadzeta(iomega,index_plasma,l_plasma+1)*cosangle2)*dzdtheta &
-!                + (R*sinangle2 - dRdzeta*cosangle2)*dZdomegadtheta(iomega,index_plasma,l_plasma+1) &
-!                + (dRdomegadtheta(iomega,index_plasma,l_plasma+1)*dzdzeta + dRdtheta*dZdomegadzeta(iomega,index_plasma,l_plasma+1))*cosangle2
-!              dnormzdomega(iomega,index_plasma,l_plasma+1) = -dRRdomega(iomega,index_plasma,l_plasma+1)*dRdtheta - R*dRdomegadtheta(iomega,index_plasma,l_plasma+1)
               dnormxdomega(iomega,index_plasma,l_plasma+1) = &
                   d2rdzetadomega(2,index_plasma,l_plasma+1,iomega) * dzdtheta + dydzeta * d2rdthetadomega(3,index_plasma,l_plasma+1,iomega) &
                 - d2rdthetadomega(2,index_plasma,l_plasma+1,iomega) * dzdzeta - dydtheta * d2rdzetadomega(3,index_plasma,l_plasma+1,iomega)
@@ -551,94 +524,6 @@ subroutine regcoil_init_sensitivity()
         print *,"Coil surface and d sensitivity loop in regcoil_init_sensitivity: ",real(toc-tic)/countrate," sec."
         print *,"Init sensitivity complete."
       end if
-
-!print *, maxval(abs(sum(sum(d2rdthetadomega(1,:,:,:),1),1)))
-!print *, maxval(abs(sum(sum(d2rdthetadomega(2,:,:,:),1),1)))
-!print *, maxval(abs(sum(sum(d2rdthetadomega(3,:,:,:),1),1)))
-!print *, ""
-!print *, maxval(abs(sum(sum(d2rdzetadomega(1,:,:,:),1),1)))
-!print *, maxval(abs(sum(sum(d2rdzetadomega(2,:,:,:),1),1)))
-!print *, maxval(abs(sum(sum(d2rdzetadomega(3,:,:,:),1),1)))
-!print *, ""
-!print *, maxval(abs(sum(sum(d3rdtheta2domega(1,:,:,:),1),1)))
-!print *, maxval(abs(sum(sum(d3rdtheta2domega(2,:,:,:),1),1)))
-!print *, maxval(abs(sum(sum(d3rdtheta2domega(3,:,:,:),1),1)))
-!print *, ""
-!print *, maxval(abs(sum(sum(d3rdthetadzetadomega(1,:,:,:),1),1)))
-!print *, maxval(abs(sum(sum(d3rdthetadzetadomega(2,:,:,:),1),1)))
-!print *, maxval(abs(sum(sum(d3rdthetadzetadomega(3,:,:,:),1),1)))
-!print *, ""
-!print *, maxval(abs(sum(sum(d3rdzeta2domega(1,:,:,:),1),1)))
-!print *, maxval(abs(sum(sum(d3rdzeta2domega(2,:,:,:),1),1)))
-!print *, maxval(abs(sum(sum(d3rdzeta2domega(3,:,:,:),1),1)))
-!print *, ""
-!print *, maxval(abs(sum(sum(d2normxdthetadomega(:,:,:),2),2)))
-!print *, maxval(abs(sum(sum(d2normydthetadomega(:,:,:),2),2)))
-!print *, maxval(abs(sum(sum(d2normzdthetadomega(:,:,:),2),2)))
-!print *, ""
-!print *, maxval(abs(sum(sum(d2normxdzetadomega(:,:,:),2),2)))
-!print *, maxval(abs(sum(sum(d2normydzetadomega(:,:,:),2),2)))
-!print *, maxval(abs(sum(sum(d2normzdzetadomega(:,:,:),2),2)))
-!print *, ""
-!print *, maxval(abs(sum(d2norm_normaldthetadomega(:,:,:),2)))
-!print *, maxval(abs(sum(d2norm_normaldzetadomega(:,:,:),3)))
-!print *, ""
-!print *, sum(sum(abs(dnormxdomega(:,:,:)),2),2)
-!print *, sum(sum(abs(dnormydomega(:,:,:)),2),2)
-!print *, sum(sum(abs(dnormzdomega(:,:,:)),2),2)
-!print *,""
-!print *, xm_sensitivity
-!print *, xn_sensitivity
-!print *, darea_plasmadomega
-!print *, darea_coildomega
-
-!print *, sum(sum(abs(d2rdthetadomega(1,:,:,:)),1),1)
-!print *, sum(sum(abs(d2rdthetadomega(2,:,:,:)),1),1)!!
-!print *, sum(sum(abs(d2rdthetadomega(3,:,:,:)),1),1)
-!print *, ""
-!print *, sum(sum(abs(d2rdzetadomega(1,:,:,:)),1),1)!
-!print *, sum(sum(abs(d2rdzetadomega(2,:,:,:)),1),1)!
-!print *, sum(sum(abs(d2rdzetadomega(3,:,:,:)),1),1)!
-!print *, ""
-!print *, sum(sum(abs(d3rdtheta2domega(1,:,:,:)),1),1)!
-!print *, sum(sum(abs(d3rdtheta2domega(2,:,:,:)),1),1)!
-!print *, sum(sum(abs(d3rdtheta2domega(3,:,:,:)),1),1)!
-!print *, ""
-!print *, sum(sum(abs(d3rdthetadzetadomega(1,:,:,:)),1),1)
-!print *, sum(sum(abs(d3rdthetadzetadomega(2,:,:,:)),1),1)!
-!print *, sum(sum(abs(d3rdthetadzetadomega(3,:,:,:)),1),1)
-!print *, ""
-!print *, sum(sum(abs(d3rdzeta2domega(1,:,:,:)),1),1)!
-!print *, sum(sum(abs(d3rdzeta2domega(2,:,:,:)),1),1)!
-!print *, sum(sum(abs(d3rdzeta2domega(3,:,:,:)),1),1)!
-!print *, ""
-!print *, sum(sum(abs(d2normxdthetadomega(:,:,:)),2),2)!
-!print *, sum(sum(abs(d2normydthetadomega(:,:,:)),2),2)!
-!print *, sum(sum(abs(d2normzdthetadomega(:,:,:)),2),2)!
-!print *, ""
-!print *, sum(sum(abs(d2normxdzetadomega(:,:,:)),2),2)
-!print *, sum(sum(abs(d2normydzetadomega(:,:,:)),2),2)
-!print *, sum(sum(abs(d2normzdzetadomega(:,:,:)),2),2)
-!print *, ""
-!print *, sum(sum(abs(d2norm_normaldthetadomega(:,:,:)),2),2)!!!!!!
-!print *, sum(sum(abs(d2norm_normaldzetadomega(:,:,:)),2),2)!!!!!!
-!print *, ""
-
-!print *, sum(sum(abs(d2rdthetadomega_coil(1,:,:,:)),1),1)
-!print *, sum(sum(abs(d2rdthetadomega_coil(2,:,:,:)),1),1)
-!print *, sum(sum(abs(d2rdthetadomega_coil(3,:,:,:)),1),1)
-!print *, ""
-!print *, sum(sum(abs(d2rdzetadomega_coil(1,:,:,:)),1),1)
-!print *, sum(sum(abs(d2rdzetadomega_coil(2,:,:,:)),1),1)
-!print *, sum(sum(abs(d2rdzetadomega_coil(3,:,:,:)),1),1)
-!print *, ""
-!print *, sum(sum(abs(dnormxdomega_coil(:,:,:)),2),2)
-!print *, sum(sum(abs(dnormydomega_coil(:,:,:)),2),2)!
-!print *, sum(sum(abs(dnormzdomega_coil(:,:,:)),2),2)!
-!print *, ""
-!print *, sum(sum(abs(dnorm_normaldomega_coil(:,:,:)),2),2)
-!print *, ""
-!stop
 
   else !----- Coil derivatives -----
 

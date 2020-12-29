@@ -228,12 +228,26 @@ subroutine regcoil_validate_input
   end if
 
   if ((general_option==4 .or. general_option==5) .and. fixed_norm_sensitivity_option) then
-     select case (trim(target_option))
-       case (target_option_max_K_lse,target_option_lp_norm_K,target_option_chi2_B,target_option_rms_K)
-       case default
-      print *,"fixed_norm_sensitivity_option must be used with target_option = 'max_K_lse', 'lp_norm_K', or 'chi2_B'"
-        stop
-     end select
+     if (sensitivity_option < 6) then
+       select case (trim(target_option))
+         case (target_option_max_K_lse,target_option_lp_norm_K,target_option_chi2_B,target_option_rms_K)
+         case default
+        print *,"fixed_norm_sensitivity_option must be used with target_option = 'max_K_lse', 'lp_norm_K', or 'chi2_B'"
+          stop
+       end select
+     else if (sensitivity_option == 6) then
+        select case (trim(target_option))
+          case (target_option_lp_norm_K)
+            if (target_option_p .ne. 2) then
+              print *,"fixed_norm_sensitivity_option must be used with target_option = 'lp_norm_K' with p = 2, or 'chi2_K'"
+              stop 
+            end if
+          case (target_option_chi2_K)
+          case default
+         print *,"fixed_norm_sensitivity_option must be used with target_option = 'lp_norm_K' with p = 2, or 'chi2_K'"
+           stop
+        end select
+     end if
   end if
 
 end subroutine regcoil_validate_input

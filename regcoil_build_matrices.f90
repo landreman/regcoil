@@ -152,12 +152,8 @@ subroutine regcoil_build_matrices()
       allocate(dRHS_Bdomega(nomega_coil,num_basis_functions),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error!'
     else if (sensitivity_option == 6) then
-      !allocate(dmatrix_Kdomega(nomega_plasma,num_basis_functions,num_basis_functions),stat=iflag)
-      !if (iflag .ne. 0) stop 'Allocation error!'
       allocate(dmatrix_Bdomega(nomega_plasma,num_basis_functions,num_basis_functions),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error!'
-      !allocate(dRHS_Kdomega(nomega_plasma,num_basis_functions),stat=iflag)
-      !if (iflag .ne. 0) stop 'Allocation error!'
       allocate(dRHS_Bdomega(nomega_plasma,num_basis_functions),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error!'
 
@@ -729,9 +725,6 @@ subroutine regcoil_build_matrices()
   end if
   deallocate(factor_for_h)
   Bnormal_from_net_coil_currents = reshape(h, (/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma
-!  print *,sum(abs(Bnormal_from_net_coil_currents))
-!  stop
-  !Bnormal_from_net_coil_currents = transpose(reshape(h, (/ nzeta_plasma, ntheta_plasma /))) / norm_normal_plasma
 
   allocate(this_dhdomega(ntheta_plasma*nzeta_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'Allocation error!'
@@ -739,9 +732,7 @@ subroutine regcoil_build_matrices()
   if (sensitivity_option == 6) then
     do iomega=1,nomega_plasma
         this_dhdomega = dhdomega(iomega,:)
-        !print *,sum(abs(this_dhdomega))
         dBnormaldomega_from_net_coil_currents(iomega,:,:) = reshape(this_dhdomega, (/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma
-        !print *,sum(abs(dBnormaldomega_from_net_coil_currents(iomega,:,:)))
     end do
   end if
 
@@ -809,13 +800,6 @@ subroutine regcoil_build_matrices()
   call system_clock(toc)
   if (verbose) print *,"inductance*basis_functions:",real(toc-tic)/countrate,"sec."
 
-!print *, sum(abs(dddomega(1,:,1:ntheta_coil*nzeta_coil)),2)
-!print *, sum(abs(dddomega(2,:,1:ntheta_coil*nzeta_coil)),2)
-!print *, sum(abs(dddomega(3,:,1:ntheta_coil*nzeta_coil)),2)
-!print *, sum(sum(abs(dBnormaldomega_from_net_coil_currents),3),2)
-!print *, sum(sum(abs(dgdomega),2),1)
-!stop
-
   if (allocated(matrix_B)) deallocate(matrix_B)
   allocate(matrix_B(num_basis_functions, num_basis_functions),stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 13!'
@@ -870,8 +854,6 @@ subroutine regcoil_build_matrices()
   RHS_B = -dtheta_plasma*dzeta_plasma*matmul( &
        reshape(Bnormal_from_plasma_current+Bnormal_from_net_coil_currents, (/ ntheta_plasma*nzeta_plasma /)), g)
 
-!print *,sum(abs(RHS_B))
-!stop
   call system_clock(toc)
   if (verbose) print *,"Form RHS_B:",real(toc-tic)/countrate,"sec."
   call system_clock(tic)
@@ -1315,35 +1297,6 @@ subroutine regcoil_build_matrices()
   deallocate(d_g_zeta_zeta_d_theta, d_g_zeta_zeta_d_zeta)
   deallocate(d_N_d_theta, d_N_d_zeta)
   deallocate(Laplace_Beltrami_d_Phi_d_theta_coefficient, Laplace_Beltrami_d_Phi_d_zeta_coefficient)
-
-!print *, sum(abs(drdtheta_coil(1,:,:)))
-!print *, sum(abs(drdtheta_coil(2,:,:)))
-!print *, sum(abs(drdtheta_coil(3,:,:)))
-!print *, sum(abs(drdzeta_coil(1,:,:)))
-!print *, sum(abs(drdzeta_coil(2,:,:)))
-!print *, sum(abs(drdzeta_coil(3,:,:)))
-!stop
-!print *, sum(abs(d_x))
-!print *, sum(abs(d_y))
-!print *, sum(abs(d_z))
-!print *, sum(abs(f_x))
-!print *, sum(abs(f_y))
-!print *, sum(abs(f_z))
-!print *, ""
-!print *, sum(sum(abs(dfxdomega),2),2)
-!print *, sum(sum(abs(dfydomega),2),2)
-!print *, sum(sum(abs(dfzdomega),2),2)
-!print *, ""
-!print *, sum(sum(abs(dnorm_normaldomega),2),2)
-!print *, ""
-!print *, sum(abs(RHS_regularization))
-!print *, sum(abs(dRHS_Bdomega),2)
-!print *, sum(abs(dRHS_Kdomega),2)
-!print *, ""
-!print *, sum(abs(matrix_regularization))
-!print *, sum(sum(abs(dmatrix_Bdomega),3),2)
-!print *, sum(sum(abs(dmatrix_Kdomega),3),2)
-!stop
 
 end subroutine regcoil_build_matrices
 

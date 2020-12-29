@@ -174,8 +174,6 @@ subroutine regcoil_double_to_single()
     dzeta = zeta(2)-zeta(1)
 
     B_0 = sqrt(sum(B**2 * norm_normal) / sum(norm_normal))
-!print *,B_0
-!stop
 
     if (allocated(mean_curvature_temp)) deallocate(mean_curvature_temp)
     allocate(mean_curvature_temp(ntheta_plasma, nzeta_plasma),stat=iflag)

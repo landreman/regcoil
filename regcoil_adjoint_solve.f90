@@ -236,13 +236,6 @@ subroutine regcoil_adjoint_solve
             d_xdNdomega_over_N_coil = d_x_over_N_coil * reshape(dnorm_normaldomega_coil(iomega,:,:),(/ ntheta_coil*nzeta_coil/))
             d_ydNdomega_over_N_coil = d_y_over_N_coil * reshape(dnorm_normaldomega_coil(iomega,:,:),(/ ntheta_coil*nzeta_coil/))
             d_zdNdomega_over_N_coil = d_z_over_N_coil * reshape(dnorm_normaldomega_coil(iomega,:,:),(/ ntheta_coil*nzeta_coil/))
-!            dchi2Kdomega_withoutadjoint(iomega,1) = dot_product(d_x_over_N_coil,dddomega(1,iomega,1:ntheta_coil*nzeta_coil)) &
-!            + dot_product(d_y_over_N_coil,dddomega(2,iomega,1:ntheta_coil*nzeta_coil)) &
-!            + dot_product(d_z_over_N_coil,dddomega(3,iomega,1:ntheta_coil*nzeta_coil))
-!            dchi2Kdomega_withoutadjoint(iomega,2) = - dot_product(d_x_over_N_coil,d_xdNdomega_over_N_coil) &
-!            - dot_product(d_y_over_N_coil,d_ydNdomega_over_N_coil) &
-!            - dot_product(d_z_over_N_coil,d_zdNdomega_over_N_coil)
-!            dchi2Kdomega_withoutadjoint(iomega,3) = 2*dot_product(dRHS_Kdomega(iomega,:),solution) + dot_product(solution,matmul(dmatrix_Kdomega(iomega,:,:),solution))
             dchi2Kdomega_withoutadjoint(iomega,ilambda) = nfp*( dtheta_coil*dzeta_coil* ( &
               2*(dot_product(d_x_over_N_coil,dddomega(1,iomega,1:ntheta_coil*nzeta_coil)) &
               + dot_product(d_y_over_N_coil,dddomega(2,iomega,1:ntheta_coil*nzeta_coil)) &
@@ -323,10 +316,9 @@ subroutine regcoil_adjoint_solve
         !$OMP DO PRIVATE(temp_vec)
         do iomega = 1, nomega_plasma
          temp_vec = matmul(dmatrix_Bdomega(iomega,:,:),solution)
-         !temp_num = reshape(1/2*matmul(reshape(solution, (/ 1,num_basis_functions /)), reshape(temp_vec, (/ num_basis_functions, 1 /))), (/ 0 /))
          dchi2Bdomega_withoutadjoint(iomega,ilambda) = nfp*dtheta_plasma*dzeta_plasma * sum(dnorm_normaldomega(iomega,:,:) * B_nonSV**2 + 2*norm_normal_plasma * B_nonSV * dBnormaldomega_from_net_coil_currents(iomega,:,:)) &
             - 2*nfp*sum(solution*dRHS_Bdomega(iomega,:)) &
-            + nfp*sum(solution*temp_vec)!matmul(solution, reshape(temp_vec, (/ num_basis_functions, 1 /))) )
+            + nfp*sum(solution*temp_vec)
          dchi2Bdomega(iomega,ilambda) = dchi2Bdomega_withoutadjoint(iomega,ilambda)
         enddo
         !$OMP END DO
@@ -446,13 +438,5 @@ subroutine regcoil_adjoint_solve
   if (sensitivity_option == 3 .or. sensitivity_option == 5) then
     deallocate(adjoint_c)
   endif
-
-!  print *, dchi2Bdomega_withoutadjoint(:,nlambda)
-!  print *, dchi2Bdomega(:,nlambda)
-!  print *, dchi2Kdomega_withoutadjoint(:,nlambda)
-!  print *, dchi2Kdomega(:,nlambda)
-!  print *, dRMSBdomega(:,nlambda)
-!  print *, dRMSKdomega(:,nlambda)
-!  stop
 
 end subroutine regcoil_adjoint_solve

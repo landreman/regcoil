@@ -15,7 +15,6 @@ program regcoil
   call system_clock(tic,countrate)
 
   call regcoil_read_input()
-!  nomega_coil = -1
   call regcoil_validate_input()
   call regcoil_compute_lambda()
 

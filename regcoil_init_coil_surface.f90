@@ -296,15 +296,6 @@ subroutine regcoil_init_coil_surface()
     drdzeta_coil(2,:,:) = drdzeta_plasma(2,:,:) + separation * (dnormaldzeta_plasma(2,:,:) - dnorm_normaldzeta_plasma * normal_plasma(2,:,:)/norm_normal_plasma_full) / norm_normal_plasma_full
     drdzeta_coil(3,:,:) = drdzeta_plasma(3,:,:) + separation * (dnormaldzeta_plasma(3,:,:) - dnorm_normaldzeta_plasma * normal_plasma(3,:,:)/norm_normal_plasma_full) / norm_normal_plasma_full
 
-!print *, maxval(abs(sum(drdtheta_coil(1,:,:),1)))!
-!print *, maxval(abs(sum(drdtheta_coil(2,:,:),1)))!
-!print *, maxval(abs(sum(drdtheta_coil(3,:,:),1)))!
-!print *, ""
-!print *, maxval(abs(sum(drdzeta_coil(1,:,:),2)))
-!print *, maxval(abs(sum(drdzeta_coil(2,:,:),2)))
-!print *, maxval(abs(sum(drdzeta_coil(3,:,:),2)))!
-!print *, ""
-
     d2rdtheta2_coil = 0     ! 2nd derivatives of coil position not implemented yet for geometry_option_coil == 5
     d2rdthetadzeta_coil = 0
     d2rdzeta2_coil = 0
@@ -355,9 +346,6 @@ subroutine regcoil_init_coil_surface()
   call system_clock(toc)
   if (verbose) print *,"Done initializing coil surface. Took ",real(toc-tic)/countrate," sec."
   
-!print *, area_plasma
-!print *, area_coil
-!print *, max_separation
 end subroutine regcoil_init_coil_surface
 
 subroutine regcoil_filter_coil_surface()

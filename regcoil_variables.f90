@@ -174,7 +174,7 @@ module regcoil_variables
     real(dp), allocatable, dimension(:) :: raxis_cc, zaxis_cs
     real(dp), allocatable, dimension(:) :: lmnc, lmns, omns
     real(dp), allocatable, dimension(:) :: bmnc_plasma, bmns_plasma
-    character(len=200) :: singleFourierFilename = '/Users/arthurcarlton-jones/Documents/Spring2019/Plasma/regcoil_adjoint/regcoil/singleFourierSurface.nc'
+    character(len=200) :: singleFourierFilename =""
 
   namelist / regcoil_nml / ntheta_plasma, nzeta_plasma, ntheta_coil, nzeta_coil, &
        geometry_option_plasma, geometry_option_coil, &
@@ -191,7 +191,8 @@ module regcoil_variables
        sensitivity_option, nmax_sensitivity, mmax_sensitivity, &
        sensitivity_symmetry_option, target_option_p, &
        fixed_norm_sensitivity_option, coil_plasma_dist_lse_p, &
-       m_max, n_max, singleFourierFilename, use_arclength_angle, arclength_separation
+       m_max, n_max, singleFourierFilename, use_arclength_angle, arclength_separation, &
+       theta_transform_refinement, zeta_transform_refinement
 
 end module regcoil_variables
 

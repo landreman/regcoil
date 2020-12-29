@@ -24,8 +24,6 @@ contains
          mpol_vmec => mpol, ntor_vmec => ntor, bvco, bsubvmnc
     use safe_open_mod
     use stel_constants
-!    use regcoil_double_to_single
-!    use regcoil_read_single_Fourier
 
     implicit none
 
@@ -670,8 +668,6 @@ contains
 
              select case (geometry_option_plasma)
              case (8,9)
-!                  if ((xm_plasma(imn) > 10) .or. (abs(xn_plasma(imn)) > 10*nfp)) cycle
-!                  f_test(imn,itheta,izeta) = (dcosangle3dtheta)
                  r_plasma(1,itheta,izeta) = r_plasma(1,itheta,izeta) + lmnc(imn) * cosangle * cosangle3 * cosangle2
                  r_plasma(2,itheta,izeta) = r_plasma(2,itheta,izeta) + lmnc(imn) * cosangle * cosangle3 * sinangle2
                  r_plasma(3,itheta,izeta) = r_plasma(3,itheta,izeta) + lmnc(imn) * cosangle * sinangle3
@@ -769,55 +765,6 @@ contains
         - d2rdthetadzeta_plasma(1,:,:) * drdzeta_plasma(2,:,:) - drdtheta_plasma(1,:,:) * d2rdzeta2_plasma(2,:,:)
     end if
    
-!do imn = 1,mnmax_plasma
-!  if (maxval(abs(sum(f_test(imn,:,:),2))) > 1e-10) then
-!    print *, xm_plasma(imn), xn_plasma(imn), maxval(abs(sum(f_test(imn,:,:),2)))
-!  end if
-!end do
-!do imn = 1,mnmax_plasma
-!  print *, xm_plasma(imn), xn_plasma(imn), maxval(abs(f_test(imn,:,:)))
-!end do
-!print *, ""
-!stop
-!print *, maxval(sum(domegadtheta_arclength,1))
-!print *, maxval(sum(domegadzeta_arclength,2))
-!print *, maxval(sum(d2omegadtheta2_arclength,1))
-!print *, maxval(sum(d2omegadzeta2_arclength,2))
-!print *, maxval(sum(d2omegadthetadzeta_arclength,1))
-!print *, maxval(sum(d2omegadthetadzeta_arclength,2))
-!print *, ""
-!print *, maxval(abs(sum(drdtheta_plasma(1,:,:),1)))!
-!print *, maxval(abs(sum(drdtheta_plasma(2,:,:),1)))!
-!print *, maxval(abs(sum(drdtheta_plasma(3,:,:),1)))!
-!print *, ""
-!print *, maxval(abs(sum(drdzeta_plasma(1,:,:),2)))
-!print *, maxval(abs(sum(drdzeta_plasma(2,:,:),2)))
-!print *, maxval(abs(sum(drdzeta_plasma(3,:,:),2)))!
-!print *, ""
-!print *, maxval(abs(sum(d2rdtheta2_plasma(1,:,:),1)))!!
-!print *, maxval(abs(sum(d2rdtheta2_plasma(2,:,:),1)))
-!print *, maxval(abs(sum(d2rdtheta2_plasma(3,:,:),1)))
-!print *, ""
-!print *, maxval(abs(sum(d2rdzeta2_plasma(1,:,:),2)))
-!print *, maxval(abs(sum(d2rdzeta2_plasma(2,:,:),2)))
-!print *, maxval(abs(sum(d2rdzeta2_plasma(3,:,:),2)))!!!!!!
-!print *, ""
-!print *, maxval(abs(sum(d2rdthetadzeta_plasma(1,:,:),1)))!
-!print *, maxval(abs(sum(d2rdthetadzeta_plasma(2,:,:),1)))
-!print *, maxval(abs(sum(d2rdthetadzeta_plasma(3,:,:),1)))
-!print *,""
-!print *, maxval(abs(sum(d2rdthetadzeta_plasma(1,:,:),2)))
-!print *, maxval(abs(sum(d2rdthetadzeta_plasma(2,:,:),2)))
-!print *, maxval(abs(sum(d2rdthetadzeta_plasma(3,:,:),2)))
-!print *,""
-!print *, maxval(abs(sum(dnormaldtheta_plasma(1,:,:),1)))
-!print *, maxval(abs(sum(dnormaldtheta_plasma(2,:,:),1)))!!
-!print *, maxval(abs(sum(dnormaldtheta_plasma(3,:,:),1)))!!
-!print *, maxval(abs(sum(dnormaldzeta_plasma(1,:,:),2)))
-!print *, maxval(abs(sum(dnormaldzeta_plasma(2,:,:),2)))
-!print *, maxval(abs(sum(dnormaldzeta_plasma(3,:,:),2)))!
-!print *,""
-!stop
     if (allocated(norm_normal_plasma)) deallocate(norm_normal_plasma)
     allocate(norm_normal_plasma(ntheta_plasma, nzeta_plasma),stat=iflag)
     if (iflag .ne. 0) stop 'regcoil_init_plasma Allocation error!'
@@ -848,56 +795,11 @@ contains
         + dnormaldzeta_plasma(2,:,:) * normal_plasma(2,:,:) &
         + dnormaldzeta_plasma(3,:,:) * normal_plasma(3,:,:) ) / norm_normal_plasma_full
     end if
-
-!print *, maxval(abs(sum(dnorm_normaldtheta_plasma,1)))!
-!print *, maxval(abs(sum(dnorm_normaldzeta_plasma,2)))!
-!print *,""
-!print *, sum(abs(d2omegadtheta2_arclength))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(d2omegadthetadzeta_arclength))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(d2omegadzeta2_arclength))/(ntheta_plasma*nzetal_plasma)
-!print *,""
-!print *, sum(abs(dnormaldtheta_plasma(1,:,:) * normal_plasma(1,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(dnormaldtheta_plasma(2,:,:) * normal_plasma(2,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(dnormaldtheta_plasma(3,:,:) * normal_plasma(3,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(dnormaldzeta_plasma(1,:,:) * normal_plasma(1,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(dnormaldzeta_plasma(2,:,:) * normal_plasma(2,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(dnormaldzeta_plasma(3,:,:) * normal_plasma(3,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *,""
-!stop
-!print *, sum(abs(drdtheta_plasma(1,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(drdtheta_plasma(2,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(drdtheta_plasma(3,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(drdzeta_plasma(1,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(drdzeta_plasma(2,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(drdzeta_plasma(3,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *,""
-!stop
-!print *, sum(abs(d2rdtheta2_plasma(1,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(d2rdtheta2_plasma(2,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(d2rdtheta2_plasma(3,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(d2rdthetadzeta_plasma(1,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(d2rdthetadzeta_plasma(2,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(d2rdthetadzeta_plasma(3,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(d2rdzeta2_plasma(1,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(d2rdzeta2_plasma(2,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(d2rdzeta2_plasma(3,:,:)))/(ntheta_plasma*nzetal_plasma)!
-!print *,""
-!stop
-!print *, sum(abs(dnormaldtheta_plasma(1,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(dnormaldtheta_plasma(2,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(dnormaldtheta_plasma(3,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *, sum(abs(dnormaldzeta_plasma(1,:,:)))/(ntheta_plasma*nzetal_plasma)!
-!print *, sum(abs(dnormaldzeta_plasma(2,:,:)))/(ntheta_plasma*nzetal_plasma)!
-!print *, sum(abs(dnormaldzeta_plasma(3,:,:)))/(ntheta_plasma*nzetal_plasma)
-!print *,""
-!stop
     
     dtheta_plasma = theta_plasma(2)-theta_plasma(1)
     dzeta_plasma = zeta_plasma(2)-zeta_plasma(1)
     
     area_plasma = nfp * dtheta_plasma * dzeta_plasma * sum(norm_normal_plasma)
-!print *, area_plasma
-!print *, dtheta_plasma * dzeta_plasma * sum(norm_normal_plasma_full)
 
     ! Compute plasma volume using \int (1/2) R^2 dZ dzeta.
     ! These quantities will be evaluated on the half theta grid, which is the natural grid for dZ,

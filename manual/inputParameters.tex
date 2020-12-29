@@ -140,7 +140,7 @@ from the {\ttfamily bvco} value in the vmec wout file.
 {real}
 {0.0}
 {Always}
-{The number of Amperes of current the links the coil winding surface toroidally,
+{The number of Amperes of current that links the coil winding surface toroidally,
 denoted $I$ in \cite{regcoilPaper}. Unlike the net poloidal current, this number
 is never read from a wout file.
 }
@@ -215,6 +215,30 @@ Maximum toroidal mode number to include for the single-valued part of the curren
 
 \myhrule
 
+\param{theta\_transform\_refinement}
+{integer}
+{2}
+{Only when \parlink{geometry\_option\_plasma} is 8.}
+{\parlink{ntheta\_plasma} will be multiplied by this value
+when transforming from the original \vmec~double Fourier series representation to a single Fourier representation.
+This parameter affects the time required to compute the single Fourier amplitudes,
+but does not affect the time for other calculations.
+}
+
+\myhrule
+
+\param{zeta\_transform\_refinement}
+{integer}
+{2}
+{Only when \parlink{geometry\_option\_plasma} is 8.}
+{\parlink{nzeta\_plasma} will be multiplied by this value
+when transforming from the original \vmec~double Fourier series representation to a single Fourier representation.
+This parameter affects the time required to compute the single Fourier amplitudes,
+but does not affect the time for other calculations.
+}
+
+\myhrule
+
 \param{mpol\_transform\_refinement}
 {real}
 {5.0}
@@ -254,7 +278,7 @@ but does not affect the time for other calculations.
 
 {\ttfamily geometry\_option\_plasma} = 1: Identical to option 0.\\
 
-{\ttfamily geometry\_option\_plasma} = 2: The plasma surface will be the last surface in the full radial grid of the \vmec~file specified by \parlink{wout\_ilename}.
+{\ttfamily geometry\_option\_plasma} = 2: The plasma surface will be the last surface in the full radial grid of the \vmec~file specified by \parlink{wout\_filename}.
 The poloidal angle used will be the normal \vmec~angle which is not a straight-field-line coordinate.
 This is typically the best option to use for working with \vmec~equilibria.\\
 
@@ -272,7 +296,11 @@ This option exists in order to examine changes when using a different poloidal c
 {\ttfamily geometry\_option\_plasma} = 6: The plasma surface will be loaded from an ASCII file, specified by \parlink{shape\_filename\_plasma}. The first line of this file is ignored. The second line is an integer giving the number of Fourier modes
 to read. The remaining lines contain $m$, $n$, $rmnc$, $zmns$, $rmns$, $zmnc$. \\
 
-{\ttfamily geometry\_option\_plasma} = 7: The plasma surface and Bnorm information will be loaded from an ASCII file in FOCUS format, specified by \parlink{shape\_filename\_plasma}. For more information, please look here \url{https://princetonuniversity.github.io/FOCUS/rdsurf.pdf}.
+{\ttfamily geometry\_option\_plasma} = 7: The plasma surface and Bnorm information will be loaded from an ASCII file in FOCUS format, specified by \parlink{shape\_filename\_plasma}. For more information, please look here \url{https://princetonuniversity.github.io/FOCUS/rdsurf.pdf}.\\
+
+{\ttfamily geometry\_option\_plasma} = 8: The plasma surface will be the last surface in the full radial grid of the \vmec~file specified by \parlink{wout\_filename}. This is then converted into a single Fourier representation. For more information, see \url{https://arxiv.org/abs/2011.03702}.\\
+
+{\ttfamily geometry\_option\_plasma} = 9: The plasma surface in the single Fourier representation of option 8 and Bnorm information will be loaded from a text file, specified by \parlink{singleFourierFilename}.
 
 }
 
@@ -321,6 +349,31 @@ You can use either a \netCDF~or {\ttfamily ASCII} format file.}
 
 \myhrule
 
+\param{singleFourierFilename}
+{string}
+{{\ttfamily ""}}
+{Only when \parlink{geometry\_option\_plasma} is 8 (write to) or 9 (read from).}
+{Name of the text file which will be used for the plasma surface single Fourier representation. If \parlink{geometry\_option\_plasma}=9, the plasma surface from
+this file will be used as the plasma surface for \regcoil. If \parlink{geometry\_option\_plasma}=8, \regcoil~will save the single Fourier representation of the plasma surface it computes into a file with this name.}
+
+\myhrule
+
+\param{use\_arclength\_angle}
+{logical}
+{true}
+{Only when \parlink{geometry\_option\_plasma} is 8.}
+{Determines the poloidal angle to be used with the plasma surface single Fourier representation. Arctangent angle is used when false. Uniform arclength angle on a uniformly offset surface from the plasma surface is used when true.}
+
+\myhrule
+
+\param{arclength\_separation}
+{real}
+{0.2}
+{Only when \parlink{geometry\_option\_plasma} is 8 and \parlink{use\_arclength\_angle} is true.}
+{Offset distance of the uniformly offset surface used to compute the uniform arclength angle. If \parlink{geometry\_option\_coil}=5, it is helpful, though not necessary, to make this the same as \parlink{separation}.}
+
+\myhrule
+
 \param{efit\_filename}
 {string}
 {{\ttfamily ""}}
@@ -361,11 +414,14 @@ if  \parlink{geometry\_option\_plasma} is 2.
 
 {\ttfamily geometry\_option\_coil} = 1: Identical to option 0, except the major radius of the coil surface will be set by \parlink{R0\_coil}.\\
 
-{\ttfamily geometry\_option\_coil} = 2: The coil surface will computing by expanding the plasma surface uniformly by a distance \parlink{separation}. The expanded surface will be saved to a local file specified by \parlink{nescin\_filename}. \\
+{\ttfamily geometry\_option\_coil} = 2: The coil surface will be computed by expanding the plasma surface uniformly by a distance \parlink{separation}. The expanded surface will be saved to a local file specified by \parlink{nescin\_filename}. \\
 
 {\ttfamily geometry\_option\_coil} = 3: The coil surface will be the `coil' surface in the \nescoil~`nescin' input file specified by \parlink{nescin\_filename}. \\
 
-{\ttfamily geometry\_option\_coil} = 4: Similar to option 2, except that the poloidal angle will be changed such that the arclength (with respect to $\theta)$ is independent of $\theta$ at each $\zeta$. The coil surface will computing by expanding the plasma surface uniformly by a distance \parlink{separation}. The expanded surface will be saved to a local file specified by \parlink{nescin\_filename}. \\
+{\ttfamily geometry\_option\_coil} = 4: Similar to option 2, except that the poloidal angle will be changed such that the arclength (with respect to $\theta)$ is independent of $\theta$ at each $\zeta$. The coil surface will be computed by expanding the plasma surface uniformly by a distance \parlink{separation}. The expanded surface will be saved to a local file specified by \parlink{nescin\_filename}. \\
+
+{\ttfamily geometry\_option\_coil} = 5: The coil surface will be computed by expanding the plasma surface uniformly by a distance \parlink{separation}. This is similar to option 2, except that it is to be used with  \parlink{geometry\_option\_plasma}=8 or 9, and it does not save a Fourier representation of the coil surface. 
+
 }
 
 \myhrule
@@ -390,7 +446,7 @@ if  \parlink{geometry\_option\_plasma} is 2.
 \param{separation}
 {real}
 {0.2}
-{Only when \parlink{geometry\_option\_coil} is 2.}
+{Only when \parlink{geometry\_option\_coil} is 2 or 5.}
 {Amount by which the coil surface is offset from the plasma surface.}
 
 \myhrule
@@ -520,13 +576,14 @@ by varying $\lambda$.
 \param{sensitivity\_option}
 {integer}
 {1}
-{Only when one wishes to compute derivatives of output quantities with respect to the coil winding surface parameters. Note that {\ttfamily sensitivity\_option > 1} must be used with \parlink{general\_option} = 1, 4, or 5. {\ttfamily sensitivity\_option = 3, 4, 5} should give the same results, although 4 or 5 tend to be more efficient. }
+{Only when one wishes to compute derivatives of output quantities with respect to the coil winding surface parameters (1-5) or plasma surface parameters (6). Note that {\ttfamily sensitivity\_option > 1} must be used with \parlink{general\_option} = 1, 4, or 5. {\ttfamily sensitivity\_option = 3, 4, 5} should give the same results, although 4 or 5 tend to be more efficient. }
 {\\
 {\ttfamily sensitivity\_option = 1}: Derivatives are not computed. \\
 {\ttfamily sensitivity\_option = 2}: Derivative of $\chi^2$ is computed. \\
 {\ttfamily sensitivity\_option = 3}: Derivatives of $\chi^2_K$, $\chi^2_B$, and $\chi^2$ are computed. This requires two adjoint solves. \\
 {\ttfamily sensitivity\_option = 4}: Derivatives of $\chi^2_K$, $\chi^2_B$, and $\chi^2$ are computed. An adjoint solve is used to compute the derivative of $\chi^2_K$ and the derivative of $\chi^2_B$ is computed from it. This requires one adjoint solve. \\
-{\ttfamily sensitivity\_option = 5}: Derivatives of $\chi^2_K$, $\chi^2_B$, and $\chi^2$ are computed. An adjoint solve is used to compute the derivative of $\chi^2_B$ and the derivative of $\chi^2_K$ is computed from it. This requires one adjoint solve. 
+{\ttfamily sensitivity\_option = 5}: Derivatives of $\chi^2_K$, $\chi^2_B$, and $\chi^2$ are computed. An adjoint solve is used to compute the derivative of $\chi^2_B$ and the derivative of $\chi^2_K$ is computed from it. This requires one adjoint solve. \\
+{\ttfamily sensitivity\_option = 6}: Unlike in the previous options, derivatives are computed with respect to the plasma surface parameters. Derivatives of $\chi^2_K$, $\chi^2_B$, and $\chi^2$ are computed. An adjoint solve is used to compute the derivative of $\chi^2_K$ and the derivative of $\chi^2_B$ is computed from it. This requires one adjoint solve. 
 }
 
 \myhrule
@@ -535,14 +592,14 @@ by varying $\lambda$.
 {logical}
 {false}
 {When \parlink{sensitivity\_option} $> 1$.}
-{If true, derivatives of $\chi^2$, $\chi^2_B$, and $\chi^2_K$ are computed at fixed target (indicated by \parlink{target\_option}) rather than at fixed $\lambda$. This option must be used with \parlink{general\_option} $> 3$ and \parlink{target\_option} = \texttt{"chi2\_B"}, \texttt{"lp\_norm\_K"} or \texttt{"max\_K\_lse"}.}
+{If true, derivatives of $\chi^2$, $\chi^2_B$, and $\chi^2_K$ are computed at fixed target (indicated by \parlink{target\_option}) rather than at fixed $\lambda$. When \parlink{sensitivity\_option} $< 5$ , this option must be used with \parlink{general\_option} $> 3$ and \parlink{target\_option} = \texttt{"chi2\_B"}, \texttt{"lp\_norm\_K"} or \texttt{"max\_K\_lse"}. When \parlink{sensitivity\_option} $=6$ , this option must be used with \parlink{general\_option} $> 3$ and \parlink{target\_option} = \texttt{"chi2\_K"} or \texttt{"lp\_norm\_K"}  with $p=2$ .}
 
 \myhrule
 
 \param{sensitivity\_symmetry\_option}
 {integer}
 {1}
-{Symmetry assumed when computing derivative with respect to coil geometry parameters. This does not need to be the same as \parlink{symmetry\_option}.}
+{Symmetry assumed when computing derivative with respect to coil or plasma geometry parameters. This does not need to be the same as \parlink{symmetry\_option}.}
 {\\
 {\ttfamily sensitivity\_symmetry\_option = 1}: Only compute derivatives with respect to $r_{mn}^c$ and $z_{mn}^s$ of the winding surface using the \texttt{NESCIN} convention. This option corresponds to stellarator symmetry. \\
 {\ttfamily sensitivity\_symmetry\_option = 2}: Only compute derivatives with respect to $r_{mn}^s$ and $z_{mn}^c$ of the winding surface using the \texttt{NESCIN} convention. \\

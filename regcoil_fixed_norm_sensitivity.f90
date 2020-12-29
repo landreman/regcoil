@@ -216,15 +216,6 @@ subroutine regcoil_fixed_norm_sensitivity()
     print *,"total time in regcoil_fixed_norm_sensitivity: ",real(toc-tic_begin)/countrate," sec."
   end if
 
-!print *, lambda(nlambda)
-!print *, dchi2Bdomega_withoutadjoint(:,nlambda)
-!print *, dchi2Bdomega(:,nlambda)
-!print *, dchi2Kdomega_withoutadjoint(:,nlambda)
-!print *, dchi2Kdomega(:,nlambda)
-!print *, dRMSBdomega(:,nlambda)
-!print *, dRMSKdomega(:,nlambda)
-!stop
-
 contains
 
 end subroutine regcoil_fixed_norm_sensitivity
