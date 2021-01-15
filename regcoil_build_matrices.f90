@@ -152,7 +152,11 @@ subroutine regcoil_build_matrices()
       allocate(dRHS_Bdomega(nomega_coil,num_basis_functions),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error!'
     else if (sensitivity_option == 6) then
+      allocate(dmatrix_Kdomega(nomega_plasma,num_basis_functions,num_basis_functions),stat=iflag)
+      if (iflag .ne. 0) stop 'Allocation error!'
       allocate(dmatrix_Bdomega(nomega_plasma,num_basis_functions,num_basis_functions),stat=iflag)
+      if (iflag .ne. 0) stop 'Allocation error!'
+      allocate(dRHS_Kdomega(nomega_plasma,num_basis_functions),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error!'
       allocate(dRHS_Bdomega(nomega_plasma,num_basis_functions),stat=iflag)
       if (iflag .ne. 0) stop 'Allocation error!'

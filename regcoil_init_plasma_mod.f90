@@ -200,15 +200,11 @@ contains
        if (verbose) print *,"size of rmnc_vmec:",size(rmnc_vmec,1),size(rmnc_vmec,2)
        rmnc_plasma = rmnc_vmec(:,ns-1) * weight1 + rmnc_vmec(:,ns) * weight2
        zmns_plasma = zmns_vmec(:,ns-1) * weight1 + zmns_vmec(:,ns) * weight2
-       if (sensitivity_option == 6) then
-         bmnc_plasma = bmnc_vmec(:,ns-1) * weight4 + bmnc_vmec(:,ns) * weight3
-       end if
+       bmnc_plasma = bmnc_vmec(:,ns-1) * weight4 + bmnc_vmec(:,ns) * weight3
        if (lasym) then
           rmns_plasma = rmns_vmec(:,ns-1) * weight1 + rmns_vmec(:,ns) * weight2
           zmnc_plasma = zmnc_vmec(:,ns-1) * weight1 + zmnc_vmec(:,ns) * weight2
-          if (sensitivity_option == 6) then
-            bmns_plasma = bmns_vmec(:,ns-1) * weight4 + bmns_vmec(:,ns) * weight3
-          end if
+          bmns_plasma = bmns_vmec(:,ns-1) * weight4 + bmns_vmec(:,ns) * weight3
        end if
 
        if (geometry_option_plasma .eq. 8) then
@@ -251,11 +247,9 @@ contains
 
        rmnc_vmecLast = rmnc_vmec(:,ns-1) * weight1 + rmnc_vmec(:,ns) * weight2
        zmns_vmecLast = zmns_vmec(:,ns-1) * weight1 + zmns_vmec(:,ns) * weight2
-       if (sensitivity_option==6) then
-         bmnc_plasma = bmnc_vmec(:,ns-1) * weight4 + bmnc_vmec(:,ns) * weight3
-         if (lasym) then
-           bmns_plasma = bmns_vmec(:,ns-1) * weight4 + bmnc_vmec(:,ns) * weight3
-         end if
+       bmnc_plasma = bmnc_vmec(:,ns-1) * weight4 + bmnc_vmec(:,ns) * weight3
+       if (lasym) then
+         bmns_plasma = bmns_vmec(:,ns-1) * weight4 + bmnc_vmec(:,ns) * weight3
        end if
 
        ! Since the "original" vmec poloidal angle is chosen to have a very condensed
