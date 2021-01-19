@@ -58,13 +58,13 @@ contains
   end subroutine regcoil_init_Fourier_modes
 
 subroutine regcoil_init_Fourier_modes_sensitivity &
-      (mpol,ntor,mnmax,nomega,xm,xn,omega,sensitivity_symmetry_option,sensitivity_option)
+      (mpol_min,ntor_min,mpol,ntor,mnmax,nomega,xm,xn,omega,sensitivity_symmetry_option,sensitivity_option)
 
     use regcoil_variables, only: geometry_option_plasma
 
     implicit none
 
-    integer :: mpol, ntor, mnmax, iomega, i, nomega
+    integer :: mpol_min, ntor_min, mpol, ntor, mnmax, iomega, i, nomega
     integer, dimension(:), allocatable :: xm, xn, omega
     integer :: minSymmetry, maxSymmetry, sensitivity_symmetry_option, sensitivity_option
 
@@ -73,7 +73,17 @@ subroutine regcoil_init_Fourier_modes_sensitivity &
     ! xm is nonnegative.
     ! xn can be negative, zero, or positive.
     ! When xm is 0, xn must be non-negative
-    mnmax = mpol*(ntor*2+1) + ntor+1
+    !mnmax = mpol*(ntor*2+1) + ntor+1
+    mnmax = (mpol-mpol_min+1) * (2*(ntor-ntor_min+1))
+    if (ntor_min == 0) then
+      mnmax = mnmax - (mpol-mpol_min+1) ! remove overcounting if ntor_min = 0
+    end if
+    if (mpol_min == 0) then
+      mnmax = mnmax - (ntor-ntor_min+1) ! remove negative n for m = 0
+      if (ntor_min == 0) then
+        mnmax = mnmax + 1 ! remove undercounting if ntor_min = 0
+      end if
+    end if
 
     ! nomega is the length of the number of fourier coefficients
     if (sensitivity_option == 6) then !----- Plasma derivatives -----
@@ -136,28 +146,46 @@ subroutine regcoil_init_Fourier_modes_sensitivity &
     allocate(omega(nomega),stat=iflag)
     if (iflag .ne. 0) stop 'Allocation error!'
 
-    ! Handle the xm=0 modes:
     xm=0
     iomega = 0
-    do jn=1,ntor+1
-      do i=minSymmetry,maxSymmetry
-        iomega = iomega + 1
-        omega(iomega) = i
-        xn(iomega)=jn-1
-      enddo
-    end do
 
-    ! Handle the xm>0 modes:
-    do jm = 1,mpol
-      do jn = -ntor, ntor
+    if (mpol_min == 0) then
+      ! Handle the xm=0 modes:
+      do jn=ntor_min,ntor
         do i=minSymmetry,maxSymmetry
           iomega = iomega + 1
-          xn(iomega) = jn
-          xm(iomega) = jm
           omega(iomega) = i
+          xn(iomega)=jn
         enddo
       end do
-    end do
+
+      ! Handle the xm>0 modes:
+      do jm = 1,mpol
+        do jn = -ntor, ntor
+        if (abs(jn) < ntor_min) cycle
+          do i=minSymmetry,maxSymmetry
+            iomega = iomega + 1
+            xn(iomega) = jn
+            xm(iomega) = jm
+            omega(iomega) = i
+          enddo
+        end do
+      end do
+    else
+      do jm = mpol_min,mpol
+        do jn = -ntor, ntor
+        if (abs(jn) < ntor_min) cycle
+          do i=minSymmetry,maxSymmetry
+            iomega = iomega + 1
+            xn(iomega) = jn
+            xm(iomega) = jm
+            omega(iomega) = i
+          enddo
+        end do
+      end do
+    end if
+
+    
 
     if (iomega .ne. nomega) then
       print *,"Error!  iomega=",iomega," but nomega=",nomega

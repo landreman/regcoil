@@ -215,6 +215,22 @@ subroutine regcoil_validate_input
     stop "mmax_sensitivity must be >=0."
   end if
 
+  if (nmin_sensitivity<0) then
+    stop "nmin_sensitivity must be >=0."
+  end if
+
+  if (mmin_sensitivity<0) then
+    stop "mmin_sensitivity must be >=0."
+  end if
+
+  if (nmax_sensitivity<nmin_sensitivity) then
+    stop "nmax_sensitivity must be >= nmin_sensitivity."
+  end if
+
+  if (mmax_sensitivity<mmin_sensitivity) then
+    stop "mmax_sensitivity must be >= mmin_sensitivity."
+  end if
+
   if (sensitivity_symmetry_option<1 .or. sensitivity_symmetry_option>2) then
     stop "sensitivity_symmetry_option must be 1 or 2."
   end if

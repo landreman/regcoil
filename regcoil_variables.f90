@@ -122,6 +122,8 @@ module regcoil_variables
   logical :: fixed_norm_sensitivity_option = .false.
   integer :: sensitivity_option = 1
   integer :: sensitivity_symmetry_option = 1
+  integer :: nmin_sensitivity = 0
+  integer :: mmin_sensitivity = 0
   integer :: nmax_sensitivity = 1
   integer :: mmax_sensitivity = 1
   real(dp) :: target_option_p = 4.0
@@ -192,7 +194,7 @@ module regcoil_variables
        sensitivity_symmetry_option, target_option_p, &
        fixed_norm_sensitivity_option, coil_plasma_dist_lse_p, &
        m_max, n_max, singleFourierFilename, use_arclength_angle, arclength_separation, &
-       theta_transform_refinement, zeta_transform_refinement
+       theta_transform_refinement, zeta_transform_refinement, nmin_sensitivity, mmin_sensitivity
 
 end module regcoil_variables
 

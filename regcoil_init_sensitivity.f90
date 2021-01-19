@@ -25,7 +25,7 @@ subroutine regcoil_init_sensitivity()
   if (sensitivity_option == 6) then !----- Plasma derivatives -----
 
       ! Initialize Fourier arrays - need to include m = 0, n = 0 mode
-      call regcoil_init_Fourier_modes_sensitivity(mmax_sensitivity, nmax_sensitivity, mnmax_sensitivity, nomega_plasma, &
+      call regcoil_init_Fourier_modes_sensitivity(mmin_sensitivity, nmin_sensitivity,mmax_sensitivity, nmax_sensitivity, mnmax_sensitivity, nomega_plasma, &
         xm_sensitivity, xn_sensitivity, omega_plasma,sensitivity_symmetry_option,sensitivity_option)
 
       allocate(darea_plasmadomega(nomega_plasma),stat=iflag)
@@ -99,7 +99,7 @@ subroutine regcoil_init_sensitivity()
   else !----- Coil derivatives -----
 
       ! Initialize Fourier arrays - need to include m = 0, n = 0 mode
-      call regcoil_init_Fourier_modes_sensitivity(mmax_sensitivity, nmax_sensitivity, mnmax_sensitivity, nomega_coil, &
+      call regcoil_init_Fourier_modes_sensitivity(mmin_sensitivity, nmin_sensitivity,mmax_sensitivity, nmax_sensitivity, mnmax_sensitivity, nomega_coil, &
         xm_sensitivity, xn_sensitivity, omega_coil,sensitivity_symmetry_option,sensitivity_option)
 
       allocate(darea_coildomega(nomega_coil),stat=iflag)
