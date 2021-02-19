@@ -174,7 +174,7 @@ f.close()
 
 contour_X = []
 contour_Y = []
-fig=plt.figure(figsize=(9,9))
+fig=plt.figure(figsize=(7,7))
 fig.patch.set_facecolor('white')
 ax = fig.gca(projection='3d')
 maxR=0

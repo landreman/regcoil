@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import netcdf
 from scipy.interpolate import interp1d
-import sys
+import sys, os
 import math
 
 if len(sys.argv) != 2:
@@ -28,7 +28,8 @@ def maximizeWindow():
         except AttributeError:
             pass
 
-f = netcdf.netcdf_file(sys.argv[1],'r',mmap=False)
+filename = sys.argv[1]
+f = netcdf.netcdf_file(filename,'r',mmap=False)
 nfp = f.variables['nfp'][()]
 ntheta_plasma = f.variables['ntheta_plasma'][()]
 ntheta_coil = f.variables['ntheta_coil'][()]
@@ -175,6 +176,7 @@ for whichPlot in range(4):
 
 plt.tight_layout()
 
+plt.figtext(0.5,0.01,os.path.abspath(filename),horizontalalignment='center',verticalalignment='bottom',fontsize=6)
 
 ########################################################
 # Pick the lambda values to show in the 2D plots
@@ -236,6 +238,7 @@ for j in range(numPlots):
 
 plt.tight_layout()
 plt.figtext(0.5,0.99,"Blue dots indicate the points in the lambda scan that are plotted in later figures",horizontalalignment='center',verticalalignment='top',fontsize='small')
+plt.figtext(0.5,0.01,os.path.abspath(filename),horizontalalignment='center',verticalalignment='bottom',fontsize=6)
 
 ########################################################
 # Prepare for plotting current potential
@@ -267,6 +270,7 @@ for whichPlot in range(numPlots):
 
 plt.tight_layout()
 plt.figtext(0.5,0.99,"Single-valued part of the current potential",horizontalalignment='center',verticalalignment='top',fontsize='small')
+plt.figtext(0.5,0.01,os.path.abspath(filename),horizontalalignment='center',verticalalignment='bottom',fontsize=6)
 
 ########################################################
 # Plot total current potential
@@ -302,6 +306,7 @@ for whichPlot in range(numPlots):
 
 plt.tight_layout()
 plt.figtext(0.5,0.99,"Total current potential",horizontalalignment='center',verticalalignment='top',fontsize='small')
+plt.figtext(0.5,0.01,os.path.abspath(filename),horizontalalignment='center',verticalalignment='bottom',fontsize=6)
 
 ########################################################
 # Plot the current density K
@@ -321,6 +326,7 @@ for whichPlot in range(numPlots):
 
 plt.tight_layout()
 plt.figtext(0.5,0.99,"K [A/m]",horizontalalignment='center',verticalalignment='top',fontsize='small')
+plt.figtext(0.5,0.01,os.path.abspath(filename),horizontalalignment='center',verticalalignment='bottom',fontsize=6)
 
 ########################################################
 # Plot Bnormal
@@ -360,6 +366,7 @@ for whichPlot in range(numPlots-2):
 
 #plt.tight_layout()
 plt.figtext(0.5,0.99,"Bnormal [Tesla]",horizontalalignment='center',verticalalignment='top',fontsize='small')
+plt.figtext(0.5,0.01,os.path.abspath(filename),horizontalalignment='center',verticalalignment='bottom',fontsize=6)
 
 
 

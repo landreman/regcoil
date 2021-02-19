@@ -1,0 +1,23 @@
+name: Publish manual
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  manual:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install latex
+      run: sudo apt-get install texlive texlive-science
+    - name: Generate manual
+      working-directory: ./manual
+      run: make && mkdir deploy && cp regcoilManual.pdf deploy
+    - name: Deploy docs
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./manual/deploy
+        force_orphan: true
