@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 print "Usage: cutCoilsFromRegcoil <regcoil_out.XXX> <nescin.XXX> <# of coils per half period> <thetaShift> <ilambda>"
 print "This script assumes the contours do not zig-zag back and forth across the theta=0 line,"
