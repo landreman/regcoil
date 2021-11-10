@@ -35,8 +35,8 @@ contains
     rootSolve_abserr = 1.0e-10_dp
     rootSolve_relerr = 1.0e-10_dp
     
-    zeta_rootSolve_min = zeta_rootSolve_target - 0.3
-    zeta_rootSolve_max = zeta_rootSolve_target + 0.3
+    zeta_rootSolve_min = zeta_rootSolve_target - 1.0
+    zeta_rootSolve_max = zeta_rootSolve_target + 1.0
     call regcoil_fzero(regcoil_fzero_residual, zeta_rootSolve_min, zeta_rootSolve_max, zeta_rootSolve_target, &
          rootSolve_relerr, rootSolve_abserr, fzeroFlag)
     ! Note: fzero returns its answer in zeta_rootSolve_min
