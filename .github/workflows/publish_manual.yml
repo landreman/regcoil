@@ -11,7 +11,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install latex
-      run: sudo apt-get install texlive-latex-extra
+      run: sudo apt-get install texlive-latex-extra texlive-science
     - name: Generate manual
       working-directory: ./manual
       run: make && mkdir deploy && cp regcoilManual.pdf deploy
