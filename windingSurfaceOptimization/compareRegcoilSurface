@@ -1,22 +1,22 @@
 #!/usr/bin/env python
-print "usage: compareRegcoilSurface regcoil_out1.XXX.nc regcoil_out2.XXX.nc"
+print("usage: compareRegcoilSurface regcoil_out1.XXX.nc regcoil_out2.XXX.nc")
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 #from mpl_toolkits.mplot3d import Axes3D
 #from matplotlib import cm
 import numpy as np
-from scipy.io import netcdf
+from scipy.io import netcdf_file
 from scipy.interpolate import interp1d
 import sys
 import math
 
 if len(sys.argv) != 3:
-    print "Error! You must specify 2 arguments: two regcoil_out.XXX.nc files."
+    print("Error! You must specify 2 arguments: two regcoil_out.XXX.nc files.")
     exit(1)
 
-f1 = netcdf.netcdf_file(sys.argv[1],'r',mmap=False)
-f2 = netcdf.netcdf_file(sys.argv[2],'r',mmap=False)
+f1 = netcdf_file(sys.argv[1],'r',mmap=False)
+f2 = netcdf_file(sys.argv[2],'r',mmap=False)
 nfp = f1.variables['nfp'][()]
 r_plasma  = f1.variables['r_plasma'][()]
 r_coil1  = f1.variables['r_coil'][()]
@@ -49,8 +49,8 @@ def getCrossSection(rArray, zetal_old, zeta_new):
     rArray = np.concatenate((rArray,rArray),axis=0)
 
 
-    print "zetal_old shape:",zetal_old.shape
-    print "rArray shape:",rArray.shape
+    print("zetal_old shape:",zetal_old.shape)
+    print("rArray shape:",rArray.shape)
 
     x = rArray[:,:,0]
     y = rArray[:,:,1]
@@ -107,5 +107,4 @@ for whichPlot in range(4):
 
 plt.tight_layout()
 
-plt.show()
-
+plt.savefig('output.png')

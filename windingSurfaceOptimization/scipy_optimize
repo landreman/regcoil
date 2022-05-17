@@ -10,76 +10,75 @@ import scipy
 # nmax and mmax are maximum Fourier modes to read from nescin file
 def cg_scipy(regcoil_input_file):
 
-  # Create coilFourier object
-  nmax_sensitivity = readVariable("nmax_sensitivity","int",regcoil_input_file,required=True)
-  mmax_sensitivity = readVariable("mmax_sensitivity","int",regcoil_input_file,required=True)
-  nescin_filename = readVariable("nescin_filename","string",regcoil_input_file,required=True)
+    # Create coilFourier object
+    nmax_sensitivity = readVariable("nmax_sensitivity","int",regcoil_input_file,required=True)
+    mmax_sensitivity = readVariable("mmax_sensitivity","int",regcoil_input_file,required=True)
+    nescin_filename = readVariable("nescin_filename","string",regcoil_input_file,required=True)
 
-  # scipy.optimize method
-  # The following methods use gradient information: CG, BFGS, Newton-CG, L-BFGS-B, TNC
-  # SLSQP, dogleg, trust-ncg
-  method = readVariable("scipy_optimize_method","string",regcoil_input_file,required=False)
-  if (method is None):
-    method = 'CG'
-  print "Initializing optimizer: " + method
-  # Order to use for norm of the gradient
-  norm = readVariable("norm","int",regcoil_input_file,required=False)
-  if (norm is None):
-    norm = 2
-  print "Setting gradient norm to: " + str(norm)
-  # Tolerance for norm of the gradient
-  gtol = readVariable("gtol","float",regcoil_input_file,required=False)
-  if (gtol is None):
-    gtol = 1e-5
-  print "Setting gtol to: " + str(gtol)
-  # Number of iterations
-  maxiter = readVariable("maxiter","int",regcoil_input_file,required=False)
-  if (maxiter is None):
-    maxiter = 1000
-  print "Setting maxiter to: " + str(maxiter)
-  # 0 = don't use gradient function (finite diff), 1 = use gradient
-  grad_option = readVariable("grad_option","int",regcoil_input_file,required=False)
-  if (grad_option is None):
-    grad_option = 1
-  print "Setting grad_option to: " + str(grad_option)
+    # scipy.optimize method
+    # The following methods use gradient information: CG, BFGS, Newton-CG, L-BFGS-B, TNC
+    # SLSQP, dogleg, trust-ncg
+    method = readVariable("scipy_optimize_method","string",regcoil_input_file,required=False)
+    if (method is None):
+        method = 'CG'
+    print("Initializing optimizer: ",method)
+    # Order to use for norm of the gradient
+    norm = readVariable("norm","int",regcoil_input_file,required=False)
+    if (norm is None):
+        norm = 2
+    print("Setting gradient norm to: " ,str(norm))
+    # Tolerance for norm of the gradient
+    gtol = readVariable("gtol","float",regcoil_input_file,required=False)
+    if (gtol is None):
+        gtol = 1e-5
+    print("Setting gtol to: ",str(gtol))
+    # Number of iterations
+    maxiter = readVariable("maxiter","int",regcoil_input_file,required=False)
+    if (maxiter is None):
+        maxiter = 1000
+    print("Setting maxiter to: ",str(maxiter))
+    # 0 = don't use gradient function (finite diff), 1 = use gradient
+    grad_option = readVariable("grad_option","int",regcoil_input_file,required=False)
+    if (grad_option is None):
+        grad_option = 1
+    print("Setting grad_option to: ",str(grad_option))
 
-  # nmax and mmax are required!
-  # Max n in nescin file
-  nmax = readVariable("nmax","int",regcoil_input_file,required=True)
-  # max m in nescin file
-  mmax = readVariable("mmax","int",regcoil_input_file,required=True)
-  print "Reading nmax = " + str(nmax) + " and mmax = " + str(mmax) + " from nescin file"
-  
-  nescinObject = coilFourier(nmax,mmax,regcoil_input_file)
-  nescinObject.set_Fourier_from_nescin(nescin_filename)
-  global x0
-  x0 = nescinObject.omegas_sensitivity.copy()
+    # nmax and mmax are required!
+    # Max n in nescin file
+    nmax = readVariable("nmax","int",regcoil_input_file,required=True)
+    # max m in nescin file
+    mmax = readVariable("mmax","int",regcoil_input_file,required=True)
+    print("Reading nmax = ",str(nmax)," and mmax = ",str(mmax)," from nescin file")
 
-  f = evaluateFunctionRegcoil
-  if (grad_option == 1):
-    fprime = evaluateGradientRegcoil
-  else:
-    fprime = None
-  args = (nescinObject,)
-  if (method=="CG" or method=="BFGS"):
-    options={'gtol':gtol,'disp':True,'maxiter':maxiter,'norm':norm}
-  else:
-    options={'disp':True,'maxiter':maxiter,'norm':norm}
-  full_output = True
-  disp = True
-  retall = True
+    nescinObject = coilFourier(nmax,mmax,regcoil_input_file)
+    nescinObject.set_Fourier_from_nescin(nescin_filename)
+    global x0
+    x0 = nescinObject.omegas_sensitivity.copy()
 
-  if (grad_option == 1):
-		OptimizeResult = scipy.optimize.minimize(fun=f,x0=x0,args=args,method=method,jac=fprime,hess=None,hessp=None,bounds=None,options=options)
-  else:
-		OptimizeResult = scipy.optimize.minimize(fun=f,x0=x0,args=args,method=method,hess=None,hessp=None,bounds=None,options=options)
-  sol = OptimizeResult.x
-  func = evaluateFunctionRegcoil(sol,nescinObject)
-  grad = evaluateGradientRegcoil(sol,nescinObject)
-  print "function value: " + str(func)
-  print "norm of function gradient: " + str(np.linalg.norm(grad,2))
-  print OptimizeResult.message
+    f = evaluateFunctionRegcoil
+    if (grad_option == 1):
+        fprime = evaluateGradientRegcoil
+    else:
+        fprime = None
+    args = (nescinObject,)
+    if (method=="CG" or method=="BFGS"):
+        options={'gtol':gtol,'disp':True,'maxiter':maxiter,'norm':norm}
+    else:
+        options={'disp':True,'maxiter':maxiter,'norm':norm}
+    full_output = True
+    disp = True
+    retall = True
+
+    if (grad_option == 1):
+        OptimizeResult = scipy.optimize.minimize(fun=f,x0=x0,args=args,method=method,jac=fprime,hess=None,hessp=None,bounds=None,options=options)
+    else:
+        OptimizeResult = scipy.optimize.minimize(fun=f,x0=x0,args=args,method=method,hess=None,hessp=None,bounds=None,options=options)
+    sol = OptimizeResult.x
+    func = evaluateFunctionRegcoil(sol,nescinObject)
+    grad = evaluateGradientRegcoil(sol,nescinObject)
+    print("function value: " + str(func))
+    print("norm of function gradient: " + str(np.linalg.norm(grad,2)))
+    print(OptimizeResult.message)
 
 if __name__ == "__main__":
-  cg_scipy(sys.argv[1])
-
+    cg_scipy(sys.argv[1])

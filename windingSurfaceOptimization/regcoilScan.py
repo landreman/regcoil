@@ -23,7 +23,7 @@ def readVariable(varName, intOrFloatOrString, inputFilename, required=True):
     with open(inputFilename, 'r') as f:
         inputFile = f.readlines()
     if (intOrFloatOrString != "int") and (intOrFloatOrString != "float") and (intOrFloatOrString != "string"):
-	    print "intOrFloatOrString must be int, float, or string."
+	    print("intOrFloatOrString must be int, float, or string.")
 	    exit(1)
 
     originalVarName = varName
@@ -45,38 +45,39 @@ def readVariable(varName, intOrFloatOrString, inputFilename, required=True):
         line5 = line4[1:].strip();
         if intOrFloatOrString != "string":
             line5 = line5.replace('d','e').replace('D','e')
-    # Remove any comments:
+        # Remove any comments:
         if "!" in line5:
-            line5 = line5[:string.find(line5,"!")]
+            line5 = line5[:line5.find("!")]
+            # line5 = line5[:string.find(line5,"!")]
         if intOrFloatOrString=="int":
             try:
                 returnValue = int(line5)
                 numValidLines += 1
             except:
-                print "Warning! I found a definition for the variable "+originalVarName+" in "+inputFilename+" but I was unable to parse the line to get an integer." #Added by AM 2015-12
-                print "Here is the line in question:"
-                print line
+                print("Warning! I found a definition for the variable "+originalVarName+" in "+inputFilename+" but I was unable to parse the line to get an integer.") #Added by AM 2015-12
+                print("Here is the line in question:")
+                print(line)
         elif intOrFloatOrString=="float":
             try:
                 returnValue = float(line5)
                 numValidLines += 1
             except:
-                print "Warning! I found a definition for the variable "+originalVarName+" in "+inputFilename+" but I was unable to parse the line to get a float." #Added by AM 2015-12
-                print "Here is the line in question:"
-                print line
+                print("Warning! I found a definition for the variable "+originalVarName+" in "+inputFilename+" but I was unable to parse the line to get a float.") #Added by AM 2015-12
+                print("Here is the line in question:")
+                print(line)
         elif intOrFloatOrString=="string":
-          # Strip quotes
-          if (line5.startswith('"') and line5.endswith('"')) or (line5.startswith("'") and line5.endswith("'")):
-            line5 = line5[1:-1]
-          returnValue = line5
-          numValidLines += 1
+            # Strip quotes
+            if (line5.startswith('"') and line5.endswith('"')) or (line5.startswith("'") and line5.endswith("'")):
+                line5 = line5[1:-1]
+            returnValue = line5
+            numValidLines += 1
 
     if required and returnValue==None:
-        print "Error! Unable to find a valid setting for the variable "+originalVarName+" in "+inputFilename+"."
+        print("Error! Unable to find a valid setting for the variable "+originalVarName+" in "+inputFilename+".")
         exit(1) #Added by AM 2015-12
 
     if numValidLines > 1:
-        print "Warning! More than 1 valid definition was found for the variable "+originalVarName+". The last one will be used."
+        print("Warning! More than 1 valid definition was found for the variable "+originalVarName+". The last one will be used.")
 
 #print "Read "+originalVarName+" = "+str(returnValue)
     return returnValue
@@ -94,7 +95,7 @@ def logspace_odd(min,max,nn):
 def namelistLineContains(line,varName):
     line2 = line.strip().lower()
     varName = varName.lower()
-# We need enough characters for the varName, =, and value: 
+# We need enough characters for the varName, =, and value:
     if len(line2)<len(varName)+2:
         return False
     if line2[0]=="!":
