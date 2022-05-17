@@ -1,0 +1,54 @@
+&regcoil_nml
+! Compute the current potential for a range of lambda
+general_option = 5
+! No symmetry in the current potential is imposed
+symmetry_option = 1
+! Save everything
+! No plasma normal loaded
+load_bnorm=.f.
+
+nlambda = 40
+target_option = "max_K_lse" 
+target_value = 1840000.0
+target_option_p = 1e3
+
+coil_plasma_dist_lse_p=1e4
+
+! Number of grid points in poloidal/toroidal angle to evalute surface integrals on plasma/coil
+ntheta_plasma=64
+ntheta_coil  =64
+nzeta_plasma =64
+nzeta_coil   =64
+
+! Maximum poloidal/toroidal mode number ot include for single-valued current potential
+mpol_potential =6
+ntor_potential =6
+
+geometry_option_plasma = 2
+wout_filename = "wout_hsxt.nc"
+
+geometry_option_coil= 3
+nescin_filename = "nescin_clone_actual.txt.changesign_0"
+
+sensitivity_option = 4
+fixed_norm_sensitivity_option = .true.
+nmax_sensitivity = 5
+mmax_sensitivity = 4
+/
+
+&regcoilOptimize
+alphaV = 1.e-4 ! Volume
+alphaS = 0 ! S_p
+alphaB = 1 ! chi2_B
+alphaK = 3e-10 ! rms_K 
+scaleFactor = 1e5
+d_min = 0.144
+nlopt_method = 'nlopt.LD_CCSAQ'
+constraint_max = 0
+constraint_min = 1
+omega_min = -0.5
+omega_max = 1.5
+nmax = 4
+mmax = 5
+/
+
