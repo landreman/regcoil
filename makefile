@@ -70,14 +70,14 @@ else ifeq ($(HOSTNAME),pppl_intel)
   REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -N 1 -n 1 -c 8 -q debug --mem 8G
 else ifeq ($(HOSTNAME),stellar)
   REGCOIL_HOST=stellar
-  FC = ifort
+  FC = mpiifort
   NETCDF_F = $(NETCDFDIR)
   NETCDF_C = $(NETCDFDIR)
   EXTRA_COMPILE_FLAGS =-mcmodel=large -O3 -m64 -unroll0 \
     -Wl,--end-group \
     -lpthread \
-    -I$(NETCDF_F)/include -I$(NETCDF_C)/include
-  EXTRA_LINK_FLAGS = -fopenmp -L$(NETCDF_C)/lib -lnetcdf -L$(NETCDF_F)/lib -lnetcdff -lmkl_gf_lp64 -lmkl_core -lmkl_sequential -lhdf5_hl -lhdf5_fortran -lhdf5 -lpthread -lz -lm
+    -I$(NETCDF_F)/include -I$(NETCDF_C)/include -fopenmp -ffree-line-length-none
+  EXTRA_LINK_FLAGS = -fopenmp -L$(NETCDF_C)/lib -lnetcdf -L$(NETCDF_F)/lib -lnetcdff -lmkl_gf_lp64 -lmkl_core -lmkl_sequential -lhdf5_hl -lhdf5_fortran -lhdf5 -lpthread -lz -lm -L$(HDF5DIR)/lib -fopenmp
   REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -N 1 -n 1 -c 8 -q debug --mem 8G
   LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/mini_libstell.a
 else ifeq ($(HOSTNAME),osx_brew)
