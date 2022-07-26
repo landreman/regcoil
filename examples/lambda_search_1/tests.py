@@ -26,7 +26,7 @@ numFailures += shouldBe(data, 0,relativeTolerance,absoluteTolerance)
 
 variableName = 'lambda'
 data = f.variables[variableName][()]
-relativeTolerance = 1e-10
+relativeTolerance = 1e-9
 numFailures += arrayShouldBe(data, [1e+200, 0, 1.86098014413313e-17, 1.86098014413313e-15, \
     1.67493916804206e-15, 1.7278563450837e-15, 1.72828277387722e-15, \
     1.72827413248484e-15],relativeTolerance,absoluteTolerance)
