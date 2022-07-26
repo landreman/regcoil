@@ -12,7 +12,7 @@ def verifyVariableExists(str):
     try:
         temp = os.environ[str]
     except:
-        print "Error!  Variable "+str+" is not set.  This error may be caused by calling runExamples.py directly rather than by calling 'make test'."
+        print("Error!  Variable "+str+" is not set.  This error may be caused by calling runExamples.py directly rather than by calling 'make test'.")
         raise
 
     return temp
@@ -24,7 +24,7 @@ if retestStr=="yes":
 elif retestStr=="no":
     retest=False
 else:
-    print "Error! REGCOIL_RETEST must be either 'yes' or 'no'. There is likely an error in the main makefile."
+    print("Error! REGCOIL_RETEST must be either 'yes' or 'no'. There is likely an error in the main makefile.")
     exit(1)
 
 wereThereAnyErrors = False
@@ -35,7 +35,7 @@ try:
 except:
     submitCommand = ""
 
-print "REGCOIL_COMMAND_TO_SUBMIT_JOB=",submitCommand
+print("REGCOIL_COMMAND_TO_SUBMIT_JOB=",submitCommand)
 
 # Get a list of the subdirectories:
 subdirectories = filter(os.path.isdir, os.listdir("."))
@@ -44,45 +44,45 @@ subdirectories = filter(os.path.isdir, os.listdir("."))
 examplesToRun = []
 directoriesThatArentExamples = []
 for subdirectory in subdirectories:
-    print "Examining subdirectory "+subdirectory
+    print("Examining subdirectory "+subdirectory)
     if os.path.isfile(subdirectory+"/tests.py"):
         if os.path.isfile(subdirectory+"/regcoil_in."+subdirectory):
             examplesToRun.append(subdirectory)
         else:
-            print "WARNING: directory "+subdirectory+" contains a tests.py file but no regcoil_in.XXX file of the same name as the directory."
+            print("WARNING: directory "+subdirectory+" contains a tests.py file but no regcoil_in.XXX file of the same name as the directory.")
     else:
         directoriesThatArentExamples.append(subdirectory)
 
-print
+print()
 if len(examplesToRun) == 0:
-    print "Error: No subdirectories of examples/ found containing a tests.py and one regcoil_in.XXX file."
+    print("Error: No subdirectories of examples/ found containing a tests.py and one regcoil_in.XXX file.")
     exit(1)
 
 if len(directoriesThatArentExamples)>0:
-    print "The following subdirectories of /examples do not contain a tests.py file and so will be ignored:"
+    print("The following subdirectories of /examples do not contain a tests.py file and so will be ignored:")
     for example in directoriesThatArentExamples:
-        print "   " + example
-    print
+        print("   " + example)
+    print()
 
-print "The following examples will be used as tests:"
+print("The following examples will be used as tests:")
 for example in examplesToRun:
-    print "   " + example
-print
+    print("   " + example)
+print()
 
 
 #if isABatchSystemUsed == "no":
 if True:
     for subdirectory in examplesToRun:
 
-        print " "
-        print "Preparing to check example: "+subdirectory
+        print(" ")
+        print("Preparing to check example: "+subdirectory)
         try:
             os.chdir(subdirectory)
         except:
-            print "Error occurred when trying to change directory to "+subdirectory
+            print("Error occurred when trying to change directory to "+subdirectory)
             raise
 
-        print "Moved to working directory "+os.getcwd()
+        print("Moved to working directory "+os.getcwd())
 
         if not retest:
             try:
@@ -91,12 +91,12 @@ if True:
                 # If the .nc output file does not exist, there will be an exception, but we can safely ignore it.
                 pass
             
-            print "Launching REGCOIL..."
+            print("Launching REGCOIL...")
 
             inputFile = "regcoil_in."+subdirectory
             submitCommand2 = submitCommand+" ../../regcoil "+inputFile
             submitCommandSplit = submitCommand2.split()
-            print "About to submit the following command: ",submitCommandSplit
+            print("About to submit the following command: ",submitCommandSplit)
             # Flush everything printed to stdout so far:
             stdout.flush()
 
@@ -106,17 +106,17 @@ if True:
                 #subprocess.call(["../../regcoil",inputFile])
                 subprocess.call(submitCommandSplit)
             except:
-                print "An error occurred when attempting to launch REGCOIL."
+                print("An error occurred when attempting to launch REGCOIL.")
                 raise
 
-        print " "
-        print "REGCOIL execution complete. About to run tests on output."
+        print(" ")
+        print("REGCOIL execution complete. About to run tests on output.")
         stdout.flush()
 
         try:
             testResults = subprocess.call("./tests.py")
         except:
-            print "An error occurred when attempting to run tests.py in the following directory:"
+            print("An error occurred when attempting to run tests.py in the following directory:")
             print(os.getcwd)
             raise
 
@@ -127,21 +127,21 @@ if True:
         # Step back one directory
         os.chdir("..")
 
-    print "-----------------------------------------------"
-    print "Done with tests."
-    print "Examples attempted:"
+    print("-----------------------------------------------")
+    print("Done with tests.")
+    print("Examples attempted:")
     for subdirectory in examplesToRun:
-        print "  " + subdirectory
+        print("  " + subdirectory)
 
 
-print
+print()
 # Report whether any tests failed.
 if wereThereAnyErrors:
-    print "AT LEAST ONE TEST WAS FAILED."
-    print "Examples which failed:"
+    print("AT LEAST ONE TEST WAS FAILED.")
+    print("Examples which failed:")
     for x in examplesWithErrors:
-        print "   "+x
+        print("   "+x)
 else:
-    print "ALL TESTS THAT WERE RUN WERE PASSED SUCCESSFULLY."
+    print("ALL TESTS THAT WERE RUN WERE PASSED SUCCESSFULLY.")
 
-print
+print()

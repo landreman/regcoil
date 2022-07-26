@@ -1,30 +1,30 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
-print "Usage: cutCoilsFromRegcoil <regcoil_out.XXX> <nescin.XXX> <# of coils per half period> <thetaShift> <ilambda>"
-print "This script assumes the contours do not zig-zag back and forth across the theta=0 line,"
-print "after shifting the current potential by thetaShift grid points."
-print "The nescin file is used to provide the coil winding surface, so make sure this is consistent with the regcoil run."
-print "ilambda is the index in the lambda scan which you want to select."
+print("Usage: cutCoilsFromRegcoil <regcoil_out.XXX> <nescin.XXX> <# of coils per half period> <thetaShift> <ilambda>")
+print("This script assumes the contours do not zig-zag back and forth across the theta=0 line,")
+print("after shifting the current potential by thetaShift grid points.")
+print("The nescin file is used to provide the coil winding surface, so make sure this is consistent with the regcoil run.")
+print("ilambda is the index in the lambda scan which you want to select.")
 
 import sys
 if len(sys.argv) != 6:
-   print "Error! Wrong number of arguments"
+   print("Error! Wrong number of arguments")
    exit(1)
 
 filename = sys.argv[1]
-print filename[:12]
+print(filename[:12])
 if filename[:12] != 'regcoil_out.':
-   print "Error! First argument should be regcoil_out.XXX"
+   print("Error! First argument should be regcoil_out.XXX")
    exit(1)
 coilsFilename='coils.'+filename[12:-3]
-print "coilsFilename:",coilsFilename
+print("coilsFilename:",coilsFilename)
 nescinFilename = sys.argv[2]
 coilsPerHalfPeriod = int(sys.argv[3])
 thetaShift = int(sys.argv[4])
 ilambda = int(sys.argv[5])
-print "coilsPerHalfPeriod:",coilsPerHalfPeriod
-print "thetaShift:",thetaShift
-print "ilambda:",ilambda
+print("coilsPerHalfPeriod:",coilsPerHalfPeriod)
+print("thetaShift:",thetaShift)
+print("ilambda:",ilambda)
 
 from scipy.io import netcdf
 import matplotlib.pyplot as plt
@@ -41,29 +41,29 @@ current_potential = f.variables['current_potential'][()]
 # = f.variables[''][()]
 f.close()
 
-print "current_potential.shape",current_potential.shape
+print("current_potential.shape",current_potential.shape)
 if abs(net_poloidal_current_Amperes) > np.finfo(float).eps:
    data = current_potential[ilambda,:,:] / net_poloidal_current_Amperes * nfp
 else:
    data = current_potential[ilambda,:,:] / np.max(current_potential[ilambda,:,:])
 #data = current_potential[ilambda,:,:] / np.max(abs(current_potential[ilambda,:,:] ))
 
-print "Theta before shift:"
-print theta
+print("Theta before shift:")
+print(theta)
 # First apply 'roll' to be sure I use the same convention as numpy:
 theta = np.roll(theta,thetaShift)
 # Now just generate a new monotonic array with the correct first value:
 theta = theta[0] + np.linspace(0,2*np.pi,len(theta),endpoint=False)
 #theta = np.mod(theta,2*np.pi)
-print "Theta after shift:"
-print theta
+print("Theta after shift:")
+print(theta)
 
 data = np.roll(data,thetaShift,axis=1)
 
 d = 2*np.pi/nfp
 zeta_3 = np.concatenate((zeta-d, zeta, zeta+d))
 data_3 = np.concatenate((data-1,data,data+1))
-print "data_3.shape",data_3.shape
+print("data_3.shape",data_3.shape)
 
 #d=2*np.pi
 #theta_3 = np.concatenate((theta-d, theta, theta+d))
@@ -88,13 +88,13 @@ contours = contours + d/2
 #cdata = plt.contour(zeta_3,theta_3,np.transpose(data_3x3),contours)
 cdata = plt.contour(zeta_3,theta,np.transpose(data_3),contours,colors='k')
 
-#print cdata.collections[0].get_paths()
-print "cdata.collections:"
-print cdata.collections
+#print(cdata.collections[0].get_paths())
+print("cdata.collections:")
+print(cdata.collections)
 numCoilsFound = len(cdata.collections)
-print "len(cdata.collections):",len(cdata.collections)
+print("len(cdata.collections):",len(cdata.collections))
 if numCoilsFound != 2*coilsPerHalfPeriod:
-   print "WARNING!!! The expected number of coils was not the number found."
+   print("WARNING!!! The expected number of coils was not the number found.")
 
 contour_zeta=[]
 contour_theta=[]
@@ -126,16 +126,16 @@ while "np     iota_edge       phip_edge       curpol" not in line:
     line = f.readline()
 line = f.readline()
 nfp_nescin = int(line.split()[0])
-print "nfp:",nfp_nescin
+print("nfp:",nfp_nescin)
 if nfp != nfp_nescin:
-   print "Error! nfp from regcoil_out does not match nfp from nescin!"
+   print("Error! nfp from regcoil_out does not match nfp from nescin!")
    exit(1)
 
 #line = ''
 #while "Number of fourier modes in table" not in line:
 #    line = f.readline()
 #line = f.readline()
-#print "Number of Fourier modes in plasma surface from nescin file: ",line
+#print("Number of Fourier modes in plasma surface from nescin file: ",line)
 # Don't bother reading plasma surface.
 
 contour_R = []
@@ -150,7 +150,7 @@ while "------ Current Surface" not in line:
     line = f.readline()
 line = f.readline()
 line = f.readline()
-print "Number of Fourier modes in coil surface from nescin file: ",line
+print("Number of Fourier modes in coil surface from nescin file: ",line)
 nmodes = int(line)
 line = f.readline()
 line = f.readline()
@@ -176,7 +176,7 @@ contour_X = []
 contour_Y = []
 fig=plt.figure(figsize=(7,7))
 fig.patch.set_facecolor('white')
-ax = fig.gca(projection='3d')
+ax = fig.add_subplot(projection='3d')
 maxR=0
 for j in range(numCoils):
    maxR = np.max((maxR,np.max(contour_R[j])))
@@ -210,7 +210,7 @@ for whichCoil1 in range(numCoils):
             y2 = contour_Y[whichCoil2][index]
             z2 = contour_Z[whichCoil2][index]
             
-print "Minimum coil separation:",np.sqrt(minSeparation2)
+print("Minimum coil separation:",np.sqrt(minSeparation2))
 ax.plot([x1,x2],[y1,y2],[z1,z2],'k',linewidth=3)
 
 
