@@ -8,9 +8,9 @@ def readOutputFile():
         print("Error! The output file "+outputFilename+" has not been created.")
         exit(1)
         
-    from scipy.io import netcdf
+    from scipy.io import netcdf_file
     try:
-        f = netcdf.netcdf_file(outputFilename,'r')
+        f = netcdf_file(outputFilename,'r')
     except:
         print("ERROR! Unable to read netCDF output file "+outputFilename)
         raise

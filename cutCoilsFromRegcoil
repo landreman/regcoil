@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 
+import sys
+import numpy as np
+from scipy.io import netcdf_file
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
 print("Usage: cutCoilsFromRegcoil <regcoil_out.XXX> <nescin.XXX> <# of coils per half period> <thetaShift> <ilambda>")
 print("This script assumes the contours do not zig-zag back and forth across the theta=0 line,")
 print("after shifting the current potential by thetaShift grid points.")
 print("The nescin file is used to provide the coil winding surface, so make sure this is consistent with the regcoil run.")
 print("ilambda is the index in the lambda scan which you want to select.")
 
-import sys
 if len(sys.argv) != 6:
    print("Error! Wrong number of arguments")
    exit(1)
@@ -26,12 +31,7 @@ print("coilsPerHalfPeriod:",coilsPerHalfPeriod)
 print("thetaShift:",thetaShift)
 print("ilambda:",ilambda)
 
-from scipy.io import netcdf
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-import numpy as np
-
-f = netcdf.netcdf_file(filename,'r',mmap=False)
+f = netcdf_file(filename,'r',mmap=False)
 theta = f.variables['theta_coil'][()]
 zeta = f.variables['zeta_coil'][()]
 nfp = f.variables['nfp'][()]
@@ -70,7 +70,6 @@ print("data_3.shape",data_3.shape)
 #data_3x3 = np.concatenate((data_3,data_3,data_3),1)
 
 fig = plt.figure()
-fig.patch.set_facecolor('white')
 
 contours = np.linspace(-1,2,coilsPerHalfPeriod*2*3+1)
 d = contours[1]-contours[0]
@@ -175,7 +174,6 @@ f.close()
 contour_X = []
 contour_Y = []
 fig=plt.figure(figsize=(7,7))
-fig.patch.set_facecolor('white')
 ax = fig.add_subplot(projection='3d')
 maxR=0
 for j in range(numCoils):

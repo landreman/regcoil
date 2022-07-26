@@ -1,35 +1,27 @@
 #!/usr/bin/env python3
+
+import sys
+import os
+import math
+import numpy as np
+from scipy.io import netcdf_file
+from scipy.interpolate import interp1d
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+
 print("usage: regcoilPlot regcoil_out.XXX.nc")
 
 # coilsPerHalfPeriod is used only to choose the number of contours to plot for the total current potential:
 coilsPerHalfPeriod = 3
 
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-#from matplotlib import cm
-import numpy as np
-from scipy.io import netcdf
-from scipy.interpolate import interp1d
-import sys, os
-import math
+figsize = (15, 8)
 
 if len(sys.argv) != 2:
     print("Error! You must specify 1 argument: the regcoil_out.XXX.nc file.")
     exit(1)
 
-def maximizeWindow():
-    # Maximize window. The command for this depends on the backend.
-    mng = plt.get_current_fig_manager()
-    try:
-        mng.resize(*mng.window.maxsize())
-    except AttributeError:
-        try:
-            mng.window.showMaximized()
-        except AttributeError:
-            pass
-
 filename = sys.argv[1]
-f = netcdf.netcdf_file(filename,'r',mmap=False)
+f = netcdf_file(filename,'r',mmap=False)
 nfp = f.variables['nfp'][()]
 ntheta_plasma = f.variables['ntheta_plasma'][()]
 ntheta_coil = f.variables['ntheta_coil'][()]
@@ -149,9 +141,7 @@ R_slice_coil, Z_slice_coil = getCrossSection(r_coil, zetal_coil, zeta_slices)
 # Now make plot of surfaces at given toroidal angle
 ########################################################
 
-figureNum = 1
-fig = plt.figure(figureNum)
-fig.patch.set_facecolor('white')
+fig = plt.figure(figsize=figsize)
 
 numRows = 2
 numCols = 2
@@ -176,7 +166,7 @@ for whichPlot in range(4):
 
 plt.tight_layout()
 
-plt.figtext(0.5,0.01,os.path.abspath(filename),horizontalalignment='center',verticalalignment='bottom',fontsize=6)
+plt.figtext(0.5, 0.005, os.path.abspath(filename),horizontalalignment='center',verticalalignment='bottom',fontsize=6)
 
 ########################################################
 # Pick the lambda values to show in the 2D plots
@@ -192,9 +182,7 @@ print("ilambda_to_plot:",ilambda_to_plot)
 # Now make plot of chi^2 over lambda scan
 ########################################################
 
-figureNum += 1
-fig = plt.figure(figureNum)
-fig.patch.set_facecolor('white')
+fig = plt.figure(figsize=figsize)
 
 numRows = 2
 numCols = 3
@@ -237,8 +225,8 @@ for j in range(numPlots):
     plt.plot(lambdas[ilambda_to_plot[j]-1], chi2_K[ilambda_to_plot[j]-1],'ob')
 
 plt.tight_layout()
-plt.figtext(0.5,0.99,"Blue dots indicate the points in the lambda scan that are plotted in later figures",horizontalalignment='center',verticalalignment='top',fontsize='small')
-plt.figtext(0.5,0.01,os.path.abspath(filename),horizontalalignment='center',verticalalignment='bottom',fontsize=6)
+plt.figtext(0.5, 0.995, "Blue dots indicate the points in the lambda scan that are plotted in later figures",horizontalalignment='center',verticalalignment='top',fontsize=7)
+plt.figtext(0.5, 0.005,os.path.abspath(filename),horizontalalignment='center',verticalalignment='bottom',fontsize=6)
 
 ########################################################
 # Prepare for plotting current potential
@@ -256,9 +244,7 @@ numContours = 20
 # Plot single-valued part of current potential
 ########################################################
 
-figureNum += 1
-fig = plt.figure(figureNum)
-fig.patch.set_facecolor('white')
+fig = plt.figure(figsize=figsize)
 
 for whichPlot in range(numPlots):
     plt.subplot(numRows,numCols,whichPlot+1)
@@ -269,16 +255,14 @@ for whichPlot in range(numPlots):
     plt.title('lambda='+str(lambdas[ilambda_to_plot[whichPlot]-1]),fontsize='x-small')
 
 plt.tight_layout()
-plt.figtext(0.5,0.99,"Single-valued part of the current potential",horizontalalignment='center',verticalalignment='top',fontsize='small')
-plt.figtext(0.5,0.01,os.path.abspath(filename),horizontalalignment='center',verticalalignment='bottom',fontsize=6)
+plt.figtext(0.5, 0.995,"Single-valued part of the current potential",horizontalalignment='center',verticalalignment='top',fontsize='small')
+plt.figtext(0.5, 0.005,os.path.abspath(filename),horizontalalignment='center',verticalalignment='bottom',fontsize=6)
 
 ########################################################
 # Plot total current potential
 ########################################################
 
-figureNum += 1
-fig = plt.figure(figureNum)
-fig.patch.set_facecolor('white')
+fig = plt.figure(figsize=figsize)
 
 # Set up contours at appropriate levels
 x = net_poloidal_current_Amperes/nfp
@@ -306,16 +290,14 @@ for whichPlot in range(numPlots):
     plt.title('lambda='+str(lambdas[ilambda_to_plot[whichPlot]-1]),fontsize='x-small')
 
 plt.tight_layout()
-plt.figtext(0.5,0.99,"Total current potential",horizontalalignment='center',verticalalignment='top',fontsize='small')
-plt.figtext(0.5,0.01,os.path.abspath(filename),horizontalalignment='center',verticalalignment='bottom',fontsize=6)
+plt.figtext(0.5, 0.995,"Total current potential",horizontalalignment='center',verticalalignment='top',fontsize='small')
+plt.figtext(0.5, 0.005,os.path.abspath(filename),horizontalalignment='center',verticalalignment='bottom',fontsize=6)
 
 ########################################################
 # Plot the current density K
 ########################################################
 
-figureNum += 1
-fig = plt.figure(figureNum)
-fig.patch.set_facecolor('white')
+fig = plt.figure(figsize=figsize)
 
 for whichPlot in range(numPlots):
     plt.subplot(numRows,numCols,whichPlot+1)
@@ -326,16 +308,14 @@ for whichPlot in range(numPlots):
     plt.title('lambda='+str(lambdas[ilambda_to_plot[whichPlot]-1]),fontsize='x-small')
 
 plt.tight_layout()
-plt.figtext(0.5,0.99,"K [A/m]",horizontalalignment='center',verticalalignment='top',fontsize='small')
-plt.figtext(0.5,0.01,os.path.abspath(filename),horizontalalignment='center',verticalalignment='bottom',fontsize=6)
+plt.figtext(0.5, 0.995,"K [A/m]",horizontalalignment='center',verticalalignment='top',fontsize='small')
+plt.figtext(0.5, 0.005,os.path.abspath(filename),horizontalalignment='center',verticalalignment='bottom',fontsize=6)
 
 ########################################################
 # Plot Bnormal
 ########################################################
 
-figureNum += 1
-fig = plt.figure(figureNum)
-fig.patch.set_facecolor('white')
+fig = plt.figure(figsize=figsize)
 
 numPlots += 2
 
@@ -365,9 +345,9 @@ for whichPlot in range(numPlots-2):
     plt.ylabel('theta',fontsize='x-small')
     plt.title('Total, lambda='+str(lambdas[ilambda_to_plot[whichPlot]-1]),fontsize='x-small')
 
-#plt.tight_layout()
-plt.figtext(0.5,0.99,"Bnormal [Tesla]",horizontalalignment='center',verticalalignment='top',fontsize='small')
-plt.figtext(0.5,0.01,os.path.abspath(filename),horizontalalignment='center',verticalalignment='bottom',fontsize=6)
+plt.tight_layout()
+plt.figtext(0.5, 0.995, "Bnormal [Tesla]",horizontalalignment='center',verticalalignment='top',fontsize='small')
+plt.figtext(0.5, 0.005, os.path.abspath(filename),horizontalalignment='center',verticalalignment='bottom',fontsize=6)
 
 
 
