@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-print "usage: compareRegcoilSurface regcoil_out1.XXX.nc regcoil_out2.XXX.nc"
+print("usage: compareRegcoilSurface regcoil_out1.XXX.nc regcoil_out2.XXX.nc")
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -12,7 +12,7 @@ import sys
 import math
 
 if len(sys.argv) != 3:
-    print "Error! You must specify 2 arguments: two regcoil_out.XXX.nc files."
+    print("Error! You must specify 2 arguments: two regcoil_out.XXX.nc files.")
     exit(1)
 
 f1 = netcdf.netcdf_file(sys.argv[1],'r',mmap=False)
@@ -49,8 +49,8 @@ def getCrossSection(rArray, zetal_old, zeta_new):
     rArray = np.concatenate((rArray,rArray),axis=0)
 
 
-    print "zetal_old shape:",zetal_old.shape
-    print "rArray shape:",rArray.shape
+    print("zetal_old shape:",zetal_old.shape)
+    print("rArray shape:",rArray.shape)
 
     x = rArray[:,:,0]
     y = rArray[:,:,1]

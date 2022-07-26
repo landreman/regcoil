@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -8,13 +8,13 @@ from scipy.io import netcdf
 import sys
 
 myname = inspect.getfile(inspect.currentframe())
-print "This is " + myname
-print "Usage:"
-print "  "+myname+" <List of 1 or more regcoil_out.XXX.nc files>"
-print 
+print("This is " + myname)
+print("Usage:")
+print("  "+myname+" <List of 1 or more regcoil_out.XXX.nc files>")
+print() 
 
 if len(sys.argv) < 2:
-    print "Error! You must list at least one regcoil_out.XXX.nc file as a command-line argument."
+    print("Error! You must list at least one regcoil_out.XXX.nc file as a command-line argument.")
     exit(1)
 
 def maximizeWindow():
@@ -52,7 +52,7 @@ for whichFile in range(1,len(sys.argv)):
 
     lambda_many.append(lambdas)
     max_lambda = np.max((max_lambda,np.max(lambdas)))
-    print "max_lambda:",max_lambda
+    print("max_lambda:",max_lambda)
 
     chi2_B_many.append(f.variables['chi2_B'][()][permutation])
     max_B_many.append(f.variables['max_Bnormal'][()][permutation])
@@ -72,7 +72,7 @@ for whichFile in range(1,len(sys.argv)):
 
     f.close()
 
-    print "Read data from file "+filename
+    print("Read data from file "+filename)
 
 
 

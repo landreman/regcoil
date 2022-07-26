@@ -1,5 +1,5 @@
-#!/usr/bin/env python2
-print "usage: regcoilPlot regcoil_out.XXX.nc"
+#!/usr/bin/env python3
+print("usage: regcoilPlot regcoil_out.XXX.nc")
 
 # coilsPerHalfPeriod is used only to choose the number of contours to plot for the total current potential:
 coilsPerHalfPeriod = 3
@@ -14,7 +14,7 @@ import sys, os
 import math
 
 if len(sys.argv) != 2:
-    print "Error! You must specify 1 argument: the regcoil_out.XXX.nc file."
+    print("Error! You must specify 1 argument: the regcoil_out.XXX.nc file.")
     exit(1)
 
 def maximizeWindow():
@@ -71,16 +71,16 @@ except:
     chi2_K = f.variables['chi2_J'][()]
     K2 = f.variables['J2'][()]
 
-print "ntheta_plasma: ",ntheta_plasma
-print "nzetal_plasma: ",nzetal_plasma
-print "r_plasma.shape: ",r_plasma.shape
-print "single_valued_current_potential_thetazeta.shape: ",single_valued_current_potential_thetazeta.shape
-print "Bnormal_total.shape: ",Bnormal_total.shape
+print("ntheta_plasma: ",ntheta_plasma)
+print("nzetal_plasma: ",nzetal_plasma)
+print("r_plasma.shape: ",r_plasma.shape)
+print("single_valued_current_potential_thetazeta.shape:) ",single_valued_current_potential_thetazeta.shape)
+print("Bnormal_total.shape: ",Bnormal_total.shape)
 
 f.close()
 
 if np.max(np.abs(lambdas)) < 1.0e-200:
-    print "lambda array appears to be all 0. Changing it to all 1 to avoid a python error."
+    print("lambda array appears to be all 0. Changing it to all 1 to avoid a python error.")
     lambdas += 1
 
 ########################################################
@@ -120,8 +120,8 @@ def getCrossSection(rArray, zetal_old, zeta_new):
     rArray = np.concatenate((rArray,rArray),axis=0)
 
 
-    print "zetal_old shape:",zetal_old.shape
-    print "rArray shape:",rArray.shape
+    print("zetal_old shape:",zetal_old.shape)
+    print("rArray shape:",rArray.shape)
 
     x = rArray[:,:,0]
     y = rArray[:,:,1]
@@ -186,7 +186,7 @@ max_nlambda_for_contour_plots = 16
 numPlots = min(nlambda,max_nlambda_for_contour_plots)
 ilambda_to_plot = np.sort(list(set(map(int,np.linspace(1,nlambda,numPlots)))))
 numPlots = len(ilambda_to_plot)
-print "ilambda_to_plot:",ilambda_to_plot
+print("ilambda_to_plot:",ilambda_to_plot)
 
 ########################################################
 # Now make plot of chi^2 over lambda scan

@@ -55,8 +55,7 @@ def nlopt_optimize(regcoil_input_file):
   global x0
   x0 = nescinObject.omegas_sensitivity.copy()
   nomega_sensitivity = len(x0)
-  print "min(omegas) = " + str(min(x0))
-  print "max(omegas) = " + str(max(x0))
+  print("max(omegas) = " + str(max(x0))
 
   algorithm = readVariable("nlopt_method","string",regcoil_input_file,required=True)
   if (algorithm == "nlopt.G_MLSL_LDS"):
@@ -127,30 +126,30 @@ def nlopt_optimize(regcoil_input_file):
     opt = nlopt.opt(nlopt.LD_VAR1,nomega_sensitivity)
     opt.set_min_objective(lambda x, grad: nlopt_evaluate(x,grad,nescinObject))
   else:
-    print "Incorrect argument for algorithm!"
+    print("Incorrect argument for algorithm!")
     sys.exit(0)
-  print "Initializing optimizer: " + opt.get_algorithm_name()
-  print "Using " + str(opt.get_dimension()) + " dimensions."
+  print("Initializing optimizer: " + opt.get_algorithm_name())
+  print("Using " + str(opt.get_dimension()) + " dimensions.")
   # Set stopping criteria
   opt.set_ftol_rel(ftol_rel)
-  print "Stopping when relative decrease in function is " + str(opt.get_ftol_rel()) + "."
+  print("Stopping when relative decrease in function is " + str(opt.get_ftol_rel()) + ".")
   opt.set_lower_bounds(omega_min)
   opt.set_upper_bounds(omega_max)
-  print "Setting lower bound on omega to " + str(omega_min) + "."
-  print "Setting upper bound on omega to " + str(omega_max) + "."
+  print("Setting lower bound on omega to " + str(omega_min) + ".")
+  print("Setting upper bound on omega to " + str(omega_max) + ".")
   xopt = opt.optimize(x0)
   opt_val = opt.last_optimum_value()
   result = opt.last_optimize_result()
-  print "Optimum value: " + str(opt_val)
-  print "Result: " + str(result)
+  print("Optimum value: " + str(opt_val))
+  print("Result: " + str(result))
 
 def nlopt_evaluate(x,grad,nescinObject):
   if grad.size > 0:
     # Assign in place
     grad[:] = evaluateGradientRegcoil(x, nescinObject)
-    print "function norm(grad): " + str(np.linalg.norm(grad,2))
+    print("function norm(grad): " + str(np.linalg.norm(grad,2)))
   function_value = evaluateFunctionRegcoil(x, nescinObject)
-  print "objective function: " + str(function_value)
+  print("objective function: " + str(function_value))
   
   return float(function_value)
 
@@ -163,24 +162,24 @@ def dist_constraint_min(x,grad,nescinObject,d_min):
   # Gradient of constraint
   if grad.size > 0:
     grad[:] = -nescinObject.dcoil_plasma_dist_mindomega
-    print "min constraint norm(grad): " + str(np.linalg.norm(grad,2))
-  print "min constraint function: " + str(d_min - nescinObject.coil_plasma_dist_min_lse)
+    print("min constraint norm(grad): " + str(np.linalg.norm(grad,2)))
+  print("min constraint function: " + str(d_min - nescinObject.coil_plasma_dist_min_lse))
   return (d_min - nescinObject.coil_plasma_dist_min_lse)
 
 def constraint_func_max_K(x,grad,nescinObject,max_K):
   evaluateFunctionRegcoil(x,nescinObject)
   if grad.size > 0:
     grad[:] = nescinObject.dmax_Kdomega
-    print "max_K constraint norm(grad): " + str(np.linalg.norm(grad,2))
-  print "max_K constraint function: " + str(nescinObject.max_K - max_K)
+    print("max_K constraint norm(grad): " + str(np.linalg.norm(grad,2)))
+  print("max_K constraint function: " + str(nescinObject.max_K - max_K))
   return (nescinObject.max_K - max_K)
 
 def constraint_func_rms_K(x,grad,nescinObject,rms_K):
   evaluateFunctionRegcoil(x,nescinObject)
   if grad.size > 0:
     grad[:] = nescinObject.drms_Kdomega
-    print "rms_K constraint norm(grad): " + str(np.linalg.norm(grad,2))
-  print "rms_K constraint function: " + str(nescinObject.rms_K - rms_K)
+    print("rms_K constraint norm(grad): " + str(np.linalg.norm(grad,2)))
+  print("rms_K constraint function: " + str(nescinObject.rms_K - rms_K))
   return (nescinObject.rms_K - rms_K)
 
 if __name__ == "__main__":

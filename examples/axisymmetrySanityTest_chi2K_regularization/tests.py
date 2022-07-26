@@ -9,7 +9,7 @@
 # so the single valued part of the current potential and B_normal should vanish to
 # machine precision (even though the plasma and coil surfaces have different major radius.)
 
-execfile('../testsCommon.py')
+exec(open('../testsCommon.py').read())
 absoluteTolerance = 1e-10
 relativeTolerance = 1e-100 # The relative tolerance is irrelevant since the true values are 0.
 
@@ -35,5 +35,5 @@ numFailures += arrayShouldBe(data[2,:], [0]*97, relativeTolerance,absoluteTolera
 
 del data
 f.close()
-print "numFailures:",numFailures
+print("numFailures:",numFailures)
 exit(numFailures > 0)
