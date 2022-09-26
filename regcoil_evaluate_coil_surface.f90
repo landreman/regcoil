@@ -13,7 +13,6 @@ subroutine regcoil_evaluate_coil_surface()
   real(dp) :: angle, sinangle, cosangle, dsinangledtheta, dcosangledtheta, dsinangledzeta, dcosangledzeta
   real(dp) :: d2sinangledtheta2, d2sinangledthetadzeta, d2sinangledzeta2, d2cosangledtheta2, d2cosangledthetadzeta, d2cosangledzeta2
   real(dp) :: angle2, sinangle2, cosangle2, dsinangle2dzeta, dcosangle2dzeta, d2sinangle2dzeta2, d2cosangle2dzeta2
-  real(dp), dimension(:,:), allocatable :: major_R_squared
   integer :: itheta, izeta
   integer :: tic, toc, countrate
   real(dp), dimension(:,:), allocatable :: sin_m_theta, cos_m_theta, sin_n_zeta, cos_n_zeta
@@ -138,33 +137,5 @@ subroutine regcoil_evaluate_coil_surface()
 !!$  do j = 1,ntheta_coil
 !!$     print *,r_coil(3,j,:)
 !!$  end do
-  
-  ! Evaluate cross product:
-  normal_coil(1,:,:) = drdzeta_coil(2,:,:) * drdtheta_coil(3,:,:) - drdtheta_coil(2,:,:) * drdzeta_coil(3,:,:)
-  normal_coil(2,:,:) = drdzeta_coil(3,:,:) * drdtheta_coil(1,:,:) - drdtheta_coil(3,:,:) * drdzeta_coil(1,:,:)
-  normal_coil(3,:,:) = drdzeta_coil(1,:,:) * drdtheta_coil(2,:,:) - drdtheta_coil(1,:,:) * drdzeta_coil(2,:,:)
-  
-  if (allocated(norm_normal_coil)) deallocate(norm_normal_coil)
-  allocate(norm_normal_coil(ntheta_coil, nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 11'
-  norm_normal_coil = sqrt(normal_coil(1,:,1:nzeta_coil)**2 + normal_coil(2,:,1:nzeta_coil)**2 &
-       +  normal_coil(3,:,1:nzeta_coil)**2)
-  
-  area_coil = nfp * dtheta_coil * dzeta_coil * sum(norm_normal_coil)
-  
-  ! Compute coil surface volume using \int (1/2) R^2 dZ dzeta.
-  ! These quantities will be evaluated on the half theta grid, which is the natural grid for dZ,
-  ! but we will need to interpolate R^2 from the full to half grid.
-  allocate(major_R_squared(ntheta_coil,nzetal_coil))
-  major_R_squared = r_coil(1,:,:)*r_coil(1,:,:) + r_coil(2,:,:)*r_coil(2,:,:)
-  ! First handle the interior of the theta grid:
-  volume_coil = sum((major_R_squared(1:ntheta_coil-1,:) + major_R_squared(2:ntheta_coil,:)) * (0.5d+0) & ! R^2, interpolated from full to half grid
-       * (r_coil(3,2:ntheta_coil,:)-r_coil(3,1:ntheta_coil-1,:))) ! dZ
-  ! Add the contribution from the ends of the theta grid:
-  volume_coil = volume_coil + sum((major_R_squared(1,:) + major_R_squared(ntheta_coil,:)) * (0.5d+0) & ! R^2, interpolated from full to half grid
-       * (r_coil(3,1,:)-r_coil(3,ntheta_coil,:))) ! dZ
-  volume_coil = abs(volume_coil * dzeta_coil / 2) ! r includes all nfp periods already, so no factor of nfp needed.
-  deallocate(major_R_squared)
-  if (verbose) print "(a,es10.3,a,es10.3,a)"," Coil surface area:",area_coil," m^2. Volume:",volume_coil," m^3."
   
 end subroutine  regcoil_evaluate_coil_surface

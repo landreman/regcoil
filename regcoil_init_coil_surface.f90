@@ -21,6 +21,8 @@ subroutine regcoil_init_coil_surface()
   real(dp) :: x_new, y_new, z_new, delta_theta, delta_zeta, temp, factor, factor2
   integer :: tic, toc, countrate, tic1, toc1
   integer :: mpol_coil, ntor_coil
+  integer :: xyz, yzx, zxy
+  real(dp), dimension(:,:), allocatable :: major_R_squared
   integer, allocatable, dimension(:) :: xm, xn
   real(dp), allocatable, dimension(:) :: rmnc, rmns, zmnc, zmns  
   real(dp), allocatable, dimension(:) :: theta_plasma_corresponding_to_theta_coil, dl, R_slice, z_slice
@@ -66,6 +68,35 @@ subroutine regcoil_init_coil_surface()
 
   dtheta_coil = theta_coil(2)-theta_coil(1)
   dzeta_coil  = zeta_coil(2)-zeta_coil(1)
+
+  ! First dimension is the Cartesian component x, y, or z.
+  if (allocated(r_coil)) deallocate(r_coil)
+  allocate(r_coil(3,ntheta_coil,nzetal_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 4'
+
+  if (allocated(drdtheta_coil)) deallocate(drdtheta_coil)
+  allocate(drdtheta_coil(3,ntheta_coil,nzetal_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 5'
+
+  if (allocated(drdzeta_coil)) deallocate(drdzeta_coil)
+  allocate(drdzeta_coil(3,ntheta_coil,nzetal_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 6'
+
+  if (allocated(normal_coil)) deallocate(normal_coil)
+  allocate(normal_coil(3,ntheta_coil,nzetal_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 7'
+
+  if (allocated(d2rdtheta2_coil)) deallocate(d2rdtheta2_coil)
+  allocate(d2rdtheta2_coil(3,ntheta_coil,nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 8'
+
+  if (allocated(d2rdthetadzeta_coil)) deallocate(d2rdthetadzeta_coil)
+  allocate(d2rdthetadzeta_coil(3,ntheta_coil,nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 9'
+
+  if (allocated(d2rdzeta2_coil)) deallocate(d2rdzeta2_coil)
+  allocate(d2rdzeta2_coil(3,ntheta_coil,nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 10'
 
   select case (geometry_option_coil)
   case (0,1)
@@ -238,46 +269,103 @@ subroutine regcoil_init_coil_surface()
      call regcoil_read_nescin()
      call regcoil_filter_coil_surface()
      
+  case (5)
+     if (verbose) then
+        print "(a,f10.4,a)","   Constructing a surface offset from the plasma by ",separation," meters."
+        print *,"  Toroidal angle on the coil surface will not be the standard toroidal angle."
+        print *,"  Laplace-Beltrami regularization and diagnostics will not be correct!"
+     end if
+
+     if (ntheta_coil .ne. ntheta_plasma) stop "geometry_option_coil 5 requires that ntheta_plasma = ntheta_coil"
+     if (nzeta_coil .ne. nzeta_plasma) stop "geometry_option_coil 5 requires that nzeta_plasma = nzeta_coil"
+
+     r_coil = r_plasma + separation * normal_plasma
+
+     do xyz = 1, 3
+        yzx = xyz + 1
+        if (yzx > 3) yzx = yzx - 3
+        zxy = yzx + 1
+        if (zxy > 3) zxy = zxy - 3
+
+        ! For derivation of the following formulae see
+        ! 20220926-01 New coil surface representation in regcoil.lyx
+        drdtheta_coil(xyz, :, :) = drdtheta_plasma(xyz, :, :) &
+             + separation / norm_normal_plasma * ( &
+             d2rdthetadzeta_plasma(yzx, :, :) * drdtheta_plasma(zxy, :, :) - d2rdthetadzeta_plasma(zxy, :, :) * drdtheta_plasma(yzx, :, :) &
+             + drdzeta_plasma(yzx, :, :) * d2rdtheta2_plasma(zxy, :, :) - drdzeta_plasma(zxy, :, :) * d2rdtheta2_plasma(yzx, :, :) &
+             - normal_plasma(xyz, :, :) * ( &
+             + d2rdthetadzeta_plasma(1, :, :) * drdtheta_plasma(2, :, :) * normal_plasma(3, :, :) &
+             + d2rdthetadzeta_plasma(2, :, :) * drdtheta_plasma(3, :, :) * normal_plasma(1, :, :) &
+             + d2rdthetadzeta_plasma(3, :, :) * drdtheta_plasma(1, :, :) * normal_plasma(2, :, :) &
+             - d2rdthetadzeta_plasma(3, :, :) * drdtheta_plasma(2, :, :) * normal_plasma(1, :, :) &
+             - d2rdthetadzeta_plasma(1, :, :) * drdtheta_plasma(3, :, :) * normal_plasma(2, :, :) &
+             - d2rdthetadzeta_plasma(2, :, :) * drdtheta_plasma(1, :, :) * normal_plasma(3, :, :) &
+             + drdzeta_plasma(1, :, :) * d2rdtheta2_plasma(2, :, :) * normal_plasma(3, :, :) &
+             + drdzeta_plasma(2, :, :) * d2rdtheta2_plasma(3, :, :) * normal_plasma(1, :, :) &
+             + drdzeta_plasma(3, :, :) * d2rdtheta2_plasma(1, :, :) * normal_plasma(2, :, :) &
+             - drdzeta_plasma(3, :, :) * d2rdtheta2_plasma(2, :, :) * normal_plasma(1, :, :) &
+             - drdzeta_plasma(1, :, :) * d2rdtheta2_plasma(3, :, :) * normal_plasma(2, :, :) &
+             - drdzeta_plasma(2, :, :) * d2rdtheta2_plasma(1, :, :) * normal_plasma(3, :, :) ))
+        
+        drdzeta_coil(xyz, :, :) = drdzeta_plasma(xyz, :, :) &
+             + separation / norm_normal_plasma * ( &
+             d2rdzeta2_plasma(yzx, :, :) * drdtheta_plasma(zxy, :, :) - d2rdzeta2_plasma(zxy, :, :) * drdtheta_plasma(yzx, :, :) &
+             + drdzeta_plasma(yzx, :, :) * d2rdthetadzeta_plasma(zxy, :, :) - drdzeta_plasma(zxy, :, :) * d2rdthetadzeta_plasma(yzx, :, :) &
+             - normal_plasma(xyz, :, :) * ( &
+             + d2rdzeta2_plasma(1, :, :) * drdtheta_plasma(2, :, :) * normal_plasma(3, :, :) &
+             + d2rdzeta2_plasma(2, :, :) * drdtheta_plasma(3, :, :) * normal_plasma(1, :, :) &
+             + d2rdzeta2_plasma(3, :, :) * drdtheta_plasma(1, :, :) * normal_plasma(2, :, :) &
+             - d2rdzeta2_plasma(3, :, :) * drdtheta_plasma(2, :, :) * normal_plasma(1, :, :) &
+             - d2rdzeta2_plasma(1, :, :) * drdtheta_plasma(3, :, :) * normal_plasma(2, :, :) &
+             - d2rdzeta2_plasma(2, :, :) * drdtheta_plasma(1, :, :) * normal_plasma(3, :, :) &
+             + drdzeta_plasma(1, :, :) * d2rdthetadzeta_plasma(2, :, :) * normal_plasma(3, :, :) &
+             + drdzeta_plasma(2, :, :) * d2rdthetadzeta_plasma(3, :, :) * normal_plasma(1, :, :) &
+             + drdzeta_plasma(3, :, :) * d2rdthetadzeta_plasma(1, :, :) * normal_plasma(2, :, :) &
+             - drdzeta_plasma(3, :, :) * d2rdthetadzeta_plasma(2, :, :) * normal_plasma(1, :, :) &
+             - drdzeta_plasma(1, :, :) * d2rdthetadzeta_plasma(3, :, :) * normal_plasma(2, :, :) &
+             - drdzeta_plasma(2, :, :) * d2rdthetadzeta_plasma(1, :, :) * normal_plasma(3, :, :) ))
+     end do
+
+     d2rdtheta2_coil = 0
+     d2rdthetadzeta_coil = 0
+     d2rdzeta2_coil = 0
+     
   case default
      print *,"Invalid setting for geometry_option_coil: ",geometry_option_coil
      stop
   end select
 
-  ! End of code that is specific to each value of geometry_option_coil.
-  ! Now comes the code that is common to all settings of geometry_option_coil.
-
-  ! First dimension is the Cartesian component x, y, or z.
-  if (allocated(r_coil)) deallocate(r_coil)
-  allocate(r_coil(3,ntheta_coil,nzetal_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 4'
-
-  if (allocated(drdtheta_coil)) deallocate(drdtheta_coil)
-  allocate(drdtheta_coil(3,ntheta_coil,nzetal_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 5'
-
-  if (allocated(drdzeta_coil)) deallocate(drdzeta_coil)
-  allocate(drdzeta_coil(3,ntheta_coil,nzetal_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 6'
-
-  if (allocated(normal_coil)) deallocate(normal_coil)
-  allocate(normal_coil(3,ntheta_coil,nzetal_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 7'
-
-  if (allocated(d2rdtheta2_coil)) deallocate(d2rdtheta2_coil)
-  allocate(d2rdtheta2_coil(3,ntheta_coil,nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 8'
-
-  if (allocated(d2rdthetadzeta_coil)) deallocate(d2rdthetadzeta_coil)
-  allocate(d2rdthetadzeta_coil(3,ntheta_coil,nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 9'
-
-  if (allocated(d2rdzeta2_coil)) deallocate(d2rdzeta2_coil)
-  allocate(d2rdzeta2_coil(3,ntheta_coil,nzeta_coil),stat=iflag)
-  if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 10'
-
   ! Convert Fourier representation of the coil winding surface to Cartesian coordinates:
-  call regcoil_evaluate_coil_surface()
+  if (geometry_option_coil .ne. 5) call regcoil_evaluate_coil_surface()
 
+  ! Evaluate cross product:
+  normal_coil(1,:,:) = drdzeta_coil(2,:,:) * drdtheta_coil(3,:,:) - drdtheta_coil(2,:,:) * drdzeta_coil(3,:,:)
+  normal_coil(2,:,:) = drdzeta_coil(3,:,:) * drdtheta_coil(1,:,:) - drdtheta_coil(3,:,:) * drdzeta_coil(1,:,:)
+  normal_coil(3,:,:) = drdzeta_coil(1,:,:) * drdtheta_coil(2,:,:) - drdtheta_coil(1,:,:) * drdzeta_coil(2,:,:)
+  
+  if (allocated(norm_normal_coil)) deallocate(norm_normal_coil)
+  allocate(norm_normal_coil(ntheta_coil, nzeta_coil),stat=iflag)
+  if (iflag .ne. 0) stop 'Allocation error! regcoil_init_coil_surface 11'
+  norm_normal_coil = sqrt(normal_coil(1,:,1:nzeta_coil)**2 + normal_coil(2,:,1:nzeta_coil)**2 &
+       +  normal_coil(3,:,1:nzeta_coil)**2)
+  
+  area_coil = nfp * dtheta_coil * dzeta_coil * sum(norm_normal_coil)
+  
+  ! Compute coil surface volume using \int (1/2) R^2 dZ dzeta.
+  ! These quantities will be evaluated on the half theta grid, which is the natural grid for dZ,
+  ! but we will need to interpolate R^2 from the full to half grid.
+  allocate(major_R_squared(ntheta_coil,nzetal_coil))
+  major_R_squared = r_coil(1,:,:)*r_coil(1,:,:) + r_coil(2,:,:)*r_coil(2,:,:)
+  ! First handle the interior of the theta grid:
+  volume_coil = sum((major_R_squared(1:ntheta_coil-1,:) + major_R_squared(2:ntheta_coil,:)) * (0.5d+0) & ! R^2, interpolated from full to half grid
+       * (r_coil(3,2:ntheta_coil,:)-r_coil(3,1:ntheta_coil-1,:))) ! dZ
+  ! Add the contribution from the ends of the theta grid:
+  volume_coil = volume_coil + sum((major_R_squared(1,:) + major_R_squared(ntheta_coil,:)) * (0.5d+0) & ! R^2, interpolated from full to half grid
+       * (r_coil(3,1,:)-r_coil(3,ntheta_coil,:))) ! dZ
+  volume_coil = abs(volume_coil * dzeta_coil / 2) ! r includes all nfp periods already, so no factor of nfp needed.
+  deallocate(major_R_squared)
+  if (verbose) print "(a,es10.3,a,es10.3,a)"," Coil surface area:",area_coil," m^2. Volume:",volume_coil," m^3."
+  
 
   call system_clock(toc)
   if (verbose) print *,"Done initializing coil surface. Took ",real(toc-tic)/countrate," sec."
