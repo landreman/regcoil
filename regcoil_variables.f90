@@ -33,6 +33,7 @@ module regcoil_variables
 
   real(dp), dimension(:), allocatable :: theta_plasma, zeta_plasma, zetal_plasma
   real(dp), dimension(:,:,:), allocatable :: r_plasma, drdtheta_plasma, drdzeta_plasma, normal_plasma
+  real(dp), dimension(:,:,:), allocatable :: d2rdtheta2_plasma, d2rdthetadzeta_plasma, d2rdzeta2_plasma
 
   real(dp), dimension(:,:), allocatable :: g, f_x, f_y, f_z, f_Laplace_Beltrami
   real(dp), dimension(:), allocatable :: h, d_x, d_y, d_z, d_Laplace_Beltrami

@@ -110,13 +110,13 @@ else ifeq ($(CLUSTER),RAVEN)
   REGCOIL_COMMAND_TO_SUBMIT_JOB = srun
 
 else
-  REGCOIL_HOST=macports
+  REGCOIL_HOST=homebrew
   FC = mpif90
   #EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none -cpp
   #EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none -O0 -g
   #EXTRA_LINK_FLAGS =  -fopenmp -L/opt/local/lib -lnetcdff  -lnetcdf -framework Accelerate
-  EXTRA_COMPILE_FLAGS = -fopenmp -I/usr/local/include -ffree-line-length-none -O0 -g -fallow-argument-mismatch
-  EXTRA_LINK_FLAGS =  -fopenmp -L/usr/local/lib -lnetcdff  -lnetcdf -framework Accelerate
+  EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/homebrew/include -ffree-line-length-none -O0 -g -fallow-argument-mismatch
+  EXTRA_LINK_FLAGS =  -fopenmp -L/opt/homebrew/lib -lnetcdff  -lnetcdf -framework Accelerate
 
   # For batch systems, set the following variable to the command used to run jobs. This variable is used by 'make test'.
   REGCOIL_COMMAND_TO_SUBMIT_JOB =
