@@ -28,6 +28,7 @@ subroutine regcoil_init_coil_surface()
   real(dp), allocatable, dimension(:) :: theta_plasma_corresponding_to_theta_coil, dl, R_slice, z_slice
   real(dp), allocatable, dimension(:) :: constant_arclength_theta_on_old_theta_grid
   type (periodic_spline) :: theta_spline
+  real(dp), allocatable :: norm_normal_plasma_big(:, :), unit_normal_plasma(:, :, :)
 
   call system_clock(tic,countrate)
   if (verbose) print *,"Initializing coil surface."
@@ -101,7 +102,7 @@ subroutine regcoil_init_coil_surface()
   select case (geometry_option_coil)
   case (0,1)
      ! Torus with circular cross-section
-     
+
      if (verbose) print *,"  Building a plain circular torus."
      
      if (geometry_option_coil==0) then
@@ -273,14 +274,24 @@ subroutine regcoil_init_coil_surface()
      if (verbose) then
         print "(a,f10.4,a)","   Constructing a surface offset from the plasma by ",separation," meters."
         print *,"  Toroidal angle on the coil surface will not be the standard toroidal angle."
-        print *,"  Laplace-Beltrami regularization and diagnostics will not be correct!"
+        print *,"  Laplace-Beltrami quantities and volume will not be correct!"
      end if
 
      if (ntheta_coil .ne. ntheta_plasma) stop "geometry_option_coil 5 requires that ntheta_plasma = ntheta_coil"
      if (nzeta_coil .ne. nzeta_plasma) stop "geometry_option_coil 5 requires that nzeta_plasma = nzeta_coil"
 
-     r_coil = r_plasma + separation * normal_plasma
-
+     ! For convenience, get norm_normal_plasma across all field periods:
+     allocate(norm_normal_plasma_big(ntheta_plasma, nzetal_plasma))
+     allocate(unit_normal_plasma(3, ntheta_plasma, nzetal_plasma))
+     do j = 1, nfp
+        norm_normal_plasma_big(:, (j - 1) * nzeta_plasma + 1: j * nzeta_plasma) = norm_normal_plasma
+     end do
+     do xyz = 1, 3
+        unit_normal_plasma(xyz, :, :) = normal_plasma(xyz, :, :) / norm_normal_plasma_big
+     end do
+     
+     r_coil = r_plasma + separation * unit_normal_plasma
+        
      do xyz = 1, 3
         yzx = xyz + 1
         if (yzx > 3) yzx = yzx - 3
@@ -290,45 +301,55 @@ subroutine regcoil_init_coil_surface()
         ! For derivation of the following formulae see
         ! 20220926-01 New coil surface representation in regcoil.lyx
         drdtheta_coil(xyz, :, :) = drdtheta_plasma(xyz, :, :) &
-             + separation / norm_normal_plasma * ( &
+             + separation / norm_normal_plasma_big * ( &
              d2rdthetadzeta_plasma(yzx, :, :) * drdtheta_plasma(zxy, :, :) - d2rdthetadzeta_plasma(zxy, :, :) * drdtheta_plasma(yzx, :, :) &
              + drdzeta_plasma(yzx, :, :) * d2rdtheta2_plasma(zxy, :, :) - drdzeta_plasma(zxy, :, :) * d2rdtheta2_plasma(yzx, :, :) &
-             - normal_plasma(xyz, :, :) * ( &
-             + d2rdthetadzeta_plasma(1, :, :) * drdtheta_plasma(2, :, :) * normal_plasma(3, :, :) &
-             + d2rdthetadzeta_plasma(2, :, :) * drdtheta_plasma(3, :, :) * normal_plasma(1, :, :) &
-             + d2rdthetadzeta_plasma(3, :, :) * drdtheta_plasma(1, :, :) * normal_plasma(2, :, :) &
-             - d2rdthetadzeta_plasma(3, :, :) * drdtheta_plasma(2, :, :) * normal_plasma(1, :, :) &
-             - d2rdthetadzeta_plasma(1, :, :) * drdtheta_plasma(3, :, :) * normal_plasma(2, :, :) &
-             - d2rdthetadzeta_plasma(2, :, :) * drdtheta_plasma(1, :, :) * normal_plasma(3, :, :) &
-             + drdzeta_plasma(1, :, :) * d2rdtheta2_plasma(2, :, :) * normal_plasma(3, :, :) &
-             + drdzeta_plasma(2, :, :) * d2rdtheta2_plasma(3, :, :) * normal_plasma(1, :, :) &
-             + drdzeta_plasma(3, :, :) * d2rdtheta2_plasma(1, :, :) * normal_plasma(2, :, :) &
-             - drdzeta_plasma(3, :, :) * d2rdtheta2_plasma(2, :, :) * normal_plasma(1, :, :) &
-             - drdzeta_plasma(1, :, :) * d2rdtheta2_plasma(3, :, :) * normal_plasma(2, :, :) &
-             - drdzeta_plasma(2, :, :) * d2rdtheta2_plasma(1, :, :) * normal_plasma(3, :, :) ))
+             - unit_normal_plasma(xyz, :, :) * ( &
+             + d2rdthetadzeta_plasma(1, :, :) * drdtheta_plasma(2, :, :) * unit_normal_plasma(3, :, :) &
+             + d2rdthetadzeta_plasma(2, :, :) * drdtheta_plasma(3, :, :) * unit_normal_plasma(1, :, :) &
+             + d2rdthetadzeta_plasma(3, :, :) * drdtheta_plasma(1, :, :) * unit_normal_plasma(2, :, :) &
+             - d2rdthetadzeta_plasma(3, :, :) * drdtheta_plasma(2, :, :) * unit_normal_plasma(1, :, :) &
+             - d2rdthetadzeta_plasma(1, :, :) * drdtheta_plasma(3, :, :) * unit_normal_plasma(2, :, :) &
+             - d2rdthetadzeta_plasma(2, :, :) * drdtheta_plasma(1, :, :) * unit_normal_plasma(3, :, :) &
+             + drdzeta_plasma(1, :, :) * d2rdtheta2_plasma(2, :, :) * unit_normal_plasma(3, :, :) &
+             + drdzeta_plasma(2, :, :) * d2rdtheta2_plasma(3, :, :) * unit_normal_plasma(1, :, :) &
+             + drdzeta_plasma(3, :, :) * d2rdtheta2_plasma(1, :, :) * unit_normal_plasma(2, :, :) &
+             - drdzeta_plasma(3, :, :) * d2rdtheta2_plasma(2, :, :) * unit_normal_plasma(1, :, :) &
+             - drdzeta_plasma(1, :, :) * d2rdtheta2_plasma(3, :, :) * unit_normal_plasma(2, :, :) &
+             - drdzeta_plasma(2, :, :) * d2rdtheta2_plasma(1, :, :) * unit_normal_plasma(3, :, :) ))
         
         drdzeta_coil(xyz, :, :) = drdzeta_plasma(xyz, :, :) &
-             + separation / norm_normal_plasma * ( &
+             + separation / norm_normal_plasma_big * ( &
              d2rdzeta2_plasma(yzx, :, :) * drdtheta_plasma(zxy, :, :) - d2rdzeta2_plasma(zxy, :, :) * drdtheta_plasma(yzx, :, :) &
              + drdzeta_plasma(yzx, :, :) * d2rdthetadzeta_plasma(zxy, :, :) - drdzeta_plasma(zxy, :, :) * d2rdthetadzeta_plasma(yzx, :, :) &
-             - normal_plasma(xyz, :, :) * ( &
-             + d2rdzeta2_plasma(1, :, :) * drdtheta_plasma(2, :, :) * normal_plasma(3, :, :) &
-             + d2rdzeta2_plasma(2, :, :) * drdtheta_plasma(3, :, :) * normal_plasma(1, :, :) &
-             + d2rdzeta2_plasma(3, :, :) * drdtheta_plasma(1, :, :) * normal_plasma(2, :, :) &
-             - d2rdzeta2_plasma(3, :, :) * drdtheta_plasma(2, :, :) * normal_plasma(1, :, :) &
-             - d2rdzeta2_plasma(1, :, :) * drdtheta_plasma(3, :, :) * normal_plasma(2, :, :) &
-             - d2rdzeta2_plasma(2, :, :) * drdtheta_plasma(1, :, :) * normal_plasma(3, :, :) &
-             + drdzeta_plasma(1, :, :) * d2rdthetadzeta_plasma(2, :, :) * normal_plasma(3, :, :) &
-             + drdzeta_plasma(2, :, :) * d2rdthetadzeta_plasma(3, :, :) * normal_plasma(1, :, :) &
-             + drdzeta_plasma(3, :, :) * d2rdthetadzeta_plasma(1, :, :) * normal_plasma(2, :, :) &
-             - drdzeta_plasma(3, :, :) * d2rdthetadzeta_plasma(2, :, :) * normal_plasma(1, :, :) &
-             - drdzeta_plasma(1, :, :) * d2rdthetadzeta_plasma(3, :, :) * normal_plasma(2, :, :) &
-             - drdzeta_plasma(2, :, :) * d2rdthetadzeta_plasma(1, :, :) * normal_plasma(3, :, :) ))
+             - unit_normal_plasma(xyz, :, :) * ( &
+             + d2rdzeta2_plasma(1, :, :) * drdtheta_plasma(2, :, :) * unit_normal_plasma(3, :, :) &
+             + d2rdzeta2_plasma(2, :, :) * drdtheta_plasma(3, :, :) * unit_normal_plasma(1, :, :) &
+             + d2rdzeta2_plasma(3, :, :) * drdtheta_plasma(1, :, :) * unit_normal_plasma(2, :, :) &
+             - d2rdzeta2_plasma(3, :, :) * drdtheta_plasma(2, :, :) * unit_normal_plasma(1, :, :) &
+             - d2rdzeta2_plasma(1, :, :) * drdtheta_plasma(3, :, :) * unit_normal_plasma(2, :, :) &
+             - d2rdzeta2_plasma(2, :, :) * drdtheta_plasma(1, :, :) * unit_normal_plasma(3, :, :) &
+             + drdzeta_plasma(1, :, :) * d2rdthetadzeta_plasma(2, :, :) * unit_normal_plasma(3, :, :) &
+             + drdzeta_plasma(2, :, :) * d2rdthetadzeta_plasma(3, :, :) * unit_normal_plasma(1, :, :) &
+             + drdzeta_plasma(3, :, :) * d2rdthetadzeta_plasma(1, :, :) * unit_normal_plasma(2, :, :) &
+             - drdzeta_plasma(3, :, :) * d2rdthetadzeta_plasma(2, :, :) * unit_normal_plasma(1, :, :) &
+             - drdzeta_plasma(1, :, :) * d2rdthetadzeta_plasma(3, :, :) * unit_normal_plasma(2, :, :) &
+             - drdzeta_plasma(2, :, :) * d2rdthetadzeta_plasma(1, :, :) * unit_normal_plasma(3, :, :) ))
      end do
+     deallocate(norm_normal_plasma_big, unit_normal_plasma)
 
      d2rdtheta2_coil = 0
      d2rdthetadzeta_coil = 0
      d2rdzeta2_coil = 0
+     
+     mnmax_coil = 1
+     ! We need to allocate the following arrays, even though they are not used:
+     allocate(xm_coil(mnmax_coil))
+     allocate(xn_coil(mnmax_coil))
+     allocate(rmnc_coil(mnmax_coil))
+     allocate(rmns_coil(mnmax_coil))
+     allocate(zmnc_coil(mnmax_coil))
+     allocate(zmns_coil(mnmax_coil))
      
   case default
      print *,"Invalid setting for geometry_option_coil: ",geometry_option_coil

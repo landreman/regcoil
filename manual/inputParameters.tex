@@ -361,11 +361,13 @@ if  \parlink{geometry\_option\_plasma} is 2.
 
 {\ttfamily geometry\_option\_coil} = 1: Identical to option 0, except the major radius of the coil surface will be set by \parlink{R0\_coil}.\\
 
-{\ttfamily geometry\_option\_coil} = 2: The coil surface will computing by expanding the plasma surface uniformly by a distance \parlink{separation}. The expanded surface will be saved to a local file specified by \parlink{nescin\_filename}. \\
+{\ttfamily geometry\_option\_coil} = 2: The coil surface will be computed by expanding the plasma surface uniformly by a distance \parlink{separation}. The expanded surface will be saved to a local file specified by \parlink{nescin\_filename}. \\
 
 {\ttfamily geometry\_option\_coil} = 3: The coil surface will be the `coil' surface in the \nescoil~`nescin' input file specified by \parlink{nescin\_filename}. \\
 
 {\ttfamily geometry\_option\_coil} = 4: Similar to option 2, except that the poloidal angle will be changed such that the arclength (with respect to $\theta)$ is independent of $\theta$ at each $\zeta$. The coil surface will computing by expanding the plasma surface uniformly by a distance \parlink{separation}. The expanded surface will be saved to a local file specified by \parlink{nescin\_filename}. \\
+
+{\ttfamily geometry\_option\_coil} = 5: The coil surface will be computed by expanding the plasma surface uniformly by a distance \parlink{separation}. Unlike option 2, for option 5 the toroidal angle for the coil surface will not be the standard toroidal angle. Instead the toroidal angle on the surface is defined by the toroidal angle on the plasma surface such that moving in the normal direction takes you to that point on the coil surface. This option may work better than option 2 when it is hard to represent the offset surface in Fourier space using the standard toroidal angle. However beware that Laplace-Beltrami quantities and the coil cutting scripts have not been updated to work with this option. \\
 }
 
 \myhrule
