@@ -35,7 +35,7 @@ subroutine regcoil_auto_regularization_solve()
         chi2_K(ilambda) = nfp * dtheta_coil * dzeta_coil * sum(this_K2_times_N)
 
         Bnormal_total(:,:,ilambda) = & ! (reshape(matmul(g,solution),(/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma) +
-             Bnormal_from_plasma_current + Bnormal_from_net_coil_currents
+             Bnormal_plasma_current + Bnormal_net_coil_currents
 
         chi2_B(ilambda) = nfp * dtheta_plasma * dzeta_plasma &
              * sum(Bnormal_total(:,:,ilambda) * Bnormal_total(:,:,ilambda) * norm_normal_plasma)

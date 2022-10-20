@@ -442,11 +442,11 @@ subroutine regcoil_write_output
        'and r is the posiiton vector, for the coil surface. This quantity is the Jacobian appearing in area integrals: ' // &
        'int d^2a = int dtheta int dzeta |N|. Units = meters^2.')
 
-  call cdf_define(ncid, vn_Bnormal_from_plasma_current, Bnormal_from_plasma_current, dimname=ntheta_nzeta_plasma_dim)
+  call cdf_define(ncid, vn_Bnormal_from_plasma_current, Bnormal_plasma_current, dimname=ntheta_nzeta_plasma_dim)
   call cdf_setatt(ncid, vn_Bnormal_from_plasma_current, 'Contribution to the magnetic field normal to the plasma surface from currents inside the plasma. ' // &
        'This is the quantity named B_{normal}^{plasma} in the 2017 Nuclear Fusion paper. Units = Tesla.')
 
-  call cdf_define(ncid, vn_Bnormal_from_net_coil_currents, Bnormal_from_net_coil_currents, dimname=ntheta_nzeta_plasma_dim)
+  call cdf_define(ncid, vn_Bnormal_from_net_coil_currents, Bnormal_net_coil_currents, dimname=ntheta_nzeta_plasma_dim)
   call cdf_setatt(ncid, vn_Bnormal_from_plasma_current, 'Contribution to the magnetic field normal to the plasma surface from the secular (nonperiodic) ' // &
        'part of the current potential. This is the quantity named B_{normal}^{GI} in the 2017 Nuclear Fusion paper. Units = Tesla.')
 
@@ -458,7 +458,7 @@ subroutine regcoil_write_output
   end if
   !call cdf_define(ncid, vn_matrix_B, matrix_B, dimname=basis_basis_dim)
   !call cdf_define(ncid, vn_matrix_K, matrix_K, dimname=basis_basis_dim)
-  call cdf_define(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda), &
+  call cdf_define(ncid, vn_single_valued_current_potential_mn, phi_sv_mn(:,1:Nlambda), &
        dimname=basis_nlambda_dim)
 
   if (sensitivity_option > 1 .and. exit_code == 0) then
@@ -491,7 +491,7 @@ subroutine regcoil_write_output
 
   end if
 
-  call cdf_define(ncid, vn_single_valued_current_potential_thetazeta, single_valued_current_potential_thetazeta(:,:,1:Nlambda), &
+  call cdf_define(ncid, vn_single_valued_current_potential_thetazeta, phi_sv_thetazeta(:,:,1:Nlambda), &
        dimname=ntheta_nzeta_coil_nlambda_dim)
   call cdf_setatt(ncid, vn_single_valued_current_potential_thetazeta, 'Periodic (single-valued) term in the current potential on the coil winding surface, in units of Amperes, ' // &
        'for each value of the regularization parameter lambda considered.')
@@ -620,8 +620,8 @@ subroutine regcoil_write_output
 
   call cdf_write(ncid, vn_norm_normal_plasma,  norm_normal_plasma)
   call cdf_write(ncid, vn_norm_normal_coil,  norm_normal_coil)
-  call cdf_write(ncid, vn_Bnormal_from_plasma_current, Bnormal_from_plasma_current)
-  call cdf_write(ncid, vn_Bnormal_from_net_coil_currents, Bnormal_from_net_coil_currents)
+  call cdf_write(ncid, vn_Bnormal_from_plasma_current, Bnormal_plasma_current)
+  call cdf_write(ncid, vn_Bnormal_from_net_coil_currents, Bnormal_net_coil_currents)
   if (save_level<1) then
      call cdf_write(ncid, vn_inductance, inductance)
   end if
@@ -630,7 +630,7 @@ subroutine regcoil_write_output
   end if
   !call cdf_write(ncid, vn_matrix_B, matrix_B)
   !call cdf_write(ncid, vn_matrix_K, matrix_K)
-  call cdf_write(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda))
+  call cdf_write(ncid, vn_single_valued_current_potential_mn, phi_sv_mn(:,1:Nlambda))
   if (sensitivity_option > 1 .and. exit_code == 0) then
     call cdf_write(ncid, vn_dchi2domega, dchi2domega(:,1:Nlambda))
   end if
@@ -657,7 +657,7 @@ subroutine regcoil_write_output
 
   end if
 
-  call cdf_write(ncid, vn_single_valued_current_potential_thetazeta, single_valued_current_potential_thetazeta(:,:,1:Nlambda))
+  call cdf_write(ncid, vn_single_valued_current_potential_thetazeta, phi_sv_thetazeta(:,:,1:Nlambda))
   call cdf_write(ncid, vn_current_potential, current_potential(:,:,1:Nlambda))
   call cdf_write(ncid, vn_Bnormal_total, Bnormal_total(:,:,1:Nlambda))
   call cdf_write(ncid, vn_K2, K2(:,:,1:Nlambda))

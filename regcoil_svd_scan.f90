@@ -44,7 +44,7 @@ subroutine regcoil_svd_scan
         !index = index+1
         index = (izeta-1)*ntheta_plasma + itheta
         factor = sqrt(norm_normal_plasma(itheta,izeta))
-        RHS(index) = -(Bnormal_from_plasma_current(itheta,izeta) + Bnormal_from_net_coil_currents(itheta,izeta))*factor
+        RHS(index) = -(Bnormal_plasma_current(itheta,izeta) + Bnormal_net_coil_currents(itheta,izeta))*factor
         svd_matrix(index,:) = g(index,:) / factor
      end do
   end do

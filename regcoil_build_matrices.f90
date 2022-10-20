@@ -325,8 +325,8 @@ subroutine regcoil_build_matrices()
   allocate(factor_for_h(3,ntheta_coil,nzetal_coil),stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 11!'
 
-  if (allocated(Bnormal_from_net_coil_currents)) deallocate(Bnormal_from_net_coil_currents)
-  allocate(Bnormal_from_net_coil_currents(ntheta_plasma,nzeta_plasma),stat=iflag)
+  if (allocated(Bnormal_net_coil_currents)) deallocate(Bnormal_net_coil_currents)
+  allocate(Bnormal_net_coil_currents(ntheta_plasma,nzeta_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 12!'
 
   if (sensitivity_option > 1) then
@@ -491,8 +491,8 @@ subroutine regcoil_build_matrices()
     dhdomega = dhdomega * (dtheta_coil*dzeta_coil*mu0/(8*pi*pi))
   endif
   deallocate(factor_for_h)
-  Bnormal_from_net_coil_currents = reshape(h, (/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma
-  !Bnormal_from_net_coil_currents = transpose(reshape(h, (/ nzeta_plasma, ntheta_plasma /))) / norm_normal_plasma
+  Bnormal_net_coil_currents = reshape(h, (/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma
+  !Bnormal_net_coil_currents = transpose(reshape(h, (/ nzeta_plasma, ntheta_plasma /))) / norm_normal_plasma
   
   call system_clock(tic)
 
@@ -587,7 +587,7 @@ subroutine regcoil_build_matrices()
   call system_clock(tic)
 
   RHS_B = -dtheta_plasma*dzeta_plasma*matmul( &
-       reshape(Bnormal_from_plasma_current+Bnormal_from_net_coil_currents, (/ ntheta_plasma*nzeta_plasma /)), g)
+       reshape(Bnormal_plasma_current+Bnormal_net_coil_currents, (/ ntheta_plasma*nzeta_plasma /)), g)
 
   call system_clock(toc)
   if (verbose) print *,"Form RHS_B:",real(toc-tic)/countrate,"sec."
@@ -619,7 +619,7 @@ subroutine regcoil_build_matrices()
 
     do iomega = 1, nomega_coil
       dRHS_Bdomega(iomega,:) = -dtheta_plasma*dzeta_plasma*matmul( &
-      reshape(Bnormal_from_plasma_current+Bnormal_from_net_coil_currents, (/ ntheta_plasma*nzeta_plasma /)), dgdomega(:,:,iomega))
+      reshape(Bnormal_plasma_current+Bnormal_net_coil_currents, (/ ntheta_plasma*nzeta_plasma /)), dgdomega(:,:,iomega))
       dRHS_Bdomega(iomega,:) = dRHS_Bdomega(iomega,:) - &
         dtheta_plasma*dzeta_plasma*matmul(transpose(g_over_N_plasma),dhdomega(iomega,:))
     enddo
@@ -694,7 +694,7 @@ subroutine regcoil_build_matrices()
   end if
      
   select case (trim(regularization_term_option))
-  case (regularization_term_option_chi2_K, regularization_term_option_K_xy)
+  case (reg_term_option_chi2_K, reg_term_option_K_xy)
   
      call system_clock(tic)
      ! Here we carry out matrix_regularization += dtheta*dzeta*(f_x ^ T) * f_x_over_N_coil
@@ -736,7 +736,7 @@ subroutine regcoil_build_matrices()
      call system_clock(toc)
      if (verbose) print *,"matmul 2 for matrix_regularization:",real(toc-tic)/countrate,"sec."
      
-     if (trim(regularization_term_option) == regularization_term_option_chi2_K) then
+     if (trim(regularization_term_option) == reg_term_option_chi2_K) then
         call system_clock(tic)
         ! Here we carry out matrix_regularization += dtheta*dzeta*(f_z ^ T) * f_z_over_N_coil
         ! A = f_z
@@ -760,7 +760,7 @@ subroutine regcoil_build_matrices()
      
      call system_clock(tic)
      
-     if (trim(regularization_term_option) == regularization_term_option_chi2_K) then     
+     if (trim(regularization_term_option) == reg_term_option_chi2_K) then     
         RHS_regularization = (matmul(d_x, f_x_over_N_coil) + matmul(d_y, f_y_over_N_coil) + matmul(d_z, f_z_over_N_coil)) &
              * (dtheta_coil*dzeta_coil)
      else
@@ -863,7 +863,7 @@ subroutine regcoil_build_matrices()
       dmatrix_Kdomega = dmatrix_Kdomega*dtheta_coil*dzeta_coil
     endif
 
-  case (regularization_term_option_Laplace_Beltrami)
+  case (reg_term_option_LB)
      ! ------------------------------------------------------------------
      ! Laplace-Beltrami matrix and RHS:
      

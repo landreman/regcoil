@@ -54,7 +54,7 @@ subroutine regcoil_fixed_norm_sensitivity()
   if (iflag .ne. 0) stop 'Allocation error!'
 
   ilambda = Nlambda
-  solution = single_valued_current_potential_mn(:,ilambda)
+  solution = phi_sv_mn(:,ilambda)
 
   KDifference_x = d_x - matmul(f_x, solution)
   KDifference_y = d_y - matmul(f_y, solution)

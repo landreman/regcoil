@@ -8,11 +8,11 @@ module regcoil_variables
   logical :: verbose = .true.
 
   character(len=*), parameter :: &
-       regularization_term_option_chi2_K = "chi2_K", &
-       regularization_term_option_Laplace_Beltrami = "Laplace-Beltrami", &
-       regularization_term_option_K_xy = "K_xy", &
-       regularization_term_option_K_zeta = "K_zeta"
-  character(len=200) :: regularization_term_option = regularization_term_option_chi2_K
+       reg_term_option_chi2_K = "chi2_K", &
+       reg_term_option_LB = "Laplace-Beltrami", &
+       reg_term_option_K_xy = "K_xy", &
+       reg_term_option_K_zeta = "K_zeta"
+  character(len=200) :: regularization_term_option = reg_term_option_chi2_K
 
   integer :: ntheta_plasma=64, nzeta_plasma=64, nzetal_plasma
   integer :: ntheta_coil=64, nzeta_coil=64, nzetal_coil
@@ -37,11 +37,11 @@ module regcoil_variables
   real(dp), dimension(:,:), allocatable :: g, f_x, f_y, f_z, f_Laplace_Beltrami
   real(dp), dimension(:), allocatable :: h, d_x, d_y, d_z, d_Laplace_Beltrami
 
-  real(dp), dimension(:,:), allocatable :: Bnormal_from_plasma_current
-  real(dp), dimension(:,:), allocatable :: Bnormal_from_net_coil_currents
+  real(dp), dimension(:,:), allocatable :: Bnormal_plasma_current
+  real(dp), dimension(:,:), allocatable :: Bnormal_net_coil_currents
   real(dp), dimension(:,:), allocatable :: matrix_B, matrix_regularization, inductance
-  real(dp), dimension(:,:), allocatable :: single_valued_current_potential_mn
-  real(dp), dimension(:,:,:), allocatable :: single_valued_current_potential_thetazeta
+  real(dp), dimension(:,:), allocatable :: phi_sv_mn
+  real(dp), dimension(:,:,:), allocatable :: phi_sv_thetazeta
   real(dp), dimension(:,:,:), allocatable :: current_potential
   real(dp), dimension(:), allocatable :: RHS_B, RHS_regularization
   real(dp), dimension(:,:,:), allocatable :: Bnormal_total
@@ -99,7 +99,7 @@ module regcoil_variables
   real(dp), dimension(:,:), allocatable :: matrix, this_current_potential
   real(dp), dimension(:), allocatable :: RHS, solution
   real(dp), dimension(:), allocatable :: KDifference_x, KDifference_y, KDifference_z, KDifference_Laplace_Beltrami
-  real(dp), dimension(:,:), allocatable :: this_K2_times_N, this_Laplace_Beltrami2_times_N
+  real(dp), dimension(:,:), allocatable :: this_K2_times_N, this_LB2_times_N
 
   ! Variables needed by LAPACK:
   integer :: LAPACK_INFO, LAPACK_LWORK

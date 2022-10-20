@@ -50,18 +50,18 @@ subroutine regcoil_prepare_solve()
   allocate(current_potential(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 10!'
 
-  if (allocated(single_valued_current_potential_thetazeta)) &
-        deallocate(single_valued_current_potential_thetazeta)
-  allocate(single_valued_current_potential_thetazeta(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
+  if (allocated(phi_sv_thetazeta)) &
+        deallocate(phi_sv_thetazeta)
+  allocate(phi_sv_thetazeta(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 11!'
 
   if (allocated(this_current_potential)) deallocate(this_current_potential)
   allocate(this_current_potential(ntheta_coil,nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 12!'
 
-  if (allocated(single_valued_current_potential_mn)) &
-        deallocate(single_valued_current_potential_mn)
-  allocate(single_valued_current_potential_mn(num_basis_functions,nlambda), stat=iflag)
+  if (allocated(phi_sv_mn)) &
+        deallocate(phi_sv_mn)
+  allocate(phi_sv_mn(num_basis_functions,nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 13!'
 
   if (allocated(Bnormal_total)) deallocate(Bnormal_total)
@@ -96,8 +96,8 @@ subroutine regcoil_prepare_solve()
   allocate(this_K2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 19!'
 
-  if (allocated(this_Laplace_Beltrami2_times_N)) deallocate(this_Laplace_Beltrami2_times_N)
-  allocate(this_Laplace_Beltrami2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
+  if (allocated(this_LB2_times_N)) deallocate(this_LB2_times_N)
+  allocate(this_LB2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 19!'
 
   if (trim(target_option)==target_option_max_K_lse) then

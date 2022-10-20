@@ -175,16 +175,16 @@ subroutine regcoil_validate_input
   end if
 
   select case (trim(regularization_term_option))
-  case (regularization_term_option_chi2_K)
-  case (regularization_term_option_Laplace_Beltrami)
+  case (reg_term_option_chi2_K)
+  case (reg_term_option_LB)
     if (symmetry_option > 1) then
       stop "Error! sensitivity_option > 1 can only be used with regularization_term_option = chi2_K."
     end if
-  case (regularization_term_option_K_xy)
+  case (reg_term_option_K_xy)
     if (symmetry_option > 1) then
       stop "Error! sensitivity_option > 1 can only be used with regularization_term_option = chi2_K."
     end if
-  case (regularization_term_option_K_zeta)
+  case (reg_term_option_K_zeta)
     if (symmetry_option > 1) then
       stop "Error! sensitivity_option > 1 can only be used with regularization_term_option = chi2_K."
     end if

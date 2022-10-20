@@ -111,7 +111,7 @@ subroutine regcoil_adjoint_solve
 
     matrix = matrix_B + lambda(ilambda) * matrix_regularization
     RHS    =    RHS_B + lambda(ilambda) *    RHS_regularization
-    solution = single_valued_current_potential_mn(:,ilambda)
+    solution = phi_sv_mn(:,ilambda)
 
     KDifference_x = d_x - matmul(f_x, solution)
     KDifference_y = d_y - matmul(f_y, solution)
