@@ -25,7 +25,7 @@ ifeq ($(HOSTNAME),cori)
   FC = ftn
   ## NERSC documentation recommends against specifying -O3
   ## -mkl MUST APPEAR AT THE END!!
-  EXTRA_COMPILE_FLAGS = -qopenmp -mkl
+  EXTRA_COMPILE_FLAGS = -qopenmp -mkl -fPIC
   EXTRA_LINK_FLAGS =  -qopenmp -mkl -Wl,-ydgemm_
   # Above, the link flag "-Wl,-ydgemm_" causes the linker to report which version of DGEMM (the BLAS3 matrix-matrix-multiplication subroutine) is used.
   # For batch systems, set the following variable to the command used to run jobs. This variable is used by 'make test'.
@@ -34,7 +34,7 @@ ifeq ($(HOSTNAME),cori)
 else ifeq ($(HOSTNAME),marconi)
   REGCOIL_HOST = marconi
   FC = mpiifort
-  EXTRA_COMPILE_FLAGS = -qopenmp -mkl $(shell nc-config --fflags)
+  EXTRA_COMPILE_FLAGS = -qopenmp -mkl $(shell nc-config --fflags) -fPIC
   EXTRA_LINK_FLAGS =  -qopenmp -mkl $(shell nc-config --flibs)
   # Above, the link flag "-Wl,-ydgemm_" causes the linker to report which version of DGEMM (the BLAS3 matrix-matrix-multiplication subroutine) is used.
   # For batch systems, set the following variable to the command used to run jobs. This variable is used by 'make test'.
@@ -47,7 +47,7 @@ else ifeq ($(HOSTNAME),pppl_gcc)
   NETCDF_F = $(NETCDF_FORTRAN_HOME)
   NETCDF_C = $(NETCDF_C_HOME)
   FC = mpifort
-  EXTRA_COMPILE_FLAGS = -O2 -ffree-line-length-none -fexternal-blas -fopenmp -I$(NETCDF_F)/include -I$(NETCDF_C)/include
+  EXTRA_COMPILE_FLAGS = -O2 -ffree-line-length-none -fexternal-blas -fopenmp -I$(NETCDF_F)/include -I$(NETCDF_C)/include -fPIC
   EXTRA_LINK_FLAGS = -fopenmp -lopenblas -L$(NETCDF_C)/lib -lnetcdf -L$(NETCDF_F)/lib -lnetcdff
   LIBSTELL_DIR=$(STELLOPT_PATH)/LIBSTELL/Release
   LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/libstell.a
@@ -63,7 +63,7 @@ else ifeq ($(HOSTNAME),pppl_intel)
     -qopenmp \
     -lpthread \
     -I$(NETCDF_F)/include -I$(NETCDF_C)/include \
-    -mkl	
+    -mkl	-fPIC
   EXTRA_LINK_FLAGS = -qopenmp -mkl -L$(NETCDF_C)/lib -lnetcdf -L$(NETCDF_F)/lib -lnetcdff
   LIBSTELL_DIR=$(STELLOPT_PATH)/LIBSTELL/Release
   LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/libstell.a
@@ -74,7 +74,7 @@ else ifeq ($(HOSTNAME),osx_brew)
   NETCDF_HOME ?= /usr/local/lib/netcdf
   LAPACK_HOME ?= /usr/local/lib/lapack
   FC = mpifort 
-  EXTRA_COMPILE_FLAGS = -O2 -ffree-line-length-none -fopenmp -I$(NETCDF_HOME)/include
+  EXTRA_COMPILE_FLAGS = -O2 -ffree-line-length-none -fopenmp -I$(NETCDF_HOME)/include -fPIC
   EXTRA_LINK_FLAGS =  -fopenmp -L$(NETCDF_HOME)/lib -lnetcdf -lnetcdff -L$(LAPACK_HOME)/lib -lblas -llapack
   LIBSTELL_DIR = $(STELLOPT_PATH)/LIBSTELL/Release
   LIBSTELL_FOR_REGCOIL = $(LIBSTELL_DIR)/libstell.a
@@ -85,7 +85,7 @@ else ifeq ($(CLUSTER),DRACO)
   FC = mpiifort
   #EXTRA_COMPILE_FLAGS = -qopenmp -mkl -I${NETCDF_HOME}/include
   #EXTRA_LINK_FLAGS =  -qopenmp -mkl -Wl,-ydgemm_ -L${NETCDF_HOME}/lib -lnetcdf -lnetcdff
-  EXTRA_COMPILE_FLAGS = -qopenmp  -I${MKLROOT}/include -I${NETCDF_HOME}/include
+  EXTRA_COMPILE_FLAGS = -qopenmp  -I${MKLROOT}/include -I${NETCDF_HOME}/include -fPIC
   EXTRA_LINK_FLAGS =  -qopenmp  -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl -Wl,-ydgemm_ -L${NETCDF_HOME}/lib -lnetcdf -lnetcdff
   # For batch systems, set the following variable to the command used to run jobs. This variable is used by 'make test'.
   REGCOIL_COMMAND_TO_SUBMIT_JOB = srun
@@ -93,7 +93,7 @@ else ifeq ($(CLUSTER),DRACO)
 else ifeq ($(CLUSTER),RAVEN)
   REGCOIL_HOST=raven
   FC = mpiifort
-  EXTRA_COMPILE_FLAGS = -qopenmp  -I${MKLROOT}/include $(shell nc-config --fflags)
+  EXTRA_COMPILE_FLAGS = -qopenmp  -I${MKLROOT}/include $(shell nc-config --fflags) -fPIC
   EXTRA_LINK_FLAGS =  -qopenmp  -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl -Wl,-ydgemm_ $(shell nc-config --flibs)
   # For batch systems, set the following variable to the command used to run jobs. This variable is used by 'make test'.
   REGCOIL_COMMAND_TO_SUBMIT_JOB = srun
@@ -102,7 +102,7 @@ else
   REGCOIL_HOST=macports
   FC = mpif90
   #EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none -cpp
-  EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none -O0 -g
+  EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none -O0 -g -fPIC
   EXTRA_LINK_FLAGS =  -fopenmp -L/opt/local/lib -lnetcdff  -lnetcdf -framework Accelerate
 
   # For batch systems, set the following variable to the command used to run jobs. This variable is used by 'make test'.
