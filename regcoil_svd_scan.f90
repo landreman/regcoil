@@ -20,15 +20,17 @@ subroutine regcoil_svd_scan
   if (allocated(lambda)) deallocate(lambda)
   ! Nescoil seems to require keeping at least 2 singular values in a svd scan. We will do the same to keep the number
   ! of solutions the same as nescoil.
-  nlambda = num_basis_functions-1
+  !nlambda = num_basis_functions-1
   allocate(lambda(nlambda))
   lambda=0
-
 
   if (allocated(svd_matrix)) deallocate(svd_matrix)
   allocate(svd_matrix(ntheta_plasma*nzeta_plasma, num_basis_functions), stat=iflag)
   if (iflag .ne. 0) stop 'svd_scan Allocation error 16!'
 
+  if (allocated(RHS)) deallocate(RHS)
+  allocate(RHS(ntheta_plasma*nzeta_plasma), stat=iflag)
+  if (iflag .ne. 0) stop 'svd_scan Allocation error 17!'
 
   print *,"Beginning SVD."
   call system_clock(tic,countrate)
@@ -120,7 +122,7 @@ subroutine regcoil_svd_scan
   ! Add the contribution from the ilambda-th singular vectors and singular value:
   solution = solution + VT(1,:) * (1/singular_values(1)) * U_transpose_times_RHS(1)
   do ilambda = nlambda,1,-1
-     print "(a,es10.3,a,i3,a,i3,a)"," Solving system for lambda=",lambda(ilambda)," (",ilambda," of ",nlambda,")"
+     print "(a,es10.3,a,i6,a,i6,a)"," Solving system for lambda=",lambda(ilambda)," (",ilambda," of ",nlambda,")"
 
      ! Add the contribution from the ilambda-th singular vectors and singular value:
      !solution = solution + VT(ilambda,:) * (1/singular_values(ilambda)) * U_transpose_times_RHS(ilambda)

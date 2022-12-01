@@ -132,6 +132,9 @@ subroutine regcoil_validate_input
      end do
      if (verbose) print *,"Detected",j,"current potentials in the nescout file."
      nlambda = j
+  else if (general_option==3) then
+     ! Nlambda with the number of singular values
+     if (verbose) print *,"Nlambda will be replaced with the number of singular values."
   end if
 
   if (target_value<=0) then
