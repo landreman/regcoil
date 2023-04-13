@@ -42,7 +42,7 @@ subroutine regcoil_build_matrices()
   if (verbose) print *,"Initializing basis functions and f"
   
   ! Initialize Fourier arrays
-  call regcoil_init_Fourier_modes(mpol_potential, ntor_potential, mnmax_potential, xm_potential, xn_potential, .false.)
+  call regcoil_init_Fourier_modes(mpol_potential, ntor_potential, mnmax_potential, xm_potential, xn_potential, .false., helicity_ratio)
   xn_potential = xn_potential * nfp
   
   select case (symmetry_option)
