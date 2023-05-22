@@ -499,8 +499,11 @@ contains
        ! VMEC stores the toroidal Boozer component B_zeta as "bvco", using the HALF mesh
        net_poloidal_current_Amperes = 2*pi/mu0*(1.5_dp*bvco(ns)-0.5_dp*bvco(ns-1)) - TF_coil_pol_current
        ! subtract the current that is already taken care of by the TF coils?
-       
-       net_toroidal_current_Amperes = net_poloidal_current_Amperes / helicity_ratio / nfp
+       if (helicity_ratio .ne. 0) then
+          net_toroidal_current_Amperes = net_poloidal_current_Amperes / helicity_ratio / nfp
+       else
+          net_toroidal_current_Amperes = 0
+       end if 
        ! curpol is a number which multiplies the data in the bnorm file.
        curpol = 1!I am supplying it in T already so should be ok... (2*pi/nfp)*(1.5_dp*bsubvmnc(1,ns) - 0.5_dp*bsubvmnc(1,ns-1))
 
