@@ -68,7 +68,7 @@ else ifeq ($(HOSTNAME),pppl_intel)
   LIBSTELL_DIR=$(STELLOPT_PATH)/LIBSTELL/Release
   LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/libstell.a
   REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -N 1 -n 1 -c 8 -q debug --mem 8G
-else ifeq ($(HOSTNAME),stellar)
+else ifeq ($(HOSTNAME),stellar-intel.princeton.edu)
   REGCOIL_HOST=stellar
   FC = ifort
   NETCDF_F = $(NETCDFDIR)
@@ -78,7 +78,7 @@ else ifeq ($(HOSTNAME),stellar)
     -lpthread \
     -I$(NETCDF_F)/include -I$(NETCDF_C)/include
   EXTRA_LINK_FLAGS = -fopenmp -L$(NETCDF_C)/lib -lnetcdf -L$(NETCDF_F)/lib -lnetcdff -lmkl_gf_lp64 -lmkl_core -lmkl_sequential -lhdf5_hl -lhdf5_fortran -lhdf5 -lpthread -lz -lm
-  REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -N 1 -n 1 -c 8 -q debug --mem 8G
+  REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -N 1 -n 1 -c 8 -q debug --mem 8G --time 00:10:00
   LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/mini_libstell.a
 else ifeq ($(HOSTNAME),osx_brew)
   REGCOIL_HOST=osx_brew

@@ -54,7 +54,8 @@ subroutine regcoil_write_output
        vn_coil_plasma_dist_max = "coil_plasma_dist_max", &
        vn_coil_plasma_dist_min_lse = "coil_plasma_dist_min_lse", &
        vn_coil_plasma_dist_max_lse = "coil_plasma_dist_max_lse", &
-       vn_coil_plasma_dist_lse_p = "coil_plasma_dist_lse_p"
+       vn_coil_plasma_dist_lse_p = "coil_plasma_dist_lse_p", &
+       vn_helicity_ratio = "helicity_ratio"
 
   ! Arrays with dimension 1
   character(len=*), parameter :: &
@@ -288,6 +289,9 @@ subroutine regcoil_write_output
   call cdf_define(ncid, vn_net_toroidal_current_Amperes, net_toroidal_current_Amperes)
   call cdf_setatt(ncid, vn_net_toroidal_current_Amperes, 'Net current (in Amperes) that flows on the coil winding surface in the toroidal direction. ' // &
        'This quantity corresponds to I in the 2017 Nuclear Fusion paper. For modular coils, this quantity is 0.')
+
+  call cdf_define(ncid, vn_helicity_ratio, helicity_ratio)
+  call cdf_setatt(ncid, vn_helicity_ratio, 'Helicity of the helical coils (i.e. number of poloidal turns per field period).')
 
   call cdf_define(ncid, vn_curpol, curpol)
 
@@ -544,6 +548,7 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_net_poloidal_current_Amperes, net_poloidal_current_Amperes)
   call cdf_write(ncid, vn_net_toroidal_current_Amperes, net_toroidal_current_Amperes)
   call cdf_write(ncid, vn_curpol, curpol)
+  call cdf_write(ncid, vn_helicity_ratio, helicity_ratio)
   call cdf_write(ncid, vn_nlambda, nlambda)
   call cdf_write(ncid, vn_total_time, total_time)
   call cdf_write(ncid, vn_exit_code, exit_code)

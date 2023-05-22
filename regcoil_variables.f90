@@ -66,6 +66,8 @@ module regcoil_variables
   real(dp), dimension(:), allocatable :: rmns_plasma, zmnc_plasma, rmnc_plasma, zmns_plasma
   real(dp), dimension(:), allocatable :: rmns_coil, zmnc_coil, rmnc_coil, zmns_coil
   integer :: nfp
+  integer :: helicity_ratio = 1 ! to produce coils with this helicity i.e. contours of constant curr potential lie on curves of 
+!theta = 2*pi - helicity_ratio*Nfp*zeta
   logical :: lasym
   integer :: max_mpol_coil = 24, max_ntor_coil = 24 ! These variables are upper limits on the # of Fourier modes used to describe a uniform-offset coil surface.
   integer :: mpol_coil_filter = 24, ntor_coil_filter = 24
@@ -85,6 +87,7 @@ module regcoil_variables
 
   real(dp) :: net_poloidal_current_Amperes = 1
   real(dp) :: net_toroidal_current_Amperes = 0
+  real(dp) :: TF_coil_pol_current = 0 ! current in external TF coils
   logical :: load_bnorm = .false.
   character(len=200) :: bnorm_filename=""
   real(dp) :: curpol = 1  ! number which multiplies data in bnorm file.
@@ -169,7 +172,7 @@ module regcoil_variables
        target_option, target_value, lambda_search_tolerance, &
        sensitivity_option, nmax_sensitivity, mmax_sensitivity, &
        sensitivity_symmetry_option, target_option_p, &
-       fixed_norm_sensitivity_option, coil_plasma_dist_lse_p
+       fixed_norm_sensitivity_option, coil_plasma_dist_lse_p, helicity_ratio, TF_coil_pol_current
 
 end module regcoil_variables
 
