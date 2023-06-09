@@ -1,0 +1,116 @@
+# include the original Makefile
+include Makefile
+
+#=======================================================================
+#                   define the compiler names
+#=======================================================================
+
+CC       = gcc
+F90      = gfortran
+#F90      = ifort
+#F90      =  /opt/intel/composer_xe_2015.3.187/bin/intel64/ifort
+PYTHON   = python
+
+#=======================================================================
+#                     additional flags
+#=======================================================================
+
+ifeq ($(F90),gfortran)
+	FPP      = $(FC) -E
+	FPP_F90FLAGS = -x f95-cpp-input -fPIC
+	F90FLAGS = -fopenmp
+    FCOMP    = $(FC) #gfortran
+endif
+
+ifeq ($(F90),ifort)
+	FPP      = gfortran -E # gfortran f90wrap temp files only. not compilation
+	FPP_F90FLAGS = -x f95-cpp-input -fPIC
+	F90FLAGS = -qopenmp
+    FCOMP    = intelem # for f2py
+endif
+
+
+#=======================================================================
+#=======================================================================
+
+UNAME = $(shell uname)
+
+ifeq (${UNAME}, Darwin)
+  LIBTOOL = libtool -static -o
+else
+  LIBTOOL = ar src
+endif
+
+# ======================================================================
+# PROJECT CONFIG, do not put spaced behind the variables
+# ======================================================================
+# Python module name
+PYTHON_MODN = regcoilpy
+# mapping between Fortran and C types
+KIND_MAP = kind_map
+# static library name
+LIB_NAME = lib$(PYTHON_MODN).a
+# This should be the same as $EXTRA_LINK_FLAGS in Makefile, but remove -fopenmp and add -lgopm
+LINKS = $(filter-out $(F90FLAGS),$(EXTRA_LINK_FLAGS)) -lgomp
+
+#=======================================================================
+#       List all source files that require a Python interface
+#=======================================================================
+
+# names (without suffix), f90 sources
+LIBSRC_WRAP_SOURCES = $(filter-out regcoil_fzero,$(OBJ_FILES:.o=))
+
+# file names
+LIBSRC_WRAP_FILES = $(addsuffix .f90,${LIBSRC_WRAP_SOURCES})
+
+# object files
+LIBSRC_WRAP_OBJECTS = $(addsuffix .o,${LIBSRC_WRAP_SOURCES}) regcoil_fzero.o
+
+# fpp files
+LIBSRC_WRAP_FPP_FILES = $(addsuffix .fpp,${LIBSRC_WRAP_SOURCES})
+
+#=======================================================================
+#                 Relevant suffixes
+#=======================================================================
+
+.SUFFIXES: .f90 .fpp
+
+#=======================================================================
+#
+#=======================================================================
+
+.PHONY: all all_clean
+
+
+all: _${PYTHON_MODN}.so
+
+all_clean: f90wrap_clean
+	$(MAKE) -f Makefile clean 
+
+f90wrap_clean:
+	-rm -f ${LIBSRC_OBJECTS} ${LIBSRC_FPP_FILES} $(LIB_NAME) _${PYTHON_MODN}*.so \
+	*.mod *.fpp f90wrap*.f90 f90wrap*.o *.o ${PYTHON_MODN}.py
+	-rm -rf ${PYTHON_MODN}_pkg
+	-rm -rf src.*/ .f2py_f2cmap .libs/ __pycache__/
+	-rm -rf $(LIB_NAME)
+
+$(LIBSRC_WRAP_FPP_FILES): %.fpp: %.f90
+	${FPP} ${FPP_F90FLAGS} $<  -o $@
+
+$(LIB_NAME): $(addprefix, $(LIBSRC_WRAP_FILES))
+	$(MAKE) -f Makefile
+	${LIBTOOL} $@ $(LIBSRC_WRAP_OBJECTS)
+	ranlib $@
+
+_${PYTHON_MODN}.so: $(LIB_NAME) ${LIBSRC_WRAP_FPP_FILES} 
+	f90wrap -m ${PYTHON_MODN} ${LIBSRC_WRAP_FPP_FILES} -k ${KIND_MAP} -v
+	f2py-f90wrap --f90exec=${FC} --f90flags=${F90FLAGS} --build-dir . -c -m _${PYTHON_MODN} -L. -l$(PYTHON_MODN) \
+	-I. -I$(LIBSTELL_DIR) $(LIBSTELL_FOR_REGCOIL) $(LINKS) f90wrap*.f90
+
+compile_test:
+	$(MAKE) -f Makefile test_make
+	@echo "LIBTOOL = ${LIBTOOL}"
+	@echo "F90FLAGS = ${F90FLAGS}"
+	@echo "LIBSRC_WRAP_SOURCES = ${LIBSRC_WRAP_SOURCES}"
+	@echo "LIBSRC_WRAP_OBJECTS = ${LIBSRC_WRAP_OBJECTS}"
+	@echo "LINKS = ${LINKS}"
