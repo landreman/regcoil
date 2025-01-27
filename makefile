@@ -161,6 +161,9 @@ $(TARGET): lib$(TARGET).a $(TARGET).o $(LIBSTELL_FOR_REGCOIL)
 mini_libstell/mini_libstell.a:
 	$(MAKE) -C mini_libstell
 
+pyregcoil: lib$(TARGET).a
+	pip install .
+
 clean:
 	rm -f *.o *.mod *.MOD *~ $(TARGET) *.a
 	cd mini_libstell; rm -f *.o *.mod *.MOD *.a
