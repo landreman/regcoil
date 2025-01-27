@@ -7,8 +7,8 @@
 # to avoid warning messages about libsci during compiling.
 
 LIBSTELL_DIR ?= mini_libstell
-#LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/mini_libstell.a
-LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/libstell.a
+LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/mini_libstell.a
+#LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/libstell.a
 
 ifdef NERSC_HOST
   HOSTNAME = $(NERSC_HOST)
@@ -68,7 +68,18 @@ else ifeq ($(HOSTNAME),pppl_intel)
   LIBSTELL_DIR=$(STELLOPT_PATH)/LIBSTELL/Release
   LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/libstell.a
   REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -N 1 -n 1 -c 8 -q debug --mem 8G
-
+else ifeq ($(HOSTNAME),stellar)
+  REGCOIL_HOST=stellar
+  FC = ifort
+  NETCDF_F = $(NETCDFDIR)
+  NETCDF_C = $(NETCDFDIR)
+  EXTRA_COMPILE_FLAGS =-mcmodel=large -O3 -m64 -unroll0 \
+    -Wl,--end-group \
+    -lpthread \
+    -I$(NETCDF_F)/include -I$(NETCDF_C)/include
+  EXTRA_LINK_FLAGS = -fopenmp -L$(NETCDF_C)/lib -lnetcdf -L$(NETCDF_F)/lib -lnetcdff -lmkl_gf_lp64 -lmkl_core -lmkl_sequential -lhdf5_hl -lhdf5_fortran -lhdf5 -lpthread -lz -lm
+  REGCOIL_COMMAND_TO_SUBMIT_JOB = srun -N 1 -n 1 -c 8 -q debug --mem 8G
+  LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/mini_libstell.a
 else ifeq ($(HOSTNAME),osx_brew)
   REGCOIL_HOST=osx_brew
   NETCDF_HOME ?= /usr/local/lib/netcdf
@@ -98,12 +109,24 @@ else ifeq ($(CLUSTER),RAVEN)
   # For batch systems, set the following variable to the command used to run jobs. This variable is used by 'make test'.
   REGCOIL_COMMAND_TO_SUBMIT_JOB = srun
 
+else ifeq ($(CLUSTER),lazerson)
+  REGCOIL_HOST=macports
+  FC = mpif90
+  NETCDF_INC = $(shell nf-config --fflags)
+  NETCDF_LIB = $(shell nf-config --flibs)
+  EXTRA_COMPILE_FLAGS = -O2 -fexternal-blas -fopenmp -fallow-argument-mismatch -ffree-line-length-none -march=native $(NETCDF_INC)
+  EXTRA_LINK_FLAGS = -fopenmp -L/usr/lib -L/opt/local/lib -framework Accelerate $(NETCDF_LIB)
+  LIBSTELL_DIR = /Users/lazerson/bin/libstell_dir
+  LIBSTELL_FOR_REGCOIL = /Users/lazerson/bin/libstell.a
+
 else
   REGCOIL_HOST=macports
   FC = mpif90
   #EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none -cpp
-  EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none -O0 -g
-  EXTRA_LINK_FLAGS =  -fopenmp -L/opt/local/lib -lnetcdff  -lnetcdf -framework Accelerate
+  #EXTRA_COMPILE_FLAGS = -fopenmp -I/opt/local/include -ffree-line-length-none -O0 -g
+  #EXTRA_LINK_FLAGS =  -fopenmp -L/opt/local/lib -lnetcdff  -lnetcdf -framework Accelerate
+  EXTRA_COMPILE_FLAGS = -fopenmp -I/usr/local/include -ffree-line-length-none -O0 -g -fallow-argument-mismatch
+  EXTRA_LINK_FLAGS =  -fopenmp -L/usr/local/lib -lnetcdff  -lnetcdf -framework Accelerate
 
   # For batch systems, set the following variable to the command used to run jobs. This variable is used by 'make test'.
   REGCOIL_COMMAND_TO_SUBMIT_JOB =
