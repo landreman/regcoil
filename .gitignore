@@ -9,3 +9,7 @@ job.err.*
 make_test.o*
 *~
 \#*
+.DS_Store
+__pycache__
+build
+*.egg-info

@@ -109,6 +109,16 @@ else ifeq ($(CLUSTER),RAVEN)
   # For batch systems, set the following variable to the command used to run jobs. This variable is used by 'make test'.
   REGCOIL_COMMAND_TO_SUBMIT_JOB = srun
 
+else ifeq ($(CLUSTER),lazerson)
+  REGCOIL_HOST=macports
+  FC = mpif90
+  NETCDF_INC = $(shell nf-config --fflags)
+  NETCDF_LIB = $(shell nf-config --flibs)
+  EXTRA_COMPILE_FLAGS = -O2 -fexternal-blas -fopenmp -fallow-argument-mismatch -ffree-line-length-none -march=native $(NETCDF_INC)
+  EXTRA_LINK_FLAGS = -fopenmp -L/usr/lib -L/opt/local/lib -framework Accelerate $(NETCDF_LIB)
+  LIBSTELL_DIR = /Users/lazerson/bin/libstell_dir
+  LIBSTELL_FOR_REGCOIL = /Users/lazerson/bin/libstell.a
+
 else
   REGCOIL_HOST=macports
   FC = mpif90
@@ -150,6 +160,9 @@ $(TARGET): lib$(TARGET).a $(TARGET).o $(LIBSTELL_FOR_REGCOIL)
 
 mini_libstell/mini_libstell.a:
 	$(MAKE) -C mini_libstell
+
+pyregcoil: lib$(TARGET).a
+	pip install .
 
 clean:
 	rm -f *.o *.mod *.MOD *~ $(TARGET) *.a

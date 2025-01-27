@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyREGCOIL"
+dynamic = ["version"]
+description = "Python library for interfacing with REGCOIL"
+readme = "README.md"
+authors = [
+    { name = "Samuel A. Lazerson", email = "lazersos@gmail.com" },
+]
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "numpy",
+    "netCDF4",
+    "contourpy"
+]
+
+[project.urls]
+Homepage = "https://github.com/landreman/regcoil"
+
