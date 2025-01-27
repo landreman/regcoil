@@ -342,7 +342,7 @@ class REGCOIL():
 			px = 1/plt.rcParams['figure.dpi']
 			fig=plt.figure(figsize=(1024*px,768*px))
 			ax=fig.add_subplot(111)
-			hmesh=ax.contourf(np.squeeze(zeta_extend),np.squeeze(theta_extend),np.squeeze(pot_extend),np.sort(cont_vals),extend='both',cmap='Greens')
+			hmesh=ax.contourf(np.squeeze(zeta_extend),np.squeeze(theta_extend),np.squeeze(pot_extend),np.sort(cont_vals),extend='both')
 			ax.contour(np.squeeze(zeta_extend),np.squeeze(theta_extend),np.squeeze(pot_extend),np.sort(cont_vals),colors='black')
 			ax.set_xlabel('Toroidal angle [rad]')
 			ax.set_ylabel('Poloidal angle [rad]')
