@@ -5,17 +5,17 @@ def readOutputFile():
     outputFilename = "regcoil_out."+dirname+".nc"
     
     if not os.path.isfile(outputFilename):
-        print "Error! The output file "+outputFilename+" has not been created."
+        print("Error! The output file "+outputFilename+" has not been created.")
         exit(1)
         
-    from scipy.io import netcdf
+    from scipy.io import netcdf_file
     try:
-        f = netcdf.netcdf_file(outputFilename,'r')
+        f = netcdf_file(outputFilename,'r')
     except:
-        print "ERROR! Unable to read netCDF output file "+outputFilename
+        print("ERROR! Unable to read netCDF output file "+outputFilename)
         raise
 
-    print "Reading output file "+outputFilename
+    print("Reading output file "+outputFilename)
     return f
 
 def shouldBe(latestValue, trueValue, relativeTolerance, absoluteTolerance):
@@ -29,17 +29,17 @@ def shouldBe(latestValue, trueValue, relativeTolerance, absoluteTolerance):
     string = "Variable "+variableName+" should be close to "+str(trueValue)+", and it was "+str(latestValue)
     if relativeTest:
         if absoluteTest:
-            print "    Test passed. "+string+". Both abs and rel tol met."
+            print("    Test passed. "+string+". Both abs and rel tol met.")
             return 0
         else:
-            print "    Test passed. "+string+". Rel tol met. Abs tol not met."
+            print("    Test passed. "+string+". Rel tol met. Abs tol not met.")
             return 0
     else:
         if absoluteTest:
-            print "    Test passed. "+string+". Abs tol met. Rel tol not met."
+            print("    Test passed. "+string+". Abs tol met. Rel tol not met.")
             return 0
         else:
-            print "*** TEST FAILED! "+string+". Neither rel nor abs tol met."
+            print("*** TEST FAILED! "+string+". Neither rel nor abs tol met.")
             return 1
 
 
@@ -48,21 +48,21 @@ def arrayShouldBe(latestValues, trueValues, relativeTolerance, absoluteTolerance
     try:
         temp = len(latestValues)
     except:
-        print "arrayifying latestValues"
+        print("arrayifying latestValues")
         latestValues = [latestValues]
 
     try:
         temp = len(trueValues)
     except:
-        print "arrayifying trueValues"
+        print("arrayifying trueValues")
         trueValues = [trueValues]
 
     if requireSameLength and (len(latestValues) != len(trueValues)):
-        print "*** TEST FAILED!! Variable "+variableName+" should have length "+str(len(trueValues))+" but it instead has length "+str(len(latestValues))
+        print("*** TEST FAILED!! Variable "+variableName+" should have length) "+str(len(trueValues))+" but it instead has length "+str(len(latestValues)))
         return 1
 
     if len(latestValues) < len(trueValues):
-        print "*** TEST FAILED!! Variable "+variableName+" should have length at least "+str(len(trueValues))+" but it instead has length "+str(len(latestValues))
+        print("*** TEST FAILED!! Variable "+variableName+" should have length at least "+str(len(trueValues))+" but it instead has length "+str(len(latestValues)))
         return 1
 
     numArrayErrors = 0

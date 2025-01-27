@@ -23,7 +23,7 @@ def readVariable(varName, intOrFloatOrString, inputFilename, required=True):
     with open(inputFilename, 'r') as f:
         inputFile = f.readlines()
     if (intOrFloatOrString != "int") and (intOrFloatOrString != "float") and (intOrFloatOrString != "string"):
-	    print "intOrFloatOrString must be int, float, or string."
+	    print("intOrFloatOrString must be int, float, or string.")
 	    exit(1)
 
     originalVarName = varName
@@ -53,17 +53,17 @@ def readVariable(varName, intOrFloatOrString, inputFilename, required=True):
                 returnValue = int(line5)
                 numValidLines += 1
             except:
-                print "Warning! I found a definition for the variable "+originalVarName+" in "+inputFilename+" but I was unable to parse the line to get an integer." #Added by AM 2015-12
-                print "Here is the line in question:"
-                print line
+                print("Warning! I found a definition for the variable "+originalVarName+" in "+inputFilename+" but I was unable to parse the line to get an integer." #Added by AM 2015-12)
+                print("Here is the line in question:")
+                print(line)
         elif intOrFloatOrString=="float":
             try:
                 returnValue = float(line5)
                 numValidLines += 1
             except:
-                print "Warning! I found a definition for the variable "+originalVarName+" in "+inputFilename+" but I was unable to parse the line to get a float." #Added by AM 2015-12
-                print "Here is the line in question:"
-                print line
+                print("Warning! I found a definition for the variable "+originalVarName+" in "+inputFilename+" but I was unable to parse the line to get a float." #Added by AM 2015-12)
+                print("Here is the line in question:")
+                print(line)
         elif intOrFloatOrString=="string":
           # Strip quotes
           if (line5.startswith('"') and line5.endswith('"')) or (line5.startswith("'") and line5.endswith("'")):
@@ -72,13 +72,13 @@ def readVariable(varName, intOrFloatOrString, inputFilename, required=True):
           numValidLines += 1
 
     if required and returnValue==None:
-        print "Error! Unable to find a valid setting for the variable "+originalVarName+" in "+inputFilename+"."
+        print("Error! Unable to find a valid setting for the variable "+originalVarName+" in "+inputFilename+".")
         exit(1) #Added by AM 2015-12
 
     if numValidLines > 1:
-        print "Warning! More than 1 valid definition was found for the variable "+originalVarName+". The last one will be used."
+        print("Warning! More than 1 valid definition was found for the variable "+originalVarName+". The last one will be used.")
 
-#print "Read "+originalVarName+" = "+str(returnValue)
+#print("Read "+originalVarName+" = "+str(returnValue))
     return returnValue
 
 def logspace_odd(min,max,nn):

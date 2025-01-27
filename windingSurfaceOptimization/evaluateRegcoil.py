@@ -107,24 +107,24 @@ class coilFourier:
       self.d_min_target = 0.1
 		
     if (self.alphaV == 0 and self.alphaS == 0 and self.alphaD == 0 and self.alphaB == 0 and self.alphaK == 0 and self.alphaMaxK == 0 and self.alphaD_tanh == 0):
-      print "Error! One of the alpha parameters must be non-zero."
+      print("Error! One of the alpha parameters must be non-zero.")
       sys.exit(0)
 
 		# Check for correct input
     if (geometry_option_coil != 3 and geometry_option_coil != 4):
-      print "Error! This script is only compatible with geometry_option_coil=3 or 4 at the moment."
+      print("Error! This script is only compatible with geometry_option_coil=3 or 4 at the) moment."
       sys.exit(0)
 
     if (abs(self.alphaMaxK)>0 and (target_option=='max_K_lse') and fixed_norm_sensitivity_option):
-			print "Error! K_max included in objective function but K_max is held fixed in gradient calculation."
+			print("Error! K_max included in objective function but K_max is held fixed in gradient calculation.")
 			sys.exit(0)
 
     if (abs(self.alphaB)>0 and (target_option=='chi2_B') and fixed_norm_sensitivity_option):
-			print "Error! chi2_B included in objective function but chi2_B is held fixed in gradient calculation."
+			print("Error! chi2_B included in objective function but chi2_B is held fixed in gradient calculation.")
 			sys.exit(0)
 
     if ((abs(self.alphaB)>0 or abs(self.alphaK)>0 or abs(self.alphaMaxK)>0) and self.sensitivity_option < 2):
-			print "Warning! chi2_B, K_rms, or K_max are included in the objective function but their derivatives are not computed in REGCOIL. Make sure that grad_option = 1 (using scipy_optmize) so finite difference derivatives are performed."
+			print("Warning! chi2_B, K_rms, or K_max are included in the objective function but their derivatives are not computed in REGCOIL. Make sure that grad_option = 1 (using scipy_optmize) so finite difference derivatives are performed.")
 
     self.nmax_sensitivity = nmax_sensitivity
     self.mmax_sensitivity = mmax_sensitivity
@@ -411,13 +411,13 @@ class coilFourier:
     try:
       submissionResult = subprocess.call(submitCommand.split(" "),stdout=g)
     except:
-      print "ERROR: Unable to submit run "+directory+" for some reason."
+      print("ERROR: Unable to submit run "+directory+" for some reason.")
       raise
     else:
       if submissionResult==0:
-        print "No errors submitting job "+directory
+        print("No errors submitting job "+directory)
       else:
-        print "Nonzero exit code returned when trying to submit job "+directory
+        print("Nonzero exit code returned when trying to submit job "+directory)
         exit
     g.close()
 
@@ -426,12 +426,12 @@ class coilFourier:
     try:
       f = netcdf.netcdf_file(cdfFileName,'r',mmap=False)
     except:
-      print "Unable to open "+cdfFileName+" even though this file exists."
+      print("Unable to open "+cdfFileName+" even though this file exists.")
       sys.exit(0)
     try:
       dummy = f.variables["K2"][()]
     except:
-      print "Unable to read "+cdfFileName+" even though this file exists."
+      print("Unable to read "+cdfFileName+" even though this file exists.")
       sys.exit(0)
 
     exit_code = f.variables["exit_code"][()]
@@ -466,11 +466,11 @@ class coilFourier:
 				self.current_factor = 0.1
 				self.target_value = self.target_value_init
     else:
-      print "Error! Job did not complete."
+      print("Error! Job did not complete.")
       if (exit_code == -1): # did not converge in nlambda iterations
         nlambda = f.variables["nlambda"][()]
         new_nlambda = nlambda*2
-        print "Trying again with nlambda = " + str(new_nlambda)
+        print("Trying again with nlambda = " + str(new_nlambda))
         # Edit input file with more nlambda
         os.chdir('..')
         with open(regcoil_input_file, 'r') as f:
@@ -488,54 +488,54 @@ class coilFourier:
       # exit_code == -2 or -3 should only happen with general_option > 3
       elif (exit_code == -2): # current density too low or chi2B too high
         if (self.target_option == 'max_K_lse' or self.target_option == 'lp_norm_K'):
-          print "Current density too low."
+          print("Current density too low.")
           # Decrease factor of increase/decrease
           if (self.decreased_target_current): # previously tried decreasing target
             self.current_factor = self.current_factor*0.5
-            print "current_factor is now: " + str(self.current_factor)
+            print("current_factor is now: " + str(self.current_factor))
           self.target_value = (1.0+self.current_factor)*self.target_value
-          print "Trying again with target_value = " + str(self.target_value)
+          print("Trying again with target_value = " + str(self.target_value))
           os.chdir('..')
           self.increased_target_current = True
           self.evaluateRegcoil(omegas_sensitivity_new,self.target_value)
         elif (self.target_option == 'chi2_B'):
-          print "chi2B too high."
+          print("chi2B too high.")
           if (self.increased_target_current): # previously tried increasing
             self.current_factor = self.current_factor*0.5
-            print "current_factor is now: " + str(self.current_factor)
+            print("current_factor is now: " + str(self.current_factor))
           self.target_value = (1.0-self.current_factor)*self.target_value
           print "Trying again with target_value = " + str(self.target_value)
           os.chdir('..')
           self.decreased_target_current = True
           self.evaluateRegcoil(omegas_sensitivity_new,self.target_value)
         else:
-					print "Error! Incorrect target_option: "+str(self.target_option)
+					print("Error! Incorrect target_option: "+str(self.target_option))
 					sys.exit(0)
       elif (exit_code == -3): # current density too high
         if (self.target_option == "max_K_lse"):
-          print "Current density too high."
+          print("Current density too high.")
           # Target has been bracketed. Decrease interval.
           if (self.increased_target_current):
             self.current_factor = self.current_factor*0.5
-            print "current_factor is now: " + str(self.current_factor)
+            print("current_factor is now: " + str(self.current_factor))
           self.target_value = (1.0-self.current_factor)*self.target_value
-          print "Trying again with target_value = " + str(self.target_value)
+          print("Trying again with target_value = " + str(self.target_value))
           os.chdir('..')
           self.decreased_target_current = True
           self.evaluateRegcoil(omegas_sensitivity_new,self.target_value)
         elif (self.target_option == 'chi2_B'):
-          print "chi2_B too low."
+          print("chi2_B too low.")
           # Target has been bracketed. Decrease interval.
           if (self.decreased_target_current):
             self.current_factor = self.current_factor*0.5
-            print "current_factor is now: " + str(self.current_factor)
+            print("current_factor is now: " + str(self.current_factor))
           self.target_value = (1.0+self.current_factor)*self.target_value
-          print "Trying again with target_value = " + str(self.target_value)
-          os.chdir('..')
+          print("Trying again with target_value = " + str(self.target_value)
+          os.chdir('..'))
           self.increased_target_current = True
           self.evaluateRegcoil(omegas_sensitivity_new,self.target_value)
         else:
-					print "Error! Incorrect target_option: "+str(self.target_option)
+					print("Error! Incorrect target_option: "+str(self.target_option))
 					sys.exit(0)
       else:
         sys.exit(0)
@@ -601,35 +601,35 @@ def evaluateGradientRegcoil(omegas_sensitivity_new, nescinObject):
 ## Testing ##
 if __name__ == "__main__":
   nescinObject = coilFourier(int(sys.argv[1]),int(sys.argv[2]),sys.argv[3])
-#  print nescinObject.xn
-#  print nescinObject.xm
-#  print nescinObject.nmax
-#  print nescinObject.mmax
+#  print(nescinObject.xn)
+#  print(nescinObject.xm)
+#  print(nescinObject.nmax)
+#  print(nescinObject.mmax)
 
   file = "nescin.w7x_winding_surface_from_Drevlak_235"
   path = os.getcwd()
   filename = path + "/" + file
   nescinObject.set_Fourier_from_nescin(filename)
-  print nescinObject.xn
-  print nescinObject.xn_sensitivity
+  print(nescinObject.xn)
+  print(nescinObject.xn_sensitivity)
   omegas_old = nescinObject.omegas
-  print omegas_old
+  print(omegas_old)
   new_omegas = nescinObject.omegas_sensitivity
   for imn in range(0,nescinObject.nmodes_sensitivity):
     if (nescinObject.xm_sensitivity[imn] == 6 and nescinObject.xn_sensitivity[imn] == 3):
-      print new_omegas[2*imn]
-      print new_omegas[2*imn+1]
+      print(new_omegas[2*imn])
+      print(new_omegas[2*imn+1])
       new_omegas[2*imn] = 0
       new_omegas[2*imn+1] = 0
-      print "mode obtained!"
+      print("mode obtained!"
   for imn in range(0,nescinObject.nmodes):
     if (nescinObject.xm[imn] == 6 and nescinObject.xn[imn] == 3):
-      print "mode obtained in omega!"
-      print omegas_old[2*imn]
-      print omegas_old[2*imn+1]
+      print("mode obtained in omega!")
+      print(omegas_old[2*imn])
+      print(omegas_old[2*imn+1])
 
   nescinObject.set_omegas_sensitivity(new_omegas)
-  print nescinObject.omegas
+  print(nescinObject.omegas)
   nescinObject.compute_spectral_norm()
-  print nescinObject.spectral_norm
-  print nescinObject.dspectral_normdomegas
+  print(nescinObject.spectral_norm)
+  print(nescinObject.dspectral_normdomegas)

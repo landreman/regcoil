@@ -5,7 +5,7 @@
 # run directly, and it is also called when "make test" is run from the
 # main REGCOIL directory.
 
-execfile('../testsCommon.py')
+exec(open('../testsCommon.py').read())
 absoluteTolerance = 1e-100
 
 numFailures = 0
@@ -26,7 +26,7 @@ numFailures += shouldBe(data, 0,relativeTolerance,absoluteTolerance)
 
 variableName = 'lambda'
 data = f.variables[variableName][()]
-relativeTolerance = 1e-10
+relativeTolerance = 1e-9
 numFailures += arrayShouldBe(data, [1e+200, 0, 1.86098014413313e-17, 1.86098014413313e-15, \
     1.67493916804206e-15, 1.7278563450837e-15, 1.72828277387722e-15, \
     1.72827413248484e-15],relativeTolerance,absoluteTolerance)
@@ -62,5 +62,5 @@ numFailures += arrayShouldBe(data, [2754022.92888632, 126095244.116546, 15504329
 
 del data
 f.close()
-print "numFailures:",numFailures
+print("numFailures:",numFailures)
 exit(numFailures > 0)

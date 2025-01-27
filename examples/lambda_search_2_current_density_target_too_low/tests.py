@@ -5,7 +5,7 @@
 # run directly, and it is also called when "make test" is run from the
 # main REGCOIL directory.
 
-execfile('../testsCommon.py')
+exec(open('../testsCommon.py').read())
 absoluteTolerance = 1e-100
 
 numFailures = 0
@@ -28,5 +28,5 @@ numFailures += arrayShouldBe(data, [1e+200],relativeTolerance,absoluteTolerance)
 
 del data
 f.close()
-print "numFailures:",numFailures
+print("numFailures:",numFailures)
 exit(numFailures > 0)
