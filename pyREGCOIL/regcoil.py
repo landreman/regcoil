@@ -363,6 +363,10 @@ class REGCOIL():
 			for temp in level:
 				th = np.append(th,temp[:,1])
 				ph = np.append(ph,temp[:,0])
+			# Wrap the coil so that poitive current is positive field (counterclockwise from top)
+			if (th[1]-th[0] > 0):
+				th = th[::-1]
+				ph = ph[::-1]
 			# Fourier transform the coil
 			npts = len(th)
 			r = np.zeros((npts)); z = np.zeros((npts))
@@ -371,10 +375,6 @@ class REGCOIL():
 				nphi  = ph*self.xn_coil[mn]
 				r  = r + np.cos(mtheta+nphi)*self.rmnc_coil[mn]
 				z  = z + np.sin(mtheta+nphi)*self.zmns_coil[mn]
-			# Check and adjust coil convention
-			if (z[1]-z[0]) > 0:
-				r = r[::-1]
-				z = z[::-1]
 			# Convert to XYZ and make current/group
 			x = r * np.cos(ph)
 			y = r * np.sin(ph)
