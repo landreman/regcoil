@@ -12,5 +12,5 @@ setup(name='pyREGCOIL',
 	url = 'https://github.com/landreman/regcoil',
 	packages=['pyREGCOIL'],
 	scripts = ['regcoil_util.py'],
-	install_requires=['numpy','matplotlib','netCDF4']
+	install_requires=['numpy','matplotlib','netCDF4','contourpy']
 	)

@@ -14,7 +14,8 @@ dependencies = [
     "numpy",
     "matplotlib",
     "numpy",
-    "netCDF4"
+    "netCDF4",
+    "contourpy"
 ]
 
 [project.urls]

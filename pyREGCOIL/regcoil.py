@@ -39,7 +39,6 @@ class REGCOIL():
 				setattr(self,'K2',nc[item][()])
 			else:
 				setattr(self,item,nc[item][()])
-		return
 		# Sort in order of lambda
 		permutation = np.argsort(self.lambdas)
 		self.lambdas = self.lambdas[permutation]
@@ -50,6 +49,9 @@ class REGCOIL():
 		self.K2 = self.K2[permutation]
 		self.current_potential = self.current_potential[permutation]
 		if self.lambdas[-1] > 1.0E199: self.lambdas = np.inf
+		# Save filename
+		self.filename = filename
+		return
 
 	def plot_chisq(self):
 		"""Plots the REGCOIL chi^2
@@ -103,7 +105,7 @@ class REGCOIL():
 		Parameters
 		----------
 		nlambda : int
-			Lambda value to plot (default: 0)
+			Lambda index to plot (default: 0)
 		numCoutours: int
 			Number of contours to plot (default: 20)
 		ax : axes (optional)
@@ -133,7 +135,7 @@ class REGCOIL():
 		Parameters
 		----------
 		nlambda : int
-			Lambda value to plot (default: 0)
+			Lambda index to plot (default: 0)
 		numCoutours: int
 			Number of contours to plot (default: 5)
 		ax : axes (optional)
@@ -180,7 +182,7 @@ class REGCOIL():
 		Parameters
 		----------
 		nlambda : int
-			Lambda value to plot (default: 0)
+			Lambda index to plot (default: 0)
 		numCoutours: int
 			Number of contours to plot (default: 20)
 		ax : axes (optional)
@@ -268,7 +270,7 @@ class REGCOIL():
 		Parameters
 		----------
 		nlambda : int
-			Lambda value to plot (default: 0)
+			Lambda index to plot (default: 0)
 		numCoutours: int
 			Number of contours to plot (default: 20)
 		ax : axes (optional)
@@ -289,6 +291,122 @@ class REGCOIL():
 		ax.set_title(rf'Total Normal Field ($\lambda$ {self.lambdas[nlambda]:7.2e})')
 		# Show if standalone
 		if lplotnow: plt.show()
+
+	def cut_coils(self,nlambda=0,numcoils=5,lplot=False):
+		"""Cut coils from the REGCOIL potential
+
+		This routine cuts coils from the REGCOIL potential.
+		It allows the user to specify the number of coils per half 
+		period.
+
+		Parameters
+		----------
+		nlambda : int
+			Lambda index to cut coils from (default: 0)
+		numcoils : integer
+			Number of coils per half period (default: 5)
+		lplot : boolean (optional)
+			Plot the potential and potential lines. (default: False)
+		"""
+		import numpy as np
+		from contourpy import contour_generator, LineType
+		import matplotlib.pyplot as plt
+		# Compute total current
+		Ipol = self.net_poloidal_current_Amperes
+		# Setup x/y axis
+		theta = self.theta_coil
+		zeta  = self.zeta_coil # This is over full half field period
+		nu = theta.shape[0]
+		nv = zeta.shape[0]
+		# Setup Data
+		pot = np.transpose(self.current_potential[nlambda,:,:])
+		# Compute Contour values
+		cont_vals = np.zeros((numcoils))
+		for k in range(numcoils):
+			#u = 1
+			u = round(nu*0.5)
+			v = round((k+0.5)*nv/(numcoils*2))
+			cont_vals[k] = pot[u,v]
+		# Now calculate a larger potential map so coils can span periods
+		nu2 = round(nu/(2*numcoils))
+		nv2 = round(nv/(2*numcoils))
+		theta_extend = np.concatenate((theta[nu-nu2:-1]-2*np.pi,theta,theta[0:nu2]+2*np.pi))
+		zeta_extend = np.concatenate((zeta[nv-nv2:-1]-zeta[-1],zeta,zeta[0:nv2]+zeta[-1]))
+		x = self.net_poloidal_current_Amperes/self.nfp
+		pot_extend = np.concatenate((pot[nv-nv2:-1,:],pot,pot[0:nv2,:]),axis=0)
+		pot_extend = np.concatenate((pot_extend[:,nu-nu2:-1]-x,pot_extend,pot_extend[:,0:nu2]+x),axis=1)
+		# Now generate contours
+		cont_gen = contour_generator(x=np.squeeze(zeta_extend),y=np.squeeze(theta_extend),z=np.squeeze(pot_extend), line_type=LineType.Separate)
+		# Make plot if requested
+		if lplot:
+			px = 1/plt.rcParams['figure.dpi']
+			fig=plt.figure(figsize=(1024*px,768*px))
+			ax=fig.add_subplot(111)
+			hmesh=ax.contourf(np.squeeze(zeta_extend),np.squeeze(theta_extend),np.squeeze(pot_extend),np.sort(cont_vals),extend='both',cmap='Greens')
+			ax.contour(np.squeeze(zeta_extend),np.squeeze(theta_extend),np.squeeze(pot_extend),np.sort(cont_vals),colors='black')
+			ax.set_xlabel('Toroidal angle [rad]')
+			ax.set_ylabel('Poloidal angle [rad]')
+			ax.set_title(r'REGCOIL Coil Cutting')
+			plt.colorbar(hmesh,label=r'Potential $\Phi$ [arb]',ax=ax)
+			plt.show()
+		# Open file
+		out_filename = self.filename.replace('regcoil_out.','coils.').replace('.nc','')
+		f = open(out_filename+rf'_{nlambda:03d}','w')
+		f.write(f"periods {self.nfp}\n")
+		f.write(f"begin filament\n")
+		f.write(f"mirror NIL\n")
+		# Now loop over contours
+		for k in range(numcoils):
+			coil_name=f'MOD{k+1}'
+			level = cont_gen.lines(cont_vals[k])
+			th = np.array([]); ph = np.array([])
+			for temp in level:
+				th = np.append(th,temp[:,1])
+				ph = np.append(ph,temp[:,0])
+			# Fourier transform the coil
+			npts = len(th)
+			r = np.zeros((npts)); z = np.zeros((npts))
+			for mn in range(self.mnmax_coil):
+				mtheta = th*self.xm_coil[mn]
+				nphi  = ph*self.xn_coil[mn]
+				r  = r + np.cos(mtheta+nphi)*self.rmnc_coil[mn]
+				z  = z + np.sin(mtheta+nphi)*self.zmns_coil[mn]
+			# Check and adjust coil convention
+			if (z[1]-z[0]) > 0:
+				r = r[::-1]
+				z = z[::-1]
+			# Convert to XYZ and make current/group
+			x = r * np.cos(ph)
+			y = r * np.sin(ph)
+			c = np.full((npts),Ipol/(self.nfp*numcoils*2))
+			g = np.full((npts),k+1,dtype=int)
+			c[-1] = 0.0
+			# Create stellarator symmetric coil
+			phn = 2.0*np.pi/self.nfp - ph
+			xo = np.append(x,r[::-1]*np.cos(phn[::-1]))
+			yo = np.append(y,r[::-1]*np.sin(phn[::-1]))
+			zo = np.append(z,-z[::-1])
+			co = np.append(c,c)
+			go = np.append(g,g)
+			x  = xo; y = yo; z = zo; c = co; g =go
+			# Now make all field periods
+			for mn in range(1,self.nfp):
+				cop = np.cos(2*mn*np.pi/self.nfp)
+				sip = np.sin(2*mn*np.pi/self.nfp)
+				x = np.append(x,xo*cop - yo*sip)
+				y = np.append(y,xo*sip + yo*cop)
+				z = np.append(z,zo)
+				c = np.append(c,co)
+				g = np.append(g,go)
+			# Write
+			for j in range(len(x)):
+				if c[j] == 0.0:
+					f.write(f"{x[j]:.10E} {y[j]:.10E} {z[j]:.10E} {c[j]:.10E} {g[j]:02d} {coil_name}\n")
+				else:
+					f.write(f"{x[j]:.10E} {y[j]:.10E} {z[j]:.10E} {c[j]:.10E}\n")
+		f.write(f"end\n")	
+		f.close()
+
 
 
 
