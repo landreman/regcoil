@@ -34,6 +34,10 @@ subroutine regcoil_read_input
      if (didFileAccessWork /= 0) then
         print *,"Error!  I was able to open the file ", trim(inputFilename), &
                " but not read data from the regcoil_nml namelist in it."
+        backspace(fileUnit)
+        read(fileUnit, fmt="(A)") inputFilename
+        print *, "Invalid line in namelist: ", trim(inputFilename)
+        print *, "(Error may be earlier)"
         if (didFileAccessWork==-1) then
            print *,"Make sure there is a carriage return after the / at the end of the namelist!"
         end if
