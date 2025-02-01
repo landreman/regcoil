@@ -55,6 +55,8 @@ subroutine regcoil_build_matrices()
      stop
   end select
 
+  if (general_option==3) nlambda = num_basis_functions-1
+
   if (allocated(basis_functions)) deallocate(basis_functions)
   allocate(basis_functions(ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 1!'
