@@ -7,6 +7,7 @@ This library provides a python class for handling and plotting REGCOIL data.
 # Libraries
 
 # Constants
+LREGCOIL_CUTCOILS=False
 
 # RECOIL Class
 class REGCOIL():
@@ -292,7 +293,7 @@ class REGCOIL():
 		# Show if standalone
 		if lplotnow: plt.show()
 
-	def cut_coils(self,nlambda=0,numcoils=5,lplot=False):
+	def cut_coils(self,nlambda=0,numcoils=5,npts=128,lplot=False):
 		"""Cut coils from the REGCOIL potential
 
 		This routine cuts coils from the REGCOIL potential.
@@ -305,6 +306,8 @@ class REGCOIL():
 			Lambda index to cut coils from (default: 0)
 		numcoils : integer
 			Number of coils per half period (default: 5)
+		npts : int
+			Number of points in coil (default: 128)
 		lplot : boolean (optional)
 			Plot the potential and potential lines. (default: False)
 		"""
@@ -336,7 +339,11 @@ class REGCOIL():
 		pot_extend = np.concatenate((pot[nv-nv2:-1,:],pot,pot[0:nv2,:]),axis=0)
 		pot_extend = np.concatenate((pot_extend[:,nu-nu2:-1]-x,pot_extend,pot_extend[:,0:nu2]+x),axis=1)
 		# Now generate contours
-		cont_gen = contour_generator(x=np.squeeze(zeta_extend),y=np.squeeze(theta_extend),z=np.squeeze(pot_extend), line_type=LineType.Separate)
+		if LREGCOIL_CUTCOILS:
+			cdata = plt.contour(np.squeeze(zeta_extend),np.squeeze(theta_extend),np.squeeze(pot_extend),np.sort(cont_vals))
+			print(f"Number of contours {len(cdata.collections)}")
+		else:
+			cont_gen = contour_generator(x=np.squeeze(zeta_extend),y=np.squeeze(theta_extend),z=np.squeeze(pot_extend), line_type=LineType.Separate)
 		# Make plot if requested
 		if lplot:
 			px = 1/plt.rcParams['figure.dpi']
@@ -358,31 +365,40 @@ class REGCOIL():
 		# Now loop over contours
 		for k in range(numcoils):
 			coil_name=f'MOD{k+1}'
-			level = cont_gen.lines(cont_vals[k])
-			th = np.array([]); ph = np.array([])
-			for temp in level:
-				th = np.append(th,temp[:,1])
-				ph = np.append(ph,temp[:,0])
+			# REGCOIL OR STELLOPT METHOD
+			if LREGCOIL_CUTCOILS:
+				p = cdata.collections[k].get_paths()[0]
+				level = p.vertices
+				th = level[:,1]
+				ph = level[:,0]
+			else:
+				level = cont_gen.lines(cont_vals[k])
+				th = np.array([]); ph = np.array([])
+				for temp in level:
+					th = np.append(th,temp[:,1])
+					ph = np.append(ph,temp[:,0])
 			# Wrap the coil so that poitive current is positive field (counterclockwise from top)
 			if (th[1]-th[0] > 0):
 				th = th[::-1]
 				ph = ph[::-1]
+			# Now we need to interpolate the coil onto the interval [0,2*pi] in theta.
+			th_out = np.linspace(0,2.0*np.pi,npts)
+			ph_out = np.interp(th_out,th,ph,period=np.pi*2.0)
 			# Fourier transform the coil
-			npts = len(th)
 			r = np.zeros((npts)); z = np.zeros((npts))
 			for mn in range(self.mnmax_coil):
-				mtheta = th*self.xm_coil[mn]
-				nphi  = ph*self.xn_coil[mn]
+				mtheta = th_out*self.xm_coil[mn]
+				nphi  = ph_out*self.xn_coil[mn]
 				r  = r + np.cos(mtheta+nphi)*self.rmnc_coil[mn]
 				z  = z + np.sin(mtheta+nphi)*self.zmns_coil[mn]
 			# Convert to XYZ and make current/group
-			x = r * np.cos(ph)
-			y = r * np.sin(ph)
+			x = r * np.cos(ph_out)
+			y = r * np.sin(ph_out)
 			c = np.full((npts),Ipol/(self.nfp*numcoils*2))
 			g = np.full((npts),k+1,dtype=int)
 			c[-1] = 0.0
 			# Create stellarator symmetric coil
-			phn = 2.0*np.pi/self.nfp - ph
+			phn = 2.0*np.pi/self.nfp - ph_out
 			xo = np.append(x,r[::-1]*np.cos(phn[::-1]))
 			yo = np.append(y,r[::-1]*np.sin(phn[::-1]))
 			zo = np.append(z,-z[::-1])
