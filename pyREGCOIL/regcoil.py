@@ -389,8 +389,8 @@ class REGCOIL():
 			for mn in range(self.mnmax_coil):
 				mtheta = th_out*self.xm_coil[mn]
 				nphi  = ph_out*self.xn_coil[mn]
-				r  = r + np.cos(mtheta+nphi)*self.rmnc_coil[mn]
-				z  = z + np.sin(mtheta+nphi)*self.zmns_coil[mn]
+				r  = r + np.cos(mtheta-nphi)*self.rmnc_coil[mn]
+				z  = z + np.sin(mtheta-nphi)*self.zmns_coil[mn]
 			# Convert to XYZ and make current/group
 			x = r * np.cos(ph_out)
 			y = r * np.sin(ph_out)
@@ -432,7 +432,33 @@ class REGCOIL_INPUT():
 	"""Class for working with REGCOIL namelist input
 	"""
 	def __init__(self):
-		super().__init__()
+		import os,sys
+		import ctypes as ct
+		from subprocess import Popen, PIPE
+		self.REGCOIL_PATH = os.environ["REGCOIL_PATH"]
+		self.PATH_TO_REGCOIL = os.path.join(self.REGCOIL_PATH,'libregcoil.a')
+		try:
+			self.libregcoil = ct.cdll.LoadLibrary(self.PATH_TO_REGCOIL)
+		except:
+			print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+			print("!!  Could not load shared libraray libregcoil.a   !!")
+			print(f"!!  PATH: {self.PATH_TO_REGCOIL}    !!")
+			print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+		# Figure out uderscoring
+		out = Popen(args="nm "+self.PATH_TO_REGCOIL, 
+			shell=True, 
+			stdout=PIPE).communicate()[0].decode("utf-8")
+		attrs = [ i.split(" ")[-1].replace("\r", "") \
+			for i in out.split("\n") if " T " in i]
+		func = '_regcoil_fzero_residual'
+		module = 'regcoil_compute_offset_surface_mod_' 
+		names = [ s for s in attrs if module in s and func in s]
+		name = names[0].replace(module, ',')
+		name = name.replace(func, ',')
+		self.s1, self.s2, self.s3 = name.split(',')
+		# Weird OSX behavior
+		if self.s1=='___':
+			self.s1='__'
 
 	def read_regcoil_nml(self,filename):
 		"""Reads the REGCOIL namelist from a file.
@@ -445,8 +471,21 @@ class REGCOIL_INPUT():
 		----------
 		file : str
 			Path to regcoil_in file.
-
 		"""
+		import ctypes as ct
+		import numpy as np
+		# Get constants
+		#module_name = self.s1+'regcoil_variables_'+self.s2
+		#get_constant = getattr(self.libregcoil,module_name+'_getnigroup'+self.s3)
+		#get_constant.argtypes = None
+		#get_constant.restype=ct.c_int
+		#nigroup = get_constant()
+		# We use an added routine as a helper
+		#module_name = self.s1+'regcoil_read_input_'+self.s2
+		#read_regcoil_namelist = getattr(self.libregcoil,module_name+self.s3)
+		#read_regcoil_namelist.argtypes = [ct.c_char_p,ct.c_long]
+		#read_regcoil_namelist.restype=None
+		#read_regcoil_namelist(filename.encode('UTF-8'),len(filename))
 
 # Main routine
 if __name__=="__main__":
