@@ -318,29 +318,34 @@ class REGCOIL():
 		Ipol = self.net_poloidal_current_Amperes
 		# Setup x/y axis
 		theta = self.theta_coil
-		zeta  = self.zeta_coil # This is over full half field period
+		zeta  = self.zeta_coil # Zeta goes from 0 to pi over a field period
+		zeta  = zeta*2.0 # Make zeta [0,2*pi] over field period
 		nu = theta.shape[0]
 		nv = zeta.shape[0]
 		# Setup Data
 		pot = np.transpose(self.current_potential[nlambda,:,:])
+		# Normalize pot
+		pot_min = np.min(pot)
+		pot_max = np.max(pot)
+		pot = (pot-pot_min)/(pot_max-pot_min)
 		# Compute Contour values
 		cont_vals = np.zeros((numcoils))
-		for k in range(numcoils):
-			#u = 1
-			u = round(nu*0.5)
-			v = round((k+0.5)*nv/(numcoils*2))
-			cont_vals[k] = pot[u,v]
+		#for k in range(numcoils):
+		#	cont_vals[k] = (k+0.5)/numcoils
+		cont_vals = np.linspace(0.15,0.85,numcoils)
+		print(cont_vals)
 		# Now calculate a larger potential map so coils can span periods
 		nu2 = round(nu/(2*numcoils))
 		nv2 = round(nv/(2*numcoils))
 		theta_extend = np.concatenate((theta[nu-nu2:-1]-2*np.pi,theta,theta[0:nu2]+2*np.pi))
 		zeta_extend = np.concatenate((zeta[nv-nv2:-1]-zeta[-1],zeta,zeta[0:nv2]+zeta[-1]))
 		x = self.net_poloidal_current_Amperes/self.nfp
-		pot_extend = np.concatenate((pot[nv-nv2:-1,:],pot,pot[0:nv2,:]),axis=0)
-		pot_extend = np.concatenate((pot_extend[:,nu-nu2:-1]-x,pot_extend,pot_extend[:,0:nu2]+x),axis=1)
+		print(f'x : {x}')
+		pot_extend = np.concatenate((pot[nu-nu2:-1,:],pot,pot[0:nu2,:]),axis=0)
+		pot_extend = np.concatenate((pot_extend[:,nv-nv2:-1]-x,pot_extend,pot_extend[:,0:nv2]+x),axis=1)
 		# Now generate contours
 		if LREGCOIL_CUTCOILS:
-			cdata = plt.contour(np.squeeze(zeta_extend),np.squeeze(theta_extend),np.squeeze(pot_extend),np.sort(cont_vals))
+			cdata = plt.contour(np.squeeze(zeta_extend),np.squeeze(theta_extend),np.squeeze(pot_extend).T,np.sort(cont_vals))
 			print(f"Number of contours {len(cdata.collections)}")
 		else:
 			cont_gen = contour_generator(x=np.squeeze(zeta_extend),y=np.squeeze(theta_extend),z=np.squeeze(pot_extend), line_type=LineType.Separate)
@@ -370,20 +375,22 @@ class REGCOIL():
 				p = cdata.collections[k].get_paths()[0]
 				level = p.vertices
 				th = level[:,1]
-				ph = level[:,0]
+				ph = level[:,0]/self.nfp # make phi
 			else:
 				level = cont_gen.lines(cont_vals[k])
 				th = np.array([]); ph = np.array([])
 				for temp in level:
 					th = np.append(th,temp[:,1])
-					ph = np.append(ph,temp[:,0])
+					ph = np.append(ph,temp[:,0]/self.nfp) # make phi
 			# Wrap the coil so that poitive current is positive field (counterclockwise from top)
 			if (th[1]-th[0] > 0):
 				th = th[::-1]
 				ph = ph[::-1]
 			# Now we need to interpolate the coil onto the interval [0,2*pi] in theta.
-			th_out = np.linspace(0,2.0*np.pi,npts)
-			ph_out = np.interp(th_out,th,ph,period=np.pi*2.0)
+			l_in   = np.linspace(0.0,1.0,len(th))
+			l_out  = np.linspace(0.0,1.0,npts)
+			th_out = np.interp(l_out,l_in,th)
+			ph_out = np.interp(l_out,l_in,ph)
 			# Fourier transform the coil
 			r = np.zeros((npts)); z = np.zeros((npts))
 			for mn in range(self.mnmax_coil):
