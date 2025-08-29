@@ -1,3 +1,4 @@
+manual/*
 *.o
 *.mod
 *.a
@@ -9,3 +10,4 @@ job.err.*
 make_test.o*
 *~
 \#*
+.DS_Store

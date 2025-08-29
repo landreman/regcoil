@@ -143,6 +143,7 @@ module regcoil_variables
   real(dp), dimension(:), allocatable :: dcoil_plasma_dist_mindomega
   real(dp) :: coil_plasma_dist_min, coil_plasma_dist_max
   real(dp) :: coil_plasma_dist_min_lse, coil_plasma_dist_max_lse
+  real(dp) :: normalized_flux = 1.0
 
   character(len=*), parameter :: &
        target_option_max_K = "max_K", &
@@ -166,6 +167,7 @@ module regcoil_variables
        net_poloidal_current_Amperes, net_toroidal_current_Amperes, &
        load_bnorm, bnorm_filename, &
        shape_filename_plasma, nlambda, lambda_min, lambda_max, general_option, regularization_term_option, verbose, nescout_filename, &
+       normalized_flux, &
        target_option, target_value, lambda_search_tolerance, &
        sensitivity_option, nmax_sensitivity, mmax_sensitivity, &
        sensitivity_symmetry_option, target_option_p, &
