@@ -185,6 +185,9 @@ contains
        R0_plasma = Rmajor
       
        call regcoil_allocate_plasma_surface_arrays()
+
+       ! Set ns according to normalized_flux
+      ns = max(1, min(ns, int(ns * normalized_flux)))
        
        xm_plasma = xm_vmec
        xn_plasma = xn_vmec
