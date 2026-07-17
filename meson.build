@@ -21,8 +21,29 @@ add_project_arguments(
   language: 'fortran',
 )
 
-openmp_dep = dependency('openmp')
+# OpenMP: dependency('openmp') detects via the C compiler, which fails on
+# macOS with Apple Clang.  _core.c does not use OpenMP; only the Fortran
+# library does.  On macOS, inject the flag per-language so that the C
+# compiler is not involved.
+if host_machine.system() == 'darwin'
+  add_project_arguments('-fopenmp', language: 'fortran')
+  add_project_link_arguments('-fopenmp', language: 'fortran')
+  openmp_dep = declare_dependency()
+else
+  openmp_dep = dependency('openmp')
+endif
+
 netcdf_dep = dependency('netcdf')
+
+# gfortran's `include "netcdf.inc"` does not search standard system paths
+# unless they are passed with -I.  meson strips standard paths (e.g.
+# /usr/include) from pkg-config include dirs, so retrieve the includedir
+# from pkg-config and inject it explicitly.
+_nc_inc = run_command('pkg-config', '--variable=includedir', 'netcdf', check: false)
+if _nc_inc.returncode() == 0 and _nc_inc.stdout().strip() != ''
+  add_project_arguments('-I' + _nc_inc.stdout().strip(), language: 'fortran')
+endif
+
 netcdff_dep = dependency('netcdf-fortran', required: false)
 if not netcdff_dep.found()
   netcdff_dep = dependency('netcdff', required: false)
