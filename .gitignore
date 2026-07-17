@@ -9,3 +9,18 @@ job.err.*
 make_test.o*
 *~
 \#*
+
+# Python / meson-python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.pymon
+.venv/
+venv/
+dist/
+build/
+.mesonpy*/
+*.egg-info/
+.eggs/
+
+nescin.out

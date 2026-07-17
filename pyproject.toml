@@ -1,0 +1,32 @@
+[build-system]
+requires = ["meson-python>=0.16.0", "meson>=1.2.0", "ninja"]
+build-backend = "mesonpy"
+
+[project]
+name = "regcoil"
+version = "0.1.0"
+description = "Regularized current-potential method for stellarator coil shapes (Python package + Fortran extension)"
+readme = "README.md"
+license = { text = "BSD-2-Clause" }
+requires-python = ">=3.9"
+authors = [{ name = "Matt Landreman" }]
+dependencies = [
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "f90nml",
+    "plotly",
+]
+
+[project.optional-dependencies]
+netcdf = ["netCDF4"]
+# meson / ninja / meson-python needed in-env for editable installs (see README).
+dev = ["pytest", "ninja", "meson", "meson-python>=0.16.0"]
+
+[project.urls]
+Homepage = "https://github.com/landreman/pyREGCOIL"
+Documentation = "https://github.com/landreman/pyREGCOIL/blob/master/manual/regcoilManual.tex"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

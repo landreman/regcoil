@@ -2,11 +2,14 @@
 
 Practical notes for developers and agents running the **current** Fortran executable path (`make` / `make test`). Packaging/CI will supersede parts of this in later phases.
 
+Fortran sources: `fortran/` (including `fortran/mini_libstell/`). The root `makefile` uses `VPATH` and still places the `regcoil` binary at the repo root.
+
 ## Dependencies
 
 - **Fortran:** `gfortran` (or Open MPI’s `mpif90` wrapper), BLAS/LAPACK, OpenMP
 - **NetCDF:** C + Fortran libraries (`netcdf`, `netcdf-fortran`) until Phase 8
 - **Python (examples):** `numpy`, `scipy` (tests use `scipy.io.netcdf_file`)
+- **Python (package scaffold):** see root `pyproject.toml` / `pip install -e ".[dev]"` (meson-python)
 
 On this machine’s default Cursor conda env, use **`20231204-02-desc`** for Python (see workspace rules).
 
@@ -37,6 +40,9 @@ ls /opt/homebrew/include/netcdf.inc
 
 - `make test` → `examples/runExamples.py` (discovers `examples/*/tests.py` + matching `regcoil_in.*`)
 - Expect several minutes for the full suite; success ends with `ALL TESTS THAT WERE RUN WERE PASSED SUCCESSFULLY` and `numFailures: 0`
+- Package smoke: install build tools then
+  `pip install -e ".[dev]" --no-build-isolation` and `pytest` (import-only until Phase 4).
+  Non-editable `pip install .` uses normal build isolation and is fine for one-shot checks.
 
 ## Other hosts
 

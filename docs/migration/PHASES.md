@@ -6,7 +6,7 @@ Ordered work packages for the overhaul. Each phase should be a reviewable PR (or
 |-------|--------|------------|
 | 0 Inventory freeze | done (see INVENTORY.md) | — |
 | 1 Delete adjoint / WSO / SVD / MATLAB (except plotly port source) | done | — |
-| 2 Layout + packaging scaffold | pending | — |
+| 2 Layout + packaging scaffold | done | — |
 | 3 CI + pytest scaffold | pending | 2 helpful; can start after 1 |
 | 4 Fortran as library + Python bindings (still may use globals) | pending | 1, 2 |
 | 5 Deglobalize Fortran state (instances) | pending | 4 |
@@ -58,7 +58,7 @@ Exit criteria:
 
 ```text
 pyproject.toml
-src/pyregcoil/          # Python package
+src/regcoil/            # Python package
 fortran/                # REGCOIL + trimmed mini_libstell
 tests/                  # pytest (unit + integration)
 examples/               # regression cases
@@ -70,9 +70,9 @@ Allowed runtime deps in `pyproject.toml`: `numpy`, `scipy`, `matplotlib`, `f90nm
 
 Exit criteria:
 
-- [ ] `pyproject.toml` + build-backend choice recorded (ADR-002).
-- [ ] Layout in place; README has install/dev stubs.
-- [ ] Dependency list matches [OVERVIEW.md](OVERVIEW.md) principles.
+- [x] `pyproject.toml` + build-backend choice recorded (ADR-002).
+- [x] Layout in place; README has install/dev stubs.
+- [x] Dependency list matches [OVERVIEW.md](OVERVIEW.md) principles.
 
 ---
 
@@ -100,7 +100,7 @@ Globals may still exist here; Phase 5 removes them.
 
 Exit criteria:
 
-- [ ] `import pyregcoil._core` (or similar) works after `pip install`.
+- [ ] `import regcoil._core` (or similar) works after `pip install`.
 - [ ] One-λ solve matches a known example within tolerance.
 - [ ] CI installs via pip, not hand-invoked makefile alone.
 
@@ -170,7 +170,7 @@ Exit criteria:
 
 **Intent:** First-class Python tooling; no standalone script requirement; no MATLAB left.
 
-Fold into `pyregcoil` (CLI entry points TBD):
+Fold into `regcoil` (CLI entry points TBD):
 
 - `regcoilPlot` → matplotlib-based plotting module
 - `compareRegcoil` → compare module

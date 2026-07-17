@@ -4,7 +4,7 @@ Design target for the migration—not a frozen public API. Refine via [DECISIONS
 
 ## Package name
 
-Working name: **`pyregcoil`** (see ADR-001).
+Working name: **`regcoil`** (see ADR-015).
 
 ## Design constraints (from OVERVIEW)
 
@@ -20,7 +20,7 @@ Working name: **`pyregcoil`** (see ADR-001).
 ### High-level
 
 ```python
-from pyregcoil import run, RegcoilProblem, RegcoilResult
+from regcoil import run, RegcoilProblem, RegcoilResult
 
 result = run("regcoil_in.my_case")          # namelist (f90nml)
 result = run("my_case.json")                # JSON
@@ -92,12 +92,12 @@ SciPy root finder stays outside this function.
 ### CLI
 
 ```bash
-pyregcoil run regcoil_in.my_case
-pyregcoil run my_case.json
-pyregcoil plot regcoil_out.my_case.nc
-pyregcoil compare regcoil_out.a.nc regcoil_out.b.nc
-pyregcoil cut-coils ...
-pyregcoil plot-coils ...   # Plotly port of m20160811_01_*.m
+regcoil run regcoil_in.my_case
+regcoil run my_case.json
+regcoil plot regcoil_out.my_case.nc
+regcoil compare regcoil_out.a.nc regcoil_out.b.nc
+regcoil cut-coils ...
+regcoil plot-coils ...   # Plotly port of m20160811_01_*.m
 ```
 
 Exact subcommand names TBD; console scripts listed in `pyproject.toml`.
@@ -154,7 +154,7 @@ Globals and Fortran namelist read may remain until Phases 5–6. Each must be re
 
 ## Binding style
 
-TBD (ADR-002 / binding spike): f2py, iso_c_binding, or meson-python Fortran. Requirement: NumPy in/out; instance handle or state object; no NetCDF in the solve path.
+Build backend is **meson-python** (ADR-002). Binding style TBD in Phase 4: f2py vs `iso_c_binding`. Requirement: NumPy in/out; instance handle or state object; no NetCDF in the solve path.
 
 ## Testing
 

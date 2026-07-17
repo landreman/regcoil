@@ -6,10 +6,10 @@ Snapshot to support kill lists and scoping. Prefer updating PHASES checklists ov
 
 | Path | Role | Migration fate |
 |------|------|----------------|
-| `regcoil.f90` | Fortran `PROGRAM` driver | Retire (Phase 12); logic → Python |
-| `regcoil_*.f90`, `regcoil_fzero.f` | Core sources (flat dir) | Library under `fortran/`; deglobalize |
-| `regcoil_variables.f90` | **Module globals** | Replace with derived type / args (Phase 5) |
-| `mini_libstell/` | kinds, wout, ezcdf, … | Trim; drop NetCDF/ezcdf |
+| `fortran/regcoil.f90` | Fortran `PROGRAM` driver | Retire (Phase 12); logic → Python |
+| `fortran/regcoil_*.f90`, `fortran/regcoil_fzero.f` | Core sources | Library under `fortran/`; deglobalize |
+| `fortran/regcoil_variables.f90` | **Module globals** | Replace with derived type / args (Phase 5) |
+| `fortran/mini_libstell/` | kinds, wout, ezcdf, … | Trim; drop NetCDF/ezcdf |
 | `makefile`, `makefile.depend` | Host-specific build | Packaging replaces for users |
 | `examples/` | Regressions | Keep; drive with pytest |
 | `equilibria/` | Sample inputs | Keep |

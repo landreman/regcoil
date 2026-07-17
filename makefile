@@ -6,7 +6,12 @@
 #   module unload cray-libsci
 # to avoid warning messages about libsci during compiling.
 
-LIBSTELL_DIR ?= mini_libstell
+# Sources live under fortran/ (Phase 2 layout). Build products stay at repo root
+# so examples/runExamples.py can still invoke ../../regcoil.
+FORTRAN_DIR = fortran
+VPATH = $(FORTRAN_DIR)
+
+LIBSTELL_DIR ?= $(FORTRAN_DIR)/mini_libstell
 LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/mini_libstell.a
 #LIBSTELL_FOR_REGCOIL=$(LIBSTELL_DIR)/libstell.a
 
@@ -146,10 +151,10 @@ all: $(TARGET)
 include makefile.depend
 
 %.o: %.f90 ${LIBSTELL_FOR_REGCOIL}
-	$(FC) $(EXTRA_COMPILE_FLAGS) -I $(LIBSTELL_DIR) -c $<
+	$(FC) $(EXTRA_COMPILE_FLAGS) -I $(LIBSTELL_DIR) -c $< -o $@
 
 %.o: %.f ${LIBSTELL_FOR_REGCOIL}
-	$(FC) $(EXTRA_COMPILE_FLAGS) -I $(LIBSTELL_DIR) -c $<
+	$(FC) $(EXTRA_COMPILE_FLAGS) -I $(LIBSTELL_DIR) -c $< -o $@
 
 lib$(TARGET).a: $(OBJ_FILES)
 	ar rcs lib$(TARGET).a $(OBJ_FILES)
@@ -158,12 +163,12 @@ $(TARGET): lib$(TARGET).a $(TARGET).o $(LIBSTELL_FOR_REGCOIL)
 	$(FC) -o $(TARGET) $(TARGET).o lib$(TARGET).a $(LIBSTELL_FOR_REGCOIL) $(EXTRA_LINK_FLAGS)
 #	$(FC) -o $(TARGET) $(OBJ_FILES) $(LIBSTELL_DIR)/libstell.a $(EXTRA_LINK_FLAGS)
 
-mini_libstell/mini_libstell.a:
-	$(MAKE) -C mini_libstell
+$(LIBSTELL_DIR)/mini_libstell.a:
+	$(MAKE) -C $(LIBSTELL_DIR)
 
 clean:
 	rm -f *.o *.mod *.MOD *~ $(TARGET) *.a
-	cd mini_libstell; rm -f *.o *.mod *.MOD *.a
+	$(MAKE) -C $(LIBSTELL_DIR) clean
 
 test: $(TARGET)
 	@echo "Beginning functional tests." && cd examples && export REGCOIL_RETEST=no && ./runExamples.py

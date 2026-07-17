@@ -20,7 +20,7 @@ Companion docs:
 6. **String-valued qualitative options** — integer “option codes” for qualitatively different modes become strings (less error-prone); see API.md.
 7. **Dual input formats** — keep Fortran namelist input via **`f90nml`**, and also accept **JSON**.
 8. **NetCDF only from Python** — no NetCDF compile/link dependency in Fortran.
-9. **Fold tooling into the package** — `regcoilPlot`, `compareRegcoil`, and coil-cutting scripts become `pyregcoil` modules / CLI entry points.
+9. **Fold tooling into the package** — `regcoilPlot`, `compareRegcoil`, and coil-cutting scripts become `regcoil` modules / CLI entry points.
 10. **Plotly coil plot** — port `m20160811_01_plotCoilsFromRegcoil.m` to Python with Plotly; **remove all other MATLAB** sources.
 11. **Remove SVD scan** — delete `regcoil_svd_scan` and `general_option == 3` pathways.
 12. **Remove adjoint / winding-surface optimization** — delete sensitivity / adjoint Fortran and `windingSurfaceOptimization/`.
@@ -51,7 +51,7 @@ Companion docs:
 ## Target architecture
 
 ```text
-pip package: pyregcoil
+pip package: regcoil
 │
 ├── Python
 │   ├── CLI / RegcoilProblem / RegcoilResult
@@ -75,7 +75,7 @@ pip package: pyregcoil
 - Multiple `RegcoilProblem` instances can exist concurrently with different parameters/results.
 - Qualitative options are strings in JSON and in the Python API; namelist accepts the same string values (legacy integer codes may be rejected or briefly translated—see ADR-009).
 - Example regressions pass; pytest unit tests cover Python and Fortran-callable cores.
-- `pyregcoil plot|compare|cut-coils` (names TBD) replace standalone scripts; Plotly coil visualization exists; no `.m` files remain.
+- `regcoil plot|compare|cut-coils` (names TBD) replace standalone scripts; Plotly coil visualization exists; no `.m` files remain.
 - SVD scan, adjoint, and WSO are gone.
 - Input works from both namelist (`f90nml`) and JSON.
 - Read the Docs publishes the user manual; LaTeX `manual/` retired.
