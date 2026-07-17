@@ -5,14 +5,14 @@ import pytest
 from regcoil import RegcoilProblem
 
 EXAMPLE_CHI2K = (
-    Path(__file__).resolve().parents[2]
+    Path(__file__).resolve().parents[1]
     / "examples"
     / "axisymmetrySanityTest_chi2K_regularization"
 )
 NML_CHI2K = EXAMPLE_CHI2K / "regcoil_in.axisymmetrySanityTest_chi2K_regularization"
 
 EXAMPLE_LB = (
-    Path(__file__).resolve().parents[2]
+    Path(__file__).resolve().parents[1]
     / "examples"
     / "axisymmetrySanityTest_Laplace_Beltrami_regularization"
 )
@@ -23,8 +23,6 @@ ABS_TOL = 1e-10
 
 @pytest.fixture
 def chi2k_problem():
-    if not NML_CHI2K.is_file():
-        pytest.skip(f"missing example namelist: {NML_CHI2K}")
     prob = RegcoilProblem()
     prob.set_verbose(False)
     prob.setup(str(NML_CHI2K))
@@ -52,8 +50,6 @@ def test_solve_ilambda_axisymmetry(chi2k_problem):
 
 def test_two_instances_noninterfering():
     """Two problems with different regularization options must not clobber each other."""
-    if not NML_CHI2K.is_file() or not NML_LB.is_file():
-        pytest.skip("missing axisymmetry example namelists")
 
     a = RegcoilProblem()
     b = RegcoilProblem()
