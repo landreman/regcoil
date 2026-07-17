@@ -11,7 +11,7 @@ Fortran sources: `fortran/` (including `fortran/mini_libstell/`). The root `make
 - **Python (examples):** `numpy`, `scipy` (tests use `scipy.io.netcdf_file`)
 - **Python (package):** see root `pyproject.toml` / `pip install ".[dev]"` (meson-python; builds `regcoil._core`)
 
-On this machine’s default Cursor conda env, use **`20231204-02-desc`** for Python (see workspace rules).
+On this machine’s default conda env, use **`20231204-02-desc`** for Python (see workspace rules).
 
 ## local environment
 

@@ -34,11 +34,10 @@ Non-editable install (fine for CI / one-shot use; uses build isolation):
 pip install ".[dev]"
 ```
 
-Smoke / Phase 4 parity tests (requires the installed package with `regcoil._core`):
+Run tests (requires the installed python package):
 
 ```bash
 pytest
-python -c "import regcoil._core"
 ```
 
 ### Build and test (legacy executable)
