@@ -80,11 +80,12 @@ Exit criteria:
 
 **Intent:** CI early; migrate example runner toward pytest.
 
-Today: `make test` → `examples/runExamples.py`. Docs-only workflow: `publish_manual.yml`.
+Today: `make test` → `examples/runExamples.py`. Legacy docs workflow `publish_manual.yml` is removed in Phase 11 (do not extend it).
 
 Exit criteria:
 
 - [ ] GHA builds on `ubuntu-latest` (gfortran, BLAS/LAPACK; NetCDF Fortran only until Phase 8).
+- [ ] GHA builds on `macos-latest`.
 - [ ] pytest discovers at least a smoke test; example suite runs in CI (legacy exe acceptable initially).
 - [ ] PR failures block merge.
 
@@ -203,16 +204,18 @@ Exit criteria:
 
 ## Phase 11 — Read the Docs manual
 
-**Intent:** Replace LaTeX `manual/`.
+**Intent:** Replace LaTeX `manual/` and remove the old docs GitHub Actions workflow.
 
 - Sphinx (or MkDocs) under `docs/`; RTD config; port content from `overview.tex`, `inputParameters.tex`, etc.
-- Retire `manual/` and `publish_manual.yml` gh-pages LaTeX flow (or replace with RTD webhook).
+- Retire `manual/` as canonical docs.
+- **Delete** `.github/workflows/publish_manual.yml` (LaTeX → gh-pages). Do not keep or adapt that workflow; docs publishing is via Read the Docs (and optionally a lightweight CI docs-build check that is not `publish_manual.yml`).
 
 Exit criteria:
 
-- [ ] Docs build on RTD (or equivalent CI job).
+- [ ] Docs build on RTD (or equivalent non-`publish_manual` CI job).
 - [ ] Input parameter reference matches string options + namelist/JSON.
 - [ ] LaTeX manual no longer the canonical user doc.
+- [ ] `.github/workflows/publish_manual.yml` is removed from the repo.
 
 ---
 
@@ -223,6 +226,7 @@ Exit criteria:
 - [ ] Fortran `program regcoil` removed or unsupported.
 - [ ] Packaging is the canonical build; makefile gone or developer-only.
 - [ ] README points at pip install, CLI, pytest, and RTD.
+- [ ] `publish_manual.yml` already gone (Phase 11); no leftover gh-pages LaTeX publish path.
 - [ ] Open ADRs resolved or explicitly deferred; migration docs marked complete.
 
 ---

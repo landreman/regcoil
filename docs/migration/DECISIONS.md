@@ -169,9 +169,9 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
 
 - **Date:** 2026-07-17
 - **Status:** accepted
-- **Context:** LaTeX manual + gh-pages PDF workflow is dated relative to a Python package.
-- **Decision:** Replace with **Read the Docs** (Sphinx preferred default; MkDocs acceptable if chosen in Phase 11). Retire `manual/` as canonical docs.
-- **Consequences:** New `docs/` structure; update/replace `publish_manual.yml`; doc deps are docs-only, not runtime.
+- **Context:** LaTeX manual + `.github/workflows/publish_manual.yml` (build PDF, deploy to gh-pages) is dated relative to a Python package.
+- **Decision:** Replace with **Read the Docs** (Sphinx preferred default; MkDocs acceptable if chosen in Phase 11). Retire `manual/` as canonical docs. **Delete** `publish_manual.yml` entirely—do not migrate that workflow to RTD.
+- **Consequences:** New `docs/` structure; no gh-pages LaTeX publish job; doc deps are docs-only, not runtime.
 
 ---
 

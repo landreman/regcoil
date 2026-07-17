@@ -17,7 +17,7 @@ Snapshot to support kill lists and scoping. Prefer updating PHASES checklists ov
 | `windingSurfaceOptimization/` | Surface optimization | **Delete** (Phase 1) |
 | `regcoilPlot`, `compareRegcoil`, `cutCoilsFromRegcoil`, `cut_saddle_coil` | Python CLIs | **Fold into package** (Phase 9) |
 | `*.m`, `coilMetricScripts/` | MATLAB | **Delete**; port only `m20160811_01_plotCoilsFromRegcoil.m` → Plotly |
-| `.github/workflows/publish_manual.yml` | LaTeX → gh-pages | Replace with RTD / pytest CI |
+| `.github/workflows/publish_manual.yml` | LaTeX → gh-pages | **Delete** (Phase 11); docs via RTD, tests via pytest CI |
 
 ## Fortran module roles
 
