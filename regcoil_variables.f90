@@ -111,38 +111,8 @@ module regcoil_variables
   integer :: exit_code = 0
   real(dp) :: chi2_B_target = 0
 
-  ! Input parameters for adjoint
-  logical :: fixed_norm_sensitivity_option = .false.
-  integer :: sensitivity_option = 1
-  integer :: sensitivity_symmetry_option = 1
-  integer :: nmax_sensitivity = 1
-  integer :: mmax_sensitivity = 1
+  ! Used by max_K_lse / lp_norm_K diagnostics and auto-regularization targets
   real(dp) :: target_option_p = 4.0
-  real(dp) :: coil_plasma_dist_lse_p = 1.0d4
-
-  ! Needed for sensitivity calculation
-  real(dp), dimension(:), allocatable :: L_p_norm_with_area
-  real(dp), dimension(:,:), allocatable :: dRMSKdomega
-  real(dp), dimension(:), allocatable :: darea_coildomega
-  integer :: mnmax_sensitivity
-  integer :: nomega_coil
-  integer, dimension(:), allocatable :: omega_coil
-  integer, dimension(:), allocatable :: xm_sensitivity, xn_sensitivity
-  real(dp), dimension(:,:), allocatable :: dchi2Bdphi
-  real(dp), dimension(:,:,:), allocatable :: dddomega, dfxdomega, dfydomega, dfzdomega
-  real(dp), dimension(:,:,:), allocatable :: dnorm_normaldomega, dgdomega
-  real(dp), dimension(:,:,:), allocatable :: dnormxdomega, dnormydomega, dnormzdomega
-  real(dp), dimension(:,:), allocatable :: dchi2domega, dchi2Kdomega, dchi2Bdomega, dchi2Kdomega_withoutadjoint, dchi2Bdomega_withoutadjoint
-  real(dp), dimension(:,:,:,:), allocatable :: drdomega
-  real(dp), dimension(:,:,:), allocatable :: domegadxdtheta, domegadxdzeta, domegadydtheta, domegadydzeta, domegadzdtheta, domegadzdzeta
-  real(dp), dimension(:,:), allocatable :: dhdomega
-  real(dp), dimension(:,:), allocatable :: domegadx, domegady, domegadz
-  real(dp), dimension(:,:), allocatable :: q_K, q_B, dFdomega, dRHS_Bdomega, dRHS_Kdomega
-  real(dp), dimension(:,:,:), allocatable :: dmatrix_Kdomega, dmatrix_Bdomega
-  real(dp), dimension(:), allocatable :: dvolume_coildomega
-  real(dp), dimension(:), allocatable :: dcoil_plasma_dist_mindomega
-  real(dp) :: coil_plasma_dist_min, coil_plasma_dist_max
-  real(dp) :: coil_plasma_dist_min_lse, coil_plasma_dist_max_lse
 
   character(len=*), parameter :: &
        target_option_max_K = "max_K", &
@@ -166,10 +136,7 @@ module regcoil_variables
        net_poloidal_current_Amperes, net_toroidal_current_Amperes, &
        load_bnorm, bnorm_filename, &
        shape_filename_plasma, nlambda, lambda_min, lambda_max, general_option, regularization_term_option, verbose, nescout_filename, &
-       target_option, target_value, lambda_search_tolerance, &
-       sensitivity_option, nmax_sensitivity, mmax_sensitivity, &
-       sensitivity_symmetry_option, target_option_p, &
-       fixed_norm_sensitivity_option, coil_plasma_dist_lse_p
+       target_option, target_value, lambda_search_tolerance, target_option_p
 
 end module regcoil_variables
 
