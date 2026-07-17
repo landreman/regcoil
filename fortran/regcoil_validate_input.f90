@@ -93,6 +93,10 @@ subroutine regcoil_validate_input(prob)
      stop "Error! geometry_option_plasma must be <= 7." 
   end if
 
+  if (geometry_option_plasma == 5) then
+     stop "Error! geometry_option_plasma=5 (EFIT) is no longer supported."
+  end if
+
 
   if (geometry_option_coil < 0) then
      stop "Error! geometry_option_coil must be >= 0."
@@ -113,7 +117,7 @@ subroutine regcoil_validate_input(prob)
      select case (geometry_option_plasma)
      case (2,3,4,7)
         ! Yes, we have a VMEC file available.
-     case (0,1,5)
+     case (0,1)
         stop "Error! If load_bnorm=.t., the plasma surface must come from a vmec wout file."
      case default
         stop "Error! Invalid geometry_option_plasma"
