@@ -1,5 +1,5 @@
 [build-system]
-requires = ["meson-python>=0.16.0", "meson>=1.2.0", "ninja"]
+requires = ["meson-python>=0.16.0", "meson>=1.2.0", "ninja", "packaging"]
 build-backend = "mesonpy"
 
 [project]
@@ -29,4 +29,4 @@ Documentation = "https://github.com/landreman/pyREGCOIL/blob/master/manual/regco
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+# Use the installed package (with compiled _core). Do not add src/ to pythonpath.

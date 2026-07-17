@@ -1,6 +1,6 @@
 # Local build and test notes
 
-Practical notes for developers and agents running the **current** Fortran executable path (`make` / `make test`). Packaging/CI will supersede parts of this in later phases.
+Practical notes for developers and agents running the **current** Fortran executable path (`make` / `make test`) and the **pip-installed** Python package (`regcoil._core`). Packaging/CI supersede the makefile for the supported import path (Phase 4+).
 
 Fortran sources: `fortran/` (including `fortran/mini_libstell/`). The root `makefile` uses `VPATH` and still places the `regcoil` binary at the repo root.
 
@@ -9,9 +9,15 @@ Fortran sources: `fortran/` (including `fortran/mini_libstell/`). The root `make
 - **Fortran:** `gfortran` (or Open MPI’s `mpif90` wrapper), BLAS/LAPACK, OpenMP
 - **NetCDF:** C + Fortran libraries (`netcdf`, `netcdf-fortran`) until Phase 8
 - **Python (examples):** `numpy`, `scipy` (tests use `scipy.io.netcdf_file`)
-- **Python (package scaffold):** see root `pyproject.toml` / `pip install -e ".[dev]"` (meson-python)
+- **Python (package):** see root `pyproject.toml` / `pip install ".[dev]"` (meson-python; builds `regcoil._core`)
 
 On this machine’s default Cursor conda env, use **`20231204-02-desc`** for Python (see workspace rules).
+
+## local environment
+
+For running python commands and tests on my macbook, you may use the conda env 20260711-01-opt. For installing this regcoil package or other packages, use a virtual environment to avoid messing up the env 20260711-01-opt.
+
+**macOS + Homebrew NetCDF:** create the venv with Homebrew (or another non-conda) Python, e.g. `/opt/homebrew/bin/python3 -m venv .venv`. A venv based on a conda env often loads conda’s HDF5 first and then `import regcoil._core` fails with a missing `H5T_IEEE_F16BE_g` symbol when the extension was linked against Homebrew NetCDF/HDF5.
 
 ## macOS (Homebrew / Apple Silicon)
 
@@ -36,17 +42,19 @@ ls /opt/homebrew/include/netcdf.inc
 # or: brew list netcdf-fortran
 ```
 
+For **pip** builds on Apple Silicon, ensure Homebrew `pkg-config` can see NetCDF (`brew install pkg-config netcdf netcdf-fortran`). Meson uses `dependency('netcdf')` / `netcdf-fortran` and Accelerate when LAPACK pkg-config is missing.
+
 ## Tests today
 
 - `make test` → `examples/runExamples.py` (discovers `examples/*/tests.py` + matching `regcoil_in.*`)
 - Expect several minutes for the full suite; success ends with `ALL TESTS THAT WERE RUN WERE PASSED SUCCESSFULLY` and `numFailures: 0`
-- Package smoke: install build tools then
-  `pip install -e ".[dev]" --no-build-isolation` and `pytest` (import-only until Phase 4).
-  Non-editable `pip install .` uses normal build isolation and is fine for one-shot checks.
+- Package tests: create/use a **venv**, then
+  `pip install ".[dev]"` (or editable with `--no-build-isolation`) and `pytest`.
+  Includes `import regcoil._core` and a one-λ axisymmetry parity test (`tests/unit/test_core_one_lambda.py`).
 
-## GitHub Actions (Phase 3 / ADR-016)
+## GitHub Actions (Phase 3–4 / ADR-016, ADR-017)
 
-Workflow: `.github/workflows/ci.yml`. Builds the legacy executable and runs pytest smoke on `ubuntu-latest` and `macos-latest`. Full example regressions are **not** in CI yet.
+Workflow: `.github/workflows/ci.yml`. Builds the legacy executable **and** installs the Python package via **pip** (compiling `regcoil._core`), then runs pytest on `ubuntu-latest` and `macos-latest`. Full example regressions are **not** in CI yet.
 
 Reproduce the CI makefile hosts locally:
 

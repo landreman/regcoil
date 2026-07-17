@@ -8,7 +8,7 @@ Ordered work packages for the overhaul. Each phase should be a reviewable PR (or
 | 1 Delete adjoint / WSO / SVD / MATLAB (except plotly port source) | done | — |
 | 2 Layout + packaging scaffold | done | — |
 | 3 CI + pytest scaffold | done | 2 helpful; can start after 1 |
-| 4 Fortran as library + Python bindings (still may use globals) | pending | 1, 2 |
+| 4 Fortran as library + Python bindings (still may use globals) | done | 1, 2 |
 | 5 Deglobalize Fortran state (instances) | pending | 4 |
 | 6 Python driver + namelist/JSON input + string options | pending | 5 |
 | 7 SciPy lambda search | pending | 6 |
@@ -102,9 +102,9 @@ Globals may still exist here; Phase 5 removes them.
 
 Exit criteria:
 
-- [ ] `import regcoil._core` (or similar) works after `pip install`.
-- [ ] One-λ solve matches a known example within tolerance.
-- [ ] CI installs via pip, not hand-invoked makefile alone.
+- [x] `import regcoil._core` (or similar) works after `pip install`.
+- [x] One-λ solve matches a known example within tolerance.
+- [x] CI installs via pip, not hand-invoked makefile alone.
 
 ---
 
