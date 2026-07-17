@@ -1,5 +1,3 @@
-"""Phase 4/5: one-λ and concurrent-instance solves via RegcoilProblem."""
-
 from pathlib import Path
 
 import pytest

@@ -53,5 +53,5 @@ jobs:
           pip install ".[dev]"
           python -c "import regcoil._core; print('regcoil._core OK')"
 
-      - name: Pytest (import + one-λ parity)
+      - name: Run pytest tests
         run: pytest -q
