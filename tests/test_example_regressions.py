@@ -32,6 +32,19 @@ def _example_names() -> list[str]:
 EXAMPLE_NAMES = _example_names()
 
 
+def _ntheta_plasma(example_name: str) -> int | None:
+    """Return the active ``ntheta_plasma`` from the example namelist, if set."""
+    nml = EXAMPLES_DIR / example_name / f"regcoil_in.{example_name}"
+    for raw in nml.read_text().splitlines():
+        line = raw.split("!")[0].strip()
+        if not line.lower().startswith("ntheta_plasma"):
+            continue
+        # e.g. ntheta_plasma = 128  or  ntheta_plasma=128
+        rhs = line.split("=", 1)[1].strip().rstrip(",").strip()
+        return int(float(rhs))
+    return None
+
+
 @pytest.fixture(scope="session")
 def regcoil_executable() -> Path:
     if not REGCOIL_EXE.is_file() or not os.access(REGCOIL_EXE, os.X_OK):
@@ -46,6 +59,10 @@ def regcoil_executable() -> Path:
 def test_example_regression(example_name: str, regcoil_executable: Path) -> None:
     example_dir = EXAMPLES_DIR / example_name
     assert example_dir.is_dir(), f"missing example directory {example_dir}"
+
+    ntheta = _ntheta_plasma(example_name)
+    if ntheta is not None and ntheta >= 128:
+        pytest.skip(f"high-resolution example (ntheta_plasma={ntheta})")
 
     output_nc = example_dir / f"regcoil_out.{example_name}.nc"
     if output_nc.exists():
