@@ -1,13 +1,10 @@
 subroutine regcoil_read_input
 
-  use regcoil_variables
-
   implicit none
 
   integer :: numargs
   character(len=200) :: inputFilename
-  integer :: fileUnit, didFileAccessWork, i
-  integer, parameter :: uninitialized = -9999
+  integer :: ios
 
   ! getcarg is in LIBSTELL
   call getcarg(1, inputFilename, numargs)
@@ -18,35 +15,66 @@ subroutine regcoil_read_input
   if (numargs>1) then
      print *,"WARNING: Arguments after the first will be ignored."
   end if
-  if (inputFilename(1:11) .ne. "regcoil_in.") then
-     stop "Input file must be named regcoil_in.XXX for some extension XXX"
-  end if
 
-  output_filename = "regcoil_out" // trim(inputFilename(11:)) // ".nc"
+  call regcoil_read_input_file(trim(inputFilename), ios)
+  if (ios /= 0) stop
+
+end subroutine regcoil_read_input
+
+
+subroutine regcoil_read_input_file(inputFilename, ios)
+
+  use regcoil_variables
+
+  implicit none
+
+  character(len=*), intent(in) :: inputFilename
+  integer, intent(out) :: ios
+  integer :: fileUnit, didFileAccessWork
+  character(len=200) :: linebuf
+  integer :: slashpos
+  character(len=200) :: basename
+
+  ios = 0
+
+  ! Prefer legacy naming when the basename starts with regcoil_in.
+  slashpos = index(inputFilename, '/', back=.true.)
+  if (slashpos == 0) then
+     basename = trim(inputFilename)
+  else
+     basename = trim(inputFilename(slashpos+1:))
+  end if
+  if (basename(1:11) == "regcoil_in.") then
+     output_filename = "regcoil_out" // trim(basename(11:)) // ".nc"
+  else
+     output_filename = "regcoil_out.nc"
+  end if
 
   fileUnit=11
   open(unit=fileUnit, file=inputFilename, action="read", status="old", iostat=didFileAccessWork)
   if (didFileAccessWork /= 0) then
      print *,"Error opening input file ", trim(inputFilename)
-     stop
-  else
-     read(fileUnit, nml=regcoil_nml, iostat=didFileAccessWork)
-     if (didFileAccessWork /= 0) then
-        print *,"Error!  I was able to open the file ", trim(inputFilename), &
-               " but not read data from the regcoil_nml namelist in it."
-        backspace(fileUnit)
-        read(fileUnit, fmt="(A)") inputFilename
-        print *, "Invalid line in namelist: ", trim(inputFilename)
-        print *, "(Error may be earlier)"
-        if (didFileAccessWork==-1) then
-           print *,"Make sure there is a carriage return after the / at the end of the namelist!"
-        end if
-        stop
-     end if
-     if (verbose) print *,"Successfully read parameters from regcoil_nml namelist in ", trim(inputFilename), "."
+     ios = 1
+     return
   end if
-  close(unit = fileUnit)
 
+  read(fileUnit, nml=regcoil_nml, iostat=didFileAccessWork)
+  if (didFileAccessWork /= 0) then
+     print *,"Error!  I was able to open the file ", trim(inputFilename), &
+            " but not read data from the regcoil_nml namelist in it."
+     backspace(fileUnit)
+     read(fileUnit, fmt="(A)") linebuf
+     print *, "Invalid line in namelist: ", trim(linebuf)
+     print *, "(Error may be earlier)"
+     if (didFileAccessWork==-1) then
+        print *,"Make sure there is a carriage return after the / at the end of the namelist!"
+     end if
+     close(unit = fileUnit)
+     ios = 2
+     return
+  end if
+  if (verbose) print *,"Successfully read parameters from regcoil_nml namelist in ", trim(inputFilename), "."
+  close(unit = fileUnit)
 
   if (verbose) then
      print *,"Resolution parameters:"
@@ -56,7 +84,7 @@ subroutine regcoil_read_input
      print "(a,i5)","   nzeta_coil     =",nzeta_coil
      print "(a,i5)","   mpol_potential =",mpol_potential
      print "(a,i5)","   ntor_potential =",ntor_potential
-     
+
      select case (symmetry_option)
      case (1)
         print *,"Symmetry: sin(m*theta - n*zeta) modes only"
@@ -66,8 +94,9 @@ subroutine regcoil_read_input
         print *,"Symmetry: both sin(m*theta - n*zeta) and cos(m*theta - n*zeta) modes"
      case default
         print *,"Error! Invalid setting for symmetry_option: ",symmetry_option
-        stop
+        ios = 3
+        return
      end select
   end if
 
-end subroutine regcoil_read_input
+end subroutine regcoil_read_input_file

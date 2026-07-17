@@ -11,9 +11,9 @@ For further documentation, see the user manual [here](http://landreman.github.io
 
 Python packaging / migration plans: [`docs/migration/`](docs/migration/OVERVIEW.md).
 
-### Install (Python package scaffold)
+### Install (Python package)
 
-Requires a Fortran compiler only once the extension is wired (Phase 4). For now the install is pure Python.
+Requires **gfortran**, **BLAS/LAPACK**, **OpenMP**, and **NetCDF C + Fortran** (until Phase 8). On macOS Homebrew Apple Silicon see [`docs/migration/LOCAL.md`](docs/migration/LOCAL.md).
 
 Editable installs with meson-python need build tools in the *same* environment (pip’s isolated build env is discarded after install):
 
@@ -28,18 +28,17 @@ pip install meson ninja "meson-python>=0.16" pytest
 pip install -e ".[dev]" --no-build-isolation
 ```
 
-Non-editable install (fine for CI / one-shot use):
+Non-editable install (fine for CI / one-shot use; uses build isolation):
 
 ```bash
-pip install .
-# or with optional NetCDF4 (ADR-004 still open):
-pip install ".[netcdf]"
+pip install ".[dev]"
 ```
 
-Smoke test:
+Smoke / Phase 4 parity tests (requires the installed package with `regcoil._core`):
 
 ```bash
 pytest
+python -c "import regcoil._core"
 ```
 
 ### Build and test (legacy executable)

@@ -154,7 +154,7 @@ Globals and Fortran namelist read may remain until Phases 5–6. Each must be re
 
 ## Binding style
 
-Build backend is **meson-python** (ADR-002). Binding style TBD in Phase 4: f2py vs `iso_c_binding`. Requirement: NumPy in/out; instance handle or state object; no NetCDF in the solve path.
+Build backend is **meson-python** (ADR-002). Binding style is **`iso_c_binding`** + thin C extension `regcoil._core` (ADR-017). Requirement: NumPy in/out as needed; instance handle or state object in Phase 5; no NetCDF in the solve path after Phase 8.
 
 ## Testing
 

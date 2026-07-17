@@ -196,3 +196,16 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
   3. Full examples on both OS
 - **Decision:** **(1)** for now. Workflow `.github/workflows/ci.yml` builds via `make MACHINE=github_ubuntu|github_macos`, installs the Python package, runs `pytest` (unit smoke). Example regressions remain `make test` locally until a follow-up enables them in GHA (toward pytest).
 - **Consequences:** CI stays fast and unblocks packaging work; example parity in CI is an explicit later task (still Phase 3 follow-up or Phase 10 continuous work).
+
+---
+
+## ADR-017: Binding style is `iso_c_binding`
+
+- **Date:** 2026-07-17
+- **Status:** accepted
+- **Context:** ADR-002 fixed meson-python but deferred f2py vs `iso_c_binding`. Phase 5 needs instance handles; Phase 4 still allows Fortran globals.
+- **Options:**
+  1. **f2py** — faster first wrap with globals; awkward for opaque instance state later
+  2. **`iso_c_binding` + thin C Python extension** — more boilerplate now; natural for Phase 5 handles
+- **Decision:** **(2)**. Module `regcoil._core` is a C extension calling `bind(C)` entry points in `fortran/regcoil_c_api.f90`.
+- **Consequences:** No f2py in the build; NumPy array exchange can be added later without changing the binding strategy; Phase 5 can evolve the C API toward an opaque problem pointer.
