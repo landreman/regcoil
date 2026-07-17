@@ -44,12 +44,12 @@ subroutine regcoil_read_input_file(prob, inputFilename, ios)
   integer :: ntheta_plasma, nzeta_plasma, ntheta_coil, nzeta_coil
   integer :: geometry_option_plasma, geometry_option_coil
   real(dp) :: R0_plasma, R0_coil, a_plasma, a_coil, separation
-  character(len=200) :: wout_filename, nescin_filename, efit_filename, shape_filename_plasma
+  character(len=200) :: wout_filename, nescin_filename, shape_filename_plasma
   character(len=200) :: nescout_filename, bnorm_filename, regularization_term_option, target_option
   integer :: save_level, nfp_imposed, symmetry_option
   integer :: mpol_potential, ntor_potential, mpol_coil_filter, ntor_coil_filter
-  integer :: efit_num_modes, max_mpol_coil, max_ntor_coil, nlambda, general_option
-  real(dp) :: efit_psiN, mpol_transform_refinement, ntor_transform_refinement
+  integer :: max_mpol_coil, max_ntor_coil, nlambda, general_option
+  real(dp) :: mpol_transform_refinement, ntor_transform_refinement
   real(dp) :: net_poloidal_current_Amperes, net_toroidal_current_Amperes
   real(dp) :: lambda_min, lambda_max, target_value, lambda_search_tolerance, target_option_p
   logical :: load_bnorm, verbose
@@ -60,7 +60,7 @@ subroutine regcoil_read_input_file(prob, inputFilename, ios)
        separation, wout_filename, &
        save_level, nfp_imposed, symmetry_option, &
        mpol_potential, ntor_potential, mpol_coil_filter, ntor_coil_filter, &
-       nescin_filename, efit_filename, efit_psiN, efit_num_modes, &
+       nescin_filename, &
        mpol_transform_refinement, ntor_transform_refinement, max_mpol_coil, max_ntor_coil, &
        net_poloidal_current_Amperes, net_toroidal_current_Amperes, &
        load_bnorm, bnorm_filename, &
@@ -84,7 +84,6 @@ subroutine regcoil_read_input_file(prob, inputFilename, ios)
   separation = prob%coil%separation
   wout_filename = prob%plasma%wout_filename
   shape_filename_plasma = prob%plasma%shape_filename_plasma
-  efit_filename = prob%plasma%efit_filename
   nescin_filename = prob%coil%nescin_filename
   nescout_filename = prob%coil%nescout_filename
   save_level = prob%input%save_level
@@ -94,8 +93,6 @@ subroutine regcoil_read_input_file(prob, inputFilename, ios)
   ntor_potential = prob%input%ntor_potential
   mpol_coil_filter = prob%coil%mpol_coil_filter
   ntor_coil_filter = prob%coil%ntor_coil_filter
-  efit_psiN = prob%plasma%efit_psiN
-  efit_num_modes = prob%plasma%efit_num_modes
   mpol_transform_refinement = prob%plasma%mpol_transform_refinement
   ntor_transform_refinement = prob%plasma%ntor_transform_refinement
   max_mpol_coil = prob%coil%max_mpol_coil
@@ -168,7 +165,6 @@ subroutine regcoil_read_input_file(prob, inputFilename, ios)
   prob%coil%separation = separation
   prob%plasma%wout_filename = wout_filename
   prob%plasma%shape_filename_plasma = shape_filename_plasma
-  prob%plasma%efit_filename = efit_filename
   prob%coil%nescin_filename = nescin_filename
   prob%coil%nescout_filename = nescout_filename
   prob%input%save_level = save_level
@@ -178,8 +174,6 @@ subroutine regcoil_read_input_file(prob, inputFilename, ios)
   prob%input%ntor_potential = ntor_potential
   prob%coil%mpol_coil_filter = mpol_coil_filter
   prob%coil%ntor_coil_filter = ntor_coil_filter
-  prob%plasma%efit_psiN = efit_psiN
-  prob%plasma%efit_num_modes = efit_num_modes
   prob%plasma%mpol_transform_refinement = mpol_transform_refinement
   prob%plasma%ntor_transform_refinement = ntor_transform_refinement
   prob%coil%max_mpol_coil = max_mpol_coil

@@ -31,7 +31,6 @@ module regcoil_variables
      real(dp) :: R0_plasma = 10.0_dp, a_plasma = 0.5_dp
      character(len=200) :: wout_filename = ""
      character(len=200) :: shape_filename_plasma = ""
-     character(len=200) :: efit_filename = ""
      real(dp), dimension(:), allocatable :: theta_plasma, zeta_plasma, zetal_plasma
      real(dp), dimension(:,:,:), allocatable :: r_plasma, drdtheta_plasma, drdzeta_plasma, normal_plasma
      real(dp), dimension(:,:), allocatable :: Bnormal_from_plasma_current
@@ -42,8 +41,6 @@ module regcoil_variables
      real(dp), dimension(:), allocatable :: rmns_plasma, zmnc_plasma, rmnc_plasma, zmns_plasma
      integer :: nfp = 0
      logical :: lasym = .false.
-     integer :: efit_num_modes = 10
-     real(dp) :: efit_psiN = 0.98_dp
      real(dp) :: area_plasma = 0, volume_plasma = 0
      integer :: nbf = 0
      integer, dimension(:), allocatable :: bfn, bfm

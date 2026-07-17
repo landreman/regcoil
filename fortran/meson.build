@@ -29,7 +29,6 @@ regcoil_lib_src = files(
   'regcoil_splines.f90',
   'regcoil_fzero.f',
   'regcoil_compute_offset_surface_mod.f90',
-  'regcoil_read_efit_mod.f90',
   'regcoil_read_input.f90',
   'regcoil_validate_input.f90',
   'regcoil_compute_lambda.f90',

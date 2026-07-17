@@ -14,7 +14,6 @@ contains
   subroutine regcoil_init_plasma(prob)
 
     use regcoil_variables, only: regcoil_t
-    use regcoil_read_efit_mod
     use read_wout_mod, only: nfp_vmec => nfp, xm_vmec => xm, xn_vmec => xn, &
          rmnc_vmec => rmnc, zmns_vmec => zmns, rmns_vmec => rmns, zmnc_vmec => zmnc, &
          lasym_vmec => lasym, mnmax_vmec => mnmax, ns, Rmajor, read_wout_file, &
@@ -46,14 +45,11 @@ contains
        a_plasma => prob%plasma%a_plasma, &
        wout_filename => prob%plasma%wout_filename, &
        shape_filename_plasma => prob%plasma%shape_filename_plasma, &
-       efit_filename => prob%plasma%efit_filename, &
        dtheta_plasma => prob%plasma%dtheta_plasma, &
        dzeta_plasma => prob%plasma%dzeta_plasma, &
        mnmax_plasma => prob%plasma%mnmax_plasma, &
        nfp => prob%plasma%nfp, &
        lasym => prob%plasma%lasym, &
-       efit_num_modes => prob%plasma%efit_num_modes, &
-       efit_psiN => prob%plasma%efit_psiN, &
        area_plasma => prob%plasma%area_plasma, &
        volume_plasma => prob%plasma%volume_plasma, &
        nbf => prob%plasma%nbf, &
@@ -367,25 +363,6 @@ contains
        end do
        call system_clock(toc1)
        if (verbose) print *,"  Time for Fourier transform:",real(toc1-tic1)/countrate
-       
-    case (5)
-       ! EFIT
-       
-       lasym = .true.
-       nfp = nfp_imposed
-       mnmax_plasma = efit_num_modes
-
-       call regcoil_allocate_plasma_surface_arrays(prob)
-
-       call regcoil_read_efit(efit_filename, efit_psiN, efit_num_modes, prob%plasma%rmnc_plasma, prob%plasma%zmns_plasma, prob%plasma%rmns_plasma, prob%plasma%zmnc_plasma)
-       
-       ! Set major radius equal to the zero-frequency component of R(theta)
-       R0_plasma = prob%plasma%rmnc_plasma(1)
-       
-       prob%plasma%xn_plasma = 0
-       do i=1,efit_num_modes
-          prob%plasma%xm_plasma(i) = i-1
-       end do
        
     case default
        print *,"Error! Invalid setting for geometry_option_plasma:",geometry_option_plasma

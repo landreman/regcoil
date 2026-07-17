@@ -262,8 +262,7 @@ This option exists so that the same flux surface can be used when comparing with
 The poloidal angle used will be the straight-field-line coordinate, obtained by shifting the normal \vmec~poloidal angle by \vmec's $\lambda$ quantity.
 This option exists in order to examine changes when using a different poloidal coordinate compared to {\ttfamily geometry\_option\_plasma} = 3.\\
 
-{\ttfamily geometry\_option\_plasma} = 5: The plasma surface will be the flux surface with normalized poloidal flux
-\parlink{efit\_psiN} taken from the {\ttfamily efit} file specified by \parlink{efit\_filename}. \\
+{\ttfamily geometry\_option\_plasma} = 5: Reserved / unsupported (formerly EFIT).\\
 
 {\ttfamily geometry\_option\_plasma} = 6: The plasma surface will be loaded from an ASCII file, specified by \parlink{shape\_filename\_plasma}. The first line of this file is ignored. The second line is an integer giving the number of Fourier modes
 to read. The remaining lines contain $m$, $n$, $rmnc$, $zmns$, $rmns$, $zmnc$. \\
@@ -314,33 +313,6 @@ and is used when {\ttfamily nfp} is not already loaded from a \vmec~file.}
 {Only when \parlink{geometry\_option\_plasma} is 2, 3, or 4.}
 {Name of the \vmec~{\ttfamily wout} output file which will be used for the plasma surface.
 You can use either a \netCDF~or {\ttfamily ASCII} format file.}
-
-\myhrule
-
-\param{efit\_filename}
-{string}
-{{\ttfamily ""}}
-{Only when \parlink{geometry\_option\_plasma} is 5.}
-{Name of the {\ttfamily efit} output file which will be used for the plasma surface.}
-
-\myhrule
-
-\param{efit\_psiN}
-{real}
-{0.98}
-{Only when \parlink{geometry\_option\_plasma} is 5.}
-{Value of normalized poloidal flux at which to select a flux surface from the {\ttfamily efit} input file.
-A value of 1 corresponds to the last closed flux surface, and 0 corresponds to the magnetic axis.}
-
-\myhrule
-
-\param{efit\_num\_modes}
-{integer}
-{10}
-{Only when \parlink{geometry\_option\_plasma} is 5.}
-{Controls the number of Fourier modes used to represent $R(\theta)$ and $Z(\theta)$ for the shape of
-the plasma surface. Each of these functions will be expanded in a sum of functions $\sin(m\theta)$ and $\cos(m\theta)$,
-where $m$ ranges from 0 to {\ttfamily efit\_num\_modes}$-1$.}
 
 \section{Geometry parameters for the coil winding surface}
 

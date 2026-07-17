@@ -33,7 +33,7 @@ Snapshot to support kill lists and scoping. Prefer updating PHASES checklists ov
 
 ### Geometry / setup
 
-- `regcoil_init_plasma_mod.f90`, coil surface / offset / expand, nescin, bnorm, EFIT, Fourier modes, splines
+- `regcoil_init_plasma_mod.f90`, coil surface / offset / expand, nescin, bnorm, Fourier modes, splines
 - VMEC wout NetCDF path → Python readers (Phase 8)
 
 ### Matrices / linear algebra (keep in Fortran; instance state)
