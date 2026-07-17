@@ -1,7 +1,10 @@
 ! This subroutine is used only when REGCOIL is called from STELLOPT,
 ! and it not used when REGCOIL is run as a standalone code.
 
-subroutine regcoil_write_input(proc_string,iunit,istat)
+subroutine regcoil_write_input(prob, proc_string,iunit,istat)
+  use regcoil_variables, only: regcoil_t
+  implicit none
+  type(regcoil_t), intent(inout) :: prob
   ! proc_string is normally located in stellopt_runtime.f90
   
   ! istat is not used for anything. Why include it?
@@ -14,6 +17,25 @@ subroutine regcoil_write_input(proc_string,iunit,istat)
   character(LEN=*), parameter :: OUTINT  = "(2X,A,1X,'=',1X,I0)"
   character(LEN=*), parameter :: OUTFLT  = "(2X,A,1X,'=',1X,E22.14)"
   character(LEN=*), parameter :: OUTSTR  = "(2X,A,1X,'=',1X,'''',A,'''')"
+
+  associate ( &
+       ntheta_plasma => prob%plasma%ntheta_plasma, &
+       nzeta_plasma => prob%plasma%nzeta_plasma, &
+       geometry_option_plasma => prob%plasma%geometry_option_plasma, &
+       wout_filename => prob%plasma%wout_filename, &
+       ntheta_coil => prob%coil%ntheta_coil, &
+       nzeta_coil => prob%coil%nzeta_coil, &
+       geometry_option_coil => prob%coil%geometry_option_coil, &
+       separation => prob%coil%separation, &
+       general_option => prob%input%general_option, &
+       symmetry_option => prob%input%symmetry_option, &
+       mpol_potential => prob%input%mpol_potential, &
+       ntor_potential => prob%input%ntor_potential, &
+       net_poloidal_current_Amperes => prob%input%net_poloidal_current_Amperes, &
+       net_toroidal_current_Amperes => prob%input%net_toroidal_current_Amperes, &
+       nlambda => prob%input%nlambda, &
+       target_option => prob%input%target_option &
+       )
 
   wout_filename_new = 'wout_'//TRIM(proc_string)//'.nc'
 
@@ -39,4 +61,6 @@ subroutine regcoil_write_input(proc_string,iunit,istat)
 !  write(iunit, '(A)') ''
   return
 
+
+  end associate
 end subroutine regcoil_write_input

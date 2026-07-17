@@ -1,11 +1,13 @@
-subroutine regcoil_expand_plasma_surface(theta, zeta, separation, x,y,z)
+subroutine regcoil_expand_plasma_surface(prob, theta, zeta, separation, x,y,z)
   
-  use regcoil_variables, only: nfp, xm_plasma, xn_plasma, mnmax_plasma, rmnc_plasma, zmns_plasma, rmns_plasma, zmnc_plasma, lasym
+  use regcoil_variables, only: regcoil_t
   use stel_kinds
   use stel_constants
 
   implicit none
 
+
+  type(regcoil_t), intent(inout) :: prob
   real(dp), intent(in) :: theta,zeta,separation
   real(dp), intent(out) :: x,y,z
 
@@ -16,6 +18,17 @@ subroutine regcoil_expand_plasma_surface(theta, zeta, separation, x,y,z)
   real(dp) :: phi, sinphi, cosphi
   real(dp) :: dsinphidzeta, dcosphidzeta
   real(dp) :: normal_x, normal_y, normal_z, normal_abs
+
+  associate ( &
+       mnmax_plasma => prob%plasma%mnmax_plasma, &
+       xm_plasma => prob%plasma%xm_plasma, &
+       xn_plasma => prob%plasma%xn_plasma, &
+       rmns_plasma => prob%plasma%rmns_plasma, &
+       zmnc_plasma => prob%plasma%zmnc_plasma, &
+       rmnc_plasma => prob%plasma%rmnc_plasma, &
+       zmns_plasma => prob%plasma%zmns_plasma, &
+       lasym => prob%plasma%lasym &
+       )
 
   x=0
   y=0
@@ -86,4 +99,6 @@ subroutine regcoil_expand_plasma_surface(theta, zeta, separation, x,y,z)
   y = y + normal_y * separation
   z = z + normal_z * separation
 
+
+  end associate
 end subroutine regcoil_expand_plasma_surface

@@ -1,15 +1,43 @@
-subroutine regcoil_validate_input
+subroutine regcoil_validate_input(prob)
 
-  use regcoil_variables
+  use regcoil_variables, only: regcoil_t, regularization_term_option_chi2_K, regularization_term_option_Laplace_Beltrami, regularization_term_option_K_xy, regularization_term_option_K_zeta, target_option_max_K, target_option_rms_K, target_option_chi2_K, target_option_max_Bnormal, target_option_rms_Bnormal, target_option_chi2_B, target_option_max_K_lse, target_option_lp_norm_K
+  use stel_kinds
   use safe_open_mod
 
   implicit none
 
+
+  type(regcoil_t), intent(inout) :: prob
   integer :: iunit = 7, istat, j
   character(300) :: myline
   character(*), parameter :: matchString = "---- Phi(m,n) for"
   character(len=*), parameter :: line="******************************************************************"
   real(dp) :: typical_target_min, typical_target_max
+
+  associate ( &
+       ntheta_plasma => prob%plasma%ntheta_plasma, &
+       nzeta_plasma => prob%plasma%nzeta_plasma, &
+       geometry_option_plasma => prob%plasma%geometry_option_plasma, &
+       ntheta_coil => prob%coil%ntheta_coil, &
+       nzeta_coil => prob%coil%nzeta_coil, &
+       geometry_option_coil => prob%coil%geometry_option_coil, &
+       separation => prob%coil%separation, &
+       nescout_filename => prob%coil%nescout_filename, &
+       general_option => prob%input%general_option, &
+       verbose => prob%input%verbose, &
+       regularization_term_option => prob%input%regularization_term_option, &
+       save_level => prob%input%save_level, &
+       symmetry_option => prob%input%symmetry_option, &
+       mpol_potential => prob%input%mpol_potential, &
+       ntor_potential => prob%input%ntor_potential, &
+       load_bnorm => prob%input%load_bnorm, &
+       nlambda => prob%input%nlambda, &
+       lambda_min => prob%input%lambda_min, &
+       lambda_max => prob%input%lambda_max, &
+       target_value => prob%input%target_value, &
+       target_option => prob%input%target_option, &
+       target_option_p => prob%input%target_option_p &
+       )
 
   if (ntheta_plasma < 1) then
      stop "Error! ntheta_plasma must be >= 1."
@@ -187,4 +215,6 @@ subroutine regcoil_validate_input
     stop "target_option_p must be >=1."
   end if
 
+
+  end associate
 end subroutine regcoil_validate_input

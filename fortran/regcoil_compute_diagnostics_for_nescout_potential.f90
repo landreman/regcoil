@@ -1,12 +1,14 @@
-subroutine regcoil_compute_diagnostics_for_nescout_potential
+subroutine regcoil_compute_diagnostics_for_nescout_potential(prob)
 
-  use regcoil_variables
+  use regcoil_variables, only: regcoil_t
   use safe_open_mod
   use stel_constants
   use stel_kinds
 
   implicit none
 
+
+  type(regcoil_t), intent(inout) :: prob
   integer :: iflag, tic, toc, countrate
   integer :: ilambda
 
@@ -17,6 +19,21 @@ subroutine regcoil_compute_diagnostics_for_nescout_potential
   character(*), parameter :: matchString_phi = "---- Phi(m,n) for"
   character(*), parameter :: matchString_phi2 = "---- end Phi(m,n)"
 
+
+  associate ( &
+       nfp => prob%plasma%nfp, &
+       nescout_filename => prob%coil%nescout_filename, &
+       mpol_potential => prob%input%mpol_potential, &
+       ntor_potential => prob%input%ntor_potential, &
+       curpol => prob%input%curpol, &
+       matrix_B => prob%work%matrix_B, &
+       RHS_B => prob%work%RHS_B, &
+       xm_potential => prob%work%xm_potential, &
+       xn_potential => prob%work%xn_potential, &
+       matrix => prob%work%matrix, &
+       RHS => prob%work%RHS, &
+       solution => prob%work%solution &
+       )
 
   matrix = matrix_B
   RHS    =    RHS_B
@@ -99,9 +116,11 @@ subroutine regcoil_compute_diagnostics_for_nescout_potential
      end if
      print *,"Successfully read current potential"
 
-     call regcoil_diagnostics(ilambda)
+     call regcoil_diagnostics(prob, ilambda)
 
   end do outerLoop
 
 
+
+  end associate
 end subroutine regcoil_compute_diagnostics_for_nescout_potential

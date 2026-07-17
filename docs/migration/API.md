@@ -150,7 +150,7 @@ Exact subcommand names TBD; console scripts listed in `pyproject.toml`.
 
 ### Transitional gray area
 
-Globals and Fortran namelist read may remain until Phases 5–6. Each must be removed before Phase 12.
+Fortran namelist read may remain until Phase 6. NetCDF in Fortran remains until Phase 8. Problem state is instance-based (`type(regcoil_t)` / `RegcoilProblem`); see ADR-018.
 
 ## Binding style
 

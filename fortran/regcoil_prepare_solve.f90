@@ -1,125 +1,141 @@
-subroutine regcoil_prepare_solve()
+subroutine regcoil_prepare_solve(prob)
 
-  use regcoil_variables
+  use regcoil_variables, only: regcoil_t, target_option_max_K_lse, target_option_lp_norm_K
 
   implicit none
 
+
+  type(regcoil_t), intent(inout) :: prob
   integer :: iflag
 
-  if (allocated(matrix)) deallocate(matrix)
-  allocate(matrix(num_basis_functions, num_basis_functions), stat=iflag)
+    associate ( &
+       ntheta_plasma => prob%plasma%ntheta_plasma, &
+       nzeta_plasma => prob%plasma%nzeta_plasma, &
+       ntheta_coil => prob%coil%ntheta_coil, &
+       nzeta_coil => prob%coil%nzeta_coil, &
+       verbose => prob%input%verbose, &
+       nlambda => prob%input%nlambda, &
+       target_option => prob%input%target_option, &
+       num_basis_functions => prob%work%num_basis_functions, &
+       LAPACK_INFO => prob%work%LAPACK_INFO, &
+       LAPACK_LWORK => prob%work%LAPACK_LWORK &
+       )
+  if (allocated(prob%work%matrix)) deallocate(prob%work%matrix)
+  allocate(prob%work%matrix(num_basis_functions, num_basis_functions), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 1!'
 
-  if (allocated(RHS)) deallocate(RHS)
-  allocate(RHS(num_basis_functions), stat=iflag)
+  if (allocated(prob%work%RHS)) deallocate(prob%work%RHS)
+  allocate(prob%work%RHS(num_basis_functions), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 2!'
 
-  if (allocated(solution)) deallocate(solution)
-  allocate(solution(num_basis_functions), stat=iflag)
+  if (allocated(prob%work%solution)) deallocate(prob%work%solution)
+  allocate(prob%work%solution(num_basis_functions), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 3!'
 
-  if (allocated(LAPACK_WORK)) deallocate(LAPACK_WORK)
-  allocate(LAPACK_WORK(1), stat=iflag)
+  if (allocated(prob%work%LAPACK_WORK)) deallocate(prob%work%LAPACK_WORK)
+  allocate(prob%work%LAPACK_WORK(1), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 4!'
 
-  if (allocated(LAPACK_IPIV)) deallocate(LAPACK_IPIV)
-  allocate(LAPACK_IPIV(num_basis_functions), stat=iflag)
+  if (allocated(prob%work%LAPACK_IPIV)) deallocate(prob%work%LAPACK_IPIV)
+  allocate(prob%work%LAPACK_IPIV(num_basis_functions), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 5!'
 
-  if (allocated(chi2_B)) deallocate(chi2_B)
-  allocate(chi2_B(nlambda), stat=iflag)
+  if (allocated(prob%output%chi2_B)) deallocate(prob%output%chi2_B)
+  allocate(prob%output%chi2_B(nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 6!'
 
-  if (allocated(chi2_K)) deallocate(chi2_K)
-  allocate(chi2_K(nlambda), stat=iflag)
+  if (allocated(prob%output%chi2_K)) deallocate(prob%output%chi2_K)
+  allocate(prob%output%chi2_K(nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 7!'
 
-  if (allocated(chi2_Laplace_Beltrami)) deallocate(chi2_Laplace_Beltrami)
-  allocate(chi2_Laplace_Beltrami(nlambda), stat=iflag)
+  if (allocated(prob%output%chi2_Laplace_Beltrami)) deallocate(prob%output%chi2_Laplace_Beltrami)
+  allocate(prob%output%chi2_Laplace_Beltrami(nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 7!'
 
-  if (allocated(max_Bnormal)) deallocate(max_Bnormal)
-  allocate(max_Bnormal(nlambda), stat=iflag)
+  if (allocated(prob%output%max_Bnormal)) deallocate(prob%output%max_Bnormal)
+  allocate(prob%output%max_Bnormal(nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 8!'
 
-  if (allocated(max_K)) deallocate(max_K)
-  allocate(max_K(nlambda), stat=iflag)
+  if (allocated(prob%output%max_K)) deallocate(prob%output%max_K)
+  allocate(prob%output%max_K(nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 9!'
 
-  if (allocated(current_potential)) deallocate(current_potential)
-  allocate(current_potential(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
+  if (allocated(prob%output%current_potential)) deallocate(prob%output%current_potential)
+  allocate(prob%output%current_potential(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 10!'
 
-  if (allocated(single_valued_current_potential_thetazeta)) &
-        deallocate(single_valued_current_potential_thetazeta)
-  allocate(single_valued_current_potential_thetazeta(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
+  if (allocated(prob%output%single_valued_current_potential_thetazeta)) &
+        deallocate(prob%output%single_valued_current_potential_thetazeta)
+  allocate(prob%output%single_valued_current_potential_thetazeta(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 11!'
 
-  if (allocated(this_current_potential)) deallocate(this_current_potential)
-  allocate(this_current_potential(ntheta_coil,nzeta_coil), stat=iflag)
+  if (allocated(prob%work%this_current_potential)) deallocate(prob%work%this_current_potential)
+  allocate(prob%work%this_current_potential(ntheta_coil,nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 12!'
 
-  if (allocated(single_valued_current_potential_mn)) &
-        deallocate(single_valued_current_potential_mn)
-  allocate(single_valued_current_potential_mn(num_basis_functions,nlambda), stat=iflag)
+  if (allocated(prob%output%single_valued_current_potential_mn)) &
+        deallocate(prob%output%single_valued_current_potential_mn)
+  allocate(prob%output%single_valued_current_potential_mn(num_basis_functions,nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 13!'
 
-  if (allocated(Bnormal_total)) deallocate(Bnormal_total)
-  allocate(Bnormal_total(ntheta_plasma,nzeta_plasma,nlambda), stat=iflag)
+  if (allocated(prob%output%Bnormal_total)) deallocate(prob%output%Bnormal_total)
+  allocate(prob%output%Bnormal_total(ntheta_plasma,nzeta_plasma,nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 14!'
 
-  if (allocated(K2)) deallocate(K2)
-  allocate(K2(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
+  if (allocated(prob%output%K2)) deallocate(prob%output%K2)
+  allocate(prob%output%K2(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 15!'
 
-  if (allocated(Laplace_Beltrami2)) deallocate(Laplace_Beltrami2)
-  allocate(Laplace_Beltrami2(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
+  if (allocated(prob%output%Laplace_Beltrami2)) deallocate(prob%output%Laplace_Beltrami2)
+  allocate(prob%output%Laplace_Beltrami2(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 15!'
 
-  if (allocated(KDifference_x)) deallocate(KDifference_x)
-  allocate(KDifference_x(ntheta_coil*nzeta_coil), stat=iflag)
+  if (allocated(prob%work%KDifference_x)) deallocate(prob%work%KDifference_x)
+  allocate(prob%work%KDifference_x(ntheta_coil*nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 16!'
 
-  if (allocated(KDifference_y)) deallocate(KDifference_y)
-  allocate(KDifference_y(ntheta_coil*nzeta_coil), stat=iflag)
+  if (allocated(prob%work%KDifference_y)) deallocate(prob%work%KDifference_y)
+  allocate(prob%work%KDifference_y(ntheta_coil*nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 17!'
 
-  if (allocated(KDifference_z)) deallocate(KDifference_z)
-  allocate(KDifference_z(ntheta_coil*nzeta_coil), stat=iflag)
+  if (allocated(prob%work%KDifference_z)) deallocate(prob%work%KDifference_z)
+  allocate(prob%work%KDifference_z(ntheta_coil*nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 18!'
 
-  if (allocated(KDifference_Laplace_Beltrami)) deallocate(KDifference_Laplace_Beltrami)
-  allocate(KDifference_Laplace_Beltrami(ntheta_coil*nzeta_coil), stat=iflag)
+  if (allocated(prob%work%KDifference_Laplace_Beltrami)) deallocate(prob%work%KDifference_Laplace_Beltrami)
+  allocate(prob%work%KDifference_Laplace_Beltrami(ntheta_coil*nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 18!'
 
-  if (allocated(this_K2_times_N)) deallocate(this_K2_times_N)
-  allocate(this_K2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
+  if (allocated(prob%work%this_K2_times_N)) deallocate(prob%work%this_K2_times_N)
+  allocate(prob%work%this_K2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 19!'
 
-  if (allocated(this_Laplace_Beltrami2_times_N)) deallocate(this_Laplace_Beltrami2_times_N)
-  allocate(this_Laplace_Beltrami2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
+  if (allocated(prob%work%this_Laplace_Beltrami2_times_N)) deallocate(prob%work%this_Laplace_Beltrami2_times_N)
+  allocate(prob%work%this_Laplace_Beltrami2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 19!'
 
   if (trim(target_option)==target_option_max_K_lse) then
-    if (allocated(max_K_lse)) deallocate(max_K_lse)
-    allocate(max_K_lse(nlambda), stat=iflag)
+    if (allocated(prob%output%max_K_lse)) deallocate(prob%output%max_K_lse)
+    allocate(prob%output%max_K_lse(nlambda), stat=iflag)
     if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 20!'
   end if
 
   if (trim(target_option)==target_option_lp_norm_K) then
-    if (allocated(lp_norm_K)) deallocate(lp_norm_K)
-    allocate(lp_norm_K(nlambda), stat=iflag)
+    if (allocated(prob%output%lp_norm_K)) deallocate(prob%output%lp_norm_K)
+    allocate(prob%output%lp_norm_K(nlambda), stat=iflag)
     if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 20!'
   end if
 
   ! Call LAPACK's DSYSV in query mode to determine the optimal size of the work array
-  call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, LAPACK_IPIV, RHS, num_basis_functions, LAPACK_WORK, -1, LAPACK_INFO)
-  LAPACK_LWORK = int(LAPACK_WORK(1))
+  call DSYSV('U',num_basis_functions, 1, prob%work%matrix, num_basis_functions, prob%work%LAPACK_IPIV, prob%work%RHS, num_basis_functions, prob%work%LAPACK_WORK, -1, LAPACK_INFO)
+  LAPACK_LWORK = int(prob%work%LAPACK_WORK(1))
   if (verbose) print *,"Optimal LWORK:",LAPACK_LWORK
-  deallocate(LAPACK_WORK)
-  allocate(LAPACK_WORK(LAPACK_LWORK), stat=iflag)
+  deallocate(prob%work%LAPACK_WORK)
+  allocate(prob%work%LAPACK_WORK(LAPACK_LWORK), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve LAPACK error!'
 
+
+  end associate
 end subroutine regcoil_prepare_solve
 
     ! Here is the LAPACK documentation for solving a symmetric linear system:

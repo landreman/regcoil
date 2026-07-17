@@ -1,15 +1,72 @@
-subroutine regcoil_diagnostics(ilambda)
+subroutine regcoil_diagnostics(prob, ilambda)
 
-  use regcoil_variables
+  use regcoil_variables, only: regcoil_t, target_option_lp_norm_K
   use stel_constants
   use stel_kinds
 
   implicit none
 
+
+  type(regcoil_t), intent(inout) :: prob
   integer, intent(in) :: ilambda
   integer :: tic, toc, countrate
   real(dp) :: factor_theta, factor_zeta
   integer :: itheta, izeta
+
+  associate ( &
+       ntheta_plasma => prob%plasma%ntheta_plasma, &
+       nzeta_plasma => prob%plasma%nzeta_plasma, &
+       Bnormal_from_plasma_current => prob%plasma%Bnormal_from_plasma_current, &
+       norm_normal_plasma => prob%plasma%norm_normal_plasma, &
+       dtheta_plasma => prob%plasma%dtheta_plasma, &
+       dzeta_plasma => prob%plasma%dzeta_plasma, &
+       nfp => prob%plasma%nfp, &
+       ntheta_coil => prob%coil%ntheta_coil, &
+       nzeta_coil => prob%coil%nzeta_coil, &
+       theta_coil => prob%coil%theta_coil, &
+       zeta_coil => prob%coil%zeta_coil, &
+       Bnormal_from_net_coil_currents => prob%coil%Bnormal_from_net_coil_currents, &
+       norm_normal_coil => prob%coil%norm_normal_coil, &
+       dtheta_coil => prob%coil%dtheta_coil, &
+       dzeta_coil => prob%coil%dzeta_coil, &
+       area_coil => prob%coil%area_coil, &
+       verbose => prob%input%verbose, &
+       net_poloidal_current_Amperes => prob%input%net_poloidal_current_Amperes, &
+       net_toroidal_current_Amperes => prob%input%net_toroidal_current_Amperes, &
+       target_option => prob%input%target_option, &
+       target_option_p => prob%input%target_option_p, &
+       single_valued_current_potential_mn => prob%output%single_valued_current_potential_mn, &
+       single_valued_current_potential_thetazeta => prob%output%single_valued_current_potential_thetazeta, &
+       current_potential => prob%output%current_potential, &
+       Bnormal_total => prob%output%Bnormal_total, &
+       K2 => prob%output%K2, &
+       Laplace_Beltrami2 => prob%output%Laplace_Beltrami2, &
+       chi2_B => prob%output%chi2_B, &
+       chi2_K => prob%output%chi2_K, &
+       max_Bnormal => prob%output%max_Bnormal, &
+       max_K => prob%output%max_K, &
+       chi2_Laplace_Beltrami => prob%output%chi2_Laplace_Beltrami, &
+       lp_norm_K => prob%output%lp_norm_K, &
+       max_K_lse => prob%output%max_K_lse, &
+       g => prob%work%g, &
+       f_x => prob%work%f_x, &
+       f_y => prob%work%f_y, &
+       f_z => prob%work%f_z, &
+       f_Laplace_Beltrami => prob%work%f_Laplace_Beltrami, &
+       d_x => prob%work%d_x, &
+       d_y => prob%work%d_y, &
+       d_z => prob%work%d_z, &
+       d_Laplace_Beltrami => prob%work%d_Laplace_Beltrami, &
+       basis_functions => prob%work%basis_functions, &
+       solution => prob%work%solution, &
+       this_current_potential => prob%work%this_current_potential, &
+       KDifference_x => prob%work%KDifference_x, &
+       KDifference_y => prob%work%KDifference_y, &
+       KDifference_z => prob%work%KDifference_z, &
+       KDifference_Laplace_Beltrami => prob%work%KDifference_Laplace_Beltrami, &
+       this_K2_times_N => prob%work%this_K2_times_N, &
+       this_Laplace_Beltrami2_times_N => prob%work%this_Laplace_Beltrami2_times_N &
+       )
 
   call system_clock(tic,countrate)
 
@@ -69,4 +126,6 @@ subroutine regcoil_diagnostics(ilambda)
     if (verbose) print "(a,es10.3)","    lp_norm_K:", lp_norm_K(ilambda)
   end if
 
+
+  end associate
 end subroutine regcoil_diagnostics

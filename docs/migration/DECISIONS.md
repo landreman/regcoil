@@ -209,3 +209,24 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
   2. **`iso_c_binding` + thin C Python extension** — more boilerplate now; natural for Phase 5 handles
 - **Decision:** **(2)**. Module `regcoil._core` is a C extension calling `bind(C)` entry points in `fortran/regcoil_c_api.f90`.
 - **Consequences:** No f2py in the build; NumPy array exchange can be added later without changing the binding strategy; Phase 5 can evolve the C API toward an opaque problem pointer.
+
+---
+
+## ADR-018: Instance state layout and Fortran calling pattern (Phase 5)
+
+- **Date:** 2026-07-17
+- **Status:** accepted
+- **Context:** Phase 5 removes `regcoil_variables` module globals so multiple problems can coexist. Nested types were preferred over a single flat derived type.
+- **Decision:**
+  1. **`type(regcoil_t)`** holds:
+     - `plasma` — `regcoil_plasma_surface_t`
+     - `coil` — `regcoil_coil_surface_t`
+     - `input` — `regcoil_solver_input_t` (namelist/solver parameters, including `lambda`)
+     - `output` — `regcoil_solver_output_t` (diagnostics / potentials)
+     - `work` — `regcoil_work_t` (matrices, basis, LAPACK scratch; needed companion to the four surface/solver types)
+  2. **Calling convention:** new and updated Fortran routines take `type(regcoil_t), intent(inout) :: prob` as the **first** argument. Prefer `associate` for readability; do **not** `allocate`/`deallocate` a selector while it is associated—allocate first, then associate, or use `prob%…` for allocate targets.
+  3. **fzero scratch** in offset-surface / plasma-init is **local** (nested residual via host association), not module variables.
+  4. **mini_libstell** module state may remain until a later phase.
+  5. **Legacy `program regcoil`** holds one local `regcoil_t` and passes it through (no compatibility globals).
+  6. **Python:** opaque handle via `regcoil_c_create` / `destroy`; thin `RegcoilProblem` wraps setup/solve. Namelist still filled in Fortran for now (Phase 6 moves I/O).
+- **Consequences:** C API is handle-based; concurrent-instance pytest is required; string option PARAMs stay as module constants (immutable).
