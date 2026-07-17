@@ -15,7 +15,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install system deps (Ubuntu)
         if: runner.os == 'Linux'
@@ -42,7 +42,7 @@ jobs:
           fi
           test -x ./regcoil
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
