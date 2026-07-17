@@ -1,15 +1,63 @@
-subroutine regcoil_auto_regularization_solve()
+subroutine regcoil_auto_regularization_solve(prob)
 
-  use regcoil_variables
+  use regcoil_variables, only: regcoil_t, target_option_max_K, target_option_rms_K, target_option_chi2_K, target_option_max_Bnormal, target_option_rms_Bnormal, target_option_chi2_B, target_option_max_K_lse, target_option_lp_norm_K
   use stel_kinds
 
   implicit none
 
+
+  type(regcoil_t), intent(inout) :: prob
   integer :: ilambda
   integer :: stage, next_stage
   logical :: initial_above_target, last_above_target, targeted_quantity_increases_with_lambda
   real(dp) :: Brendt_a, Brendt_b, Brendt_c, Brendt_fa, Brendt_fb, Brendt_fc, Brendt_d, Brendt_e
   real(dp) :: Brendt_p, Brendt_q, Brendt_r, Brendt_s, Brendt_tol1, Brendt_xm, Brendt_EPS, factor
+
+  associate ( &
+       ntheta_plasma => prob%plasma%ntheta_plasma, &
+       nzeta_plasma => prob%plasma%nzeta_plasma, &
+       Bnormal_from_plasma_current => prob%plasma%Bnormal_from_plasma_current, &
+       norm_normal_plasma => prob%plasma%norm_normal_plasma, &
+       dtheta_plasma => prob%plasma%dtheta_plasma, &
+       dzeta_plasma => prob%plasma%dzeta_plasma, &
+       nfp => prob%plasma%nfp, &
+       area_plasma => prob%plasma%area_plasma, &
+       ntheta_coil => prob%coil%ntheta_coil, &
+       nzeta_coil => prob%coil%nzeta_coil, &
+       Bnormal_from_net_coil_currents => prob%coil%Bnormal_from_net_coil_currents, &
+       norm_normal_coil => prob%coil%norm_normal_coil, &
+       dtheta_coil => prob%coil%dtheta_coil, &
+       dzeta_coil => prob%coil%dzeta_coil, &
+       area_coil => prob%coil%area_coil, &
+       general_option => prob%input%general_option, &
+       verbose => prob%input%verbose, &
+       nlambda => prob%input%nlambda, &
+       lambda => prob%input%lambda, &
+       target_value => prob%input%target_value, &
+       lambda_search_tolerance => prob%input%lambda_search_tolerance, &
+       target_option => prob%input%target_option, &
+       chi2_B_target => prob%input%chi2_B_target, &
+       Bnormal_total => prob%output%Bnormal_total, &
+       chi2_B => prob%output%chi2_B, &
+       chi2_K => prob%output%chi2_K, &
+       max_Bnormal => prob%output%max_Bnormal, &
+       max_K => prob%output%max_K, &
+       lp_norm_K => prob%output%lp_norm_K, &
+       max_K_lse => prob%output%max_K_lse, &
+       exit_code => prob%output%exit_code, &
+       g => prob%work%g, &
+       f_x => prob%work%f_x, &
+       f_y => prob%work%f_y, &
+       f_z => prob%work%f_z, &
+       d_x => prob%work%d_x, &
+       d_y => prob%work%d_y, &
+       d_z => prob%work%d_z, &
+       solution => prob%work%solution, &
+       KDifference_x => prob%work%KDifference_x, &
+       KDifference_y => prob%work%KDifference_y, &
+       KDifference_z => prob%work%KDifference_z, &
+       this_K2_times_N => prob%work%this_K2_times_N &
+       )
 
   if (general_option==4) then
      stage = 1
@@ -121,7 +169,7 @@ subroutine regcoil_auto_regularization_solve()
      ! Done choosing the next lambda. Now comes the main solve.
      ! ------------------------------------------------------------------------------------------------
 
-     call regcoil_solve(ilambda)
+     call regcoil_solve(prob, ilambda)
 
      last_above_target = (target_function(ilambda) > target_value)
      if (stage==1) initial_above_target = last_above_target
@@ -221,9 +269,12 @@ subroutine regcoil_auto_regularization_solve()
      print *,"*******************************************************************************"
   end if
 
+
+  end associate
 contains
  
   function target_function(jlambda)
+    ! Uses host-associated `prob` (associate names are not visible here).
 
     implicit none
 
@@ -231,42 +282,42 @@ contains
     real(dp) :: target_function
 
     target_function = 0
-    select case (trim(target_option))
+    select case (trim(prob%input%target_option))
 
     case (target_option_max_K)
-       target_function = max_K(jlambda)
+       target_function = prob%output%max_K(jlambda)
        targeted_quantity_increases_with_lambda = .false.
 
     case (target_option_rms_K)
-       target_function = sqrt(chi2_K(jlambda) / area_coil)
+       target_function = sqrt(prob%output%chi2_K(jlambda) / prob%coil%area_coil)
        targeted_quantity_increases_with_lambda = .false.
 
     case (target_option_chi2_K)
-       target_function = chi2_K(jlambda)
+       target_function = prob%output%chi2_K(jlambda)
        targeted_quantity_increases_with_lambda = .false.
 
     case (target_option_max_Bnormal)
-       target_function =  max_Bnormal(jlambda)
+       target_function =  prob%output%max_Bnormal(jlambda)
        targeted_quantity_increases_with_lambda = .true.
 
     case (target_option_rms_Bnormal)
-       target_function = sqrt(chi2_B(jlambda) / area_plasma)
+       target_function = sqrt(prob%output%chi2_B(jlambda) / prob%plasma%area_plasma)
        targeted_quantity_increases_with_lambda = .true.
 
     case (target_option_chi2_B)
-       target_function = chi2_B(jlambda)
+       target_function = prob%output%chi2_B(jlambda)
        targeted_quantity_increases_with_lambda = .true.
 
     case (target_option_max_K_lse)
-       target_function = max_K_lse(jlambda)
+       target_function = prob%output%max_K_lse(jlambda)
        targeted_quantity_increases_with_lambda = .false.
 
     case (target_option_lp_norm_K)
-       target_function = lp_norm_K(jlambda)
+       target_function = prob%output%lp_norm_K(jlambda)
        targeted_quantity_increases_with_lambda = .false.
 
     case default
-       print *,"Invalid target_option: ",target_option
+       print *,"Invalid target_option: ",prob%input%target_option
        stop
     end select
 

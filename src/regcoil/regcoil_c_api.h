@@ -5,15 +5,19 @@
 extern "C" {
 #endif
 
-void regcoil_c_set_verbose(int flag);
-int regcoil_c_nlambda(void);
-int regcoil_c_setup(const char *path);
-int regcoil_c_build_matrices(void);
-int regcoil_c_prepare_solve(void);
-int regcoil_c_solve_ilambda(int ilambda, double *chi2_b, double *chi2_k,
-                            double *max_bn, double *max_k);
-int regcoil_c_solve_lambda(double lam, double *chi2_b, double *chi2_k,
-                           double *max_bn, double *max_k);
+typedef struct regcoil_problem regcoil_problem; /* opaque */
+
+regcoil_problem *regcoil_c_create(void);
+void regcoil_c_destroy(regcoil_problem *handle);
+void regcoil_c_set_verbose(regcoil_problem *handle, int flag);
+int regcoil_c_nlambda(regcoil_problem *handle);
+int regcoil_c_setup(regcoil_problem *handle, const char *path);
+int regcoil_c_build_matrices(regcoil_problem *handle);
+int regcoil_c_prepare_solve(regcoil_problem *handle);
+int regcoil_c_solve_ilambda(regcoil_problem *handle, int ilambda, double *chi2_b,
+                            double *chi2_k, double *max_bn, double *max_k);
+int regcoil_c_solve_lambda(regcoil_problem *handle, double lam, double *chi2_b,
+                           double *chi2_k, double *max_bn, double *max_k);
 
 #ifdef __cplusplus
 }

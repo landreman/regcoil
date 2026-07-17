@@ -50,7 +50,7 @@ For **pip** builds on Apple Silicon, ensure Homebrew `pkg-config` can see NetCDF
 - Expect several minutes for the full suite; success ends with `ALL TESTS THAT WERE RUN WERE PASSED SUCCESSFULLY` and `numFailures: 0`
 - Package tests: create/use a **venv**, then
   `pip install ".[dev]"` (or editable with `--no-build-isolation`) and `pytest`.
-  Includes `import regcoil._core` and a one-λ axisymmetry parity test (`tests/unit/test_core_one_lambda.py`).
+  Includes `import regcoil` / `RegcoilProblem`, a one-λ axisymmetry parity test, and a two-instance non-interference test (`tests/unit/test_core_one_lambda.py`).
 
 ## GitHub Actions (Phase 3–4 / ADR-016, ADR-017)
 

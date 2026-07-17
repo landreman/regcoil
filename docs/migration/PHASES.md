@@ -9,7 +9,7 @@ Ordered work packages for the overhaul. Each phase should be a reviewable PR (or
 | 2 Layout + packaging scaffold | done | — |
 | 3 CI + pytest scaffold | done | 2 helpful; can start after 1 |
 | 4 Fortran as library + Python bindings (still may use globals) | done | 1, 2 |
-| 5 Deglobalize Fortran state (instances) | pending | 4 |
+| 5 Deglobalize Fortran state (instances) | done | 4 |
 | 6 Python driver + namelist/JSON input + string options | pending | 5 |
 | 7 SciPy lambda search | pending | 6 |
 | 8 NetCDF I/O in Python only | pending | 6 |
@@ -116,9 +116,11 @@ Replace `regcoil_variables` module globals with a derived type (or explicit argu
 
 Exit criteria:
 
-- [ ] No mutable problem state in Fortran `module` variables for normal solves.
-- [ ] Test: two instances with different resolutions/λ produce correct, non-interfering results.
-- [ ] Documented pattern for new Fortran routines (state as first argument / type components).
+- [x] No mutable problem state in Fortran `module` variables for normal solves.
+- [x] Test: two instances with different resolutions/λ produce correct, non-interfering results.
+- [x] Documented pattern for new Fortran routines (state as first argument / type components).
+
+See ADR-018 for nested types (`plasma` / `coil` / `input` / `output` / `work`), opaque C handles, and the `prob`-first calling convention.
 
 ---
 

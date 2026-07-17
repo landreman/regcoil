@@ -1,15 +1,29 @@
-subroutine regcoil_write_nescin
+subroutine regcoil_write_nescin(prob)
   ! Write the harmonics of the coil winding surface to a file; by czhu on 05/17/2018;
-  use regcoil_variables, only: mnmax_coil, xm_coil, xn_coil, &
-       rmnc_coil, rmns_coil, zmnc_coil, zmns_coil, &
-       separation, nescin_filename, nfp, curpol
+  use regcoil_variables, only: regcoil_t
   use stel_kinds
   use safe_open_mod
 
   implicit none
 
+
+  type(regcoil_t), intent(inout) :: prob
   integer :: imn, mnmax_ws, istat = 0, iunit = 8
   real(dp) :: tol
+
+  associate ( &
+       nfp => prob%plasma%nfp, &
+       separation => prob%coil%separation, &
+       nescin_filename => prob%coil%nescin_filename, &
+       mnmax_coil => prob%coil%mnmax_coil, &
+       xm_coil => prob%coil%xm_coil, &
+       xn_coil => prob%coil%xn_coil, &
+       rmns_coil => prob%coil%rmns_coil, &
+       zmnc_coil => prob%coil%zmnc_coil, &
+       rmnc_coil => prob%coil%rmnc_coil, &
+       zmns_coil => prob%coil%zmns_coil, &
+       curpol => prob%input%curpol &
+       )
 
   tol = separation * 1.0E-3_dp ! set the tolarence to ignore harmonics
   tol = 0 ! MJL 20180617 Causes all harmonics to be written.
@@ -52,4 +66,6 @@ subroutine regcoil_write_nescin
 
   close(iunit)
 
+
+  end associate
 end subroutine regcoil_write_nescin

@@ -1,10 +1,12 @@
-subroutine regcoil_write_output
+subroutine regcoil_write_output(prob)
 
-  use regcoil_variables
+  use regcoil_variables, only: regcoil_t, target_option_max_K_lse, target_option_lp_norm_K
   use ezcdf
 
   implicit none
 
+
+  type(regcoil_t), intent(inout) :: prob
   integer :: ierr, ncid
 
   ! Same convention as in VMEC:
@@ -155,6 +157,99 @@ subroutine regcoil_write_output
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+  associate ( &
+       ntheta_plasma => prob%plasma%ntheta_plasma, &
+       nzeta_plasma => prob%plasma%nzeta_plasma, &
+       nzetal_plasma => prob%plasma%nzetal_plasma, &
+       geometry_option_plasma => prob%plasma%geometry_option_plasma, &
+       R0_plasma => prob%plasma%R0_plasma, &
+       a_plasma => prob%plasma%a_plasma, &
+       theta_plasma => prob%plasma%theta_plasma, &
+       zeta_plasma => prob%plasma%zeta_plasma, &
+       zetal_plasma => prob%plasma%zetal_plasma, &
+       r_plasma => prob%plasma%r_plasma, &
+       drdtheta_plasma => prob%plasma%drdtheta_plasma, &
+       drdzeta_plasma => prob%plasma%drdzeta_plasma, &
+       normal_plasma => prob%plasma%normal_plasma, &
+       Bnormal_from_plasma_current => prob%plasma%Bnormal_from_plasma_current, &
+       norm_normal_plasma => prob%plasma%norm_normal_plasma, &
+       mnmax_plasma => prob%plasma%mnmax_plasma, &
+       xm_plasma => prob%plasma%xm_plasma, &
+       xn_plasma => prob%plasma%xn_plasma, &
+       rmns_plasma => prob%plasma%rmns_plasma, &
+       zmnc_plasma => prob%plasma%zmnc_plasma, &
+       rmnc_plasma => prob%plasma%rmnc_plasma, &
+       zmns_plasma => prob%plasma%zmns_plasma, &
+       nfp => prob%plasma%nfp, &
+       lasym => prob%plasma%lasym, &
+       area_plasma => prob%plasma%area_plasma, &
+       volume_plasma => prob%plasma%volume_plasma, &
+       ntheta_coil => prob%coil%ntheta_coil, &
+       nzeta_coil => prob%coil%nzeta_coil, &
+       nzetal_coil => prob%coil%nzetal_coil, &
+       geometry_option_coil => prob%coil%geometry_option_coil, &
+       R0_coil => prob%coil%R0_coil, &
+       a_coil => prob%coil%a_coil, &
+       theta_coil => prob%coil%theta_coil, &
+       zeta_coil => prob%coil%zeta_coil, &
+       zetal_coil => prob%coil%zetal_coil, &
+       r_coil => prob%coil%r_coil, &
+       drdtheta_coil => prob%coil%drdtheta_coil, &
+       drdzeta_coil => prob%coil%drdzeta_coil, &
+       normal_coil => prob%coil%normal_coil, &
+       Bnormal_from_net_coil_currents => prob%coil%Bnormal_from_net_coil_currents, &
+       norm_normal_coil => prob%coil%norm_normal_coil, &
+       mnmax_coil => prob%coil%mnmax_coil, &
+       xm_coil => prob%coil%xm_coil, &
+       xn_coil => prob%coil%xn_coil, &
+       rmns_coil => prob%coil%rmns_coil, &
+       zmnc_coil => prob%coil%zmnc_coil, &
+       rmnc_coil => prob%coil%rmnc_coil, &
+       zmns_coil => prob%coil%zmns_coil, &
+       area_coil => prob%coil%area_coil, &
+       volume_coil => prob%coil%volume_coil, &
+       general_option => prob%input%general_option, &
+       save_level => prob%input%save_level, &
+       symmetry_option => prob%input%symmetry_option, &
+       mpol_potential => prob%input%mpol_potential, &
+       ntor_potential => prob%input%ntor_potential, &
+       net_poloidal_current_Amperes => prob%input%net_poloidal_current_Amperes, &
+       net_toroidal_current_Amperes => prob%input%net_toroidal_current_Amperes, &
+       curpol => prob%input%curpol, &
+       nlambda => prob%input%nlambda, &
+       lambda => prob%input%lambda, &
+       target_option => prob%input%target_option, &
+       chi2_B_target => prob%input%chi2_B_target, &
+       output_filename => prob%input%output_filename, &
+       single_valued_current_potential_mn => prob%output%single_valued_current_potential_mn, &
+       single_valued_current_potential_thetazeta => prob%output%single_valued_current_potential_thetazeta, &
+       current_potential => prob%output%current_potential, &
+       Bnormal_total => prob%output%Bnormal_total, &
+       K2 => prob%output%K2, &
+       Laplace_Beltrami2 => prob%output%Laplace_Beltrami2, &
+       chi2_B => prob%output%chi2_B, &
+       chi2_K => prob%output%chi2_K, &
+       max_Bnormal => prob%output%max_Bnormal, &
+       max_K => prob%output%max_K, &
+       chi2_Laplace_Beltrami => prob%output%chi2_Laplace_Beltrami, &
+       lp_norm_K => prob%output%lp_norm_K, &
+       max_K_lse => prob%output%max_K_lse, &
+       exit_code => prob%output%exit_code, &
+       total_time => prob%output%total_time, &
+       g => prob%work%g, &
+       h => prob%work%h, &
+       matrix_B => prob%work%matrix_B, &
+       matrix_regularization => prob%work%matrix_regularization, &
+       inductance => prob%work%inductance, &
+       RHS_B => prob%work%RHS_B, &
+       RHS_regularization => prob%work%RHS_regularization, &
+       mnmax_potential => prob%work%mnmax_potential, &
+       num_basis_functions => prob%work%num_basis_functions, &
+       xm_potential => prob%work%xm_potential, &
+       xn_potential => prob%work%xn_potential &
+       )
 
   call cdf_open(ncid,output_filename,'w',ierr)
   IF (ierr .ne. 0) then
@@ -556,4 +651,6 @@ subroutine regcoil_write_output
   ! Finish up:
   call cdf_close(ncid)
 
+
+  end associate
 end subroutine regcoil_write_output
