@@ -1,7 +1,7 @@
 *.o
 *.mod
 *.a
-regcoil
+/regcoil
 *.nc
 regcoil_out*
 job.out.*

@@ -7,7 +7,7 @@ Ordered work packages for the overhaul. Each phase should be a reviewable PR (or
 | 0 Inventory freeze | done (see INVENTORY.md) | — |
 | 1 Delete adjoint / WSO / SVD / MATLAB (except plotly port source) | done | — |
 | 2 Layout + packaging scaffold | done | — |
-| 3 CI + pytest scaffold | pending | 2 helpful; can start after 1 |
+| 3 CI + pytest scaffold | done | 2 helpful; can start after 1 |
 | 4 Fortran as library + Python bindings (still may use globals) | pending | 1, 2 |
 | 5 Deglobalize Fortran state (instances) | pending | 4 |
 | 6 Python driver + namelist/JSON input + string options | pending | 5 |
@@ -80,13 +80,15 @@ Exit criteria:
 
 **Intent:** CI early; migrate example runner toward pytest.
 
-Today: `make test` → `examples/runExamples.py`. Docs-only workflow: `publish_manual.yml`.
+Today: `make test` → `examples/runExamples.py`. Legacy docs workflow `publish_manual.yml` is removed in Phase 11 (do not extend it).
+
+CI strategy (ADR-016): build the legacy Fortran executable and run pytest smoke on both `ubuntu-latest` and `macos-latest`. Full example regressions stay local (`make test`) for now; wire them into GHA in a later pass.
 
 Exit criteria:
 
-- [ ] GHA builds on `ubuntu-latest` (gfortran, BLAS/LAPACK; NetCDF Fortran only until Phase 8).
-- [ ] pytest discovers at least a smoke test; example suite runs in CI (legacy exe acceptable initially).
-- [ ] PR failures block merge.
+- [x] GHA builds on `ubuntu-latest` (gfortran, BLAS/LAPACK; NetCDF Fortran only until Phase 8).
+- [x] GHA builds on `macos-latest`.
+- [x] pytest discovers at least a smoke test (example suite in CI deferred; see ADR-016).
 
 ---
 
@@ -203,16 +205,18 @@ Exit criteria:
 
 ## Phase 11 — Read the Docs manual
 
-**Intent:** Replace LaTeX `manual/`.
+**Intent:** Replace LaTeX `manual/` and remove the old docs GitHub Actions workflow.
 
 - Sphinx (or MkDocs) under `docs/`; RTD config; port content from `overview.tex`, `inputParameters.tex`, etc.
-- Retire `manual/` and `publish_manual.yml` gh-pages LaTeX flow (or replace with RTD webhook).
+- Retire `manual/` as canonical docs.
+- **Delete** `.github/workflows/publish_manual.yml` (LaTeX → gh-pages). Do not keep or adapt that workflow; docs publishing is via Read the Docs (and optionally a lightweight CI docs-build check that is not `publish_manual.yml`).
 
 Exit criteria:
 
-- [ ] Docs build on RTD (or equivalent CI job).
+- [ ] Docs build on RTD (or equivalent non-`publish_manual` CI job).
 - [ ] Input parameter reference matches string options + namelist/JSON.
 - [ ] LaTeX manual no longer the canonical user doc.
+- [ ] `.github/workflows/publish_manual.yml` is removed from the repo.
 
 ---
 
@@ -223,6 +227,7 @@ Exit criteria:
 - [ ] Fortran `program regcoil` removed or unsupported.
 - [ ] Packaging is the canonical build; makefile gone or developer-only.
 - [ ] README points at pip install, CLI, pytest, and RTD.
+- [ ] `publish_manual.yml` already gone (Phase 11); no leftover gh-pages LaTeX publish path.
 - [ ] Open ADRs resolved or explicitly deferred; migration docs marked complete.
 
 ---

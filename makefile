@@ -124,6 +124,22 @@ else ifeq ($(CLUSTER),lazerson)
   LIBSTELL_DIR = /Users/lazerson/bin/libstell_dir
   LIBSTELL_FOR_REGCOIL = /Users/lazerson/bin/libstell.a
 
+# GitHub Actions (see .github/workflows/ci.yml and ADR-016)
+else ifeq ($(HOSTNAME),github_ubuntu)
+  REGCOIL_HOST=github_ubuntu
+  FC = gfortran
+  EXTRA_COMPILE_FLAGS = -O2 -fopenmp -ffree-line-length-none -fallow-argument-mismatch $(shell nf-config --fflags 2>/dev/null || nc-config --fflags)
+  EXTRA_LINK_FLAGS = -fopenmp $(shell nf-config --flibs 2>/dev/null || nc-config --flibs) -lblas -llapack
+  REGCOIL_COMMAND_TO_SUBMIT_JOB =
+
+else ifeq ($(HOSTNAME),github_macos)
+  REGCOIL_HOST=github_macos
+  FC = gfortran
+  BREW_PREFIX := $(shell brew --prefix)
+  EXTRA_COMPILE_FLAGS = -O2 -fopenmp -ffree-line-length-none -fallow-argument-mismatch -I$(BREW_PREFIX)/include
+  EXTRA_LINK_FLAGS = -fopenmp -L$(BREW_PREFIX)/lib -lnetcdff -lnetcdf -framework Accelerate
+  REGCOIL_COMMAND_TO_SUBMIT_JOB =
+
 else
   REGCOIL_HOST=macports
   FC = mpif90
