@@ -42,10 +42,6 @@ Smoke test:
 pytest
 ```
 
-Allowed runtime dependencies: `numpy`, `scipy`, `matplotlib`, `f90nml`, `plotly` (optional `netCDF4`). No SIMSOPT/DESC.
-
-Build backend: **meson-python** (ADR-002). Layout: `src/regcoil/`, `fortran/`, `tests/`, `examples/`, `docs/`.
-
 ### Build and test (legacy executable)
 
 The Fortran sources live under `fortran/`. The root `makefile` still builds the `regcoil` binary at the repo root for example regressions:

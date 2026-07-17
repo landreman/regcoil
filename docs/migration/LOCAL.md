@@ -44,6 +44,21 @@ ls /opt/homebrew/include/netcdf.inc
   `pip install -e ".[dev]" --no-build-isolation` and `pytest` (import-only until Phase 4).
   Non-editable `pip install .` uses normal build isolation and is fine for one-shot checks.
 
+## GitHub Actions (Phase 3 / ADR-016)
+
+Workflow: `.github/workflows/ci.yml`. Builds the legacy executable and runs pytest smoke on `ubuntu-latest` and `macos-latest`. Full example regressions are **not** in CI yet.
+
+Reproduce the CI makefile hosts locally:
+
+```bash
+# Linux (needs gfortran + BLAS/LAPACK + NetCDF Fortran)
+make -j4 MACHINE=github_ubuntu
+
+# macOS Homebrew
+brew install gcc netcdf netcdf-fortran
+make -j4 MACHINE=github_macos
+```
+
 ## Other hosts
 
 Use the makefile’s named host stanzas (`MACHINE=…`, `CLUSTER=…`, NERSC, etc.) when they match your machine; see comments at the top of `makefile`.

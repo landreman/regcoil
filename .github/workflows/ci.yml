@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    name: build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system deps (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gfortran \
+            libblas-dev \
+            liblapack-dev \
+            libnetcdf-dev \
+            libnetcdff-dev
+
+      - name: Install system deps (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install gcc netcdf netcdf-fortran
+
+      - name: Build Fortran executable
+        run: |
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            make -j4 MACHINE=github_ubuntu
+          else
+            make -j4 MACHINE=github_macos
+          fi
+          test -x ./regcoil
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python package
+        run: |
+          python -m pip install -U pip
+          pip install ".[dev]"
+
+      - name: Pytest smoke
+        run: pytest -q

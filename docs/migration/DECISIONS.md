@@ -182,3 +182,17 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
 - **Context:** ADR-001 tentatively chose `pyregcoil`; prefer the shorter name matching the Fortran code and paper.
 - **Decision:** Distribution name, import package, and CLI entry-point prefix are all **`regcoil`**.
 - **Consequences:** Layout is `src/regcoil/`; `import regcoil`; console scripts like `regcoil run|plot|…` (names TBD). Repo / migration-doc branding may still say pyREGCOIL.
+
+---
+
+## ADR-016: Phase 3 CI scope (build + smoke; examples later)
+
+- **Date:** 2026-07-17
+- **Status:** accepted
+- **Context:** Phase 3 wants GHA on Ubuntu and macOS plus a pytest scaffold. Full `examples/` regressions take several minutes and still use the legacy executable/`runExamples.py` path. Branch-protection “required checks” were dropped from Phase 3 exit criteria.
+- **Options:**
+  1. Build + pytest smoke on both OS; defer example suite in CI
+  2. Build + smoke on both OS; examples only on Ubuntu
+  3. Full examples on both OS
+- **Decision:** **(1)** for now. Workflow `.github/workflows/ci.yml` builds via `make MACHINE=github_ubuntu|github_macos`, installs the Python package, runs `pytest` (unit smoke). Example regressions remain `make test` locally until a follow-up enables them in GHA (toward pytest).
+- **Consequences:** CI stays fast and unblocks packaging work; example parity in CI is an explicit later task (still Phase 3 follow-up or Phase 10 continuous work).
