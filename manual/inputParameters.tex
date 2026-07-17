@@ -24,11 +24,7 @@ by \nescoil~in the file \parlink{nescout\_filename}, compute the $\chi^2_B$ and 
 and save results. For this setting, \parlink{Nlambda} will be over-written with the number of
 current potential solutions found in the nescout file.\\
 
-{\ttfamily general\_option} = 3: Emulate \nescoil's truncated singular value decomposition (TSVD) solver.
-The least-squares problem solved will be minimization of only $\chi^2_B$ (i.e. $\lambda=0$.)
-Output quantities will be saved in the same arrays as if $\lambda$ were scanned.
-For this setting, \parlink{Nlambda} will be over-written with the number of
-singular values.\\
+{\ttfamily general\_option} = 3: Removed (formerly emulated \nescoil's truncated SVD solver).\\
 
 {\ttfamily general\_option} = 4: Search for a value of the regularization weight such that
 a certain target is met. The target is chosen using \parlink{target\_option}.
@@ -512,69 +508,6 @@ by varying $\lambda$.
 {1.0e-5}
 {Only when \parlink{general\_option} = 4 or 5.}
 {Relative tolerance for the lambda root-finding.}
-
-\myhrule
-
-\section{Parameters related to adjoint solve}
-
-\param{sensitivity\_option}
-{integer}
-{1}
-{Only when one wishes to compute derivatives of output quantities with respect to the coil winding surface parameters. Note that {\ttfamily sensitivity\_option > 1} must be used with \parlink{general\_option} = 1, 4, or 5. {\ttfamily sensitivity\_option = 3, 4, 5} should give the same results, although 4 or 5 tend to be more efficient. }
-{\\
-{\ttfamily sensitivity\_option = 1}: Derivatives are not computed. \\
-{\ttfamily sensitivity\_option = 2}: Derivative of $\chi^2$ is computed. \\
-{\ttfamily sensitivity\_option = 3}: Derivatives of $\chi^2_K$, $\chi^2_B$, and $\chi^2$ are computed. This requires two adjoint solves. \\
-{\ttfamily sensitivity\_option = 4}: Derivatives of $\chi^2_K$, $\chi^2_B$, and $\chi^2$ are computed. An adjoint solve is used to compute the derivative of $\chi^2_K$ and the derivative of $\chi^2_B$ is computed from it. This requires one adjoint solve. \\
-{\ttfamily sensitivity\_option = 5}: Derivatives of $\chi^2_K$, $\chi^2_B$, and $\chi^2$ are computed. An adjoint solve is used to compute the derivative of $\chi^2_B$ and the derivative of $\chi^2_K$ is computed from it. This requires one adjoint solve. 
-}
-
-\myhrule
-
-\param{fixed\_norm\_sensitivity\_option}
-{logical}
-{false}
-{When \parlink{sensitivity\_option} $> 1$.}
-{If true, derivatives of $\chi^2$, $\chi^2_B$, and $\chi^2_K$ are computed at fixed target (indicated by \parlink{target\_option}) rather than at fixed $\lambda$. This option must be used with \parlink{general\_option} $> 3$ and \parlink{target\_option} = \texttt{"chi2\_B"}, \texttt{"lp\_norm\_K"} or \texttt{"max\_K\_lse"}.}
-
-\myhrule
-
-\param{sensitivity\_symmetry\_option}
-{integer}
-{1}
-{Symmetry assumed when computing derivative with respect to coil geometry parameters. This does not need to be the same as \parlink{symmetry\_option}.}
-{\\
-{\ttfamily sensitivity\_symmetry\_option = 1}: Only compute derivatives with respect to $r_{mn}^c$ and $z_{mn}^s$ of the winding surface using the \texttt{NESCIN} convention. This option corresponds to stellarator symmetry. \\
-{\ttfamily sensitivity\_symmetry\_option = 2}: Only compute derivatives with respect to $r_{mn}^s$ and $z_{mn}^c$ of the winding surface using the \texttt{NESCIN} convention. \\
-{\ttfamily sensitivity\_symmetry\_option = 3}: No symmetry in the winding surface is imposed.}
-
-\myhrule
-
-\param{nmax\_sensitivity}
-{integer}
-{1}
-{When \parlink{sensitivity\_option} $> 1$.}
-{Derivatives of $\chi^2$, $\chi^2_B$, and $\chi^2_K$ are computed with respect to winding surface Fourier modes with $\abs{n} \leq$ \texttt{nmax\_sensitivity}.}
-
-\myhrule
-
-\param{mmax\_sensitivity}
-{integer}
-{1}
-{When \parlink{sensitivity\_option} $> 1$.}
-{Derivatives of $\chi^2$, $\chi^2_B$, and $\chi^2_K$ are computed with respect to winding surface Fourier modes with $\abs{m} \leq$ \texttt{mmax\_sensitivity}.}
-
-\myhrule
-
-\param{coil\_plasma\_dist\_lse\_p}
-{real}
-{1.0d4}
-{When \parlink{sensitivity\_option}$> 1$.}
-{If \parlink{sensitivity\_option} $> 1$, the derivative of the log-sum-exponent approximation to the coil-plasma distance will be computed. The value of \texttt{coil\_plasma\_dist\_lse\_p} determines the scaling, $p$, in the exponent for this form of the distance approximation.
-\begin{gather}
-d_{\min,\text{lse}} = - \frac{1}{p} \log \left( \frac{ \int_{\text{coil}} d^2 A \int_{\text{plasma}} d^2 A \, \exp \left( - p \sqrt{ (\bm{r}_{\text{coil}}- \bm{r}_{\text{plasma}})^2} \right)}{A_{\text{coil}} A_{\text{plasma}}} \right)
-\end{gather}
- }
 
 \myhrule
 

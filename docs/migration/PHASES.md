@@ -5,7 +5,7 @@ Ordered work packages for the overhaul. Each phase should be a reviewable PR (or
 | Phase | Status | Depends on |
 |-------|--------|------------|
 | 0 Inventory freeze | done (see INVENTORY.md) | — |
-| 1 Delete adjoint / WSO / SVD / MATLAB (except plotly port source) | pending | — |
+| 1 Delete adjoint / WSO / SVD / MATLAB (except plotly port source) | done | — |
 | 2 Layout + packaging scaffold | pending | — |
 | 3 CI + pytest scaffold | pending | 2 helpful; can start after 1 |
 | 4 Fortran as library + Python bindings (still may use globals) | pending | 1, 2 |
@@ -46,9 +46,9 @@ Exit criteria:
 
 Exit criteria:
 
-- [ ] No sensitivity / adjoint / SVD scan in the default build.
-- [ ] Non-deleted examples still pass via current `make test` (or successor).
-- [ ] MATLAB tree gone except the temporary Plotly-port source (or already ported).
+- [x] No sensitivity / adjoint / SVD scan in the default build.
+- [x] Non-deleted examples still pass via current `make test` (or successor).
+- [x] MATLAB tree gone except the temporary Plotly-port source (or already ported).
 
 ---
 
