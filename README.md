@@ -10,3 +10,12 @@ which is available in this repository and also [at arXiv:1609.04378](https://arx
 For further documentation, see the user manual [here](http://landreman.github.io/regcoil/regcoilManual.pdf).
 
 Python packaging / migration plans: [`docs/migration/`](docs/migration/OVERVIEW.md).
+
+### Build and test (legacy executable)
+
+```bash
+make
+make test
+```
+
+On macOS with Homebrew NetCDF (Apple Silicon), the default makefile paths under `/usr/local` are often wrong—see [`docs/migration/LOCAL.md`](docs/migration/LOCAL.md) for the `EXTRA_*` flag overrides that work locally.

@@ -8,6 +8,7 @@ Companion docs:
 - [API.md](API.md) — intended Python / Fortran boundary
 - [DECISIONS.md](DECISIONS.md) — append-only design log
 - [INVENTORY.md](INVENTORY.md) — current-code map (roles, kill lists, touch points)
+- [LOCAL.md](LOCAL.md) — how to build/run `make test` locally (esp. macOS Homebrew)
 
 ## Goals
 
