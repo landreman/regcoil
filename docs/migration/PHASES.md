@@ -2,6 +2,13 @@
 
 Ordered work packages for the overhaul. Each phase should be a reviewable PR (or a short stack). Update the status column as work lands.
 
+> **Architecture pivot (2026-07-18).** Phases 6+ were re-planned to match the
+> object-model / stateless-Fortran-kernel design in [API.md](API.md) (ADR-019,
+> ADR-020, ADR-021, ADR-022). The pending-phase list below replaces the earlier
+> "namelist/JSON driver → SciPy Brent → NetCDF" plan. Phases 0–5 stay as
+> completed; see **Reconciliation with completed phases 4–5** below for what of
+> that work is superseded and where it is removed.
+
 | Phase | Status | Depends on |
 |-------|--------|------------|
 | 0 Inventory freeze | done (see INVENTORY.md) | — |
@@ -10,13 +17,34 @@ Ordered work packages for the overhaul. Each phase should be a reviewable PR (or
 | 3 CI + pytest scaffold | done | 2 helpful; can start after 1 |
 | 4 Fortran as library + Python bindings (still may use globals) | done | 1, 2 |
 | 5 Deglobalize Fortran state (instances) | done | 4 |
-| 6 Python driver + namelist/JSON input + string options | pending | 5 |
-| 7 SciPy lambda search | pending | 6 |
-| 8 NetCDF I/O in Python only | pending | 6 |
-| 9 Package tools (plot, compare, cut) + Plotly coil plot | pending | 8 helpful |
-| 10 Unit tests (Python + Fortran cores) | pending | 5+; continuous afterward |
-| 11 Read the Docs manual | pending | 6 helpful |
-| 12 Retire Fortran executable + final cleanup | pending | 7–11, CI green |
+| 6 Python surface object model (`Surface`/`FourierSurface`/`Plasma`/`Coil`) | pending | 5 (mostly independent) |
+| 7 Slim stateless Fortran kernel + offset surface | pending | 5 |
+| 8 Python `Regcoil` assembly + λ-family solve | pending | 6, 7 |
+| 9 NetCDF I/O in Python; strip Fortran NetCDF/BLAS | pending | 8 |
+| 10 Package tools (plot, compare, cut) + Plotly coil plot | pending | 9 helpful |
+| 11 Unit tests (Python + Fortran kernels) | pending | 7+; continuous afterward |
+| 12 Read the Docs manual | pending | 8 helpful |
+| 13 Retire Fortran executable + delete legacy Fortran + final cleanup | pending | 8–12, CI green |
+
+---
+
+## Reconciliation with completed phases 4–5
+
+Phases 4–5 wrapped the **existing** in-Fortran pipeline (`regcoil_build_matrices`,
+`regcoil_prepare_solve`, `regcoil_solve`, `regcoil_diagnostics`) behind an opaque
+`type(regcoil_t)` handle and a handle-based C API (`regcoil_c_create`,
+`regcoil_c_setup`, `regcoil_c_solve_lambda`, …). The new architecture narrows the
+Fortran boundary to 2–3 **stateless pure functions** and moves every matrix
+product, the solve, the diagnostics, and the λ scan to numpy/scipy. Therefore:
+
+- `regcoil_variables.f90`, the `regcoil_t` handle API, and the in-Fortran
+  solve/prepare/diagnostics are **superseded** (ADR-018 → ADR-020) and get removed
+  across Phases 7–9 and 13 — not carried forward.
+- `iso_c_binding` + `regcoil._core` (ADR-017) and `meson-python` (ADR-002) **stay**;
+  only the *number and shape* of entry points change (from a stateful handle to
+  stateless kernels).
+- Keep the legacy Fortran `program regcoil` and its NetCDF output building until
+  Python-path parity is proven (ADR-006), then remove in Phase 13.
 
 ---
 
@@ -124,53 +152,125 @@ See ADR-018 for nested types (`plasma` / `coil` / `input` / `output` / `work`), 
 
 ---
 
-## Phase 6 — Python driver, namelist + JSON, string options
+## Phase 6 — Python surface object model
 
-**Intent:** Python owns the run loop; inputs are less error-prone.
+**Intent:** The user-facing geometry layer, in pure Python/numpy, replacing the
+Fortran geometry-init and the input-file readers. No Fortran dependency (except
+`from_uniform_offset`, which lands in Phase 7).
 
-- Parse namelist with **`f90nml`**; also accept **JSON** with the same schema (field names aligned).
-- Qualitative options as **strings** (e.g. run mode, geometry kind, symmetry, target metric)—see [API.md](API.md) and ADR-009.
-- Dispatch: λ scan, nescout diagnostics, auto-regularization (**not** SVD).
+- `Surface` (ABC): the contract is `_evaluate(theta, zetal) -> {r, drdtheta,
+  drdzeta}`, each `(3, ntheta, nzetal)`, Cartesian. Base class supplies `normal`,
+  `norm_normal`, `area`, `volume`, `dtheta`, `dzeta`, the grids, and plotting.
+  **No `nderiv` / second derivatives** (Laplace–Beltrami removed, ADR-022).
+- `FourierSurface(Surface)`: holds `mnmax, xm, xn, rmnc, rmns, zmnc, zmns`;
+  `_evaluate` is the numpy gemm. Alternate constructors (classmethods) replace the
+  `geometry_option_*` codes: `circular_torus`, `from_vmec` (`mesh="full"|"half"`,
+  `straight_field_line=`), `from_efit`, `from_ascii_table`, `from_focus`,
+  `from_nescin`. VMEC `wout` / nescin / FOCUS reading is **Python** (ADR-004 lib).
+- `PlasmaSurface(FourierSurface)`: `Bnormal_from_plasma_current` via bnorm file
+  (`set_bnormal_from_bnorm_file`), FOCUS modes, or user array;
+  `net_poloidal_current_Amperes`, `curpol`.
+- `CoilSurface(FourierSurface)`: coil-side Fourier filtering; `from_uniform_offset`
+  wired in Phase 7.
+- Qualitative options are **string enums** in the Python API (carries forward the
+  string-option spirit of ADR-009; the namelist/integer-translation machinery is
+  dropped with ADR-019).
 
 Exit criteria:
 
-- [ ] CLI / `run(path)` works for `.nml`-style and `.json` inputs.
-- [ ] Example regressions pass on the Python path (exe optional).
-- [ ] Integer qualitative codes no longer required in new inputs; legacy handling documented.
+- [ ] `PlasmaSurface.from_vmec(...)` and `CoilSurface.from_nescin(...)` reproduce
+      the legacy surface grids (`r`, `normal`, `area`) within tolerance.
+- [ ] `circular_torus`, `from_focus`, bnorm loading covered by unit tests.
+- [ ] `_evaluate` numpy gemm matches a small hand-checked case; `xn`/`nfp` and
+      `m·θ − n·ζ` conventions asserted (see [API.md](API.md) conventions).
 
 ---
 
-## Phase 7 — SciPy lambda search
+## Phase 7 — Slim stateless Fortran kernel + offset surface
 
-**Intent:** Root-finding in Python; physics residual is a callback.
+**Intent:** Shrink the Fortran boundary to 2–3 **pure** functions; retire the
+globals-coupled build and the in-Fortran solve chain.
 
-Port staging/bracketing from `regcoil_auto_regularization_solve.f90`; use `scipy.optimize.brentq` / `root_scalar`. Audit `regcoil_fzero.f` call sites (geometry roots may stay or move separately).
+- `regcoil_build_g_and_h`: fused `inductance @ basis_functions` → `g`, `h`.
+  Blocked/DGEMM-free internal loop, OpenMP over plasma rows, GIL released
+  (threadsafe). `intent(in)/(out)` only, extents explicit, **`info`** return, no
+  `stop`, no module state.
+- `regcoil_build_inductance`: same args minus `basis_functions`, returns the full
+  matrix — a **separate** debug/regression entry point.
+- `regcoil_uniform_offset_surface`: returns **Fourier coefficients**
+  (`mnmax_out = mpol_out*(2*ntor_out+1) + ntor_out + 1`, deterministic), so a
+  uniform-offset coil is an ordinary `FourierSurface`. Wire
+  `CoilSurface.from_uniform_offset`.
+- Extend the `bind(C)` layer (`fortran/regcoil_c_api.f90`, `src/regcoil/_core.c`)
+  with these stateless entry points; a nonzero `info` becomes a Python exception.
+  Assert `f_contiguous` at the boundary.
+- Begin removing the superseded path: stop compiling `regcoil_variables`-coupled
+  `regcoil_build_matrices`/`prepare_solve`/`solve`/`diagnostics` from the extension
+  (final deletion in Phase 13; the legacy executable may still use them per ADR-006).
+  Audit `regcoil_fzero.f`: keep only if the offset root-solve needs it.
 
 Exit criteria:
 
-- [ ] Auto-λ does not require Fortran Brent.
-- [ ] `lambda_search_*` examples pass.
-- [ ] Residual is unit-testable.
+- [ ] `build_g_and_h(...)` equals `build_inductance(...) @ basis_functions` within
+      tolerance on a manufactured case.
+- [ ] `uniform_offset_surface(...)` coefficients match the legacy offset routine.
+- [ ] Kernels are callable from `regcoil._core` with no persistent Fortran state;
+      two concurrent calls with different sizes do not interfere.
 
 ---
 
-## Phase 8 — NetCDF I/O entirely in Python
+## Phase 8 — Python `Regcoil` assembly + λ-family solve
 
-**Intent:** Drop NetCDF from the Fortran build (library choice: ADR-004).
+**Intent:** Assemble and solve entirely in numpy/scipy; the λ scan and target
+search are free after one eigendecomposition. Replaces the former "SciPy Brent"
+phase (ADR-021 supersedes ADR-003).
 
-1. Python writes `regcoil_out.*.nc`.
-2. Python reads VMEC NetCDF `wout` (when needed) and passes coefficients in.
-3. Strip `ezcdf` / `NETCDF` from the extension.
+- `Regcoil(plasma, coil, mpol_potential, ntor_potential, net_poloidal_current,
+  net_toroidal_current, symmetry)`: builds `basis_functions` and the potential
+  modes (numpy), calls `regcoil_build_g_and_h` for `g`/`h`, forms
+  `matrix_B = gᵀ(g/N)`, `matrix_K = Σ fᵢᵀ(fᵢ/N)`, `RHS_B`, `RHS_K`, and computes
+  `w, V = scipy.linalg.eigh(matrix_B, matrix_K)`. **Immutable** thereafter.
+- `Solution` (frozen dataclass): `lam`, `solution`,
+  `single_valued_current_potential_mn`, `chi2_B`, `chi2_K`, `max_K`, `rms_K`,
+  `max_Bnormal`, `Bnormal_total`; lazy `current_potential()` / `current_density()`.
+- `solve(lam)`, `scan(lambdas)` (vectorized), `solve_for_target(metric, value)`
+  (bisection/Newton on the closed-form `chi2`/`max_K` vs λ). No Fortran Brent,
+  no `regcoil_lambda_scan`, no `regcoil_auto_regularization_solve`.
+- Keep the non-stellarator-symmetry option (`symmetry` ∈ {`stellarator_symmetric`,
+  `cos_only`, `both`}, ADR-019).
 
 Exit criteria:
 
-- [ ] Extension links only BLAS/LAPACK (+ runtime).
+- [ ] One-λ solve matches a legacy example within tolerance.
+- [ ] `scan(...)` matches per-λ direct solves; `solve_for_target(...)` matches the
+      legacy `lambda_search_*` results within tolerance.
+- [ ] Two `Regcoil` instances with different resolutions coexist and don't
+      interfere (no shared state, kernel is stateless).
+
+---
+
+## Phase 9 — NetCDF I/O in Python; strip Fortran NetCDF/BLAS
+
+**Intent:** All I/O in Python; the extension links only the Fortran runtime +
+OpenMP (library choice: ADR-004).
+
+1. `Solution.save(path)` writes `regcoil_out.*.nc` from Python (and a reader for
+   tools/tests).
+2. VMEC `wout` ingest is already Python (Phase 6); confirm no Fortran NetCDF is
+   reached on the supported path.
+3. Strip `ezcdf` / `NETCDF` and the NetCDF `read_wout` path from the extension and
+   from `mini_libstell` (keep only kinds/constants and whatever the offset routine
+   needs — see ADR-005).
+
+Exit criteria:
+
+- [ ] Extension links only the compiler runtime + OpenMP (no BLAS/LAPACK, no NetCDF).
 - [ ] Tests read outputs via the chosen Python NetCDF stack.
 - [ ] CI does not install Fortran NetCDF for the package build.
 
 ---
 
-## Phase 9 — Package tools + Plotly coil visualization
+## Phase 10 — Package tools + Plotly coil visualization
 
 **Intent:** First-class Python tooling; no standalone script requirement; no MATLAB left.
 
@@ -190,22 +290,28 @@ Exit criteria:
 
 ---
 
-## Phase 10 — Unit tests (ongoing)
+## Phase 11 — Unit tests (ongoing)
 
 **Intent:** Not only example regressions.
 
-- **Python:** pytest unit tests for input parsing (namelist/JSON), option validation, lambda residual helpers, NetCDF round-trip, plotting smoke (non-interactive backends).
-- **Fortran cores:** tests that exercise matrix/solve via the Python extension **or** a Fortran unit-test framework (ADR-008). Prefer minimal new deps.
+- **Python:** pytest unit tests for the surface object model (`_evaluate` gemm,
+  `normal`/`area`/`volume`, constructors, conventions), Bnormal loaders, basis-
+  function / matrix assembly, the closed-form λ family vs direct solves, and
+  NetCDF round-trip; plotting smoke (non-interactive backends).
+- **Fortran kernels:** exercise `build_g_and_h` / `build_inductance` /
+  `uniform_offset_surface` via `regcoil._core` with small manufactured inputs
+  **or** a Fortran unit-test framework (ADR-008). Prefer minimal new deps.
 
 Exit criteria:
 
 - [ ] Documented `pytest` layout under `tests/`.
-- [ ] At least a handful of true unit tests (not only full examples) for Python and for Fortran-backed numerics.
+- [ ] At least a handful of true unit tests (not only full examples) for the
+      Python object model and for the Fortran kernels.
 - [ ] CI runs unit + example suites.
 
 ---
 
-## Phase 11 — Read the Docs manual
+## Phase 12 — Read the Docs manual
 
 **Intent:** Replace LaTeX `manual/` and remove the old docs GitHub Actions workflow.
 
@@ -216,20 +322,24 @@ Exit criteria:
 Exit criteria:
 
 - [ ] Docs build on RTD (or equivalent non-`publish_manual` CI job).
-- [ ] Input parameter reference matches string options + namelist/JSON.
+- [ ] Reference documents the object-model API (surfaces, `Regcoil`, `Solution`)
+      and the string options; no namelist/JSON input reference.
 - [ ] LaTeX manual no longer the canonical user doc.
 - [ ] `.github/workflows/publish_manual.yml` is removed from the repo.
 
 ---
 
-## Phase 12 — Retire executable and final cleanup
+## Phase 13 — Retire executable, delete legacy Fortran, final cleanup
 
 Exit criteria:
 
 - [ ] Fortran `program regcoil` removed or unsupported.
+- [ ] `regcoil_variables.f90`, the `regcoil_t` handle API, and the in-Fortran
+      solve/prepare/diagnostics + λ-search sources are deleted (superseded by the
+      stateless kernels and the numpy/scipy solve).
 - [ ] Packaging is the canonical build; makefile gone or developer-only.
-- [ ] README points at pip install, CLI, pytest, and RTD.
-- [ ] `publish_manual.yml` already gone (Phase 11); no leftover gh-pages LaTeX publish path.
+- [ ] README points at pip install, the scripting API, pytest, and RTD.
+- [ ] `publish_manual.yml` already gone (Phase 12); no leftover gh-pages LaTeX publish path.
 - [ ] Open ADRs resolved or explicitly deferred; migration docs marked complete.
 
 ---
@@ -243,18 +353,22 @@ flowchart TD
   P1 --> P3[3 CI pytest]
   P2 --> P3
   P4 --> P5[5 Deglobalize]
-  P5 --> P6[6 Driver namelist/JSON strings]
-  P6 --> P7[7 SciPy lambda]
-  P6 --> P8[8 NetCDF Python]
-  P8 --> P9[9 Tools + Plotly]
-  P5 --> P10[10 Unit tests]
-  P6 --> P11[11 Read the Docs]
-  P7 --> P12[12 Retire exe]
-  P8 --> P12
-  P9 --> P12
-  P10 --> P12
-  P11 --> P12
-  P3 --> P12
+  P5 --> P6[6 Surface object model]
+  P5 --> P7[7 Stateless kernel + offset]
+  P6 --> P8[8 Regcoil assembly + λ solve]
+  P7 --> P8
+  P8 --> P9[9 NetCDF in Python]
+  P9 --> P10[10 Tools + Plotly]
+  P7 --> P11[11 Unit tests]
+  P8 --> P11
+  P8 --> P12[12 Read the Docs]
+  P9 --> P13[13 Retire exe + cleanup]
+  P10 --> P13
+  P11 --> P13
+  P12 --> P13
+  P3 --> P13
 ```
 
-Phases 1–2 parallel. Phase 10 starts as soon as callables exist and grows continuously. Phase 9 can begin once NetCDF outputs are stable from Python (or still from Fortran during transition).
+Phases 6 and 7 run in parallel (Python geometry vs Fortran kernel) and converge at
+Phase 8. Phase 11 starts as soon as the surfaces and kernels exist and grows
+continuously. Phase 10 can begin once NetCDF outputs are stable from Python.

@@ -35,11 +35,14 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
 ## ADR-003: SciPy root finder for auto-regularization
 
 - **Date:** 2026-07-17
-- **Status:** proposed
+- **Status:** superseded
 - **Context:** `regcoil_auto_regularization_solve.f90` embeds Brent; `regcoil_fzero.f` is SLATEC Dekker/Brent. Goal is separation of search vs physics.
 - **Options:** `scipy.optimize.brentq`, `root_scalar(method="brentq"|"ridder"|"bisect")`, keep Fortran Brent behind a callback
 - **Decision (tentative):** Python bracketing + `brentq`/`root_scalar` on `log(λ)` or `λ` (match current staging behavior closely enough for example tolerances).
 - **Consequences:** Fortran exposes “solve at λ → residual metrics” only; example `lambda_search_*` become the acceptance tests.
+- **Superseded by:** ADR-021. A generalized eigendecomposition makes the whole λ
+  family closed-form, so `chi2`/`max_K` vs λ are smooth scalar functions; a root
+  find is trivial and needs no Brent staging at all.
 
 ---
 
@@ -110,7 +113,7 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
 ## ADR-009: String options and legacy integer codes
 
 - **Date:** 2026-07-17
-- **Status:** proposed
+- **Status:** superseded
 - **Context:** Integer option codes are error-prone; several fields are already strings (`regularization_term_option`, `target_option`). Namelist via `f90nml` and JSON should share one vocabulary.
 - **Options:**
   1. Strings only in new inputs; reject integers.
@@ -118,6 +121,10 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
   3. Accept both indefinitely (discouraged).
 - **Decision (tentative):** Prefer (2) during migration, then (1). Exact string spellings documented in RTD and mirrored in JSON schema / examples.
 - **Consequences:** Example `regcoil_in.*` files need updating; validate_input logic moves to Python.
+- **Superseded by:** ADR-019. The **string-enum** decision for qualitative options
+  carries forward into the Python API (e.g. `symmetry="stellarator_symmetric"`);
+  the namelist/JSON/integer-translation machinery is dropped with the input-file
+  format.
 
 ---
 
@@ -135,6 +142,9 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
 
 - **Date:** 2026-07-17
 - **Status:** accepted
+- **Amended by:** ADR-019 (drop `f90nml` with the input-file format) and ADR-021
+  (drop Fortran BLAS/LAPACK; numpy/scipy provide it). The forbidden-deps decision
+  (no SIMSOPT/DESC) stands.
 - **Context:** Keep the stack small and avoid coupling to other stellarator frameworks.
 - **Decision:**
   - **Python runtime:** `numpy`, `scipy`, `matplotlib`, `f90nml`, `plotly`; optionally `netCDF4` if ADR-004 selects it.
@@ -148,10 +158,12 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
 ## ADR-012: Input formats (namelist + JSON)
 
 - **Date:** 2026-07-17
-- **Status:** accepted
+- **Status:** superseded
 - **Context:** Preserve familiar Fortran namelists while making structured input easier for scripts and tests.
 - **Decision:** Support both: parse namelists with **`f90nml`** in Python; also accept JSON with the same logical keys. Fortran-side namelist read is not required on the supported path after Phase 6.
 - **Consequences:** Single validation layer in Python; examples can migrate to JSON gradually; round-trip tests namelist ↔ dict ↔ JSON.
+- **Superseded by:** ADR-019. There is no input-file format; parameters are set in
+  code via the object model. `f90nml` is dropped from the dependency list.
 
 ---
 
@@ -215,7 +227,12 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
 ## ADR-018: Instance state layout and Fortran calling pattern (Phase 5)
 
 - **Date:** 2026-07-17
-- **Status:** accepted
+- **Status:** superseded
+- **Superseded by:** ADR-020. Phase 5 wrapped the in-Fortran solve behind an
+  opaque `type(regcoil_t)` handle; the new architecture moves the solve to
+  numpy/scipy and narrows Fortran to stateless pure functions, so no problem
+  state (and no derived type) crosses the boundary. The handle API and
+  `regcoil_variables.f90` are removed in Phases 7–9 / 13.
 - **Context:** Phase 5 removes `regcoil_variables` module globals so multiple problems can coexist. Nested types were preferred over a single flat derived type.
 - **Decision:**
   1. **`type(regcoil_t)`** holds:
@@ -230,3 +247,92 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
   5. **Legacy `program regcoil`** holds one local `regcoil_t` and passes it through (no compatibility globals).
   6. **Python:** opaque handle via `regcoil_c_create` / `destroy`; thin `RegcoilProblem` wraps setup/solve. Namelist still filled in Fortran for now (Phase 6 moves I/O).
 - **Consequences:** C API is handle-based; concurrent-instance pytest is required; string option PARAMs stay as module constants (immutable).
+
+---
+
+## ADR-019: Scriptable object-model API (no input-file format)
+
+- **Date:** 2026-07-18
+- **Status:** accepted
+- **Supersedes:** ADR-012 (namelist + JSON input); ADR-009 (string-enum decision
+  carried forward, integer/namelist machinery dropped).
+- **Context:** The overhaul (design session 2026-07-18) drops the input-file
+  format entirely: users drive the calculation with Python scripts and set
+  parameters in code. The two natural objects are the plasma surface and the coil
+  surface; existing initialization methods must survive and stay extensible.
+- **Decision:** User-facing objects are `PlasmaSurface`, `CoilSurface`, `Regcoil`,
+  and a `Solution` result, over a `Surface` (ABC) / `FourierSurface` base. Legacy
+  `geometry_option_*` codes become **alternate constructors** (`from_vmec`,
+  `from_nescin`, `from_focus`, `from_efit`, `from_ascii_table`, `circular_torus`,
+  `from_uniform_offset`). The `Surface` ABC (`_evaluate` contract) is the
+  extensibility hook. `Regcoil` accepts a `Surface` (documented arrays it reads
+  let an outer optimization loop supply its own geometry). Qualitative options are
+  **string enums** in the API. No namelist/JSON reader; `f90nml` leaves the
+  dependency list.
+- **Consequences:** See [API.md](API.md). `regcoil_read_input`/`write_input`/
+  `validate_input` and the Python `RegcoilProblem`/`RegcoilResult` sketch are
+  retired; docs (Phase 12) document the object model, not input parameters.
+
+---
+
+## ADR-020: Stateless Fortran kernel boundary
+
+- **Date:** 2026-07-18
+- **Status:** accepted
+- **Supersedes:** ADR-018 (opaque instance handle / derived types crossing the
+  boundary / in-Fortran solve).
+- **Context:** Profiling the design (attached session) shows only two genuinely
+  expensive hot paths that belong in Fortran: the O(N²) pairwise inductance/field
+  sum, and the uniform-offset surface (serial root solves + splines + DFT).
+  Everything else is a gemm or a small solve that numpy/scipy already do with
+  threaded BLAS/LAPACK.
+- **Decision:** Delete `regcoil_variables.f90`. Fortran is **pure** subroutines
+  with `intent(in)`/`intent(out)` arrays and **explicit** extents: no module
+  globals, no derived types crossing the boundary, no persistent handle, **no
+  `stop`** (every entry returns `integer :: info`), and **no LAPACK**. Entry
+  points: `regcoil_build_g_and_h` (fused `inductance @ basis`, OpenMP,
+  threadsafe), `regcoil_build_inductance` (debug/regression, full matrix), and
+  `regcoil_uniform_offset_surface` (returns Fourier coefficients). Optional
+  `regcoil_evaluate_surface` only if profiling demands. `iso_c_binding` +
+  `regcoil._core` (ADR-017) and `meson-python` (ADR-002) are unchanged — only the
+  number/shape of entry points changes.
+- **Consequences:** The extension links only the compiler runtime + OpenMP after
+  Phase 9. Kernels are unit-testable in isolation from Python. The handle API and
+  in-Fortran solve/prepare/diagnostics are removed across Phases 7–9 / 13.
+
+---
+
+## ADR-021: Linear algebra and λ family in numpy/scipy
+
+- **Date:** 2026-07-18
+- **Status:** accepted
+- **Supersedes:** ADR-003 (Fortran → SciPy Brent auto-regularization).
+- **Context:** numpy's `@`/`dot` and `scipy.linalg` call the same threaded
+  BLAS/LAPACK a Fortran layer would; reimplementing them in Fortran buys nothing
+  and costs an interface. `matrix_B` and `matrix_K` are symmetric with `matrix_K`
+  positive definite.
+- **Decision:** Assemble `matrix_B`, `matrix_K`, and the RHS vectors in numpy, and
+  solve in scipy. Compute **one** generalized eigendecomposition
+  `w, V = scipy.linalg.eigh(matrix_B, matrix_K)` in `Regcoil.__init__`; then
+  `x(λ) = V @ ((Vᵀ·b_B + λ·Vᵀ·b_K) / (w + λ))` gives every λ in O(nbf²), and
+  `chi2_B(λ)`, `chi2_K(λ)`, `max_K(λ)` are closed-form for scans and target
+  searches. Retire `regcoil_auto_regularization_solve.f90`,
+  `regcoil_lambda_scan.f90`, `regcoil_compute_lambda.f90`, and (for λ) `regcoil_fzero.f`.
+- **Consequences:** No Fortran BLAS/LAPACK link; the λ scan and target search are
+  ~15 lines of Python; the object is immutable after construction (the expensive
+  step is exactly the geometry-dependent one, so there is nothing to cache).
+
+---
+
+## ADR-022: Remove Laplace–Beltrami regularization
+
+- **Date:** 2026-07-18
+- **Status:** accepted
+- **Context:** Open decision from the design session; the adjoint method is already
+  being removed (ADR-007). Laplace–Beltrami is the only consumer of surface second
+  derivatives and the metric-coefficient block in `build_matrices`.
+- **Decision:** Drop Laplace–Beltrami regularization. Surface `_evaluate` returns
+  first derivatives only (no `nderiv`), and the second-derivative / metric block
+  disappears from matrix assembly.
+- **Consequences:** Simpler `Surface` contract and matrix build; the
+  `regularization_term_option` choices reduce accordingly.
