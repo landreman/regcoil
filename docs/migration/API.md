@@ -100,6 +100,7 @@ class Surface(ABC):
     nfp: int
     stellarator_symmetric: bool
     ntheta: int; nzeta: int            # nzetal = nzeta * nfp
+    standard_toroidal_angle: bool      # zeta is atan2(y, x)? (ADR-025)
 
     @abstractmethod
     def _evaluate(self, theta, zetal) -> dict:
@@ -112,6 +113,15 @@ The base class supplies everything derived, identically for all subclasses:
 the `(theta, zeta, zetal)` grids, and plotting. This is the extensibility hook —
 a spline surface, Bezier patch, or coordinate-transformed surface subclasses
 `Surface`, implements `_evaluate`, and every downstream consumer works unchanged.
+
+`standard_toroidal_angle` is `True` iff a constant-`zeta` slice of `r` is a
+constant *physical* toroidal-angle (`atan2(y, x)`) cross section. Every
+constructor below sets/defaults it `True` except
+`CoilSurface.from_uniform_offset(..., standard_toroidal_angle=False)` (the
+default there — ADR-025): moving plasma points along their normal without
+re-solving for the standard toroidal angle leaves `atan2(y, x) != zeta` in
+general, so a future cross-section plot (Phase 10) must check this attribute
+before assuming constant-`zeta` == constant-physical-angle.
 
 > Second derivatives are gone with Laplace–Beltrami regularization (ADR-022), so
 > `_evaluate` has no `nderiv` and returns first derivatives only.
@@ -130,8 +140,16 @@ The concrete workhorse. Holds `mnmax, xm, xn, rmnc, rmns, zmnc, zmns`; its
 | plasma 5 | (removed, do not implement in python) |
 | plasma 6 | `from_ascii_table(file)` |
 | plasma 7 | `from_focus(file)` (also returns Bnormal modes) |
-| coil 2,4 | `from_uniform_offset(plasma, separation, ...)` |
+| coil 2, 4 | `from_uniform_offset(plasma, separation, standard_toroidal_angle=False, ...)` |
 | coil 3 | `from_nescin(file)` |
+
+`from_uniform_offset`'s `standard_toroidal_angle` argument (default `False`,
+ADR-025) selects the construction; it does not distinguish legacy `coil 2` vs
+`coil 4` -- the constant-arclength theta reparametrization that separates them
+is not implemented (ADR-024 item 4), so both map to the same constructor call
+(`standard_toroidal_angle=True` reproduces the `coil 2`/`coil 4` root-solve
+behavior for regression purposes). A future `uniform_arclength` argument to
+add the `coil 4` reparametrization is a documented idea, not yet implemented.
 
 ### `PlasmaSurface(FourierSurface)`
 
@@ -143,9 +161,10 @@ Adds physics attached to the plasma boundary:
 
 ### `CoilSurface(FourierSurface)`
 
-Nearly bare — mainly carries `from_uniform_offset` (the one constructor that
-calls Fortran) and coil-side Fourier filtering (`mpol_coil_filter` /
-`ntor_coil_filter`).
+Nearly bare — mainly carries `from_uniform_offset` and coil-side Fourier
+filtering (`mpol_coil_filter` / `ntor_coil_filter`). `from_uniform_offset`
+only calls Fortran when `standard_toroidal_angle=True`; its default
+(`False`) is pure Python/numpy (ADR-025).
 
 ### `Regcoil`
 

@@ -426,3 +426,62 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
   full-resolution mode-coefficient arrays, extracted programmatically) from
   `examples/*/tests.py`; `ntheta_plasma=128` cases are `@pytest.mark.slow`
   and skipped in CI (`pytest -m "not slow"`) per PHASES.md Phase 8.
+
+---
+
+## ADR-025: `Surface.standard_toroidal_angle`; second `from_uniform_offset` construction
+
+- **Date:** 2026-07-19
+- **Status:** accepted
+- **Context:** `CoilSurface.from_uniform_offset` (Phase 7) only implemented the
+  legacy `geometry_option_coil=2` construction: for each coil `(theta, zeta)`
+  grid point, root-solve (`regcoil_uniform_offset_surface`) for the plasma
+  point whose normal-offset lands at Cartesian toroidal angle `atan2(y,x) ==
+  zeta`. Future cross-section plotting (Phase 10) plots a surface's `r` at
+  fixed `zeta`, which is only a plane of constant physical toroidal angle if
+  `zeta` *is* the standard toroidal angle in that sense. A second, simpler
+  offset construction is wanted: move each plasma grid point `separation`
+  along its local unit normal and Fourier-transform the result labeled by the
+  *same* `(theta, zeta)`, with no root solve. Because the plasma normal
+  generally has a toroidal component, this mislabels the moved point's actual
+  `atan2(y,x)` as `zeta` -- a real geometric difference from the root-solve
+  construction, not just an implementation detail, and one that would
+  silently corrupt any future cross-section plot that assumes constant-`zeta`
+  == constant-physical-angle.
+- **Decision:**
+  1. Add `Surface.standard_toroidal_angle: bool` (alongside `nfp`,
+     `stellarator_symmetric`, ...): `True` iff a constant-`zeta` slice of `r`
+     is a constant-physical-toroidal-angle cross section. All existing
+     constructors (`circular_torus`, `from_vmec`, `from_ascii_table`,
+     `from_focus`, `from_nescin`, and the root-solve `from_uniform_offset`)
+     set/default it `True`.
+  2. `CoilSurface.from_uniform_offset` gains a `standard_toroidal_angle: bool`
+     argument that both selects the construction and is stored as the
+     result's attribute of the same name, so the argument name *is* the
+     contract. **Default is now `False`** (the new normal-offset method,
+     pure Python/numpy, no Fortran call) rather than the legacy root-solve;
+     `standard_toroidal_angle=True` keeps the old behavior (and is required
+     to reproduce the legacy-Fortran-golden regression tests, which pin it
+     explicitly). `ntheta_transform`/`nzeta_transform` apply to both
+     constructions; `tol` (root-solve tolerance) only affects `True`.
+  3. The normal-offset method samples one field period, not the full torus:
+     the plasma's `xn` is already an nfp multiple, so a `2*pi/nfp` rotation
+     maps the plasma surface (and hence its normal field and any
+     fixed-separation offset of it) to itself, and one period is enough to
+     reconstruct the Fourier coefficients -- the same shortcut the root-solve
+     kernel already relies on.
+- **Consequences:** For an axisymmetric plasma the two constructions agree
+  exactly (the normal has no toroidal component), giving a cheap
+  cross-check (`tests/unit/test_coil_surface.py::test_from_uniform_offset_circular_torus_is_exact`,
+  parametrized over both). For a non-axisymmetric plasma they differ by an
+  amount that shrinks with `separation` and with how non-circular the
+  cross-section is; both are physically legitimate offset surfaces (as
+  ADR-024 item 4 already established for `=2` vs `=4`), just parametrized
+  differently. All pre-existing unit/regression call sites that depend on
+  matching the legacy Fortran (`tests/unit/test_kernels.py`,
+  `tests/regression/lambda_search_*`,
+  `tests/regression/regcoilPaper_figure10d_but_geometry_option_coil_*`) were
+  updated to pass `standard_toroidal_angle=True` explicitly. Phase 10
+  cross-section plotting must check this attribute (and, if plotting a
+  `standard_toroidal_angle=False` surface, either say so or resample/re-root-
+  solve rather than assume constant-`zeta` is a physical cross section).

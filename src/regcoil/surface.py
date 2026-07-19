@@ -18,13 +18,23 @@ class Surface(ABC):
     zeta with period 2*pi/nfp.
 
     Attributes set by subclasses: `nfp`, `stellarator_symmetric`, `ntheta`,
-    `nzeta`.
+    `nzeta`, `standard_toroidal_angle`.
     """
 
     nfp: int
     stellarator_symmetric: bool
     ntheta: int
     nzeta: int
+    #: True if the surface's `zeta` parameter is the standard toroidal angle
+    #: (`atan2(y, x)`), so a constant-`zeta` slice of `r` is a constant
+    #: physical-toroidal-angle cross section. False for a surface built by
+    #: moving another surface's points along its normal without re-solving
+    #: for the standard toroidal angle (see
+    #: `CoilSurface.from_uniform_offset(..., standard_toroidal_angle=False)`)
+    #: -- for such a surface, `r[:, :, k]` is not a plane of constant
+    #: physical toroidal angle, and cross-section plots must not assume it
+    #: is.
+    standard_toroidal_angle: bool
 
     @abstractmethod
     def _evaluate(self, theta: np.ndarray, zetal: np.ndarray) -> dict:

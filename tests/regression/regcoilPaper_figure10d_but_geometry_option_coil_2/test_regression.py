@@ -16,7 +16,7 @@ from ..testsCommon import EQUILIBRIA, legacy_lambda_array
 def test_uniform_offset_highres():
     plasma = PlasmaSurface.from_vmec(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=128, nzeta=128, mesh="full")
     plasma.set_bnormal_from_bnorm_file(str(EQUILIBRIA / "bnorm.d23p4_tm"))
-    coil = CoilSurface.from_uniform_offset(plasma, separation=0.5, ntheta=128, nzeta=128)
+    coil = CoilSurface.from_uniform_offset(plasma, separation=0.5, ntheta=128, nzeta=128, standard_toroidal_angle=True)
 
     prob = Regcoil(
         plasma, coil, mpol_potential=32, ntor_potential=32,

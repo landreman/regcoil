@@ -51,13 +51,21 @@ def test_from_nescin_filter_at_construction():
     assert not np.allclose(filtered.rmnc, unfiltered.rmnc)
 
 
-def test_from_uniform_offset_circular_torus_is_exact():
+@pytest.mark.parametrize("standard_toroidal_angle", [False, True])
+def test_from_uniform_offset_circular_torus_is_exact(standard_toroidal_angle):
     """`from_uniform_offset` for a circular-cross-section plasma should stay
-    circular, with minor radius a + separation (see test_kernels.py for the
-    golden-legacy-Fortran and non-circular-plasma coverage)."""
+    circular, with minor radius a + separation, under *either* construction:
+    for an axisymmetric plasma the normal has no toroidal component, so the
+    default normal-offset method and the standard-toroidal-angle root solve
+    agree exactly (see test_kernels.py for the golden-legacy-Fortran and
+    non-circular-plasma coverage)."""
     plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
-    coil = CoilSurface.from_uniform_offset(plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1)
+    coil = CoilSurface.from_uniform_offset(
+        plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1,
+        standard_toroidal_angle=standard_toroidal_angle,
+    )
 
+    assert coil.standard_toroidal_angle is standard_toroidal_angle
     for m, n, rc, zs in zip(coil.xm, coil.xn, coil.rmnc, coil.zmns):
         if m == 0 and n == 0:
             assert rc == pytest.approx(5.0, abs=1e-9)
@@ -69,12 +77,33 @@ def test_from_uniform_offset_circular_torus_is_exact():
             assert zs == pytest.approx(0.0, abs=1e-8)
 
 
+def test_from_uniform_offset_default_is_not_standard_toroidal_angle():
+    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
+    coil = CoilSurface.from_uniform_offset(plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1)
+    assert coil.standard_toroidal_angle is False
+
+
 def test_from_uniform_offset_logs_kernel_timing(caplog):
+    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
+
+    with caplog.at_level("INFO"):
+        CoilSurface.from_uniform_offset(
+            plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1, standard_toroidal_angle=True
+        )
+
+    messages = [record.getMessage() for record in caplog.records]
+    assert any("Starting uniform offset surface kernel" in message for message in messages)
+    assert any("Finished uniform offset surface kernel" in message for message in messages)
+
+
+def test_from_uniform_offset_default_does_not_log_kernel_timing(caplog):
+    """The default (`standard_toroidal_angle=False`) construction is pure
+    Python/numpy and never calls the Fortran kernel, so it must not emit the
+    kernel's timing log lines."""
     plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
 
     with caplog.at_level("INFO"):
         CoilSurface.from_uniform_offset(plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1)
 
     messages = [record.getMessage() for record in caplog.records]
-    assert any("Starting uniform offset surface kernel" in message for message in messages)
-    assert any("Finished uniform offset surface kernel" in message for message in messages)
+    assert not any("uniform offset surface kernel" in message for message in messages)

@@ -28,6 +28,7 @@ class FourierSurface(Surface):
         ntheta=64,
         nzeta=64,
         stellarator_symmetric=None,
+        standard_toroidal_angle=True,
     ):
         xm = np.asarray(xm, dtype=np.int64)
         xn = np.asarray(xn, dtype=np.int64)
@@ -57,6 +58,7 @@ class FourierSurface(Surface):
         self.ntheta = int(ntheta)
         self.nzeta = int(nzeta)
         self.stellarator_symmetric = bool(stellarator_symmetric)
+        self.standard_toroidal_angle = bool(standard_toroidal_angle)
         self.mnmax = mnmax
         self.xm = xm
         self.xn = xn

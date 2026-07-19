@@ -51,6 +51,17 @@ def test_stellarator_symmetric_inferred():
     assert not surf2.stellarator_symmetric
 
 
+def test_standard_toroidal_angle_defaults_true():
+    """Every plain Fourier-coefficient construction represents its `zeta` as
+    the standard toroidal angle; only `CoilSurface.from_uniform_offset`'s
+    normal-offset method (default) sets this False."""
+    surf = FourierSurface([0, 1], [0, 0], [1.0, 0.5], [0.0, 0.5], nfp=1)
+    assert surf.standard_toroidal_angle is True
+
+    surf2 = FourierSurface([0, 1], [0, 0], [1.0, 0.5], [0.0, 0.5], nfp=1, standard_toroidal_angle=False)
+    assert surf2.standard_toroidal_angle is False
+
+
 def test_circular_torus_area_and_shape():
     R0, a, nfp = 5.0, 1.2, 3
     torus = FourierSurface.circular_torus(R0=R0, a=a, nfp=nfp, ntheta=32, nzeta=24)
