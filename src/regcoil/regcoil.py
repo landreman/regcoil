@@ -156,7 +156,7 @@ class Regcoil:
         dtheta_coil, dzeta_coil = coil.dtheta, coil.dzeta
 
         logger.info(
-            "Starting REGCOIL fused kernel build_g_and_h for plasma %dx%d, coil %dx%d, nbf=%d",
+            "Starting build_g_and_h for plasma %dx%d, coil %dx%d, nbf=%d",
             ntheta_plasma,
             nzeta_plasma,
             ntheta_coil,
@@ -173,17 +173,35 @@ class Regcoil:
             perf_counter() - kernel_start,
         )
 
+        logger.info("Starting Bnormal0_flat assembly")
+        assembly_start = perf_counter()
         Bnormal_from_net_coil_currents = _unflatten_grid(h, ntheta_plasma, nzeta_plasma) / plasma.norm_normal
         Bnormal0 = plasma.Bnormal_from_plasma_current + Bnormal_from_net_coil_currents
         Bnormal0_flat = _flatten_grid(Bnormal0)
+        logger.info(
+            "Finished Bnormal0_flat assembly in %.3f s",
+            perf_counter() - assembly_start,
+        )
 
+        logger.info("Starting RHS_B assembly")
+        start_time = perf_counter()
         RHS_B = -dtheta_plasma * dzeta_plasma * (Bnormal0_flat @ g)
+        logger.info("Finished RHS_B assembly in %.3f s", perf_counter() - start_time)
         g_over_N = g / norm_normal_plasma_flat[:, None]
+        logger.info("Starting matrix_B assembly")
+        start_time = perf_counter()
         matrix_B = dtheta_plasma * dzeta_plasma * (g.T @ g_over_N)
+        logger.info("Finished matrix_B assembly in %.3f s", perf_counter() - start_time)
 
         f_over_N = f_all / norm_normal_coil_flat[None, None, :]
+        logger.info("Starting matrix_K assembly")
+        start_time = perf_counter()
         matrix_K = dtheta_coil * dzeta_coil * np.einsum("mcg,ncg->mn", f_all, f_over_N)
+        logger.info("Finished matrix_K assembly in %.3f s", perf_counter() - start_time)
+        logger.info("Starting RHS_K assembly")
+        start_time = perf_counter()
         RHS_K = dtheta_coil * dzeta_coil * np.einsum("cg,mcg->m", d_xyz, f_over_N)
+        logger.info("Finished RHS_K assembly in %.3f s", perf_counter() - start_time)
 
         logger.info("Starting generalized eigensolve for %d basis functions", nbf)
         eigensolve_start = perf_counter()
