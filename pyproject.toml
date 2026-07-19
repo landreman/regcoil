@@ -1,5 +1,5 @@
 [build-system]
-requires = ["meson-python>=0.16.0", "meson>=1.2.0", "ninja", "packaging"]
+requires = ["meson-python>=0.16.0", "meson>=1.2.0", "ninja", "packaging", "numpy"]
 build-backend = "mesonpy"
 
 [project]

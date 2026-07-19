@@ -21,7 +21,7 @@ Companion docs:
 2. **Python-driven execution** — remove the Fortran `PROGRAM regcoil` as the user-facing entry point.
 3. **Fortran only for the two hot paths** — the O(N²) pairwise inductance/field kernel and the uniform-offset surface stay compiled; everything else is numpy/scipy. (ADR-020)
 4. **Stateless Fortran** — delete `regcoil_variables`; entry points are pure `intent(in)`/`intent(out)` functions returning `info` (no `stop`), with no globals, no derived types crossing the boundary, and no persistent handle. (ADR-020)
-5. **Linear algebra in numpy/scipy** — matrix products and the regularized solve are numpy/scipy; one generalized eigendecomposition makes the whole λ family closed-form (no Fortran BLAS/LAPACK, no Brent). (ADR-021)
+5. **Linear algebra in numpy/scipy** — matrix products and the regularized solve are numpy/scipy; one generalized eigendecomposition makes the whole λ family closed-form (no Fortran BLAS/LAPACK *for the solve*, no Brent; the unrelated DGEMM call inside `regcoil_build_g_and_h`, ADR-020, is a performance choice for that one kernel, not a solve). (ADR-021)
 6. **Scriptable object model** — `PlasmaSurface`, `CoilSurface`, `Regcoil`, `Solution`; existing initialization methods survive as alternate constructors; no input-file format. (ADR-019)
 7. **String-valued qualitative options** — qualitatively different modes are string enums in the API (e.g. `symmetry="stellarator_symmetric"`; ADR-009 spirit via ADR-019).
 8. **NetCDF only from Python** — no NetCDF compile/link dependency in Fortran.
@@ -37,7 +37,7 @@ Companion docs:
 
 - **Minimal dependencies.**
   - **Python (allowed):** `numpy`, `scipy`, `matplotlib`, `plotly`, and a NetCDF library (see ADR-004). **Testing:** `pytest`. (`f90nml` dropped with the input-file format — ADR-019.)
-  - **Fortran:** a compiler + OpenMP only. **No BLAS/LAPACK** (numpy/scipy provide it — ADR-021) and no NetCDF Fortran libs after Phase 9.
+  - **Fortran:** a compiler, OpenMP, and BLAS (DGEMM in `regcoil_build_g_and_h`, chosen over the `matmul` intrinsic for performance — ADR-020). **No LAPACK** (numpy/scipy provide it for the solve — ADR-021) and no NetCDF Fortran libs after Phase 9.
   - **Do not** depend on **SIMSOPT**, **DESC**, or other large stellarator stacks.
 - **Pytest** is the Python test runner (unit, integration, examples).
 - Prefer **instance-friendly** APIs (classes / derived types) over process-global state.
@@ -69,7 +69,7 @@ pip package: regcoil
 │   ├── plot / compare / cut-coils tools (matplotlib + plotly)
 │   └── docs → Read the Docs
 │
-└── Fortran extension (compiled; runtime + OpenMP only; no BLAS/LAPACK, no NetCDF)
+└── Fortran extension (compiled; runtime + OpenMP + BLAS; no LAPACK, no NetCDF)
       ├── regcoil_build_g_and_h   — fused inductance @ basis → g, h  (pure, info)
       ├── regcoil_build_inductance — full matrix, debug/regression   (pure, info)
       └── regcoil_uniform_offset_surface — returns Fourier coeffs    (pure, info)
@@ -77,7 +77,7 @@ pip package: regcoil
 
 ## Success criteria
 
-- `pip install -e .` on a documented CI image (gfortran + OpenMP; no BLAS/LAPACK or NetCDF Fortran needed for the extension).
+- `pip install -e .` on a documented CI image (gfortran + OpenMP + BLAS; no LAPACK or NetCDF Fortran needed for the extension).
 - A driver script builds `PlasmaSurface` / `CoilSurface` / `Regcoil` and gets a `Solution` matching a legacy example within tolerance; `scan(...)` and `solve_for_target(...)` match `lambda_search_*`.
 - Two `Regcoil` instances with different resolutions coexist and don't interfere (the kernel is stateless).
 - Qualitative options are string enums in the Python API (e.g. `symmetry`).

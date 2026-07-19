@@ -143,13 +143,16 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
 - **Date:** 2026-07-17
 - **Status:** accepted
 - **Amended by:** ADR-019 (drop `f90nml` with the input-file format) and ADR-021
-  (drop Fortran BLAS/LAPACK; numpy/scipy provide it). The forbidden-deps decision
+  (drop Fortran BLAS/LAPACK *for the solve*; numpy/scipy provide it). Fortran
+  BLAS is not fully dropped: `regcoil_build_g_and_h` (ADR-020) keeps a DGEMM
+  call by design, chosen over the `matmul` intrinsic for performance — Fortran
+  LAPACK goes away (Phase 9), Fortran BLAS does not. The forbidden-deps decision
   (no SIMSOPT/DESC) stands.
 - **Context:** Keep the stack small and avoid coupling to other stellarator frameworks.
 - **Decision:**
   - **Python runtime:** `numpy`, `scipy`, `matplotlib`, `f90nml`, `plotly`; optionally `netCDF4` if ADR-004 selects it.
   - **Python test/dev:** `pytest` (plus doc builder for RTD, e.g. Sphinx—docs-only).
-  - **Fortran:** BLAS/LAPACK (+ compiler).
+  - **Fortran:** BLAS (+ compiler + OpenMP); no LAPACK.
   - **Forbidden as package deps:** SIMSOPT, DESC, and similar large stacks.
 - **Consequences:** Any new dependency needs a superseding ADR; tooling must be implemented in-tree with the allowed libs.
 
@@ -296,9 +299,12 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
   `regcoil_evaluate_surface` only if profiling demands. `iso_c_binding` +
   `regcoil._core` (ADR-017) and `meson-python` (ADR-002) are unchanged — only the
   number/shape of entry points changes.
-- **Consequences:** The extension links only the compiler runtime + OpenMP after
-  Phase 9. Kernels are unit-testable in isolation from Python. The handle API and
-  in-Fortran solve/prepare/diagnostics are removed across Phases 7–9 / 13.
+- **Consequences:** The extension links only the compiler runtime, OpenMP, and
+  BLAS after Phase 9 (BLAS stays for `regcoil_build_g_and_h`'s DGEMM, chosen
+  over the `matmul` intrinsic for performance; LAPACK and NetCDF are the ones
+  that go away — Phase 9 retitled accordingly). Kernels are unit-testable in
+  isolation from Python. The handle API and in-Fortran solve/prepare/diagnostics
+  are removed across Phases 7–9 / 13.
 
 ---
 
@@ -318,9 +324,11 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
   `chi2_B(λ)`, `chi2_K(λ)`, `max_K(λ)` are closed-form for scans and target
   searches. Retire `regcoil_auto_regularization_solve.f90`,
   `regcoil_lambda_scan.f90`, `regcoil_compute_lambda.f90`, and (for λ) `regcoil_fzero.f`.
-- **Consequences:** No Fortran BLAS/LAPACK link; the λ scan and target search are
-  ~15 lines of Python; the object is immutable after construction (the expensive
-  step is exactly the geometry-dependent one, so there is nothing to cache).
+- **Consequences:** No Fortran BLAS/LAPACK link *for the solve* (the unrelated
+  DGEMM call inside `regcoil_build_g_and_h`, ADR-020, stays); the λ scan and
+  target search are ~15 lines of Python; the object is immutable after
+  construction (the expensive step is exactly the geometry-dependent one, so
+  there is nothing to cache).
 
 ---
 

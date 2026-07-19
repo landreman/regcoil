@@ -5,19 +5,40 @@
 extern "C" {
 #endif
 
-typedef struct regcoil_problem regcoil_problem; /* opaque */
+/* Phase 7 stateless kernels (ADR-020). All arrays are caller-allocated,
+ * Fortran-contiguous (column-major), float64 (int32 for mode-number
+ * arrays), and passed as raw pointers; a nonzero return value is an error
+ * code (see the corresponding Fortran `info`). No opaque handle, no
+ * persistent state: concurrent calls with different sizes do not
+ * interfere. */
 
-regcoil_problem *regcoil_c_create(void);
-void regcoil_c_destroy(regcoil_problem *handle);
-void regcoil_c_set_verbose(regcoil_problem *handle, int flag);
-int regcoil_c_nlambda(regcoil_problem *handle);
-int regcoil_c_setup(regcoil_problem *handle, const char *path);
-int regcoil_c_build_matrices(regcoil_problem *handle);
-int regcoil_c_prepare_solve(regcoil_problem *handle);
-int regcoil_c_solve_ilambda(regcoil_problem *handle, int ilambda, double *chi2_b,
-                            double *chi2_k, double *max_bn, double *max_k);
-int regcoil_c_solve_lambda(regcoil_problem *handle, double lam, double *chi2_b,
-                           double *chi2_k, double *max_bn, double *max_k);
+int regcoil_c_build_inductance(
+    int ntheta_plasma, int nzeta_plasma, int ntheta_coil, int nzeta_coil, int nfp,
+    const double *r_plasma, const double *normal_plasma,
+    const double *r_coil, const double *normal_coil,
+    const double *drdtheta_coil, const double *drdzeta_coil,
+    double net_poloidal_current, double net_toroidal_current,
+    double dtheta_coil, double dzeta_coil,
+    double *inductance, double *h);
+
+int regcoil_c_build_g_and_h(
+    int ntheta_plasma, int nzeta_plasma, int ntheta_coil, int nzeta_coil, int nfp, int nbf,
+    const double *r_plasma, const double *normal_plasma,
+    const double *r_coil, const double *normal_coil,
+    const double *drdtheta_coil, const double *drdzeta_coil,
+    const double *basis_functions,
+    double net_poloidal_current, double net_toroidal_current,
+    double dtheta_coil, double dzeta_coil,
+    double *g, double *h);
+
+int regcoil_c_uniform_offset_surface(
+    int mnmax_in, const int *xm_in, const int *xn_in,
+    const double *rmnc_in, const double *rmns_in, const double *zmnc_in, const double *zmns_in,
+    int lasym_flag, int nfp,
+    double separation, int mpol_out, int ntor_out, int ntheta_transform, int nzeta_transform,
+    double tol,
+    int mnmax_out, int *xm_out, int *xn_out,
+    double *rmnc_out, double *rmns_out, double *zmnc_out, double *zmns_out);
 
 #ifdef __cplusplus
 }

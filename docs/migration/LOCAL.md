@@ -15,7 +15,9 @@ On this machine’s default conda env, use **`20231204-02-desc`** for Python (se
 
 ## local environment
 
-For running python commands and tests on my macbook, you may use the conda env 20260711-01-opt. For installing this regcoil package or other packages, use a virtual environment to avoid messing up the env 20260711-01-opt.
+For running python commands and tests on my macbook, you may use the conda env
+20260711-01-opt or 20250627-01-libE, whichever is available. For installing this regcoil package or other packages, use a
+virtual environment to avoid messing up these conda envs.
 
 **macOS + Homebrew NetCDF:** create the venv with Homebrew (or another non-conda) Python, e.g. `/opt/homebrew/bin/python3 -m venv .venv`. A venv based on a conda env often loads conda’s HDF5 first and then `import regcoil._core` fails with a missing `H5T_IEEE_F16BE_g` symbol when the extension was linked against Homebrew NetCDF/HDF5.
 
@@ -48,9 +50,13 @@ For **pip** builds on Apple Silicon, ensure Homebrew `pkg-config` can see NetCDF
 
 - `make test` → `examples/runExamples.py` (discovers `examples/*/tests.py` + matching `regcoil_in.*`)
 - Expect several minutes for the full suite; success ends with `ALL TESTS THAT WERE RUN WERE PASSED SUCCESSFULLY` and `numFailures: 0`
-- Package tests: create/use a **venv**, then
-  `pip install ".[dev]"` (or editable with `--no-build-isolation`) and `pytest`.
-  Includes `import regcoil` / `RegcoilProblem`, a one-λ axisymmetry parity test, and a two-instance non-interference test (`tests/unit/test_core_one_lambda.py`).
+- Package tests: create/use a **venv** (numpy must be installed before an
+  `--no-build-isolation` editable install, since `meson.build` imports it at
+  configure time to locate its C headers), then `pip install ".[dev]"` (or
+  editable with `--no-build-isolation`) and `pytest`.
+  Includes `import regcoil`, the surface-object-model unit tests, and the
+  stateless-kernel unit tests (`tests/unit/test_kernels.py`) -- golden-vs-legacy
+  comparisons plus a two-instance/different-sizes non-interference test.
 
 ## GitHub Actions (Phase 3–4 / ADR-016, ADR-017)
 

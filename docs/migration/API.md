@@ -48,8 +48,8 @@ Distribution and import name: **`regcoil`** (ADR-015).
 - **Binding / build:** `iso_c_binding` + thin C extension `regcoil._core`
   (ADR-017), built with `meson-python` (ADR-002).
 - **Deps:** numpy, scipy, matplotlib, plotly, netCDF library per ADR-004; pytest
-  for tests. Fortran needs only a compiler + OpenMP (no BLAS/LAPACK, no NetCDF).
-  No SIMSOPT/DESC.
+  for tests. Fortran needs a compiler, OpenMP, and BLAS (for `build_g_and_h`'s
+  DGEMM) -- no LAPACK, no NetCDF. No SIMSOPT/DESC.
 
 ## What a driver script looks like
 
@@ -260,9 +260,10 @@ end subroutine
 ```
 
 Blocked internally: accumulate `inductance` for a chunk of plasma rows into a
-small buffer, DGEMM that chunk against `basis_functions`, write into `g`. Keeps
-the working set in cache and drops peak memory ~100×. Add OpenMP over plasma rows
-and mark the wrapper threadsafe so the GIL is released during the kernel.
+small buffer, DGEMM that chunk against `basis_functions` (faster than the
+`matmul` intrinsic), write into `g`. Keeps the working set in cache and drops
+peak memory ~100×. Add OpenMP over plasma rows and mark the wrapper
+threadsafe so the GIL is released during the kernel.
 
 ### (a′) Debug variant — `regcoil_build_inductance`
 
@@ -314,9 +315,9 @@ module and assert them at the boundary:
 ## Build system
 
 `meson-python` backend (ADR-002); `iso_c_binding` + `regcoil._core` C extension
-(ADR-017). The extension links only the Fortran runtime and OpenMP — **no
-BLAS/LAPACK, no NetCDF** — after the boundary is re-slimmed. `numpy.distutils` is
-gone as of Python 3.12, so no f2py path.
+(ADR-017). The extension links the Fortran runtime, OpenMP, and BLAS (DGEMM in
+`build_g_and_h`) — **no LAPACK, no NetCDF** — after the boundary is
+re-slimmed. `numpy.distutils` is gone as of Python 3.12, so no f2py path.
 
 ## Testing
 

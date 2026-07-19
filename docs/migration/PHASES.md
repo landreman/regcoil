@@ -18,9 +18,9 @@ Ordered work packages for the overhaul. Each phase should be a reviewable PR (or
 | 4 Fortran as library + Python bindings (still may use globals) | done | 1, 2 |
 | 5 Deglobalize Fortran state (instances) | done | 4 |
 | 6 Python surface object model (`Surface`/`FourierSurface`/`Plasma`/`Coil`) | done | 5 (mostly independent) |
-| 7 Slim stateless Fortran kernel + offset surface | pending | 5 |
+| 7 Slim stateless Fortran kernel + offset surface | done | 5 |
 | 8 Python `Regcoil` assembly + λ-family solve | pending | 6, 7 |
-| 9 NetCDF I/O in Python; strip Fortran NetCDF/BLAS | pending | 8 |
+| 9 NetCDF I/O in Python; strip Fortran NetCDF/LAPACK | pending | 8 |
 | 10 Package tools (plot, compare, cut) + Plotly coil plot | pending | 9 helpful |
 | 11 Unit tests (Python + Fortran kernels) | pending | 7+; continuous afterward |
 | 12 Read the Docs manual | pending | 8 helpful |
@@ -207,9 +207,10 @@ kernel added in Phase 7, per the original plan).
 globals-coupled build and the in-Fortran solve chain.
 
 - `regcoil_build_g_and_h`: fused `inductance @ basis_functions` → `g`, `h`.
-  Blocked/DGEMM-free internal loop, OpenMP over plasma rows, GIL released
-  (threadsafe). `intent(in)/(out)` only, extents explicit, **`info`** return, no
-  `stop`, no module state.
+  Blocked internal loop (DGEMM per plasma-row chunk -- faster than the
+  `matmul` intrinsic), OpenMP over plasma rows, GIL released (threadsafe).
+  `intent(in)/(out)` only, extents explicit, **`info`** return, no `stop`, no
+  module state.
 - `regcoil_build_inductance`: same args minus `basis_functions`, returns the full
   matrix — a **separate** debug/regression entry point.
 - `regcoil_uniform_offset_surface`: returns **Fourier coefficients**
@@ -226,11 +227,48 @@ globals-coupled build and the in-Fortran solve chain.
 
 Exit criteria:
 
-- [ ] `build_g_and_h(...)` equals `build_inductance(...) @ basis_functions` within
+- [x] `build_g_and_h(...)` equals `build_inductance(...) @ basis_functions` within
       tolerance on a manufactured case.
-- [ ] `uniform_offset_surface(...)` coefficients match the legacy offset routine.
-- [ ] Kernels are callable from `regcoil._core` with no persistent Fortran state;
+- [x] `uniform_offset_surface(...)` coefficients match the legacy offset routine.
+- [x] `build_g_and_h(...)` output matches golden reference output of legacy Fortran routine
+      within tolerance on a small case.
+- [x] Unit tests for `regcoil_fzero.f`, assuming it is kept for `uniform_offset_surface(...)`.
+- [x] Kernels are callable from `regcoil._core` with no persistent Fortran state;
       two concurrent calls with different sizes do not interfere.
+
+**Status: done.** `regcoil_build_inductance` and `regcoil_build_g_and_h`
+(`fortran/regcoil_kernels_mod.f90`) and `regcoil_uniform_offset_surface`
+(`fortran/regcoil_uniform_offset_surface_mod.f90`) are pure/stateless: explicit
+extents, `info` return, no `stop`, no module state, OpenMP over plasma rows
+(`build_g_and_h`) or grid points (`uniform_offset_surface`). `build_g_and_h`
+contracts one plasma-row chunk at a time against DGEMM (chosen over the
+`matmul` intrinsic for performance), so the full inductance matrix is never
+materialized; `regcoil_fzero.f` is kept and exercised by
+`uniform_offset_surface`'s per-point root solve. `fortran/regcoil_c_api.f90` /
+`src/regcoil/_core.c` expose all three as module-level `regcoil._core`
+functions (no opaque handle -- ADR-020 supersedes the Phase 5 handle API, so
+`RegcoilProblem` and its namelist-driven setup/solve chain are removed, along
+with `tests/test_core_one_lambda.py`); a nonzero Fortran `info` becomes a
+Python exception, and large arrays (`r_plasma`, `r_coil`, `basis_functions`,
+...) must already be float64/Fortran-contiguous (`ValueError`/`TypeError`
+otherwise, no silent copy) while small mode-number/coefficient arrays are cast
+for convenience. `fortran/meson.build`'s extension source list is slimmed to
+just what these kernels need (`regcoil_fzero.f`, the two new kernel modules,
+`regcoil_c_api.f90`, plus `stel_kinds`/`stel_constants`); the
+`regcoil_variables`-coupled build/solve chain, VMEC/nescin/bnorm reading, and
+NetCDF modules are no longer compiled into the extension (still built for the
+legacy executable via the makefile's own source list, untouched, per ADR-006).
+`CoilSurface.from_uniform_offset` is wired in `src/regcoil/coil_surface.py`.
+Golden values in `tests/unit/_golden_kernels.py` were generated the same way
+as Phase 6's (a standalone driver linking the legacy
+`regcoil_build_matrices` / `regcoil_init_coil_surface`, compiled and run
+outside the package build); `tests/unit/test_kernels.py` checks
+`build_g_and_h` against `build_inductance(...) @ basis_functions`, both
+against the golden legacy values, `uniform_offset_surface` against a
+non-circular (helical-bump) golden legacy case that forces a genuine
+`regcoil_fzero` root solve, an exact analytic circular-torus check, the
+`CoilSurface.from_uniform_offset` wiring, boundary-validation error paths, and
+non-interference across two different problem sizes.
 
 ---
 
@@ -264,22 +302,24 @@ Exit criteria:
 
 ---
 
-## Phase 9 — NetCDF I/O in Python; strip Fortran NetCDF/BLAS
+## Phase 9 — NetCDF I/O in Python; strip Fortran NetCDF/LAPACK
 
-**Intent:** All I/O in Python; the extension links only the Fortran runtime +
-OpenMP (library choice: ADR-004).
+**Intent:** All I/O in Python; the extension links only the Fortran runtime,
+OpenMP, and BLAS (library choice: ADR-004). BLAS stays because
+`regcoil_build_g_and_h` (Phase 7) uses DGEMM; LAPACK and NetCDF do not have an
+equivalent permanent consumer and go away.
 
 1. `Solution.save(path)` writes `regcoil_out.*.nc` from Python (and a reader for
    tools/tests).
 2. VMEC `wout` ingest is already Python (Phase 6); confirm no Fortran NetCDF is
    reached on the supported path.
-3. Strip `ezcdf` / `NETCDF` and the NetCDF `read_wout` path from the extension and
-   from `mini_libstell` (keep only kinds/constants and whatever the offset routine
-   needs — see ADR-005).
+3. Strip `ezcdf` / `NETCDF` and the NetCDF `read_wout` path from the extension.
+4. Remove `mini_libstell`, relocating any essential kinds/constants and anything
+   else necessary to the fortran files that will be kept in the end.  — see ADR-005.
 
 Exit criteria:
 
-- [ ] Extension links only the compiler runtime + OpenMP (no BLAS/LAPACK, no NetCDF).
+- [ ] Extension links only the compiler runtime, OpenMP, and BLAS (no LAPACK, no NetCDF).
 - [ ] Tests read outputs via the chosen Python NetCDF stack.
 - [ ] CI does not install Fortran NetCDF for the package build.
 
@@ -352,6 +392,7 @@ Exit criteria:
 - [ ] `regcoil_variables.f90`, the `regcoil_t` handle API, and the in-Fortran
       solve/prepare/diagnostics + λ-search sources are deleted (superseded by the
       stateless kernels and the numpy/scipy solve).
+- [ ] mini_libstell is completely removed.
 - [ ] Packaging is the canonical build; makefile gone or developer-only.
 - [ ] README points at pip install, the scripting API, pytest, and RTD.
 - [ ] `publish_manual.yml` already gone (Phase 12); no leftover gh-pages LaTeX publish path.
