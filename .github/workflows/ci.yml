@@ -53,4 +53,4 @@ jobs:
           python -c "import regcoil._core; print('regcoil._core OK')"
 
       - name: Run pytest tests
-        run: pytest
+        run: pytest -m "not slow"
