@@ -321,6 +321,8 @@ class Regcoil:
         return self.solve(np.exp(log_lam))
 
     def _build_solution(self, lam, solution):
+        logger.info("Starting solution build for lambda=%g", lam)
+        start_time = perf_counter()
         g_sol = self.g @ solution
         Bnormal_total_flat = g_sol / self._norm_normal_plasma_flat + self._Bnormal0_flat
         Bnormal_total = _unflatten_grid(Bnormal_total_flat, self.plasma.ntheta, self.plasma.nzeta)
@@ -335,6 +337,11 @@ class Regcoil:
         chi2_K = float(self.nfp * self._dtheta_coil * self._dzeta_coil * np.sum(K2_times_N))
         max_K = float(np.sqrt(np.max(K2_times_N / self._norm_normal_coil_flat)))
         rms_K = float(np.sqrt(chi2_K / self.coil.area))
+        logger.info(
+            "Finished solution build for lambda=%g in %.3f s",
+            lam,
+            perf_counter() - start_time,
+        )
 
         return Solution(
             problem=self,
