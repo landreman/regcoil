@@ -6,5 +6,17 @@ __version__ = "0.1.0"
 
 from . import _core
 from ._core import RegcoilProblem
+from .coil_surface import CoilSurface
+from .fourier_surface import FourierSurface
+from .plasma_surface import PlasmaSurface
+from .surface import Surface
 
-__all__ = ["__version__", "_core", "RegcoilProblem"]
+__all__ = [
+    "__version__",
+    "_core",
+    "RegcoilProblem",
+    "Surface",
+    "FourierSurface",
+    "PlasmaSurface",
+    "CoilSurface",
+]

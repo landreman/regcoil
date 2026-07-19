@@ -2,6 +2,12 @@
 
 py.install_sources(
   '__init__.py',
+  '_constants.py',
+  '_io.py',
+  'surface.py',
+  'fourier_surface.py',
+  'plasma_surface.py',
+  'coil_surface.py',
   subdir: 'regcoil',
 )
 
