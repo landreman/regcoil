@@ -67,3 +67,14 @@ def test_from_uniform_offset_circular_torus_is_exact():
         else:
             assert rc == pytest.approx(0.0, abs=1e-8)
             assert zs == pytest.approx(0.0, abs=1e-8)
+
+
+def test_from_uniform_offset_logs_kernel_timing(caplog):
+    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
+
+    with caplog.at_level("INFO"):
+        CoilSurface.from_uniform_offset(plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1)
+
+    messages = [record.getMessage() for record in caplog.records]
+    assert any("Starting uniform offset surface kernel" in message for message in messages)
+    assert any("Finished uniform offset surface kernel" in message for message in messages)

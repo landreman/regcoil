@@ -4,6 +4,7 @@ py.install_sources(
   '__init__.py',
   '_constants.py',
   '_io.py',
+  'log.py',
   'surface.py',
   'fourier_surface.py',
   'plasma_surface.py',

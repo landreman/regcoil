@@ -66,6 +66,17 @@ def test_scan_matches_per_lambda_direct_solves():
         assert sol.max_K == pytest.approx(direct.max_K, rel=1e-10)
 
 
+def test_regcoil_constructor_logs_expensive_steps(caplog):
+    with caplog.at_level("INFO"):
+        _small_problem()
+
+    messages = [record.getMessage() for record in caplog.records]
+    assert any("Starting REGCOIL fused kernel build_g_and_h" in message for message in messages)
+    assert any("Finished REGCOIL fused kernel build_g_and_h" in message for message in messages)
+    assert any("Starting generalized eigensolve" in message for message in messages)
+    assert any("Finished generalized eigensolve" in message for message in messages)
+
+
 def test_two_problems_different_resolutions_do_not_interfere():
     """No shared state: interleaved solves on differently-sized problems
     must not corrupt each other (mirrors tests/unit/test_kernels.py's

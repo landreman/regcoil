@@ -14,6 +14,9 @@ Fortran kernel is ``(izeta-1)*ntheta+itheta`` (itheta fastest) -- see
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import logging
+from time import perf_counter
+from typing import cast
 
 import numpy as np
 import scipy.linalg
@@ -22,6 +25,7 @@ import scipy.optimize
 from . import _core
 
 SYMMETRY_OPTIONS = ("stellarator_symmetric", "cos_only", "both")
+logger = logging.getLogger(__name__)
 
 
 def _flatten_grid(arr):
@@ -151,9 +155,22 @@ class Regcoil:
         dtheta_plasma, dzeta_plasma = plasma.dtheta, plasma.dzeta
         dtheta_coil, dzeta_coil = coil.dtheta, coil.dzeta
 
-        g, h = _core.build_g_and_h(
+        logger.info(
+            "Starting REGCOIL fused kernel build_g_and_h for plasma %dx%d, coil %dx%d, nbf=%d",
+            ntheta_plasma,
+            nzeta_plasma,
+            ntheta_coil,
+            nzeta_coil,
+            nbf,
+        )
+        kernel_start = perf_counter()
+        g, h = _core.build_g_and_h(  # type: ignore[attr-defined]
             r_plasma, normal_plasma, r_coil, normal_coil, drdtheta_coil_all, drdzeta_coil_all,
             basis_functions, nfp, net_poloidal_current, net_toroidal_current, dtheta_coil, dzeta_coil,
+        )
+        logger.info(
+            "Finished REGCOIL fused kernel build_g_and_h in %.3f s",
+            perf_counter() - kernel_start,
         )
 
         Bnormal_from_net_coil_currents = _unflatten_grid(h, ntheta_plasma, nzeta_plasma) / plasma.norm_normal
@@ -168,7 +185,13 @@ class Regcoil:
         matrix_K = dtheta_coil * dzeta_coil * np.einsum("mcg,ncg->mn", f_all, f_over_N)
         RHS_K = dtheta_coil * dzeta_coil * np.einsum("cg,mcg->m", d_xyz, f_over_N)
 
+        logger.info("Starting generalized eigensolve for %d basis functions", nbf)
+        eigensolve_start = perf_counter()
         w, V = scipy.linalg.eigh(matrix_B, matrix_K)
+        logger.info(
+            "Finished generalized eigensolve in %.3f s",
+            perf_counter() - eigensolve_start,
+        )
 
         # Public: the assembled problem (API.md).
         self.xm_potential = xm_potential
@@ -215,6 +238,8 @@ class Regcoil:
         """Vectorized over an array of lambdas -- free after the
         eigendecomposition cached in `__init__`. Returns a list of
         `Solution`, one per lambda."""
+        logger.info("Starting lambda scan")
+        start_time = perf_counter()
         lambdas = np.atleast_1d(np.asarray(lambdas, dtype=float))
         is_inf = np.isinf(lambdas)
         finite = np.where(is_inf, 0.0, lambdas)
@@ -224,7 +249,12 @@ class Regcoil:
         if np.any(is_inf):
             coeffs[:, is_inf] = self._VtRHS_K[:, None]
         solutions = self.V @ coeffs  # (nbf, nlambda)
-        return [self._build_solution(lam, solutions[:, i]) for i, lam in enumerate(lambdas)]
+        data = [self._build_solution(lam, solutions[:, i]) for i, lam in enumerate(lambdas)]
+        logger.info(
+            "Finished lambda scan in %.3f s",
+            perf_counter() - start_time,
+        )
+        return data
 
     def solve_for_target(self, metric, value, xtol=1e-12, rtol=1e-12, max_iter=200):
         """Bisect (in log(lambda)) for the lambda whose `Solution.<metric>`
@@ -253,7 +283,23 @@ class Regcoil:
         def residual(log_lam):
             return getattr(self.solve(np.exp(log_lam)), metric) - value
 
-        log_lam = scipy.optimize.brentq(residual, np.log(1e-300), np.log(1e300), xtol=xtol, rtol=rtol, maxiter=max_iter)
+        logger.info("Starting lambda search")
+        start_time = perf_counter()
+        log_lam = cast(
+            float,
+            scipy.optimize.brentq(  # pyright: ignore[reportArgumentType,reportCallIssue]
+                residual,
+                np.log(1e-300),
+                np.log(1e300),
+                xtol=xtol,
+                rtol=rtol,  # pyright: ignore[reportArgumentType]
+                maxiter=max_iter,
+            ),
+        )
+        logger.info(
+            "Finished lambda search in %.3f s",
+            perf_counter() - start_time,
+        )
         return self.solve(np.exp(log_lam))
 
     def _build_solution(self, lam, solution):
