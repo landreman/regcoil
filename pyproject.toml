@@ -30,3 +30,6 @@ Documentation = "https://github.com/landreman/pyREGCOIL/blob/master/manual/regco
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 # Use the installed package (with compiled _core). Do not add src/ to pythonpath.
+markers = [
+    "slow: high-resolution regression case (ntheta_plasma=128); skipped in CI, run by hand with `pytest -m slow`",
+]

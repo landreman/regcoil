@@ -379,3 +379,50 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
   and checked against the legacy Fortran (`regcoil_init_plasma`/
   `regcoil_init_coil_surface`, compiled standalone for comparison) in
   `tests/unit/`.
+
+---
+
+## ADR-024: Phase 8 scope decisions (`Regcoil`/`Solution` assembly and solve)
+
+- **Date:** 2026-07-19
+- **Status:** accepted
+- **Context:** Implementing `Regcoil`/`Solution` (Phase 8) surfaced a few items
+  not fully pinned down by ADR-021/API.md.
+- **Decisions:**
+  1. **`regularization_term_option` is chi2_K only.** `matrix_K`/`RHS_K` are
+     built from `f_x, f_y, f_z` (chi2_K's definition) only; the legacy `K_xy`
+     and `K_zeta` regularization variants (and Laplace–Beltrami, already
+     dropped by ADR-022) are not ported -- no example or ADR calls for them,
+     and API.md's `matrix_K = Σ fᵢᵀ(fᵢ/N)` already specifies exactly this.
+  2. **`solve_for_target` raises `ValueError` for an unreachable target**
+     (the achievable range is read off the `lam=0`/`lam=inf` closed-form
+     endpoints) instead of the legacy `exit_code` sentinel
+     (`-2`/`-3`/other). There is no `RegcoilProblem`/`RegcoilResult` handle to
+     stash a sentinel on post-ADR-019, and a Python API should signal
+     "can't do that" via an exception, not a magic return code.
+  3. **`solve_for_target` bisects in `log(lambda)`** via `scipy.optimize.brentq`
+     rather than porting `regcoil_auto_regularization_solve.f90`'s staged
+     bracket-then-Brent search. The lambda *sequence* visited necessarily
+     differs from the legacy solver (already anticipated in PHASES.md Phase
+     8); only the converged endpoint is a contract.
+  4. **`CoilSurface.from_uniform_offset` stands in for legacy
+     `geometry_option_coil=4`** (the constant-arclength theta
+     reparametrization) in the `regcoilPaper_figure10d_but_geometry_option_coil_4_loRes`
+     regression test. The Phase 7 kernel
+     (`regcoil_uniform_offset_surface`) only ports plain `geometry_option_coil=2`
+     (ADR-020); there is no Python constructor for the constant-arclength
+     iteration, and no ADR calls for adding one. This is legitimate because the
+     legacy example's own point is that the physics is independent of the
+     coil-surface parametrization -- its golden chi2/max_K tolerances (3-6%)
+     already budget for exactly this kind of small parametrization difference.
+  5. **`Solution.single_valued_current_potential_mn` is an alias for
+     `Solution.solution`** (a `@property`, not a stored duplicate) -- in the
+     legacy Fortran the two are the same array (`single_valued_current_potential_mn(:,ilambda)
+     = solution`); API.md lists both names only because it mirrors the legacy
+     NetCDF variable name for Phase 9's `Solution.save`.
+- **Consequences:** Regression tests in `tests/regression/` build the problem
+  directly via `PlasmaSurface`/`CoilSurface`/`Regcoil` (no legacy executable,
+  no NetCDF) and compare against golden values read (or, for the large
+  full-resolution mode-coefficient arrays, extracted programmatically) from
+  `examples/*/tests.py`; `ntheta_plasma=128` cases are `@pytest.mark.slow`
+  and skipped in CI (`pytest -m "not slow"`) per PHASES.md Phase 8.

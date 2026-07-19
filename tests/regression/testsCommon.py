@@ -1,74 +1,31 @@
-# Shared helpers for tests/regression/*/tests.py (copy of examples/testsCommon.py).
+"""Shared helpers for tests/regression/*/test_regression.py (Phase 8).
 
-def readOutputFile():
-    import os
+These tests build the problem directly via the Python object model
+(`regcoil.PlasmaSurface`/`CoilSurface`/`Regcoil`) and compare against golden
+values taken by hand from the legacy Fortran solver -- the same reference
+values recorded in the corresponding `examples/*/tests.py` (see PHASES.md
+Phase 8). There is no more legacy-executable subprocess or netCDF output to
+read.
+"""
 
-    head, dirname = os.path.split(os.getcwd())
-    outputFilename = "regcoil_out."+dirname+".nc"
-    
-    if not os.path.isfile(outputFilename):
-        print("Error! The output file "+outputFilename+" has not been created.")
-        exit(1)
-        
-    from scipy.io import netcdf_file
-    try:
-        f = netcdf_file(outputFilename,'r')
-    except:
-        print("ERROR! Unable to read netCDF output file "+outputFilename)
-        raise
+from __future__ import annotations
 
-    print("Reading output file "+outputFilename)
-    return f
+from pathlib import Path
 
-def shouldBe(latestValue, trueValue, relativeTolerance, absoluteTolerance):
-    difference = abs(latestValue-trueValue)
-    if abs(trueValue) > 0:
-        relativeDifference = abs(difference / trueValue)
-        relativeTest = (relativeDifference <= relativeTolerance)
-    else:
-        relativeTest = False
-    absoluteTest = (difference <= absoluteTolerance)
-    string = "Variable "+variableName+" should be close to "+str(trueValue)+", and it was "+str(latestValue)
-    if relativeTest:
-        if absoluteTest:
-            print("    Test passed. "+string+". Both abs and rel tol met.")
-            return 0
-        else:
-            print("    Test passed. "+string+". Rel tol met. Abs tol not met.")
-            return 0
-    else:
-        if absoluteTest:
-            print("    Test passed. "+string+". Abs tol met. Rel tol not met.")
-            return 0
-        else:
-            print("*** TEST FAILED! "+string+". Neither rel nor abs tol met.")
-            return 1
+import numpy as np
+
+EQUILIBRIA = Path(__file__).resolve().parents[2] / "equilibria"
 
 
-def arrayShouldBe(latestValues, trueValues, relativeTolerance, absoluteTolerance, requireSameLength = True):
-    # These next few lines are a hack so this function can be called on scalars without an exception
-    try:
-        temp = len(latestValues)
-    except:
-        print("arrayifying latestValues")
-        latestValues = [latestValues]
-
-    try:
-        temp = len(trueValues)
-    except:
-        print("arrayifying trueValues")
-        trueValues = [trueValues]
-
-    if requireSameLength and (len(latestValues) != len(trueValues)):
-        print("*** TEST FAILED!! Variable "+variableName+" should have length) "+str(len(trueValues))+" but it instead has length "+str(len(latestValues)))
-        return 1
-
-    if len(latestValues) < len(trueValues):
-        print("*** TEST FAILED!! Variable "+variableName+" should have length at least "+str(len(trueValues))+" but it instead has length "+str(len(latestValues)))
-        return 1
-
-    numArrayErrors = 0
-    for i in range(len(trueValues)):
-        numArrayErrors += shouldBe(latestValues[i],trueValues[i],relativeTolerance, absoluteTolerance)
-
-    return numArrayErrors
+def legacy_lambda_array(nlambda, lambda_min, lambda_max):
+    """Port of the legacy fixed lambda scan (`regcoil_compute_lambda.f90`,
+    `general_option=1`): `lambda[0] = 0`, then `nlambda-1` values log-spaced
+    from `lambda_min` to `lambda_max`.
+    """
+    if nlambda == 1:
+        return np.array([0.0])
+    lambdas = np.empty(nlambda)
+    lambdas[0] = 0.0
+    j = np.arange(1, nlambda)
+    lambdas[1:] = lambda_min * np.exp(np.log(lambda_max / lambda_min) * (j - 1) / (nlambda - 2))
+    return lambdas

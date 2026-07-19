@@ -8,6 +8,7 @@ py.install_sources(
   'fourier_surface.py',
   'plasma_surface.py',
   'coil_surface.py',
+  'regcoil.py',
   subdir: 'regcoil',
 )
 

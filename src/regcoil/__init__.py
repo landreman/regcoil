@@ -8,6 +8,7 @@ from . import _core
 from .coil_surface import CoilSurface
 from .fourier_surface import FourierSurface
 from .plasma_surface import PlasmaSurface
+from .regcoil import Regcoil, Solution
 from .surface import Surface
 
 __all__ = [
@@ -17,4 +18,6 @@ __all__ = [
     "FourierSurface",
     "PlasmaSurface",
     "CoilSurface",
+    "Regcoil",
+    "Solution",
 ]

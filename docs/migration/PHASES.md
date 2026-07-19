@@ -19,7 +19,7 @@ Ordered work packages for the overhaul. Each phase should be a reviewable PR (or
 | 5 Deglobalize Fortran state (instances) | done | 4 |
 | 6 Python surface object model (`Surface`/`FourierSurface`/`Plasma`/`Coil`) | done | 5 (mostly independent) |
 | 7 Slim stateless Fortran kernel + offset surface | done | 5 |
-| 8 Python `Regcoil` assembly + λ-family solve | pending | 6, 7 |
+| 8 Python `Regcoil` assembly + λ-family solve | done | 6, 7 |
 | 9 NetCDF I/O in Python; strip Fortran NetCDF/LAPACK | pending | 8 |
 | 10 Package tools (plot, compare, cut) + Plotly coil plot | pending | 9 helpful |
 | 11 Unit tests (Python + Fortran kernels) | pending | 7+; continuous afterward |
@@ -289,16 +289,56 @@ phase (ADR-021 supersedes ADR-003).
 - `solve(lam)`, `scan(lambdas)` (vectorized), `solve_for_target(metric, value)`
   (bisection/Newton on the closed-form `chi2`/`max_K` vs λ). No Fortran Brent,
   no `regcoil_lambda_scan`, no `regcoil_auto_regularization_solve`.
-- Keep the non-stellarator-symmetry option (`symmetry` ∈ {`stellarator_symmetric`,
-  `cos_only`, `both`}, ADR-019).
+- Keep the non-stellarator-symmetry option (`stellarator_symmetric` ∈ {True, False}, ADR-019).
+- For tests that the new python-based solver matches the legacy fortran solver,
+  you can use existing golden reference values from the files
+  /examples/*/tests.py, as the reference values in those files were taken by
+  hand from the fortran solver.
+- Re-wire the regression tests in /tests/regression to use the new python solver
+  instead of the legacy fortran solver. Mark the tests with ntheta_plasma=128 as
+  "slow" in pytest and the github actions CI skips these tests, but they are
+  available for a user to run by hand if desired.
+- For the lambda-search examples in /examples (general_option = 5), the order of lambda values for
+  the search will almost certainly be different with the new python solver than
+  with the legacy Fortran solver, so tests can cover just the final converged
+  value of lambda, and if possible the large-lambda and zero-lambda limits, but
+  the intermediate lambda values and the specific order of lambda values may
+  differ.
 
 Exit criteria:
 
-- [ ] One-λ solve matches a legacy example within tolerance.
-- [ ] `scan(...)` matches per-λ direct solves; `solve_for_target(...)` matches the
+- [x] One-λ solve matches a legacy example within tolerance.
+- [x] `scan(...)` matches per-λ direct solves; `solve_for_target(...)` matches the
       legacy `lambda_search_*` results within tolerance.
-- [ ] Two `Regcoil` instances with different resolutions coexist and don't
+- [x] Two `Regcoil` instances with different resolutions coexist and don't
       interfere (no shared state, kernel is stateless).
+- [x] Regression tests in /tests/regression/ pass, use the new python solver,
+      and all asserted values from the /examples/*/tests.py files are encoded in
+      the tests/regression/ tests, except that non-converged lambda values may
+      be skipped in the lambda-search examples.
+
+**Status: done.** `Regcoil`/`Solution` implemented in `src/regcoil/regcoil.py`:
+basis functions, `matrix_B`/`matrix_K`/`RHS_B`/`RHS_K` assembly, and the λ
+family solve are numpy/scipy; the only Fortran call is
+`regcoil._core.build_g_and_h` (Phase 7). `solve(lam)` (including `lam=np.inf`,
+the well-defined heavily-regularized limit) and `scan(lambdas)` share the
+cached `scipy.linalg.eigh(matrix_B, matrix_K)` eigendecomposition;
+`solve_for_target(metric, value)` bisects in `log(lambda)` and raises
+`ValueError` for an unreachable target (see ADR-024) rather than porting the
+legacy staged Brent search. `Solution.current_potential()`/`current_density()`
+are lazy grid expansions; `chi2_B`/`chi2_K`/`max_K`/`rms_K`/`max_Bnormal`/
+`Bnormal_total` are eager (computed once per solve, matching legacy
+diagnostics). Regression tests under `tests/regression/*/test_regression.py`
+build the problem directly via the object model (no legacy executable, no
+NetCDF) and check against golden values read from `examples/*/tests.py`
+(programmatically extracted into `_golden.py` for the largest arrays, to
+avoid hand-transcription errors); the four `ntheta_plasma=128` cases are
+`@pytest.mark.slow` and skipped in CI (`pytest -m "not slow"`, `.github/workflows/ci.yml`).
+`tests/unit/test_regcoil.py` covers the object-model behavior independent of
+any golden legacy value (basis-function/mode-count sanity, `scan` vs. `solve`
+consistency, two-instance non-interference, `solve_for_target` bracketing).
+See ADR-024 for the chi2_K-only regularization, the `ValueError`-on-unreachable-target
+design, and the `geometry_option_coil=4` approximation.
 
 ---
 
