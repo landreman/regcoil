@@ -2,7 +2,7 @@
 (regcoil_init_plasma / regcoil_init_coil_surface), used by test_plasma_surface.py
 and test_coil_surface.py to check r/normal against legacy output.
 
-VMEC case: PlasmaSurface.from_vmec(wout_li383_1.4m.nc, ntheta=4, nzeta=3, mesh="full").
+VMEC case: PlasmaSurface.from_wout(wout_li383_1.4m.nc, ntheta=4, nzeta=3, mesh="full").
 Nescin case: CoilSurface.from_nescin(nescin.w7x_standardConfig_separation0.3, nfp=5, ntheta=4, nzeta=3).
 """
 

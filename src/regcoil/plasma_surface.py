@@ -22,7 +22,7 @@ class PlasmaSurface(FourierSurface):
         self.Bnormal_from_plasma_current = np.zeros((self.ntheta, self.nzeta))
 
     @classmethod
-    def from_vmec(
+    def from_wout(
         cls,
         wout_filename,
         ntheta=64,
@@ -51,7 +51,7 @@ class PlasmaSurface(FourierSurface):
             # change in residual") for some equilibria/grids -- and there is
             # no validated reference to port against.
             raise NotImplementedError(
-                "from_vmec(straight_field_line=True) is not implemented (legacy "
+                "from_wout(straight_field_line=True) is not implemented (legacy "
                 "geometry_option_plasma=4). The legacy root-solve is not robust "
                 "enough to port with confidence; use mesh='full' or mesh='half' "
                 "instead, or supply your own straight-field-line coefficients "
@@ -118,7 +118,7 @@ class PlasmaSurface(FourierSurface):
         """Set `Bnormal_from_plasma_current` from a BNORM-format file.
 
         Requires `curpol` to already be set correctly (done automatically by
-        `from_vmec`).
+        `from_wout`).
         """
         self.Bnormal_from_plasma_current = read_bnorm_file(
             filename, self.theta, self.zeta, self.nfp, self.curpol

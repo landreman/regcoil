@@ -265,7 +265,7 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
   surface; existing initialization methods must survive and stay extensible.
 - **Decision:** User-facing objects are `PlasmaSurface`, `CoilSurface`, `Regcoil`,
   and a `Solution` result, over a `Surface` (ABC) / `FourierSurface` base. Legacy
-  `geometry_option_*` codes become **alternate constructors** (`from_vmec`,
+  `geometry_option_*` codes become **alternate constructors** (`from_wout`,
   `from_nescin`, `from_focus`,`from_ascii_table`, `circular_torus`,
   `from_uniform_offset`). The `Surface` ABC (`_evaluate` contract) is the
   extensibility hook. `Regcoil` accepts a `Surface` (documented arrays it reads
@@ -360,7 +360,7 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
      fixture to build or validate a new EFIT g-file reader against. `from_efit` is
      omitted from `PlasmaSurface` and from the API.md constructor table until a
      concrete need (and a g-file + reference output to validate against) exists.
-  2. **`from_vmec(straight_field_line=True)` raises `NotImplementedError`.** The
+  2. **`from_wout(straight_field_line=True)` raises `NotImplementedError`.** The
      legacy coordinate transform (geometry_option_plasma=4) root-solves VMEC's
      theta against a fixed ±0.3 bracket per grid point; this is not robust even in
      the reference Fortran (observed "no sign change in residual" errors on a
@@ -374,7 +374,7 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
      optional. ADR-004 remains open for Phase 9 output writing.
 - **Consequences:** `CoilSurface.from_uniform_offset` (Phase 7, needs the Fortran
   offset kernel) and `from_efit` both raise/omit rather than half-implement;
-  `PlasmaSurface.from_vmec`, `from_ascii_table`, `from_focus`,
+  `PlasmaSurface.from_wout`, `from_ascii_table`, `from_focus`,
   `CoilSurface.from_nescin`, and `FourierSurface.circular_torus` are implemented
   and checked against the legacy Fortran (`regcoil_init_plasma`/
   `regcoil_init_coil_surface`, compiled standalone for comparison) in
@@ -452,7 +452,7 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
   1. Add `Surface.standard_toroidal_angle: bool` (alongside `nfp`,
      `stellarator_symmetric`, ...): `True` iff a constant-`zeta` slice of `r`
      is a constant-physical-toroidal-angle cross section. All existing
-     constructors (`circular_torus`, `from_vmec`, `from_ascii_table`,
+     constructors (`circular_torus`, `from_wout`, `from_ascii_table`,
      `from_focus`, `from_nescin`, and the root-solve `from_uniform_offset`)
      set/default it `True`.
   2. `CoilSurface.from_uniform_offset` gains a `standard_toroidal_angle: bool`

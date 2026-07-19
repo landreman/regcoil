@@ -13,7 +13,7 @@ from ..tests_common import EQUILIBRIA
 
 
 def test_solve_for_target_chi2_B():
-    plasma = PlasmaSurface.from_vmec(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=64, nzeta=64, mesh="full")
+    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=64, nzeta=64, mesh="full")
     coil = CoilSurface.from_uniform_offset(plasma, separation=0.5, ntheta=64, nzeta=64, standard_toroidal_angle=True)
     prob = Regcoil(
         plasma, coil, mpol_potential=12, ntor_potential=12,

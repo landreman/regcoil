@@ -1,6 +1,6 @@
 """Unit tests for `PlasmaSurface`.
 
-`from_vmec` is checked against golden r/normal/area/G/curpol values computed
+`from_wout` is checked against golden r/normal/area/G/curpol values computed
 by the legacy compiled Fortran (`regcoil_init_plasma`, geometry_option_plasma=2)
 on the same VMEC file -- see tests/unit/_golden.py.
 """
@@ -25,7 +25,7 @@ REF_CURPOL = 4.9782004309255496e00
 
 
 def test_from_vmec_full_mesh_matches_legacy():
-    plasma = PlasmaSurface.from_vmec(str(EQUILIBRIA / "wout_li383_1.4m.nc"), ntheta=4, nzeta=3, mesh="full")
+    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_li383_1.4m.nc"), ntheta=4, nzeta=3, mesh="full")
 
     assert plasma.nfp == 3
     assert plasma.stellarator_symmetric
@@ -38,19 +38,19 @@ def test_from_vmec_full_mesh_matches_legacy():
 
 
 def test_from_vmec_mesh_options():
-    full = PlasmaSurface.from_vmec(str(EQUILIBRIA / "wout_li383_1.4m.nc"), ntheta=8, nzeta=6, mesh="full")
-    half = PlasmaSurface.from_vmec(str(EQUILIBRIA / "wout_li383_1.4m.nc"), ntheta=8, nzeta=6, mesh="half")
+    full = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_li383_1.4m.nc"), ntheta=8, nzeta=6, mesh="full")
+    half = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_li383_1.4m.nc"), ntheta=8, nzeta=6, mesh="half")
     # Different (but nearby) surfaces; both should be well-formed closed tori.
     assert full.area > 0 and half.area > 0
     assert not np.allclose(full.rmnc, half.rmnc)
 
     with pytest.raises(ValueError):
-        PlasmaSurface.from_vmec(str(EQUILIBRIA / "wout_li383_1.4m.nc"), mesh="bogus")
+        PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_li383_1.4m.nc"), mesh="bogus")
 
 
 def test_from_vmec_straight_field_line_not_implemented():
     with pytest.raises(NotImplementedError):
-        PlasmaSurface.from_vmec(str(EQUILIBRIA / "wout_li383_1.4m.nc"), straight_field_line=True)
+        PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_li383_1.4m.nc"), straight_field_line=True)
 
 
 def test_from_focus_matches_legacy():
@@ -80,7 +80,7 @@ def test_from_focus_matches_legacy():
 
 
 def test_set_bnormal_from_bnorm_file_matches_legacy():
-    plasma = PlasmaSurface.from_vmec(str(EQUILIBRIA / "wout_li383_1.4m.nc"), ntheta=5, nzeta=4, mesh="full")
+    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_li383_1.4m.nc"), ntheta=5, nzeta=4, mesh="full")
     np.testing.assert_allclose(plasma.curpol, REF_CURPOL, rtol=1e-10)
 
     plasma.set_bnormal_from_bnorm_file(str(EQUILIBRIA / "bnorm.li383_1.4m"))
