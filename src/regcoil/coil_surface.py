@@ -28,10 +28,30 @@ class CoilSurface(FourierSurface):
         return surf
 
     @classmethod
-    def from_uniform_offset(cls, plasma, separation, ntheta=64, nzeta=64, mpol=24, ntor=24):
-        raise NotImplementedError(
-            "CoilSurface.from_uniform_offset requires the Fortran "
-            "regcoil_uniform_offset_surface kernel, added in Phase 7."
+    def from_uniform_offset(
+        cls, plasma, separation, ntheta=64, nzeta=64, mpol=24, ntor=24,
+        ntheta_transform=None, nzeta_transform=None, tol=1e-10,
+    ):
+        """A surface offset uniformly outward from `plasma` by `separation`
+        meters along its normal. `ntheta_transform`/`nzeta_transform` (default
+        `ntheta`/`nzeta`) set the grid the offset surface is sampled on before
+        being Fourier-transformed to `mpol`/`ntor` modes; each grid point is a
+        Fortran root solve (`regcoil_uniform_offset_surface`, Phase 7).
+        """
+        from . import _core
+
+        ntheta_transform = ntheta if ntheta_transform is None else ntheta_transform
+        nzeta_transform = nzeta if nzeta_transform is None else nzeta_transform
+
+        xm_out, xn_out, rmnc_out, rmns_out, zmnc_out, zmns_out = _core.uniform_offset_surface(
+            plasma.xm, plasma.xn, plasma.rmnc, plasma.rmns, plasma.zmnc, plasma.zmns,
+            not plasma.stellarator_symmetric, plasma.nfp,
+            float(separation), int(mpol), int(ntor),
+            int(ntheta_transform), int(nzeta_transform), float(tol),
+        )
+        return cls(
+            xm_out, xn_out, rmnc_out, zmns_out, rmns_out, zmnc_out,
+            nfp=plasma.nfp, ntheta=ntheta, nzeta=nzeta,
         )
 
     def filter_modes(self, mpol_filter=None, ntor_filter=None):

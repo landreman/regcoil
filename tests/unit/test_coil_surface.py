@@ -10,7 +10,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from regcoil import CoilSurface
+from regcoil import CoilSurface, PlasmaSurface
 
 from ._golden import NORMAL_COIL, R_COIL
 
@@ -51,6 +51,19 @@ def test_from_nescin_filter_at_construction():
     assert not np.allclose(filtered.rmnc, unfiltered.rmnc)
 
 
-def test_from_uniform_offset_deferred_to_phase7():
-    with pytest.raises(NotImplementedError):
-        CoilSurface.from_uniform_offset(plasma=None, separation=0.5)
+def test_from_uniform_offset_circular_torus_is_exact():
+    """`from_uniform_offset` for a circular-cross-section plasma should stay
+    circular, with minor radius a + separation (see test_kernels.py for the
+    golden-legacy-Fortran and non-circular-plasma coverage)."""
+    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
+    coil = CoilSurface.from_uniform_offset(plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1)
+
+    for m, n, rc, zs in zip(coil.xm, coil.xn, coil.rmnc, coil.zmns):
+        if m == 0 and n == 0:
+            assert rc == pytest.approx(5.0, abs=1e-9)
+        elif m == 1 and n == 0:
+            assert rc == pytest.approx(1.3, abs=1e-9)
+            assert zs == pytest.approx(1.3, abs=1e-9)
+        else:
+            assert rc == pytest.approx(0.0, abs=1e-8)
+            assert zs == pytest.approx(0.0, abs=1e-8)

@@ -48,9 +48,13 @@ For **pip** builds on Apple Silicon, ensure Homebrew `pkg-config` can see NetCDF
 
 - `make test` → `examples/runExamples.py` (discovers `examples/*/tests.py` + matching `regcoil_in.*`)
 - Expect several minutes for the full suite; success ends with `ALL TESTS THAT WERE RUN WERE PASSED SUCCESSFULLY` and `numFailures: 0`
-- Package tests: create/use a **venv**, then
-  `pip install ".[dev]"` (or editable with `--no-build-isolation`) and `pytest`.
-  Includes `import regcoil` / `RegcoilProblem`, a one-λ axisymmetry parity test, and a two-instance non-interference test (`tests/unit/test_core_one_lambda.py`).
+- Package tests: create/use a **venv** (numpy must be installed before an
+  `--no-build-isolation` editable install, since `meson.build` imports it at
+  configure time to locate its C headers), then `pip install ".[dev]"` (or
+  editable with `--no-build-isolation`) and `pytest`.
+  Includes `import regcoil`, the surface-object-model unit tests, and the
+  stateless-kernel unit tests (`tests/unit/test_kernels.py`) -- golden-vs-legacy
+  comparisons plus a two-instance/different-sizes non-interference test.
 
 ## GitHub Actions (Phase 3–4 / ADR-016, ADR-017)
 
