@@ -68,7 +68,7 @@ class Regcoil:
         coil,
         mpol_potential,
         ntor_potential,
-        net_poloidal_current,
+        net_poloidal_current=None,
         net_toroidal_current=0.0,
         symmetry="stellarator_symmetric",
     ):
@@ -76,6 +76,13 @@ class Regcoil:
             raise ValueError(f"symmetry must be one of {SYMMETRY_OPTIONS}, got {symmetry!r}")
         if coil.nfp != plasma.nfp:
             raise ValueError(f"plasma.nfp ({plasma.nfp}) != coil.nfp ({coil.nfp})")
+        if net_poloidal_current is None:
+            if not hasattr(plasma, "net_poloidal_current_Amperes"):
+                raise ValueError(
+                    "net_poloidal_current is None, but plasma has no "
+                    "net_poloidal_current_Amperes attribute"
+                )
+            net_poloidal_current = plasma.net_poloidal_current_Amperes
 
         self.plasma = plasma
         self.coil = coil

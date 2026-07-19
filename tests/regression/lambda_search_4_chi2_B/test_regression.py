@@ -17,8 +17,6 @@ def test_solve_for_target_chi2_B():
     coil = CoilSurface.from_uniform_offset(plasma, separation=0.5, ntheta=64, nzeta=64)
     prob = Regcoil(
         plasma, coil, mpol_potential=12, ntor_potential=12,
-        net_poloidal_current=plasma.net_poloidal_current_Amperes,
-        net_toroidal_current=0.0, symmetry="stellarator_symmetric",
     )
 
     sol = prob.solve_for_target("chi2_B", 0.1)

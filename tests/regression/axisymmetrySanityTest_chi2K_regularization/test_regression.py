@@ -21,8 +21,6 @@ def test_axisymmetric_solution_vanishes():
 
     prob = Regcoil(
         plasma, coil, mpol_potential=6, ntor_potential=7,
-        net_poloidal_current=plasma.net_poloidal_current_Amperes,
-        net_toroidal_current=0.0, symmetry="stellarator_symmetric",
     )
     assert prob.nbf == 97  # legacy: single_valued_current_potential_mn has length 97
 

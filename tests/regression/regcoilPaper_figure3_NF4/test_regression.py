@@ -25,8 +25,6 @@ def test_li383_single_lambda():
 
     prob = Regcoil(
         plasma, coil, mpol_potential=4, ntor_potential=4,
-        net_poloidal_current=plasma.net_poloidal_current_Amperes,
-        net_toroidal_current=0.0, symmetry="stellarator_symmetric",
     )
 
     sol = prob.solve(0.0)
