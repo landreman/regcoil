@@ -289,8 +289,7 @@ phase (ADR-021 supersedes ADR-003).
 - `solve(lam)`, `scan(lambdas)` (vectorized), `solve_for_target(metric, value)`
   (bisection/Newton on the closed-form `chi2`/`max_K` vs λ). No Fortran Brent,
   no `regcoil_lambda_scan`, no `regcoil_auto_regularization_solve`.
-- Keep the non-stellarator-symmetry option (`symmetry` ∈ {`stellarator_symmetric`,
-  `cos_only`, `both`}, ADR-019).
+- Keep the non-stellarator-symmetry option (`stellarator_symmetric` ∈ {True, False}, ADR-019).
 - For tests that the new python-based solver matches the legacy fortran solver,
   you can use existing golden reference values from the files
   /examples/*/tests.py, as the reference values in those files were taken by
@@ -299,7 +298,7 @@ phase (ADR-021 supersedes ADR-003).
   instead of the legacy fortran solver. Mark the tests with ntheta_plasma=128 as
   "slow" in pytest and the github actions CI skips these tests, but they are
   available for a user to run by hand if desired.
-- For the lambda-search examples in /examples, the order of lambda values for
+- For the lambda-search examples in /examples (general_option = 5), the order of lambda values for
   the search will almost certainly be different with the new python solver than
   with the legacy Fortran solver, so tests can cover just the final converged
   value of lambda, and if possible the large-lambda and zero-lambda limits, but
@@ -316,7 +315,7 @@ Exit criteria:
 - [ ] Regression tests in /tests/regression/ pass, use the new python solver,
       and all asserted values from the /examples/*/tests.py files are encoded in
       the tests/regression/ tests, except that non-converged lambda values may
-      be skipped in the lambda-scan examples.
+      be skipped in the lambda-search examples.
 
 ---
 
