@@ -263,7 +263,7 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
 - **Decision:** User-facing objects are `PlasmaSurface`, `CoilSurface`, `Regcoil`,
   and a `Solution` result, over a `Surface` (ABC) / `FourierSurface` base. Legacy
   `geometry_option_*` codes become **alternate constructors** (`from_vmec`,
-  `from_nescin`, `from_focus`, `from_efit`, `from_ascii_table`, `circular_torus`,
+  `from_nescin`, `from_focus`,`from_ascii_table`, `circular_torus`,
   `from_uniform_offset`). The `Surface` ABC (`_evaluate` contract) is the
   extensibility hook. `Regcoil` accepts a `Surface` (documented arrays it reads
   let an outer optimization loop supply its own geometry). Qualitative options are
@@ -336,3 +336,38 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
   disappears from matrix assembly.
 - **Consequences:** Simpler `Surface` contract and matrix build; the
   `regularization_term_option` choices reduce accordingly.
+
+---
+
+## ADR-023: Phase 6 scope decisions (surface object model)
+
+- **Date:** 2026-07-19
+- **Status:** accepted
+- **Context:** Implementing `Surface`/`FourierSurface`/`PlasmaSurface`/`CoilSurface`
+  (Phase 6) surfaced three items not fully pinned down by ADR-019/API.md.
+- **Decisions:**
+  1. **`from_efit` dropped, not stubbed-and-deferred.** Legacy Fortran explicitly
+     stops with "geometry_option_plasma=5 (EFIT) is no longer supported"
+     (`regcoil_validate_input.f90`); there is no reference implementation or test
+     fixture to build or validate a new EFIT g-file reader against. `from_efit` is
+     omitted from `PlasmaSurface` and from the API.md constructor table until a
+     concrete need (and a g-file + reference output to validate against) exists.
+  2. **`from_vmec(straight_field_line=True)` raises `NotImplementedError`.** The
+     legacy coordinate transform (geometry_option_plasma=4) root-solves VMEC's
+     theta against a fixed ±0.3 bracket per grid point; this is not robust even in
+     the reference Fortran (observed "no sign change in residual" errors on a
+     real VMEC file at moderate transform resolution). Porting it without a
+     validated reference risked shipping a silently-wrong surface. Deferred past
+     Phase 6; `mesh="full"`/`mesh="half"` are implemented and legacy-matched.
+  3. **VMEC `wout` reading uses `scipy.io.netcdf_file` first, `netCDF4` as a
+     fallback** for HDF5-based wout files (`src/regcoil/_io.py:read_vmec_wout`).
+     This is the "hybrid" option from ADR-004, chosen because scipy is already a
+     required dependency and reads both example `wout` files; `netCDF4` stays
+     optional. ADR-004 remains open for Phase 9 output writing.
+- **Consequences:** `CoilSurface.from_uniform_offset` (Phase 7, needs the Fortran
+  offset kernel) and `from_efit` both raise/omit rather than half-implement;
+  `PlasmaSurface.from_vmec`, `from_ascii_table`, `from_focus`,
+  `CoilSurface.from_nescin`, and `FourierSurface.circular_torus` are implemented
+  and checked against the legacy Fortran (`regcoil_init_plasma`/
+  `regcoil_init_coil_surface`, compiled standalone for comparison) in
+  `tests/unit/`.

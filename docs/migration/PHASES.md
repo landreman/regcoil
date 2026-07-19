@@ -17,7 +17,7 @@ Ordered work packages for the overhaul. Each phase should be a reviewable PR (or
 | 3 CI + pytest scaffold | done | 2 helpful; can start after 1 |
 | 4 Fortran as library + Python bindings (still may use globals) | done | 1, 2 |
 | 5 Deglobalize Fortran state (instances) | done | 4 |
-| 6 Python surface object model (`Surface`/`FourierSurface`/`Plasma`/`Coil`) | pending | 5 (mostly independent) |
+| 6 Python surface object model (`Surface`/`FourierSurface`/`Plasma`/`Coil`) | done | 5 (mostly independent) |
 | 7 Slim stateless Fortran kernel + offset surface | pending | 5 |
 | 8 Python `Regcoil` assembly + λ-family solve | pending | 6, 7 |
 | 9 NetCDF I/O in Python; strip Fortran NetCDF/BLAS | pending | 8 |
@@ -165,7 +165,7 @@ Fortran geometry-init and the input-file readers. No Fortran dependency (except
 - `FourierSurface(Surface)`: holds `mnmax, xm, xn, rmnc, rmns, zmnc, zmns`;
   `_evaluate` is the numpy gemm. Alternate constructors (classmethods) replace the
   `geometry_option_*` codes: `circular_torus`, `from_vmec` (`mesh="full"|"half"`,
-  `straight_field_line=`), `from_efit`, `from_ascii_table`, `from_focus`,
+  `straight_field_line=`), `from_ascii_table`, `from_focus`,
   `from_nescin`. VMEC `wout` / nescin / FOCUS reading is **Python** (ADR-004 lib).
 - `PlasmaSurface(FourierSurface)`: `Bnormal_from_plasma_current` via bnorm file
   (`set_bnormal_from_bnorm_file`), FOCUS modes, or user array;
@@ -178,11 +178,26 @@ Fortran geometry-init and the input-file readers. No Fortran dependency (except
 
 Exit criteria:
 
-- [ ] `PlasmaSurface.from_vmec(...)` and `CoilSurface.from_nescin(...)` reproduce
+- [x] `PlasmaSurface.from_vmec(...)` and `CoilSurface.from_nescin(...)` reproduce
       the legacy surface grids (`r`, `normal`, `area`) within tolerance.
-- [ ] `circular_torus`, `from_focus`, bnorm loading covered by unit tests.
-- [ ] `_evaluate` numpy gemm matches a small hand-checked case; `xn`/`nfp` and
+- [x] `circular_torus`, `from_focus`, bnorm loading covered by unit tests.
+- [x] `_evaluate` numpy gemm matches a small hand-checked case; `xn`/`nfp` and
       `m·θ − n·ζ` conventions asserted (see [API.md](API.md) conventions).
+
+**Status: done.** `Surface` (ABC), `FourierSurface`, `PlasmaSurface`, `CoilSurface`
+implemented in `src/regcoil/{surface,fourier_surface,plasma_surface,coil_surface,_io}.py`,
+exported from `regcoil/__init__.py`. Constructors landed: `circular_torus`,
+`from_vmec` (`mesh="full"|"half"`), `from_ascii_table`, `from_focus` (surface +
+Bnormal modes), `from_nescin`, plus `set_bnormal_from_bnorm_file` and coil-side
+`filter_modes`. `r`/`normal`/`area`/`volume` for `from_vmec` and `from_nescin`
+are checked in `tests/unit/` against the legacy Fortran (`regcoil_init_plasma`/
+`regcoil_init_coil_surface`, compiled standalone and run outside the package
+build for comparison, since this exit criteria doesn't require the (still
+unbuilt) `_core` extension). **Not implemented, by design (see ADR-023):**
+`from_efit` (legacy dropped EFIT support, no reference to validate against),
+`from_vmec(straight_field_line=True)` (legacy root-solve not robust enough to
+port with confidence), `CoilSurface.from_uniform_offset` (needs the Fortran
+kernel added in Phase 7, per the original plan).
 
 ---
 

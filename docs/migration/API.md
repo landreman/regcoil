@@ -130,7 +130,7 @@ The concrete workhorse. Holds `mnmax, xm, xn, rmnc, rmns, zmnc, zmns`; its
 | plasma 0,1 / coil 0,1 | `circular_torus(R0, a, nfp, ...)` |
 | plasma 2,3 | `from_vmec(wout, mesh="full"\|"half")` |
 | plasma 4 | `from_vmec(wout, straight_field_line=True)` |
-| plasma 5 | `from_efit(file, psiN, num_modes)` |
+| plasma 5 | (removed, do not implement in python) |
 | plasma 6 | `from_ascii_table(file)` |
 | plasma 7 | `from_focus(file)` (also returns Bnormal modes) |
 | coil 2,4 | `from_uniform_offset(plasma, separation, ...)` |
@@ -222,6 +222,7 @@ no derived types crossing it.
   audit whether any geometry root solve is still needed by the offset routine).
 - Adjoint / sensitivity / WSO; `regcoil_svd_scan`; Laplace–Beltrami metric block.
 - Fortran namelist read/write and NetCDF (`ezcdf`, `read_wout` NetCDF path).
+- EFIT input format.
 
 ## The interface signatures
 

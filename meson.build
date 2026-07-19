@@ -1,4 +1,4 @@
-# REGCOIL package build (Phase 4): Fortran library + Python iso_c_binding extension.
+# REGCOIL package build: Fortran library + Python iso_c_binding extension.
 project(
   'regcoil',
   ['c', 'fortran'],
