@@ -11,7 +11,7 @@ import pytest
 
 from regcoil import CoilSurface, PlasmaSurface, Regcoil
 
-from ..testsCommon import EQUILIBRIA
+from ..tests_common import EQUILIBRIA
 from ._golden import CHI2_B, CHI2_K, MAX_BNORMAL, MAX_K, SINGLE_VALUED_CURRENT_POTENTIAL_MN
 
 

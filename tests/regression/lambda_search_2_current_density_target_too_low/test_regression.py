@@ -12,7 +12,7 @@ import pytest
 
 from regcoil import CoilSurface, PlasmaSurface, Regcoil
 
-from ..testsCommon import EQUILIBRIA
+from ..tests_common import EQUILIBRIA
 
 
 def test_target_too_low_raises():

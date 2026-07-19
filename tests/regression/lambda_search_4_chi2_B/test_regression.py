@@ -9,7 +9,7 @@ import numpy as np
 
 from regcoil import CoilSurface, PlasmaSurface, Regcoil
 
-from ..testsCommon import EQUILIBRIA
+from ..tests_common import EQUILIBRIA
 
 
 def test_solve_for_target_chi2_B():

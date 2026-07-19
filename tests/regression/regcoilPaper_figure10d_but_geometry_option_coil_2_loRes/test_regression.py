@@ -13,7 +13,7 @@ import numpy as np
 
 from regcoil import CoilSurface, PlasmaSurface, Regcoil
 
-from ..testsCommon import EQUILIBRIA, legacy_lambda_array
+from ..tests_common import EQUILIBRIA, lambda_array
 
 
 def test_uniform_offset_lores():
@@ -25,7 +25,7 @@ def test_uniform_offset_lores():
         plasma, coil, mpol_potential=12, ntor_potential=12,
     )
 
-    lambdas = legacy_lambda_array(nlambda=10, lambda_min=1e-15, lambda_max=1e-14)
+    lambdas = lambda_array(nlambda=10, lambda_min=1e-15, lambda_max=1e-14)
     np.testing.assert_allclose(
         lambdas,
         [0, 1e-15, 1.33352143216332e-15, 1.77827941003892e-15, 2.37137370566166e-15,

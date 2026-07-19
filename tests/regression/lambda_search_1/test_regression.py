@@ -12,7 +12,7 @@ import numpy as np
 
 from regcoil import CoilSurface, PlasmaSurface, Regcoil
 
-from ..testsCommon import EQUILIBRIA
+from ..tests_common import EQUILIBRIA
 
 
 def _build_problem():

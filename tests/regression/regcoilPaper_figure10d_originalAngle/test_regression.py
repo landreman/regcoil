@@ -12,7 +12,7 @@ import pytest
 
 from regcoil import CoilSurface, PlasmaSurface, Regcoil
 
-from ..testsCommon import EQUILIBRIA, legacy_lambda_array
+from ..tests_common import EQUILIBRIA, lambda_array
 from ._golden import CHI2_B, CHI2_K, LAMBDA, MAX_BNORMAL, MAX_K, SINGLE_VALUED_CURRENT_POTENTIAL_MN
 
 
@@ -28,7 +28,7 @@ def test_nescin_original_angle_highres():
         plasma, coil, mpol_potential=32, ntor_potential=32,
     )
 
-    lambdas = legacy_lambda_array(nlambda=10, lambda_min=1e-15, lambda_max=1e-14)
+    lambdas = lambda_array(nlambda=10, lambda_min=1e-15, lambda_max=1e-14)
     np.testing.assert_allclose(lambdas, LAMBDA, rtol=1e-12)
     sols = prob.scan(lambdas)
 
