@@ -69,9 +69,6 @@ coil = CoilSurface.from_uniform_offset(plasma, separation=0.5,
 prob = Regcoil(
     plasma, coil,
     mpol_potential=12, ntor_potential=12,
-    net_poloidal_current=plasma.net_poloidal_current_Amperes,
-    net_toroidal_current=0.0,
-    symmetry="stellarator_symmetric",   # or "cos_only" / "both"
 )                                        # <- all Fortran work happens here
 
 sol = prob.solve(lam=1e-16)

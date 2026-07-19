@@ -31,7 +31,7 @@ def test_from_vmec_full_mesh_matches_legacy():
     assert plasma.stellarator_symmetric
     np.testing.assert_allclose(plasma.area, REF_AREA, rtol=1e-10)
     np.testing.assert_allclose(plasma.volume, REF_VOLUME, rtol=1e-10)
-    np.testing.assert_allclose(plasma.net_poloidal_current_Amperes, REF_G, rtol=1e-10)
+    np.testing.assert_allclose(plasma.net_poloidal_current, REF_G, rtol=1e-10)
     np.testing.assert_allclose(plasma.curpol, REF_CURPOL, rtol=1e-10)
     np.testing.assert_allclose(plasma.r, R_PLASMA, atol=1e-10)
     np.testing.assert_allclose(plasma.normal, NORMAL_PLASMA, atol=1e-10)

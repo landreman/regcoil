@@ -20,8 +20,6 @@ def test_uniform_offset_highres():
 
     prob = Regcoil(
         plasma, coil, mpol_potential=32, ntor_potential=32,
-        net_poloidal_current=plasma.net_poloidal_current_Amperes,
-        net_toroidal_current=0.0, symmetry="stellarator_symmetric",
     )
 
     lambdas = legacy_lambda_array(nlambda=10, lambda_min=1e-15, lambda_max=1e-14)

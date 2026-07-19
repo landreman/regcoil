@@ -16,13 +16,11 @@ from ..testsCommon import legacy_lambda_array
 
 def test_axisymmetric_solution_vanishes():
     plasma = PlasmaSurface.circular_torus(R0=6, a=2, nfp=3, ntheta=32, nzeta=32)
-    plasma.net_poloidal_current_Amperes = 1.0e6
+    plasma.net_poloidal_current = 1.0e6
     coil = CoilSurface.circular_torus(R0=6.5, a=4, nfp=3, ntheta=32, nzeta=32)
 
     prob = Regcoil(
         plasma, coil, mpol_potential=6, ntor_potential=7,
-        net_poloidal_current=plasma.net_poloidal_current_Amperes,
-        net_toroidal_current=0.0, symmetry="stellarator_symmetric",
     )
     assert prob.nbf == 97  # legacy: single_valued_current_potential_mn has length 97
 

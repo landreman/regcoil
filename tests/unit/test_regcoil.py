@@ -10,11 +10,10 @@ from regcoil import CoilSurface, PlasmaSurface, Regcoil
 
 def _small_problem(ntheta=8, nzeta=8, mpol=3, ntor=2, R0=6.0, a_plasma=2.0, a_coil=3.0, nfp=3):
     plasma = PlasmaSurface.circular_torus(R0=R0, a=a_plasma, nfp=nfp, ntheta=ntheta, nzeta=nzeta)
-    plasma.net_poloidal_current_Amperes = 1.0e6
+    plasma.net_poloidal_current = 1.0e6
     coil = CoilSurface.circular_torus(R0=R0, a=a_coil, nfp=nfp, ntheta=ntheta, nzeta=nzeta)
     return Regcoil(
         plasma, coil, mpol_potential=mpol, ntor_potential=ntor,
-        net_poloidal_current=plasma.net_poloidal_current_Amperes,
         net_toroidal_current=0.0, symmetry="stellarator_symmetric",
     )
 
@@ -33,7 +32,7 @@ def test_symmetry_both_is_twice_stellarator_symmetric():
     sin_only = _small_problem()
     both = Regcoil(
         sin_only.plasma, sin_only.coil, mpol_potential=3, ntor_potential=2,
-        net_poloidal_current=sin_only.net_poloidal_current, net_toroidal_current=0.0, symmetry="both",
+        net_toroidal_current=0.0, symmetry="both",
     )
     assert both.nbf == 2 * sin_only.nbf
 
@@ -43,12 +42,11 @@ def test_axisymmetric_solution_is_zero_for_every_symmetry_option():
     radius) admit an exactly axisymmetric current potential, independent of
     `symmetry` -- a resolution/basis-independent sanity check."""
     plasma = PlasmaSurface.circular_torus(R0=6.0, a=2.0, nfp=3, ntheta=8, nzeta=8)
-    plasma.net_poloidal_current_Amperes = 1.0e6
+    plasma.net_poloidal_current = 1.0e6
     coil = CoilSurface.circular_torus(R0=6.0, a=3.0, nfp=3, ntheta=8, nzeta=8)
     for symmetry in ("stellarator_symmetric", "cos_only", "both"):
         prob = Regcoil(
             plasma, coil, mpol_potential=3, ntor_potential=2,
-            net_poloidal_current=plasma.net_poloidal_current_Amperes,
             net_toroidal_current=0.0, symmetry=symmetry,
         )
         sol = prob.solve(1e-10)
@@ -111,10 +109,22 @@ def test_current_potential_and_current_density_shapes():
 
 def test_regcoil_rejects_mismatched_nfp():
     plasma = PlasmaSurface.circular_torus(R0=6.0, a=2.0, nfp=3, ntheta=8, nzeta=8)
-    plasma.net_poloidal_current_Amperes = 1.0e6
+    plasma.net_poloidal_current = 1.0e6
     coil = CoilSurface.circular_torus(R0=6.0, a=3.0, nfp=4, ntheta=8, nzeta=8)
     with pytest.raises(ValueError, match="nfp"):
         Regcoil(
             plasma, coil, mpol_potential=3, ntor_potential=2,
-            net_poloidal_current=plasma.net_poloidal_current_Amperes, symmetry="stellarator_symmetric",
+            symmetry="stellarator_symmetric",
         )
+
+
+def test_regcoil_defaults_net_poloidal_current_from_plasma():
+    plasma = PlasmaSurface.circular_torus(R0=6.0, a=2.0, nfp=3, ntheta=8, nzeta=8)
+    plasma.net_poloidal_current = 2.5e6
+    coil = CoilSurface.circular_torus(R0=6.0, a=3.0, nfp=3, ntheta=8, nzeta=8)
+
+    prob = Regcoil(
+        plasma, coil, mpol_potential=3, ntor_potential=2,
+    )
+
+    np.testing.assert_allclose(prob.net_poloidal_current, plasma.net_poloidal_current)
