@@ -238,6 +238,8 @@ class Regcoil:
         """Vectorized over an array of lambdas -- free after the
         eigendecomposition cached in `__init__`. Returns a list of
         `Solution`, one per lambda."""
+        logger.info("Starting lambda scan")
+        start_time = perf_counter()
         lambdas = np.atleast_1d(np.asarray(lambdas, dtype=float))
         is_inf = np.isinf(lambdas)
         finite = np.where(is_inf, 0.0, lambdas)
@@ -247,7 +249,12 @@ class Regcoil:
         if np.any(is_inf):
             coeffs[:, is_inf] = self._VtRHS_K[:, None]
         solutions = self.V @ coeffs  # (nbf, nlambda)
-        return [self._build_solution(lam, solutions[:, i]) for i, lam in enumerate(lambdas)]
+        data = [self._build_solution(lam, solutions[:, i]) for i, lam in enumerate(lambdas)]
+        logger.info(
+            "Finished lambda scan in %.3f s",
+            perf_counter() - start_time,
+        )
+        return data
 
     def solve_for_target(self, metric, value, xtol=1e-12, rtol=1e-12, max_iter=200):
         """Bisect (in log(lambda)) for the lambda whose `Solution.<metric>`
@@ -276,6 +283,8 @@ class Regcoil:
         def residual(log_lam):
             return getattr(self.solve(np.exp(log_lam)), metric) - value
 
+        logger.info("Starting lambda search")
+        start_time = perf_counter()
         log_lam = cast(
             float,
             scipy.optimize.brentq(  # pyright: ignore[reportArgumentType,reportCallIssue]
@@ -286,6 +295,10 @@ class Regcoil:
                 rtol=rtol,  # pyright: ignore[reportArgumentType]
                 maxiter=max_iter,
             ),
+        )
+        logger.info(
+            "Finished lambda search in %.3f s",
+            perf_counter() - start_time,
         )
         return self.solve(np.exp(log_lam))
 
