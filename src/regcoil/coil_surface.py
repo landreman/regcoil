@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
+import logging
+from time import perf_counter
+
 import numpy as np
 
 from ._io import read_nescin
 from .fourier_surface import FourierSurface
+
+logger = logging.getLogger(__name__)
 
 
 class CoilSurface(FourierSurface):
@@ -43,11 +48,24 @@ class CoilSurface(FourierSurface):
         ntheta_transform = ntheta if ntheta_transform is None else ntheta_transform
         nzeta_transform = nzeta if nzeta_transform is None else nzeta_transform
 
-        xm_out, xn_out, rmnc_out, rmns_out, zmnc_out, zmns_out = _core.uniform_offset_surface(
+        logger.info(
+            "Starting uniform offset surface kernel for separation=%s, transform grid=%dx%d, modes=%dx%d",
+            separation,
+            ntheta_transform,
+            nzeta_transform,
+            mpol,
+            ntor,
+        )
+        kernel_start = perf_counter()
+        xm_out, xn_out, rmnc_out, rmns_out, zmnc_out, zmns_out = _core.uniform_offset_surface(  # type: ignore[attr-defined]
             plasma.xm, plasma.xn, plasma.rmnc, plasma.rmns, plasma.zmnc, plasma.zmns,
             not plasma.stellarator_symmetric, plasma.nfp,
             float(separation), int(mpol), int(ntor),
             int(ntheta_transform), int(nzeta_transform), float(tol),
+        )
+        logger.info(
+            "Finished uniform offset surface kernel in %.3f s",
+            perf_counter() - kernel_start,
         )
         return cls(
             xm_out, xn_out, rmnc_out, zmns_out, rmns_out, zmnc_out,
