@@ -15,9 +15,9 @@ class PlasmaSurface(FourierSurface):
     boundary condition).
     """
 
-    def __init__(self, *args, net_poloidal_current_Amperes=1.0, curpol=1.0, **kwargs):
+    def __init__(self, *args, net_poloidal_current=1.0, curpol=1.0, **kwargs):
         super().__init__(*args, **kwargs)
-        self.net_poloidal_current_Amperes = net_poloidal_current_Amperes
+        self.net_poloidal_current = net_poloidal_current
         self.curpol = curpol
         self.Bnormal_from_plasma_current = np.zeros((self.ntheta, self.nzeta))
 
@@ -80,7 +80,7 @@ class PlasmaSurface(FourierSurface):
         # VMEC stores the toroidal Boozer covariant component B_zeta ("bvco")
         # on the half mesh; extrapolate to the boundary the same way the
         # legacy code does (1.5*last - 0.5*second-to-last).
-        surf.net_poloidal_current_Amperes = (
+        surf.net_poloidal_current = (
             2 * np.pi / MU0 * (1.5 * data["bvco"][-1] - 0.5 * data["bvco"][-2])
         )
         # curpol multiplies the data in a bnorm file (see set_bnormal_from_bnorm_file).

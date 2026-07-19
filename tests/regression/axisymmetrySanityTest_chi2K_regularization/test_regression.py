@@ -16,7 +16,7 @@ from ..testsCommon import legacy_lambda_array
 
 def test_axisymmetric_solution_vanishes():
     plasma = PlasmaSurface.circular_torus(R0=6, a=2, nfp=3, ntheta=32, nzeta=32)
-    plasma.net_poloidal_current_Amperes = 1.0e6
+    plasma.net_poloidal_current = 1.0e6
     coil = CoilSurface.circular_torus(R0=6.5, a=4, nfp=3, ntheta=32, nzeta=32)
 
     prob = Regcoil(

@@ -77,12 +77,12 @@ class Regcoil:
         if coil.nfp != plasma.nfp:
             raise ValueError(f"plasma.nfp ({plasma.nfp}) != coil.nfp ({coil.nfp})")
         if net_poloidal_current is None:
-            if not hasattr(plasma, "net_poloidal_current_Amperes"):
+            if not hasattr(plasma, "net_poloidal_current"):
                 raise ValueError(
                     "net_poloidal_current is None, but plasma has no "
-                    "net_poloidal_current_Amperes attribute"
+                    "net_poloidal_current attribute"
                 )
-            net_poloidal_current = plasma.net_poloidal_current_Amperes
+            net_poloidal_current = plasma.net_poloidal_current
 
         self.plasma = plasma
         self.coil = coil
