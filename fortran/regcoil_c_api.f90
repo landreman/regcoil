@@ -11,12 +11,19 @@
 module regcoil_c_api
   use iso_c_binding
   use stel_kinds, only: dp
+     use omp_lib, only: omp_get_max_threads
   use regcoil_kernels_mod, only: regcoil_build_inductance, regcoil_build_g_and_h
   use regcoil_uniform_offset_surface_mod, only: regcoil_uniform_offset_surface
 
   implicit none
 
 contains
+
+     function regcoil_c_omp_max_threads() result(nthreads) bind(C, name="regcoil_c_omp_max_threads")
+          integer(c_int) :: nthreads
+
+          nthreads = int(omp_get_max_threads(), kind=c_int)
+     end function regcoil_c_omp_max_threads
 
   function regcoil_c_build_inductance( &
        ntheta_plasma, nzeta_plasma, ntheta_coil, nzeta_coil, nfp, &

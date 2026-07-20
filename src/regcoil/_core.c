@@ -52,6 +52,12 @@ dims_match(PyArrayObject *a, PyArrayObject *b)
 }
 
 static PyObject *
+core_omp_max_threads(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
+{
+    return PyLong_FromLong((long)regcoil_c_omp_max_threads());
+}
+
+static PyObject *
 core_build_inductance(PyObject *Py_UNUSED(self), PyObject *args)
 {
     PyObject *r_plasma_o, *normal_plasma_o, *r_coil_o, *normal_coil_o, *drdtheta_coil_o, *drdzeta_coil_o;
@@ -329,6 +335,9 @@ fail:
 }
 
 static PyMethodDef core_methods[] = {
+    {"omp_max_threads", core_omp_max_threads, METH_NOARGS,
+     "omp_max_threads() -> int\n\n"
+     "Return omp_get_max_threads() from the linked Fortran runtime."},
     {"build_inductance", core_build_inductance, METH_VARARGS,
      "build_inductance(r_plasma, normal_plasma, r_coil, normal_coil, drdtheta_coil, drdzeta_coil,\n"
      "                  nfp, net_poloidal_current, net_toroidal_current, dtheta_coil, dzeta_coil)\n"

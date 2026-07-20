@@ -4,6 +4,8 @@ from datetime import datetime
 import logging
 from typing import TextIO
 
+from . import _core
+
 _LOG_HANDLER_NAME = "regcoil-info-handler"
 
 
@@ -34,3 +36,5 @@ def log(level=logging.INFO, stream: TextIO | None = None):
 
     handler.setLevel(level)
     handler.setFormatter(_RegcoilLogFormatter("%(asctime)s %(message)s"))
+    package_logger.info("REGCOIL: starting package logging")
+    package_logger.info("OpenMP max threads: %d", _core.omp_max_threads())
