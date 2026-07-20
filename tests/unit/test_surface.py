@@ -129,3 +129,108 @@ def test_circular_torus_area_and_shape():
     exact = 2 * np.pi**2 * R0 * a**2
     assert abs(fine.volume - exact) < abs(coarse.volume - exact)
     assert abs(fine.volume - exact) < 0.02
+
+
+def test_cross_section_circular_torus_matches_analytic(nfp=3, R0=5.0, a=1.2):
+    """For a plain circular torus, `zeta` already is the physical toroidal
+    angle, so cross_section(phi) at any phi should reproduce the exact
+    circular cross section (independent of theta-grid resolution)."""
+    torus = FourierSurface.circular_torus(R0=R0, a=a, nfp=nfp, ntheta=32, nzeta=16)
+    phi = np.array([0.0, 0.3, 1.5, 4.2, 2 * np.pi - 0.01])
+    R, Z = torus.cross_section(phi)
+
+    assert R.shape == (len(phi), torus.ntheta)
+    assert Z.shape == (len(phi), torus.ntheta)
+    # theta values on the grid, in some order, since interpolation at the
+    # exact theta grid values (phi is an exact grid zeta) should reproduce
+    # them to high precision.
+    expected_R = np.sort(R0 + a * np.cos(torus.theta))
+    expected_Z = np.sort(a * np.sin(torus.theta))
+    for i in range(len(phi)):
+        np.testing.assert_allclose(np.sort(R[i]), expected_R, atol=1e-8)
+        np.testing.assert_allclose(np.sort(Z[i]), expected_Z, atol=1e-8)
+
+
+def test_cross_section_default_phi_is_half_field_period():
+    torus = FourierSurface.circular_torus(R0=5.0, a=1.0, nfp=4, ntheta=8, nzeta=8)
+    R, Z = torus.cross_section()
+    assert R.shape == (4, torus.ntheta)
+
+
+def test_cross_section_nonstandard_toroidal_angle_matches_atan2():
+    """A CoilSurface built by `from_uniform_offset(standard_toroidal_angle=False)`
+    has a nonzero nu, so a constant-zeta slice is not a constant-phi cross
+    section (ADR-025/ADR-026); cross_section must still return the surface's
+    actual atan2(y, x) == phi points, not the naive constant-zeta slice."""
+    from regcoil import CoilSurface, PlasmaSurface
+
+    plasma = PlasmaSurface.from_wout(
+        "equilibria/wout_li383_1.4m.nc", ntheta=12, nzeta=12,
+    )
+    coil = CoilSurface.from_uniform_offset(
+        plasma, separation=0.3, ntheta=12, nzeta=12, mpol=6, ntor=5,
+        standard_toroidal_angle=False,
+    )
+    assert coil.standard_toroidal_angle is False
+    assert np.any(coil.numns != 0)
+
+    phi = np.array([0.0, 0.7])
+    R, Z = coil.cross_section(phi)
+    X = R * np.cos(phi)[:, None]
+    Y = R * np.sin(phi)[:, None]
+    # Every returned point must actually sit at physical angle phi (up to
+    # interpolation error), i.e. atan2(Y, X) == phi.
+    recovered_phi = np.arctan2(Y, X)
+    for i in range(len(phi)):
+        np.testing.assert_allclose(
+            np.mod(recovered_phi[i] - phi[i] + np.pi, 2 * np.pi) - np.pi,
+            0.0, atol=1e-6,
+        )
+
+
+def test_evaluate_at_matches_grid_evaluate():
+    """`FourierSurface.evaluate_at` (arbitrary paired points) must agree with
+    `_evaluate` (tensor-product grid) at the same points."""
+    surf = FourierSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
+    theta_grid = surf.theta
+    zeta_grid = surf.zeta
+    tt, zz = np.meshgrid(theta_grid, zeta_grid, indexing="ij")
+
+    pointwise = surf.evaluate_at(tt.ravel(), zz.ravel())
+    grid = surf._evaluate(theta_grid, zeta_grid)
+
+    np.testing.assert_allclose(
+        pointwise["r"].reshape(3, surf.ntheta, surf.nzeta), grid["r"], atol=1e-12
+    )
+    np.testing.assert_allclose(
+        pointwise["drdtheta"].reshape(3, surf.ntheta, surf.nzeta), grid["drdtheta"], atol=1e-12
+    )
+    np.testing.assert_allclose(
+        pointwise["drdzeta"].reshape(3, surf.ntheta, surf.nzeta), grid["drdzeta"], atol=1e-12
+    )
+
+
+def test_evaluate_at_derivatives_match_finite_differences_nonstandard_angle():
+    """Same check as above, but for a surface with nonzero nu (nonstandard
+    toroidal angle), where the derivative formulas have extra terms."""
+    from regcoil import CoilSurface, PlasmaSurface
+
+    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
+    coil = CoilSurface.from_uniform_offset(
+        plasma, separation=0.3, ntheta=8, nzeta=8, mpol=5, ntor=4,
+        standard_toroidal_angle=False,
+    )
+    theta = np.array([0.3, 1.2, 2.5, 4.0])
+    zeta = np.array([0.1, 0.4, 0.9, 1.3])
+    eps = 1e-6
+
+    base = coil.evaluate_at(theta, zeta)
+    dtheta = coil.evaluate_at(theta + eps, zeta)
+    dzeta = coil.evaluate_at(theta, zeta + eps)
+
+    np.testing.assert_allclose(
+        (dtheta["r"] - base["r"]) / eps, base["drdtheta"], atol=1e-4
+    )
+    np.testing.assert_allclose(
+        (dzeta["r"] - base["r"]) / eps, base["drdzeta"], atol=1e-4
+    )

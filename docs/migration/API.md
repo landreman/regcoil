@@ -425,14 +425,14 @@ the only layer that touches file paths; the library functions stay object-only.
 
 ```text
 regcoil plot    FILE.nc [--only NAME]... [--phi ...] [--lambda-index N]
-                        [--save OUT.(png|html)] [--no-show]
+                        [--save OUT.(pdf|html)] [--no-show]
         # No --only: the full dashboard (plot.all). --only selects atomic plots,
         # repeatable: cross_section | pareto | lambda_scan | current_potential |
         # current_density | bnormal | plot_3d.  --phi overrides cross-section
         # angles; --lambda-index picks which Solution for the (theta,zeta) maps.
 
 regcoil compare FILE.nc [FILE.nc ...] [--x f_K|max_K] [--y f_B|max_Bnormal]
-                        [--save OUT.png] [--no-show]
+                        [--save OUT.pdf] [--no-show]
         # Overlays plot.pareto across several saved runs (replaces compareRegcoil).
 
 regcoil cut     FILE.nc --coils-per-half-period N [--lambda-index N]

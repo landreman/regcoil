@@ -162,6 +162,62 @@ class FourierSurface(Surface):
         drdzeta = np.stack([dXdzeta, dYdzeta, dZdzeta], axis=0)
         return {"r": r, "drdtheta": drdtheta, "drdzeta": drdzeta}
 
+    def evaluate_at(self, theta_pts, zeta_pts):
+        """Evaluate the surface (and its first theta/zeta derivatives) at
+        arbitrary *paired* `(theta, zeta)` points, rather than the
+        tensor-product grid `_evaluate`/`r` use. Used where points come from
+        a contour (`regcoil.cut`) rather than a regular grid.
+
+        Returns a dict with keys 'r', 'drdtheta', 'drdzeta', each
+        `(3, len(theta_pts))`, matching `_evaluate`'s per-point contract.
+        """
+        theta_pts = np.asarray(theta_pts, dtype=np.float64)
+        zeta_pts = np.asarray(zeta_pts, dtype=np.float64)
+        m = self.xm[:, None].astype(np.float64)
+        n = self.xn[:, None].astype(np.float64)
+        angle = self.xm[:, None] * theta_pts[None, :] - self.xn[:, None] * zeta_pts[None, :]
+        cos_a = np.cos(angle)
+        sin_a = np.sin(angle)
+
+        rmnc, rmns = self.rmnc[:, None], self.rmns[:, None]
+        zmnc, zmns = self.zmnc[:, None], self.zmns[:, None]
+
+        R = np.sum(rmnc * cos_a + rmns * sin_a, axis=0)
+        Z = np.sum(zmns * sin_a + zmnc * cos_a, axis=0)
+        R_term = -rmnc * sin_a + rmns * cos_a
+        Z_term = zmns * cos_a - zmnc * sin_a
+        dRdtheta = np.sum(m * R_term, axis=0)
+        dRdzeta = np.sum(-n * R_term, axis=0)
+        dZdtheta = np.sum(m * Z_term, axis=0)
+        dZdzeta = np.sum(-n * Z_term, axis=0)
+
+        if self.standard_toroidal_angle:
+            phi = zeta_pts
+            dphidtheta = np.zeros_like(theta_pts)
+            dphidzeta = np.ones_like(zeta_pts)
+        else:
+            numns, numnc = self.numns[:, None], self.numnc[:, None]
+            nu = np.sum(numns * sin_a + numnc * cos_a, axis=0)
+            nu_term = numns * cos_a - numnc * sin_a
+            dnudtheta = np.sum(m * nu_term, axis=0)
+            dnudzeta = np.sum(-n * nu_term, axis=0)
+            phi = zeta_pts + nu
+            dphidtheta = dnudtheta
+            dphidzeta = 1.0 + dnudzeta
+
+        cosphi, sinphi = np.cos(phi), np.sin(phi)
+        X = R * cosphi
+        Y = R * sinphi
+        dXdtheta = dRdtheta * cosphi - R * sinphi * dphidtheta
+        dYdtheta = dRdtheta * sinphi + R * cosphi * dphidtheta
+        dXdzeta = dRdzeta * cosphi - R * sinphi * dphidzeta
+        dYdzeta = dRdzeta * sinphi + R * cosphi * dphidzeta
+
+        r = np.stack([X, Y, Z], axis=0)
+        drdtheta = np.stack([dXdtheta, dYdtheta, dZdtheta], axis=0)
+        drdzeta = np.stack([dXdzeta, dYdzeta, dZdzeta], axis=0)
+        return {"r": r, "drdtheta": drdtheta, "drdzeta": drdzeta}
+
     @classmethod
     def circular_torus(cls, R0, a, nfp, ntheta=64, nzeta=64):
         """A plain circular-cross-section torus of major radius R0, minor radius a."""

@@ -5,7 +5,10 @@ from __future__ import annotations
 __version__ = "0.1.0"
 
 from . import _core
+from . import cut
+from . import plot
 from .coil_surface import CoilSurface
+from .cut import CutCoils
 from .fourier_surface import FourierSurface
 from .log import log
 from .plasma_surface import PlasmaSurface
@@ -26,6 +29,9 @@ __all__ = [
     "Regcoil",
     "Solution",
     "SolutionScan",
+    "CutCoils",
+    "plot",
+    "cut",
     "save",
     "load",
 ]

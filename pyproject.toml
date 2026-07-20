@@ -23,6 +23,9 @@ dependencies = [
 # meson / ninja / meson-python needed in-env for editable installs (see README).
 dev = ["pytest", "ninja", "meson", "meson-python>=0.16.0"]
 
+[project.scripts]
+regcoil = "regcoil._cli:main"
+
 [project.urls]
 Homepage = "https://github.com/landreman/pyREGCOIL"
 Documentation = "https://github.com/landreman/pyREGCOIL/blob/master/manual/regcoilManual.tex"

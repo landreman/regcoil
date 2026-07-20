@@ -24,4 +24,5 @@ build/
 *.egg-info/
 .eggs/
 
+.vscode
 nescin.out

@@ -527,6 +527,28 @@ class Solution:
         from . import _serialize
         return _serialize.load_solution(path)
 
+    def plot_current_potential(self, kind="single_valued", ax=None):
+        """Convenience delegate for `regcoil.plot.current_potential`."""
+        from . import plot
+        return plot.current_potential(self, kind=kind, ax=ax)
+
+    def plot_current_density(self, ax=None):
+        """Convenience delegate for `regcoil.plot.current_density`."""
+        from . import plot
+        return plot.current_density(self, ax=ax)
+
+    def plot_bnormal(self, component="total", ax=None):
+        """Convenience delegate for `regcoil.plot.bnormal`."""
+        from . import plot
+        return plot.bnormal(self, component=component, ax=ax)
+
+    def cut(self, coils_per_half_period, thickness=None, theta_shift=0):
+        """Convenience delegate for `regcoil.cut.cut`."""
+        from . import cut as cut_module
+        return cut_module.cut(
+            self, coils_per_half_period, thickness=thickness, theta_shift=theta_shift
+        )
+
 
 class SolutionScan(Sequence):
     """A lambda scan: a `Sequence[Solution]` that iterates/indexes as
@@ -575,3 +597,23 @@ class SolutionScan(Sequence):
     @property
     def max_Bnormal(self):
         return self._column("max_Bnormal")
+
+    def plot_pareto(self, x="f_K", y="f_B", ax=None):
+        """Convenience delegate for `regcoil.plot.pareto`."""
+        from . import plot
+        return plot.pareto(self, x=x, y=y, ax=ax)
+
+    def plot_lambda_scan(self, ax=None):
+        """Convenience delegate for `regcoil.plot.lambda_scan`."""
+        from . import plot
+        return plot.lambda_scan(self, ax=ax)
+
+    def plot_current_potential_scan(self, kind="total", nmax=16, fig=None):
+        """Convenience delegate for `regcoil.plot.current_potential_scan`."""
+        from . import plot
+        return plot.current_potential_scan(self, kind=kind, nmax=nmax, fig=fig)
+
+    def plot_bnormal_scan(self, nmax=16, fig=None):
+        """Convenience delegate for `regcoil.plot.bnormal_scan`."""
+        from . import plot
+        return plot.bnormal_scan(self, nmax=nmax, fig=fig)
