@@ -109,7 +109,7 @@ class Surface(ABC):
 
     @cached_property
     def norm_normal(self) -> np.ndarray:
-        """(ntheta, nzeta) |N|, one field period."""
+        """(ntheta, nzeta) `|N|`, one field period."""
         n = self.normal[:, :, : self.nzeta]
         return np.sqrt(np.sum(n * n, axis=0))
 

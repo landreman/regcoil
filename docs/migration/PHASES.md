@@ -23,7 +23,7 @@ Ordered work packages for the overhaul. Each phase should be a reviewable PR (or
 | 9 Save/load (object serialization); strip Fortran NetCDF/LAPACK | done | 8 |
 | 10 Package tools (plot, compare, cut) + Plotly coil plot | done | 9 helpful |
 | 11 Unit tests (Python + Fortran kernels) | done | 7+; continuous afterward |
-| 12 Read the Docs manual | pending | 8 helpful |
+| 12 Read the Docs manual | done | 8 helpful |
 | 13 Retire Fortran executable + delete legacy Fortran + final cleanup | pending | 8–12, CI green |
 
 ---
@@ -655,19 +655,85 @@ delete them from the repo root.
 
 Exit criteria:
 
-- [ ] `README.md` has a short quickstart, validated by `sphinx.ext.doctest` in CI.
-- [ ] Docs build on Read the Docs with the Fortran extension compiled;
+- [x] `README.md` has a short quickstart, validated by `sphinx.ext.doctest` in CI.
+- [x] Docs build on Read the Docs with the Fortran extension compiled;
       `fail_on_warning: true`.
-- [ ] Pages exist for installation, typical usage, **every** plot type, and an
+- [x] Pages exist for installation, typical usage, **every** plot type, and an
       `autosummary` API reference in the yancc style; the reference documents the
       object-model API and the string options — no namelist/JSON input reference.
-- [ ] Every code cell in the docs is executed at build with
+- [x] Every code cell in the docs is executed at build with
       `nb_execution_raise_on_error = True`, **and** runs under `pytest --nbmake`
       in the normal CI matrix; a `sphinx-build -W` smoke build passes.
-- [ ] Tutorial sources are plain-text jupytext MyST-Markdown with no committed
+- [x] Tutorial sources are plain-text jupytext MyST-Markdown with no committed
       cell outputs.
-- [ ] LaTeX `manual/` is no longer the canonical user doc.
-- [ ] `.github/workflows/publish_manual.yml` is removed from the repo.
+- [x] LaTeX `manual/` is no longer the canonical user doc.
+- [x] `.github/workflows/publish_manual.yml` is removed from the repo.
+
+**Status: done.** Sphinx + `furo` under `docs/` (`conf.py`, `index.md`,
+`installation.md`, `quickstart.md`, `usage.md`, `plotting.md`, `theory.md`,
+`api.md`); `.readthedocs.yaml` builds `gfortran`/BLAS/`pkg-config` and installs
+`.[docs]` so RTD compiles the real extension (`fail_on_warning: true`).
+`quickstart.md`/`usage.md`/`plotting.md` are jupytext-pairable MyST-Markdown
+(standard `jupytext:`/`kernelspec` front matter) with **no committed cell
+outputs**, executed by MyST-NB (`nb_execution_mode = "cache"`,
+`nb_execution_raise_on_error = True`) against a small bundled example
+(`regcoil.examples("NCSX")` at `ntheta=nzeta=24`) — every plotted figure, table
+value, and printed number in the docs is produced live at build time, not
+pasted in. `api.md` follows the yancc `api.html` pattern: grouped
+`sphinx.ext.autosummary` tables (`:recursive:`, `:toctree: _api/`) covering
+surfaces, `Regcoil`/`Solution`/`SolutionScan`, `regcoil.plot`, `regcoil.cut`,
+save/load, the bundled-examples registry, and utilities; each entry's one-line
+summary comes from its own NumPy-style docstring (`sphinx.ext.napoleon`), and
+`sphinx.ext.linkcode` (hand-rolled `linkcode_resolve`, no extra dependency)
+adds a per-object **[source]** link to the exact GitHub lines. The
+`README.md` quickstart snippet is checked by `sphinx.ext.doctest`
+(`sphinx-build -b doctest`); a second, independent CI safety net converts the
+three executed pages to notebooks with `jupytext --to ipynb` and runs them
+under `pytest --nbmake`, alongside a `sphinx-build -W` smoke build — added as
+a new `docs` job in `.github/workflows/ci.yml`, run on every push/PR. Internal
+migration-planning docs (`docs/migration/*.md`) are excluded from the built
+site (`conf.py`'s `exclude_patterns`) since they are not user-facing.
+`manual/` gets a `README.md` pointing at Read the Docs and noting it is no
+longer canonical; `.github/workflows/publish_manual.yml` was already absent
+(never existed in this migrated repo). The four untracked root scratch
+scripts (`run_example.py`, `run_fast_example.py`, `run_slow_example.py`,
+`test_cross_section_plot.py`, plus a stray editor backup) had their useful
+patterns (bundled-example loading, `from_uniform_offset`, `cross_sections`
+plotting) folded into `quickstart.md`/`usage.md`/`plotting.md`, then were
+deleted.
+
+Deviations from the plan above, decided while implementing (all verified
+locally — `sphinx-build -W`, `sphinx-build -b doctest`, `pytest --nbmake`, and
+the existing `pytest` suite all pass):
+
+- **`libblas-dev`, not `libopenblas-dev`**, in `.readthedocs.yaml`/CI apt
+  packages — matches `meson.build`'s actual `dependency('blas')` /
+  `fc.find_library('blas')` lookup and the package already proven to work in
+  `ci.yml`.
+- **No committed `sample_run.nc`.** Building and solving a small
+  (`ntheta=nzeta=24`) problem from a bundled example takes well under a
+  second, so `quickstart.md`/`usage.md`/`plotting.md` construct their own tiny
+  run from `regcoil.examples(...)` rather than loading a checked-in binary
+  data file. This needs the compiled extension on every executed page rather
+  than isolating that to one tutorial, but RTD compiles the extension
+  regardless (decision 8), so the simplification costs nothing and avoids a
+  binary blob in `docs/`.
+- **`docs/migration/` excluded from the Sphinx build entirely**, rather than
+  left in but unlinked, to avoid "not in any toctree" warnings under
+  `fail_on_warning: true` and to keep engineering-process docs off the public
+  site.
+- **Plotly figures need `pio.renderers.default = "notebook_connected"`**
+  (set once in `plotting.md`) so `plot_3d`/`coil_3d` emit a `text/html`
+  mimebundle MyST-NB can embed, instead of the ipywidget-style
+  `application/vnd.plotly.v1+json` output real Jupyter frontends understand
+  but a static Sphinx page cannot render.
+- **Fixed real docstring bugs surfaced by turning on autodoc**, since a
+  reST-syntax error in any documented docstring is a hard build failure under
+  `fail_on_warning`: bare `|N|`/`|m|`/`|n|` in `surface.py`/`coil_surface.py`
+  parsed as (undefined) reST substitution references — wrapped in backticks;
+  `FourierSurface` had no class docstring (was silently inheriting
+  `Surface`'s via `inspect.getdoc`, but autosummary's table-summary
+  extraction does not follow that inheritance) — added one.
 
 ---
 

@@ -31,6 +31,10 @@ from .surface import Surface
 
 
 class FourierSurface(Surface):
+    """A toroidal surface given by a double Fourier series in `theta`/`zeta`
+    (see the module docstring for the exact `R`/`Z`/`nu` expansion and the
+    `standard_toroidal_angle` convention)."""
+
     def __init__(
         self,
         xm,

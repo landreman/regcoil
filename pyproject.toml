@@ -22,13 +22,22 @@ dependencies = [
 [project.optional-dependencies]
 # meson / ninja / meson-python needed in-env for editable installs (see README).
 dev = ["pytest", "ninja", "meson", "meson-python>=0.16.0"]
+# Sphinx + Read the Docs stack (ADR-030). Docs-only; never a runtime dependency.
+docs = [
+    "sphinx",
+    "furo",
+    "myst-nb",
+    "jupytext",
+    "sphinx-copybutton",
+    "nbmake",
+]
 
 [project.scripts]
 regcoil = "regcoil._cli:main"
 
 [project.urls]
 Homepage = "https://github.com/landreman/pyREGCOIL"
-Documentation = "https://github.com/landreman/pyREGCOIL/blob/master/manual/regcoilManual.tex"
+Documentation = "https://regcoil.readthedocs.io"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
