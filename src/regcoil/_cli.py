@@ -14,7 +14,7 @@ from pathlib import Path
 import numpy as np
 
 ATOMIC_PLOTS = (
-    "cross_section", "pareto", "lambda_scan",
+    "cross_sections", "cross_sections_overlay", "pareto", "lambda_scan",
     "current_potential", "current_density", "bnormal", "plot_3d",
 )
 
@@ -80,9 +80,13 @@ def _cmd_plot(args):
 
     figs = []
     for name in args.only:
-        if name == "cross_section":
+        if name == "cross_sections":
             phi = None if args.phi is None else np.asarray(args.phi, dtype=float)
-            figs.append(plot.cross_section(data.plasma, data.coil, phi=phi).figure)
+            figs.append(plot.cross_sections(data.plasma, data.coil, phi=phi))
+        elif name == "cross_sections_overlay":
+            phi = None if args.phi is None else np.asarray(args.phi, dtype=float)
+            surf = data.plasma if args.surface == "plasma" else data.coil
+            figs.append(plot.cross_sections_overlay(surf, phi=phi).figure)
         elif name == "pareto":
             figs.append(plot.pareto(data.solutions).figure)
         elif name == "lambda_scan":
@@ -137,6 +141,10 @@ def build_parser():
         help="Plot only this atomic function (repeatable); default is the full dashboard",
     )
     p_plot.add_argument("--phi", type=float, nargs="+", help="Cross-section physical angles (radians)")
+    p_plot.add_argument(
+        "--surface", default="plasma", choices=("plasma", "coil"),
+        help="Which surface to plot for --only cross_sections_overlay (default: plasma)",
+    )
     p_plot.add_argument("--lambda-index", type=int, default=0, help="Solution index for the (theta,zeta) maps")
     p_plot.add_argument("--save", help="Save to OUT.pdf (matplotlib) or OUT.html (Plotly)")
     p_plot.add_argument("--no-show", action="store_true", help="Skip the interactive window")
