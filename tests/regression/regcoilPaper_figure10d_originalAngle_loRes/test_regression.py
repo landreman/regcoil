@@ -13,11 +13,11 @@ import numpy as np
 
 from regcoil import CoilSurface, PlasmaSurface, Regcoil
 
-from ..testsCommon import EQUILIBRIA, legacy_lambda_array
+from ..tests_common import EQUILIBRIA, lambda_array
 
 
 def test_nescin_original_angle_lores():
-    plasma = PlasmaSurface.from_vmec(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=64, nzeta=64, mesh="full")
+    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=64, nzeta=64, mesh="full")
     plasma.set_bnormal_from_bnorm_file(str(EQUILIBRIA / "bnorm.d23p4_tm"))
     coil = CoilSurface.from_nescin(
         str(EQUILIBRIA / "nescin.d23p4_tm_uniform_0.5m_offset"), nfp=plasma.nfp, ntheta=64, nzeta=64,
@@ -27,7 +27,7 @@ def test_nescin_original_angle_lores():
         plasma, coil, mpol_potential=12, ntor_potential=12,
     )
 
-    lambdas = legacy_lambda_array(nlambda=10, lambda_min=1e-15, lambda_max=1e-14)
+    lambdas = lambda_array(nlambda=10, lambda_min=1e-15, lambda_max=1e-14)
     sols = prob.scan(lambdas)
 
     chi2_B = np.array([sol.chi2_B for sol in sols])

@@ -11,13 +11,13 @@ import pytest
 
 from regcoil import CoilSurface, PlasmaSurface, Regcoil
 
-from ..testsCommon import EQUILIBRIA
+from ..tests_common import EQUILIBRIA
 from ._golden import CHI2_B, CHI2_K, MAX_BNORMAL, MAX_K, SINGLE_VALUED_CURRENT_POTENTIAL_MN
 
 
 @pytest.mark.slow
 def test_li383_single_lambda():
-    plasma = PlasmaSurface.from_vmec(str(EQUILIBRIA / "wout_li383_1.4m.nc"), ntheta=128, nzeta=128, mesh="full")
+    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_li383_1.4m.nc"), ntheta=128, nzeta=128, mesh="full")
     plasma.set_bnormal_from_bnorm_file(str(EQUILIBRIA / "bnorm.li383_1.4m"))
     coil = CoilSurface.from_nescin(
         str(EQUILIBRIA / "nescin.li383_realWindingSurface"), nfp=plasma.nfp, ntheta=128, nzeta=128,

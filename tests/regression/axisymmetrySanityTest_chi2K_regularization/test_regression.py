@@ -11,7 +11,7 @@ import numpy as np
 
 from regcoil import CoilSurface, PlasmaSurface, Regcoil
 
-from ..testsCommon import legacy_lambda_array
+from ..tests_common import lambda_array
 
 
 def test_axisymmetric_solution_vanishes():
@@ -24,7 +24,7 @@ def test_axisymmetric_solution_vanishes():
     )
     assert prob.nbf == 97  # legacy: single_valued_current_potential_mn has length 97
 
-    lambdas = legacy_lambda_array(nlambda=3, lambda_min=1e-15, lambda_max=1e100)
+    lambdas = lambda_array(nlambda=3, lambda_min=1e-15, lambda_max=1e100)
     for sol in prob.scan(lambdas):
         assert abs(sol.chi2_B) < 1e-10
         assert abs(sol.max_Bnormal) < 1e-10

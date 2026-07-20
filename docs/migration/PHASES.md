@@ -164,7 +164,7 @@ Fortran geometry-init and the input-file readers. No Fortran dependency (except
   **No `nderiv` / second derivatives** (Laplace–Beltrami removed, ADR-022).
 - `FourierSurface(Surface)`: holds `mnmax, xm, xn, rmnc, rmns, zmnc, zmns`;
   `_evaluate` is the numpy gemm. Alternate constructors (classmethods) replace the
-  `geometry_option_*` codes: `circular_torus`, `from_vmec` (`mesh="full"|"half"`,
+  `geometry_option_*` codes: `circular_torus`, `from_wout` (`mesh="full"|"half"`,
   `straight_field_line=`), `from_ascii_table`, `from_focus`,
   `from_nescin`. VMEC `wout` / nescin / FOCUS reading is **Python** (ADR-004 lib).
 - `PlasmaSurface(FourierSurface)`: `Bnormal_from_plasma_current` via bnorm file
@@ -178,7 +178,7 @@ Fortran geometry-init and the input-file readers. No Fortran dependency (except
 
 Exit criteria:
 
-- [x] `PlasmaSurface.from_vmec(...)` and `CoilSurface.from_nescin(...)` reproduce
+- [x] `PlasmaSurface.from_wout(...)` and `CoilSurface.from_nescin(...)` reproduce
       the legacy surface grids (`r`, `normal`, `area`) within tolerance.
 - [x] `circular_torus`, `from_focus`, bnorm loading covered by unit tests.
 - [x] `_evaluate` numpy gemm matches a small hand-checked case; `xn`/`nfp` and
@@ -187,15 +187,15 @@ Exit criteria:
 **Status: done.** `Surface` (ABC), `FourierSurface`, `PlasmaSurface`, `CoilSurface`
 implemented in `src/regcoil/{surface,fourier_surface,plasma_surface,coil_surface,_io}.py`,
 exported from `regcoil/__init__.py`. Constructors landed: `circular_torus`,
-`from_vmec` (`mesh="full"|"half"`), `from_ascii_table`, `from_focus` (surface +
+`from_wout` (`mesh="full"|"half"`), `from_ascii_table`, `from_focus` (surface +
 Bnormal modes), `from_nescin`, plus `set_bnormal_from_bnorm_file` and coil-side
-`filter_modes`. `r`/`normal`/`area`/`volume` for `from_vmec` and `from_nescin`
+`filter_modes`. `r`/`normal`/`area`/`volume` for `from_wout` and `from_nescin`
 are checked in `tests/unit/` against the legacy Fortran (`regcoil_init_plasma`/
 `regcoil_init_coil_surface`, compiled standalone and run outside the package
 build for comparison, since this exit criteria doesn't require the (still
 unbuilt) `_core` extension). **Not implemented, by design (see ADR-023):**
 `from_efit` (legacy dropped EFIT support, no reference to validate against),
-`from_vmec(straight_field_line=True)` (legacy root-solve not robust enough to
+`from_wout(straight_field_line=True)` (legacy root-solve not robust enough to
 port with confidence), `CoilSurface.from_uniform_offset` (needs the Fortran
 kernel added in Phase 7, per the original plan).
 

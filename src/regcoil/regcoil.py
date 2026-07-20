@@ -157,7 +157,7 @@ class Regcoil:
         dtheta_coil, dzeta_coil = coil.dtheta, coil.dzeta
 
         logger.info(
-            "Starting REGCOIL fused kernel build_g_and_h for plasma %dx%d, coil %dx%d, nbf=%d",
+            "Starting build_g_and_h for plasma %dx%d, coil %dx%d, nbf=%d",
             ntheta_plasma,
             nzeta_plasma,
             ntheta_coil,
@@ -170,19 +170,33 @@ class Regcoil:
             basis_functions, nfp, net_poloidal_current, net_toroidal_current, dtheta_coil, dzeta_coil,
         )
         logger.info(
-            "Finished REGCOIL fused kernel build_g_and_h in %.3f s",
+            "Finished build_g_and_h in %.3f s",
             perf_counter() - kernel_start,
         )
 
+        logger.info("Starting Bnormal0_flat assembly")
+        assembly_start = perf_counter()
         Bnormal_from_net_coil_currents = _unflatten_grid(h, ntheta_plasma, nzeta_plasma) / plasma.norm_normal
         Bnormal0 = plasma.Bnormal_from_plasma_current + Bnormal_from_net_coil_currents
         Bnormal0_flat = _flatten_grid(Bnormal0)
+        logger.info(
+            "Finished Bnormal0_flat assembly in %.3f s",
+            perf_counter() - assembly_start,
+        )
 
+        logger.info("Starting RHS_B assembly")
+        start_time = perf_counter()
         RHS_B = -dtheta_plasma * dzeta_plasma * (Bnormal0_flat @ g)
+        logger.info("Finished RHS_B assembly in %.3f s", perf_counter() - start_time)
         g_over_N = g / norm_normal_plasma_flat[:, None]
+        logger.info("Starting matrix_B assembly")
+        start_time = perf_counter()
         matrix_B = dtheta_plasma * dzeta_plasma * (g.T @ g_over_N)
+        logger.info("Finished matrix_B assembly in %.3f s", perf_counter() - start_time)
 
         f_over_N = f_all / norm_normal_coil_flat[None, None, :]
+        logger.info("Starting matrix_K assembly")
+        start_time = perf_counter()
         # matrix_K[m, n] = dtheta_coil * dzeta_coil * sum_{c,g} f_all[m,c,g] * f_over_N[n,c,g],
         # i.e. a contraction over the combined (Cartesian component, grid point) axes -- equivalent
         # to C @ C.T for C = f_all / sqrt(norm_normal_coil) flattened to (nbf, 3*ncoil_grid). Since
@@ -194,7 +208,11 @@ class Regcoil:
         C = f_over_sqrtN.reshape(nbf, -1)
         K_upper = scipy.linalg.blas.dsyrk(alpha=dtheta_coil * dzeta_coil, a=C, trans=0)
         matrix_K = np.triu(K_upper) + np.triu(K_upper, 1).T
+        logger.info("Finished matrix_K assembly in %.3f s", perf_counter() - start_time)
+        logger.info("Starting RHS_K assembly")
+        start_time = perf_counter()
         RHS_K = dtheta_coil * dzeta_coil * np.einsum("cg,mcg->m", d_xyz, f_over_N)
+        logger.info("Finished RHS_K assembly in %.3f s", perf_counter() - start_time)
 
         logger.info("Starting generalized eigensolve for %d basis functions", nbf)
         eigensolve_start = perf_counter()
@@ -314,6 +332,8 @@ class Regcoil:
         return self.solve(np.exp(log_lam))
 
     def _build_solution(self, lam, solution):
+        logger.info("Starting solution build for lambda=%g", lam)
+        start_time = perf_counter()
         g_sol = self.g @ solution
         Bnormal_total_flat = g_sol / self._norm_normal_plasma_flat + self._Bnormal0_flat
         Bnormal_total = _unflatten_grid(Bnormal_total_flat, self.plasma.ntheta, self.plasma.nzeta)
@@ -328,6 +348,11 @@ class Regcoil:
         chi2_K = float(self.nfp * self._dtheta_coil * self._dzeta_coil * np.sum(K2_times_N))
         max_K = float(np.sqrt(np.max(K2_times_N / self._norm_normal_coil_flat)))
         rms_K = float(np.sqrt(chi2_K / self.coil.area))
+        logger.info(
+            "Finished solution build for lambda=%g in %.3f s",
+            lam,
+            perf_counter() - start_time,
+        )
 
         return Solution(
             problem=self,

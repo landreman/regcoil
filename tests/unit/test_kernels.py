@@ -233,9 +233,12 @@ def test_from_uniform_offset_wires_kernel_to_coil_surface():
         xm=[0, 1, 1], xn=[0, 0, 3], rmnc=[5.0, 1.0, 0.15], zmns=[0.0, 1.0, 0.1],
         nfp=3, ntheta=16, nzeta=16,
     )
-    coil = CoilSurface.from_uniform_offset(plasma, separation=0.4, ntheta=6, nzeta=5, mpol=3, ntor=2)
+    coil = CoilSurface.from_uniform_offset(
+        plasma, separation=0.4, ntheta=6, nzeta=5, mpol=3, ntor=2, standard_toroidal_angle=True
+    )
 
     assert coil.nfp == 3
+    assert coil.standard_toroidal_angle is True
     assert coil.mnmax == len(XM_OUT)
     np.testing.assert_array_equal(np.sort(coil.xm), np.sort(XM_OUT))
     np.testing.assert_allclose(np.sort(coil.rmnc), np.sort(RMNC_OUT), atol=1e-12, rtol=1e-10)

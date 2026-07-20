@@ -17,7 +17,7 @@ import numpy as np
 EQUILIBRIA = Path(__file__).resolve().parents[2] / "equilibria"
 
 
-def legacy_lambda_array(nlambda, lambda_min, lambda_max):
+def lambda_array(nlambda, lambda_min, lambda_max):
     """Port of the legacy fixed lambda scan (`regcoil_compute_lambda.f90`,
     `general_option=1`): `lambda[0] = 0`, then `nlambda-1` values log-spaced
     from `lambda_min` to `lambda_max`.

@@ -265,7 +265,7 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
   surface; existing initialization methods must survive and stay extensible.
 - **Decision:** User-facing objects are `PlasmaSurface`, `CoilSurface`, `Regcoil`,
   and a `Solution` result, over a `Surface` (ABC) / `FourierSurface` base. Legacy
-  `geometry_option_*` codes become **alternate constructors** (`from_vmec`,
+  `geometry_option_*` codes become **alternate constructors** (`from_wout`,
   `from_nescin`, `from_focus`,`from_ascii_table`, `circular_torus`,
   `from_uniform_offset`). The `Surface` ABC (`_evaluate` contract) is the
   extensibility hook. `Regcoil` accepts a `Surface` (documented arrays it reads
@@ -360,7 +360,7 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
      fixture to build or validate a new EFIT g-file reader against. `from_efit` is
      omitted from `PlasmaSurface` and from the API.md constructor table until a
      concrete need (and a g-file + reference output to validate against) exists.
-  2. **`from_vmec(straight_field_line=True)` raises `NotImplementedError`.** The
+  2. **`from_wout(straight_field_line=True)` raises `NotImplementedError`.** The
      legacy coordinate transform (geometry_option_plasma=4) root-solves VMEC's
      theta against a fixed ±0.3 bracket per grid point; this is not robust even in
      the reference Fortran (observed "no sign change in residual" errors on a
@@ -374,7 +374,7 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
      optional. ADR-004 remains open for Phase 9 output writing.
 - **Consequences:** `CoilSurface.from_uniform_offset` (Phase 7, needs the Fortran
   offset kernel) and `from_efit` both raise/omit rather than half-implement;
-  `PlasmaSurface.from_vmec`, `from_ascii_table`, `from_focus`,
+  `PlasmaSurface.from_wout`, `from_ascii_table`, `from_focus`,
   `CoilSurface.from_nescin`, and `FourierSurface.circular_torus` are implemented
   and checked against the legacy Fortran (`regcoil_init_plasma`/
   `regcoil_init_coil_surface`, compiled standalone for comparison) in
@@ -426,3 +426,136 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
   full-resolution mode-coefficient arrays, extracted programmatically) from
   `examples/*/tests.py`; `ntheta_plasma=128` cases are `@pytest.mark.slow`
   and skipped in CI (`pytest -m "not slow"`) per PHASES.md Phase 8.
+
+---
+
+## ADR-025: `Surface.standard_toroidal_angle`; second `from_uniform_offset` construction
+
+- **Date:** 2026-07-19
+- **Status:** accepted
+- **Context:** `CoilSurface.from_uniform_offset` (Phase 7) only implemented the
+  legacy `geometry_option_coil=2` construction: for each coil `(theta, zeta)`
+  grid point, root-solve (`regcoil_uniform_offset_surface`) for the plasma
+  point whose normal-offset lands at Cartesian toroidal angle `atan2(y,x) ==
+  zeta`. Future cross-section plotting (Phase 10) plots a surface's `r` at
+  fixed `zeta`, which is only a plane of constant physical toroidal angle if
+  `zeta` *is* the standard toroidal angle in that sense. A second, simpler
+  offset construction is wanted: move each plasma grid point `separation`
+  along its local unit normal and Fourier-transform the result labeled by the
+  *same* `(theta, zeta)`, with no root solve. Because the plasma normal
+  generally has a toroidal component, this mislabels the moved point's actual
+  `atan2(y,x)` as `zeta` -- a real geometric difference from the root-solve
+  construction, not just an implementation detail, and one that would
+  silently corrupt any future cross-section plot that assumes constant-`zeta`
+  == constant-physical-angle.
+- **Decision:**
+  1. Add `Surface.standard_toroidal_angle: bool` (alongside `nfp`,
+     `stellarator_symmetric`, ...): `True` iff a constant-`zeta` slice of `r`
+     is a constant-physical-toroidal-angle cross section. All existing
+     constructors (`circular_torus`, `from_wout`, `from_ascii_table`,
+     `from_focus`, `from_nescin`, and the root-solve `from_uniform_offset`)
+     set/default it `True`.
+  2. `CoilSurface.from_uniform_offset` gains a `standard_toroidal_angle: bool`
+     argument that both selects the construction and is stored as the
+     result's attribute of the same name, so the argument name *is* the
+     contract. **Default is now `False`** (the new normal-offset method,
+     pure Python/numpy, no Fortran call) rather than the legacy root-solve;
+     `standard_toroidal_angle=True` keeps the old behavior (and is required
+     to reproduce the legacy-Fortran-golden regression tests, which pin it
+     explicitly). `ntheta_transform`/`nzeta_transform` apply to both
+     constructions; `tol` (root-solve tolerance) only affects `True`.
+  3. The normal-offset method samples one field period, not the full torus:
+     the plasma's `xn` is already an nfp multiple, so a `2*pi/nfp` rotation
+     maps the plasma surface (and hence its normal field and any
+     fixed-separation offset of it) to itself, and one period is enough to
+     reconstruct the Fourier coefficients -- the same shortcut the root-solve
+     kernel already relies on.
+- **Consequences:** For an axisymmetric plasma the two constructions agree
+  exactly (the normal has no toroidal component), giving a cheap
+  cross-check (`tests/unit/test_coil_surface.py::test_from_uniform_offset_circular_torus_is_exact`,
+  parametrized over both). For a non-axisymmetric plasma they differ by an
+  amount that shrinks with `separation` and with how non-circular the
+  cross-section is; both are physically legitimate offset surfaces (as
+  ADR-024 item 4 already established for `=2` vs `=4`), just parametrized
+  differently. All pre-existing unit/regression call sites that depend on
+  matching the legacy Fortran (`tests/unit/test_kernels.py`,
+  `tests/regression/lambda_search_*`,
+  `tests/regression/regcoilPaper_figure10d_but_geometry_option_coil_*`) were
+  updated to pass `standard_toroidal_angle=True` explicitly. Phase 10
+  cross-section plotting must check this attribute (and, if plotting a
+  `standard_toroidal_angle=False` surface, either say so or resample/re-root-
+  solve rather than assume constant-`zeta` is a physical cross section).
+- **Refined by:** ADR-026. ADR-025's first implementation of the
+  `standard_toroidal_angle=False` construction was geometrically wrong (it
+  DFT-ed the moved points' `(R, Z)` into a plain `FourierSurface`, which
+  reconstructs at `phi = zeta` and so relocated every point toroidally); the
+  attribute/argument/field-period decisions above stand, but the surface
+  representation is fixed in ADR-026.
+
+---
+
+## ADR-026: `nu` toroidal-angle-shift Fourier modes for non-standard-toroidal-angle surfaces
+
+- **Date:** 2026-07-20
+- **Status:** accepted
+- **Context:** ADR-025's `standard_toroidal_angle=False` construction moved each
+  plasma point `separation` along its normal, took `major_R = sqrt(x²+y²)` and
+  `Z = z` of the moved point, DFT-ed those as functions of `(theta, zeta)`, and
+  built a plain `FourierSurface`. But `FourierSurface._evaluate` hard-codes the
+  physical toroidal angle `phi = zeta` (`X = R*cos(zeta)`, `Y = R*sin(zeta)`).
+  The moved point's true angle is `phi = atan2(y,x) = zeta + delta` with
+  `delta != 0` whenever the plasma normal has a toroidal component, so the
+  reconstructed surface was the offset surface with every point *rotated back*
+  toroidally to `phi = zeta` -- a genuinely different (wrong) surface. The
+  original tests only exercised axisymmetric plasmas, where `delta == 0` hides
+  the bug.
+- **Key insight:** representing a "moved along the normal" surface in Fourier
+  space is only possible if the toroidal-angle deviation is carried explicitly.
+  DFT-ing `(R, Z)` *without* it is exactly what broke. So either keep the
+  surface as an exact geometric object (no Fourier rep) or add angle-shift
+  modes. We chose the Fourier route (Option 1 from the design discussion),
+  because a coil winding surface benefits from being a smooth, resolution-
+  controlled, `filter_modes`-able Fourier surface (feature parity with the
+  `standard_toroidal_angle=True`/legacy path), and it stays within the
+  first-derivative-only surface contract (ADR-022) with no live plasma
+  reference.
+- **Decision:**
+  1. Generalize `FourierSurface` with a **toroidal-angle-shift** mode set `nu`
+     (`numns` sine part, `numnc` cosine part; same `(xm, xn)` mode numbering
+     and `m*theta - n*zeta` angle as `R`/`Z`). The Cartesian point is placed at
+     `phi = zeta + nu`: `x = R*cos(zeta+nu)`, `y = R*sin(zeta+nu)`, `z = Z`.
+     Derivatives stay analytic (`dphi/dtheta = dnu/dtheta`,
+     `dphi/dzeta = 1 + dnu/dzeta`) -- no second derivatives. Default `nu = 0`
+     reduces exactly to the previous behavior (a fast path keeps the common
+     `phi = zeta` case unchanged), so every existing standard-angle surface is
+     byte-for-byte unaffected.
+  2. Under stellarator symmetry `nu` has **sine parity** (`numnc = 0`), because
+     the stellarator-symmetry map sends `phi -> -phi` and `phi = zeta + nu`, so
+     `nu` must be odd -- the same parity as `Z`'s `zmns`. `numnc != 0` therefore
+     also breaks the `stellarator_symmetric` auto-inference.
+  3. `standard_toroidal_angle` stays an **explicit constructor argument**, not
+     derived from whether `nu` is (numerically) zero. Deriving it is fragile:
+     an axisymmetric offset yields `nu` at rounding-noise level, and a
+     construction-intent flag is what downstream code (Phase 10 plotting) wants
+     anyway. `from_uniform_offset` sets the attribute from its argument and
+     supplies `nu` modes only on the `False` path; the two are always
+     consistent because that constructor controls both.
+  4. `from_uniform_offset`'s `False` path computes `nu = atan2(y,x) - zeta`
+     (wrapped into `(-pi, pi]`; the true shift is `~separation/R << pi`, so the
+     branch is unambiguous) on the field-period grid and DFTs it alongside
+     `R`/`Z`. `filter_modes` zeroes `numns`/`numnc` with `R`/`Z` so smoothing
+     stays consistent.
+- **Consequences:** With `mpol`/`ntor` at the transform grid's Nyquist limit
+  the DFT->IDFT round-trips, so the reconstructed coil surface passes through
+  the moved-along-normal points to machine precision -- verified on a
+  non-axisymmetric plasma in
+  `tests/unit/test_coil_surface.py::test_from_uniform_offset_reproduces_moved_points_nonaxisymmetric`
+  (this test fails on the pre-ADR-026 code). Analytic `nu` derivatives are
+  checked against finite differences
+  (`tests/unit/test_surface.py::test_nu_angle_shift_places_point_at_zeta_plus_nu`),
+  so `Regcoil`'s coil normal and basis functions are correct on these
+  surfaces. NetCDF output (Phase 9) and any nescin export must now carry the
+  `nu` modes to round-trip a `standard_toroidal_angle=False` surface; a plain
+  nescin file (R/Z only) cannot represent one without loss. The
+  `standard_toroidal_angle=True` (Fortran root-solve) path is unchanged and
+  produces `nu = 0`.

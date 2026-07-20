@@ -51,13 +51,21 @@ def test_from_nescin_filter_at_construction():
     assert not np.allclose(filtered.rmnc, unfiltered.rmnc)
 
 
-def test_from_uniform_offset_circular_torus_is_exact():
+@pytest.mark.parametrize("standard_toroidal_angle", [False, True])
+def test_from_uniform_offset_circular_torus_is_exact(standard_toroidal_angle):
     """`from_uniform_offset` for a circular-cross-section plasma should stay
-    circular, with minor radius a + separation (see test_kernels.py for the
-    golden-legacy-Fortran and non-circular-plasma coverage)."""
+    circular, with minor radius a + separation, under *either* construction:
+    for an axisymmetric plasma the normal has no toroidal component, so the
+    default normal-offset method and the standard-toroidal-angle root solve
+    agree exactly (see test_kernels.py for the golden-legacy-Fortran and
+    non-circular-plasma coverage)."""
     plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
-    coil = CoilSurface.from_uniform_offset(plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1)
+    coil = CoilSurface.from_uniform_offset(
+        plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1,
+        standard_toroidal_angle=standard_toroidal_angle,
+    )
 
+    assert coil.standard_toroidal_angle is standard_toroidal_angle
     for m, n, rc, zs in zip(coil.xm, coil.xn, coil.rmnc, coil.zmns):
         if m == 0 and n == 0:
             assert rc == pytest.approx(5.0, abs=1e-9)
@@ -69,12 +77,85 @@ def test_from_uniform_offset_circular_torus_is_exact():
             assert zs == pytest.approx(0.0, abs=1e-8)
 
 
+def test_from_uniform_offset_default_is_not_standard_toroidal_angle():
+    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
+    coil = CoilSurface.from_uniform_offset(plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1)
+    assert coil.standard_toroidal_angle is False
+
+
+def _moved_along_normal(plasma, separation, theta, zeta):
+    """The moved-along-normal points, computed independently of CoilSurface."""
+    ev = plasma._evaluate(theta, zeta)
+    r, drdtheta, drdzeta = ev["r"], ev["drdtheta"], ev["drdzeta"]
+    normal = np.empty_like(r)
+    normal[0] = drdzeta[1] * drdtheta[2] - drdtheta[1] * drdzeta[2]
+    normal[1] = drdzeta[2] * drdtheta[0] - drdtheta[2] * drdzeta[0]
+    normal[2] = drdzeta[0] * drdtheta[1] - drdtheta[0] * drdzeta[1]
+    normal /= np.sqrt(np.sum(normal * normal, axis=0))
+    return r + separation * normal
+
+
+def test_from_uniform_offset_reproduces_moved_points_nonaxisymmetric():
+    """The core correctness check for the default (`nu`) construction on a
+    genuinely non-axisymmetric plasma: with `mpol`/`ntor` at the transform
+    grid's Nyquist limit the DFT->IDFT round-trips, so the reconstructed coil
+    surface must pass through exactly the moved-along-normal points. This
+    fails for any construction that drops the toroidal-angle shift `nu`
+    (X = R*cos(zeta) instead of R*cos(zeta + nu)) on a surface whose normal
+    has a toroidal component."""
+    plasma = PlasmaSurface(
+        xm=[0, 1, 1], xn=[0, 0, 3], rmnc=[5.0, 1.0, 0.15], zmns=[0.0, 1.0, 0.1],
+        nfp=3, ntheta=32, nzeta=32,
+    )
+    sep, nt, nz = 0.4, 16, 14
+    coil = CoilSurface.from_uniform_offset(
+        plasma, separation=sep, ntheta=nt, nzeta=nz, mpol=nt // 2, ntor=nz // 2
+    )
+
+    assert coil.standard_toroidal_angle is False
+    assert np.max(np.abs(coil.numns)) > 1e-3  # nu genuinely nonzero here
+
+    theta = 2 * np.pi * np.arange(nt) / nt
+    zeta = (2 * np.pi / plasma.nfp) * np.arange(nz) / nz
+    r_moved = _moved_along_normal(plasma, sep, theta, zeta)
+    np.testing.assert_allclose(coil.r[:, :, :nz], r_moved, atol=1e-9)
+
+
+def test_from_uniform_offset_nu_has_sine_parity_for_stellarator_symmetric_plasma():
+    """A stellarator-symmetric plasma yields an offset surface with only the
+    sine (`numns`) angle-shift modes; the cosine part (`numnc`) is zero."""
+    plasma = PlasmaSurface(
+        xm=[0, 1, 1], xn=[0, 0, 3], rmnc=[5.0, 1.0, 0.15], zmns=[0.0, 1.0, 0.1],
+        nfp=3, ntheta=32, nzeta=32,
+    )
+    assert plasma.stellarator_symmetric
+    coil = CoilSurface.from_uniform_offset(plasma, separation=0.4, ntheta=16, nzeta=14, mpol=6, ntor=5)
+    assert np.all(coil.numnc == 0)
+    assert np.any(coil.numns != 0)
+    assert coil.stellarator_symmetric
+
+
 def test_from_uniform_offset_logs_kernel_timing(caplog):
+    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
+
+    with caplog.at_level("INFO"):
+        CoilSurface.from_uniform_offset(
+            plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1, standard_toroidal_angle=True
+        )
+
+    messages = [record.getMessage() for record in caplog.records]
+    assert any("Starting uniform offset surface kernel" in message for message in messages)
+    assert any("Finished uniform offset surface kernel" in message for message in messages)
+
+
+def test_from_uniform_offset_default_does_not_log_kernel_timing(caplog):
+    """The default (`standard_toroidal_angle=False`) construction is pure
+    Python/numpy and never calls the Fortran kernel, so it must not emit the
+    kernel's timing log lines."""
     plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
 
     with caplog.at_level("INFO"):
         CoilSurface.from_uniform_offset(plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1)
 
     messages = [record.getMessage() for record in caplog.records]
-    assert any("Starting uniform offset surface kernel" in message for message in messages)
-    assert any("Finished uniform offset surface kernel" in message for message in messages)
+    assert not any("uniform offset surface kernel" in message for message in messages)

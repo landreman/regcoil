@@ -1,7 +1,23 @@
 """`FourierSurface`: a toroidal surface given by a double Fourier series.
 
-    R(theta, zeta) = sum_mn rmnc_mn*cos(m*theta - n*zeta) + rmns_mn*sin(m*theta - n*zeta)
-    Z(theta, zeta) = sum_mn zmns_mn*sin(m*theta - n*zeta) + zmnc_mn*cos(m*theta - n*zeta)
+    R(theta, zeta)  = sum_mn rmnc_mn*cos(m*theta - n*zeta) + rmns_mn*sin(m*theta - n*zeta)
+    Z(theta, zeta)  = sum_mn zmns_mn*sin(m*theta - n*zeta) + zmnc_mn*cos(m*theta - n*zeta)
+    nu(theta, zeta) = sum_mn numns_mn*sin(m*theta - n*zeta) + numnc_mn*cos(m*theta - n*zeta)
+
+The Cartesian point is placed at physical toroidal angle ``phi = zeta + nu``:
+
+    x = R*cos(zeta + nu),  y = R*sin(zeta + nu),  z = Z.
+
+``nu`` is the deviation of the standard (physical) toroidal angle from the
+surface parameter ``zeta``. When all ``nu`` modes are zero (the usual case,
+and the default) ``phi = zeta``, ``standard_toroidal_angle`` is True, and this
+reduces to an ordinary VMEC-style Fourier surface. A nonzero ``nu`` lets a
+surface whose points are *not* uniformly spaced in the standard toroidal angle
+-- e.g. the normal-offset coil surface from
+`CoilSurface.from_uniform_offset(..., standard_toroidal_angle=False)` -- still
+be represented (and smoothed / mode-filtered) as a Fourier surface. Under
+stellarator symmetry ``nu`` has sine parity (``numnc = 0``), like ``Z``'s
+``zmnc``.
 
 Conventions (asserted below; see API.md): `xn` already includes the factor of
 `nfp` (VMEC convention), and the angle is `m*theta - n*zeta`.
@@ -28,6 +44,9 @@ class FourierSurface(Surface):
         ntheta=64,
         nzeta=64,
         stellarator_symmetric=None,
+        standard_toroidal_angle=True,
+        numns=None,
+        numnc=None,
     ):
         xm = np.asarray(xm, dtype=np.int64)
         xn = np.asarray(xn, dtype=np.int64)
@@ -40,7 +59,9 @@ class FourierSurface(Surface):
 
         rmns = np.zeros(mnmax) if rmns is None else np.asarray(rmns, dtype=np.float64)
         zmnc = np.zeros(mnmax) if zmnc is None else np.asarray(zmnc, dtype=np.float64)
-        for name, arr in (("rmns", rmns), ("zmnc", zmnc)):
+        numns = np.zeros(mnmax) if numns is None else np.asarray(numns, dtype=np.float64)
+        numnc = np.zeros(mnmax) if numnc is None else np.asarray(numnc, dtype=np.float64)
+        for name, arr in (("rmns", rmns), ("zmnc", zmnc), ("numns", numns), ("numnc", numnc)):
             if arr.shape != (mnmax,):
                 raise ValueError(f"{name} must have shape (mnmax,) = ({mnmax},), got {arr.shape}")
 
@@ -51,12 +72,15 @@ class FourierSurface(Surface):
             raise ValueError("xn must be an integer multiple of nfp (VMEC convention)")
 
         if stellarator_symmetric is None:
-            stellarator_symmetric = bool(np.all(rmns == 0) and np.all(zmnc == 0))
+            stellarator_symmetric = bool(
+                np.all(rmns == 0) and np.all(zmnc == 0) and np.all(numnc == 0)
+            )
 
         self.nfp = nfp
         self.ntheta = int(ntheta)
         self.nzeta = int(nzeta)
         self.stellarator_symmetric = bool(stellarator_symmetric)
+        self.standard_toroidal_angle = bool(standard_toroidal_angle)
         self.mnmax = mnmax
         self.xm = xm
         self.xn = xn
@@ -64,6 +88,8 @@ class FourierSurface(Surface):
         self.rmns = rmns
         self.zmnc = zmnc
         self.zmns = zmns
+        self.numns = numns
+        self.numnc = numnc
 
     def _evaluate(self, theta, zetal):
         # The double-angle expansion turns the (mnmax, ntheta, nzetal) sum
@@ -101,15 +127,35 @@ class FourierSurface(Surface):
         dRdzeta = P1.T @ dcos_nzeta + P2.T @ dsin_nzeta
         dZdzeta = Q1.T @ dcos_nzeta + Q2.T @ dsin_nzeta
 
-        cosphi = np.cos(zetal)[None, :]
-        sinphi = np.sin(zetal)[None, :]
+        # Toroidal angle shift nu (same mode structure as Z): phi = zeta + nu.
+        # dphidtheta = dnudtheta, dphidzeta = 1 + dnudzeta. The common case
+        # (nu identically zero -> phi = zeta) keeps the original fast path.
+        if self.standard_toroidal_angle:
+            nu = 0.0
+            dnudtheta = 0.0
+            dnudzeta = 0.0
+            phi = zetal[None, :]
+        else:
+            numns = self.numns[:, None]
+            numnc = self.numnc[:, None]
+            N1 = numns * sin_mtheta + numnc * cos_mtheta
+            N2 = numnc * sin_mtheta - numns * cos_mtheta
+            dN1dtheta = -m * N2
+            dN2dtheta = m * N1
+            nu = N1.T @ cos_nzeta + N2.T @ sin_nzeta
+            dnudtheta = dN1dtheta.T @ cos_nzeta + dN2dtheta.T @ sin_nzeta
+            dnudzeta = N1.T @ dcos_nzeta + N2.T @ dsin_nzeta
+            phi = zetal[None, :] + nu
+
+        cosphi = np.cos(phi)
+        sinphi = np.sin(phi)
 
         X = R * cosphi
         Y = R * sinphi
-        dXdtheta = dRdtheta * cosphi
-        dYdtheta = dRdtheta * sinphi
-        dXdzeta = dRdzeta * cosphi - R * sinphi
-        dYdzeta = dRdzeta * sinphi + R * cosphi
+        dXdtheta = dRdtheta * cosphi - R * sinphi * dnudtheta
+        dYdtheta = dRdtheta * sinphi + R * cosphi * dnudtheta
+        dXdzeta = dRdzeta * cosphi - R * sinphi * (1.0 + dnudzeta)
+        dYdzeta = dRdzeta * sinphi + R * cosphi * (1.0 + dnudzeta)
 
         r = np.stack([X, Y, Z], axis=0)
         drdtheta = np.stack([dXdtheta, dYdtheta, dZdtheta], axis=0)

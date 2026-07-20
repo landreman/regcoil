@@ -12,13 +12,13 @@ import pytest
 
 from regcoil import CoilSurface, PlasmaSurface, Regcoil
 
-from ..testsCommon import EQUILIBRIA, legacy_lambda_array
+from ..tests_common import EQUILIBRIA, lambda_array
 from ._golden import CHI2_B, CHI2_K, LAMBDA, MAX_BNORMAL, MAX_K, SINGLE_VALUED_CURRENT_POTENTIAL_MN
 
 
 @pytest.mark.slow
 def test_nescin_original_angle_highres():
-    plasma = PlasmaSurface.from_vmec(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=128, nzeta=128, mesh="full")
+    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=128, nzeta=128, mesh="full")
     plasma.set_bnormal_from_bnorm_file(str(EQUILIBRIA / "bnorm.d23p4_tm"))
     coil = CoilSurface.from_nescin(
         str(EQUILIBRIA / "nescin.d23p4_tm_uniform_0.5m_offset"), nfp=plasma.nfp, ntheta=128, nzeta=128,
@@ -28,7 +28,7 @@ def test_nescin_original_angle_highres():
         plasma, coil, mpol_potential=32, ntor_potential=32,
     )
 
-    lambdas = legacy_lambda_array(nlambda=10, lambda_min=1e-15, lambda_max=1e-14)
+    lambdas = lambda_array(nlambda=10, lambda_min=1e-15, lambda_max=1e-14)
     np.testing.assert_allclose(lambdas, LAMBDA, rtol=1e-12)
     sols = prob.scan(lambdas)
 
