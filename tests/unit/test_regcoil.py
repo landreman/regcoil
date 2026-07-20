@@ -71,8 +71,8 @@ def test_regcoil_constructor_logs_expensive_steps(caplog):
         _small_problem()
 
     messages = [record.getMessage() for record in caplog.records]
-    assert any("Starting REGCOIL fused kernel build_g_and_h" in message for message in messages)
-    assert any("Finished REGCOIL fused kernel build_g_and_h" in message for message in messages)
+    assert any("Starting build_g_and_h" in message for message in messages)
+    assert any("Finished build_g_and_h" in message for message in messages)
     assert any("Starting generalized eigensolve" in message for message in messages)
     assert any("Finished generalized eigensolve" in message for message in messages)
 
