@@ -11,6 +11,9 @@ py.install_sources(
   'plasma_surface.py',
   'coil_surface.py',
   'regcoil.py',
+  'plot.py',
+  'cut.py',
+  '_cli.py',
   subdir: 'regcoil',
 )
 

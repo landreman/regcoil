@@ -21,7 +21,7 @@ Ordered work packages for the overhaul. Each phase should be a reviewable PR (or
 | 7 Slim stateless Fortran kernel + offset surface | done | 5 |
 | 8 Python `Regcoil` assembly + λ-family solve | done | 6, 7 |
 | 9 Save/load (object serialization); strip Fortran NetCDF/LAPACK | done | 8 |
-| 10 Package tools (plot, compare, cut) + Plotly coil plot | pending | 9 helpful |
+| 10 Package tools (plot, compare, cut) + Plotly coil plot | done | 9 helpful |
 | 11 Unit tests (Python + Fortran kernels) | pending | 7+; continuous afterward |
 | 12 Read the Docs manual | pending | 8 helpful |
 | 13 Retire Fortran executable + delete legacy Fortran + final cleanup | pending | 8–12, CI green |
@@ -513,16 +513,60 @@ model; no standalone-script requirement; no MATLAB left. Architecture is fixed b
 
 Exit criteria:
 
-- [ ] `regcoil.plot` atomic functions work on both a live run and a
+- [x] `regcoil.plot` atomic functions work on both a live run and a
       round-tripped saved run, calling no Fortran kernel / no `eigh` / no
       `build_g_and_h` in the saved-run path.
-- [ ] Each atomic function accepts `ax=`/`fig=` and returns it; `plot.all()` is
+- [x] Each atomic function accepts `ax=`/`fig=` and returns it; `plot.all()` is
       built by composition; `plot.pareto([...])` overlays multiple runs.
-- [ ] `plot.plot_3d(...)` renders any subset of {plasma, winding surface, cut
+- [x] `plot.plot_3d(...)` renders any subset of {plasma, winding surface, cut
       coils}, including the finite-thickness Plotly coil figure against a sample run.
-- [ ] `regcoil.cut(...)` reproduces a MAKEGRID `coils.*` file for a sample run.
-- [ ] Tools invocable via the single `regcoil` console script.
-- [ ] Zero `*.m` files in the repo.
+- [x] `regcoil.cut(...)` reproduces a MAKEGRID `coils.*` file for a sample run.
+- [x] Tools invocable via the single `regcoil` console script.
+- [x] Zero `*.m` files in the repo.
+
+**Status: done.** `src/regcoil/plot.py` holds the atomic functions
+(`cross_section`, `pareto`, `lambda_scan`, `current_potential`,
+`current_density`, `bnormal`, plus the `current_potential_scan`/
+`bnormal_scan` multi-lambda grids and `plot_3d`) and `all()`/`dashboard()`,
+all built by composing the atomics (no duplicated plotting logic); each
+accepts `ax=` (matplotlib) or `fig=` (plotly) and returns it, and
+matplotlib/plotly are imported lazily inside the functions so `import
+regcoil` stays plotting-free. `Surface.cross_section(phi)`
+(`src/regcoil/surface.py`) derives `phi = atan2(y, x)` from the actual
+Cartesian `r` grid and interpolates each theta-line to the requested
+physical angle(s), correct for both `standard_toroidal_angle` values
+(ADR-025/026) -- checked against the analytic circular-torus cross section
+and, for a `standard_toroidal_angle=False` coil surface, against `atan2`
+directly (`tests/unit/test_surface.py`). `src/regcoil/cut.py` implements
+`cut(solution, coils_per_half_period, thickness=None, theta_shift=0) ->
+CutCoils`: `contourpy` traces `2*coils_per_half_period` closed contours of
+the period-normalized total current potential on a 3-field-period-wide
+extension (so a contour winding across the period seam closes correctly,
+matching the legacy `cutCoilsFromRegcoil` construction), replicates them
+across all `nfp` periods, and maps `(theta, zeta)` points to 3D via the new
+`FourierSurface.evaluate_at` (pointwise evaluation at arbitrary paired
+points, as opposed to `_evaluate`'s tensor-product grid -- needed since
+contour points aren't a regular grid). `CutCoils.save_makegrid(path)`
+replaces the legacy file write; `thickness=` builds finite-thickness ribbon
+corners from the local surface-normal and curve-binormal (the Plotly port of
+`m20160811_01_plotCoilsFromRegcoil.m`'s offset construction), rendered by
+`plot.plot_3d(coils=...)`/`plot.coil_3d(...)`. Thin `obj.plot_*()` /
+`obj.cut()` convenience methods delegate to these free functions from
+`Surface`, `Solution`, `SolutionScan`, and `CutCoils` (ADR-029 hybrid
+placement). The single `regcoil` console script (`src/regcoil/_cli.py`,
+registered via `[project.scripts]`) provides `regcoil plot|compare|cut`,
+each a thin `load() -> plot/cut -> show/save` wrapper -- no separate
+`regcoilPlot`/`compareRegcoil` console names. The legacy
+`regcoilPlot`/`compareRegcoil`/`cutCoilsFromRegcoil`/`cut_saddle_coil`
+scripts and `m20160811_01_plotCoilsFromRegcoil.m` are deleted (zero `*.m`
+files remain in the repo). Tests: `tests/unit/test_plot.py`,
+`test_cut.py`, `test_cli.py`, and additions to `test_surface.py` cover the
+`ax=`/`fig=` contract, `pareto`'s multi-scan overlay, `plot_3d` rendering
+any subset of {plasma, winding surface, cut coils}, the coil count/current/
+MAKEGRID-format checks for `cut()`, and -- reusing the `test_serialize.py`
+kernel/`eigh`-forbidding monkeypatch pattern -- that every plot function and
+`cut()` need no Fortran kernel or eigendecomposition on a round-tripped
+saved run.
 
 ---
 

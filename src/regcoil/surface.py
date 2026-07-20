@@ -132,8 +132,56 @@ class Surface(ABC):
         wrap = np.sum(0.5 * (major_R_squared[0, :] + major_R_squared[-1, :]) * (Z[0, :] - Z[-1, :]))
         return abs((interior + wrap) * self.dzeta / 2)
 
+    def cross_section(self, phi=None):
+        """Surface cross section(s) at fixed *physical* toroidal angle(s).
+
+        Unlike a constant-`zeta` slice, this is correct regardless of
+        `standard_toroidal_angle` (ADR-025): `phi = atan2(y, x)` is computed
+        from the actual Cartesian `r` grid, and each theta-line is
+        interpolated (periodically in the full-torus `zetal` direction) to
+        the requested physical angle(s) (ADR-029 decision 6).
+
+        Parameters
+        ----------
+        phi : array-like, optional
+            Physical toroidal angles in radians. Defaults to
+            ``[0, 0.5, 1, 1.5] * pi / nfp`` (half a field period, four
+            slices -- the legacy `regcoilPlot` set).
+
+        Returns
+        -------
+        R, Z : (len(phi), ntheta) arrays.
+        """
+        if phi is None:
+            phi = np.array([0, 0.5, 1, 1.5]) * np.pi / self.nfp
+        phi = np.atleast_1d(np.asarray(phi, dtype=float))
+        phi_wrapped = np.mod(phi, 2 * np.pi)
+
+        r = self.r
+        X, Y, Z = r[0], r[1], r[2]
+        R = np.hypot(X, Y)
+        phys_phi = np.arctan2(Y, X)  # (ntheta, nzetal), in [-pi, pi]
+        phys_phi = np.mod(phys_phi, 2 * np.pi)
+
+        ntheta = self.ntheta
+        R_slices = np.empty((len(phi), ntheta))
+        Z_slices = np.empty((len(phi), ntheta))
+        for itheta in range(ntheta):
+            ang = np.unwrap(phys_phi[itheta])
+            # Extend by +/- one full turn so interpolation works across the
+            # phi=0/2*pi seam regardless of where `ang` starts.
+            ang_ext = np.concatenate([ang - 2 * np.pi, ang, ang + 2 * np.pi])
+            R_ext = np.tile(R[itheta], 3)
+            Z_ext = np.tile(Z[itheta], 3)
+            order = np.argsort(ang_ext)
+            R_slices[:, itheta] = np.interp(phi_wrapped, ang_ext[order], R_ext[order])
+            Z_slices[:, itheta] = np.interp(phi_wrapped, ang_ext[order], Z_ext[order])
+        return R_slices, Z_slices
+
     def plot(self, ax=None, **kwargs):
-        """Minimal 3D wireframe/surface plot (matplotlib)."""
+        """Minimal 3D wireframe/surface plot (matplotlib). Superseded by the
+        interactive `regcoil.plot.plot_3d` (Plotly) for real use; kept as a
+        lightweight fallback."""
         import matplotlib.pyplot as plt
 
         if ax is None:
@@ -145,3 +193,10 @@ class Surface(ABC):
         ax.plot_surface(r[0], r[1], r[2], **kwargs)
         ax.set_box_aspect((1, 1, 1))
         return ax
+
+    def plot_cross_section(self, other=None, phi=None, ax=None):
+        """Convenience delegate for `regcoil.plot.cross_section(self, other,
+        ...)` -- `self` may be either the plasma or the coil surface."""
+        from . import plot
+
+        return plot.cross_section(self, other, phi=phi, ax=ax)
