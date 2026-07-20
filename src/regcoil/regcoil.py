@@ -20,6 +20,7 @@ from typing import cast
 
 import numpy as np
 import scipy.linalg
+import scipy.linalg.blas
 import scipy.optimize
 
 from . import _core
@@ -182,7 +183,17 @@ class Regcoil:
         matrix_B = dtheta_plasma * dzeta_plasma * (g.T @ g_over_N)
 
         f_over_N = f_all / norm_normal_coil_flat[None, None, :]
-        matrix_K = dtheta_coil * dzeta_coil * np.einsum("mcg,ncg->mn", f_all, f_over_N)
+        # matrix_K[m, n] = dtheta_coil * dzeta_coil * sum_{c,g} f_all[m,c,g] * f_over_N[n,c,g],
+        # i.e. a contraction over the combined (Cartesian component, grid point) axes -- equivalent
+        # to C @ C.T for C = f_all / sqrt(norm_normal_coil) flattened to (nbf, 3*ncoil_grid). Since
+        # the result is symmetric, dsyrk computes only the upper triangle in one BLAS call (~2x
+        # fewer flops than a full matmul, and vastly faster than np.einsum, which
+        # doesn't dispatch to BLAS).
+        sqrtN_coil_flat = np.sqrt(norm_normal_coil_flat)
+        f_over_sqrtN = f_all / sqrtN_coil_flat[None, None, :]
+        C = f_over_sqrtN.reshape(nbf, -1)
+        K_upper = scipy.linalg.blas.dsyrk(alpha=dtheta_coil * dzeta_coil, a=C, trans=0)
+        matrix_K = np.triu(K_upper) + np.triu(K_upper, 1).T
         RHS_K = dtheta_coil * dzeta_coil * np.einsum("cg,mcg->m", d_xyz, f_over_N)
 
         logger.info("Starting generalized eigensolve for %d basis functions", nbf)
