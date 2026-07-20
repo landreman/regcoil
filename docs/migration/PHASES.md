@@ -22,7 +22,7 @@ Ordered work packages for the overhaul. Each phase should be a reviewable PR (or
 | 8 Python `Regcoil` assembly + λ-family solve | done | 6, 7 |
 | 9 Save/load (object serialization); strip Fortran NetCDF/LAPACK | done | 8 |
 | 10 Package tools (plot, compare, cut) + Plotly coil plot | done | 9 helpful |
-| 11 Unit tests (Python + Fortran kernels) | pending | 7+; continuous afterward |
+| 11 Unit tests (Python + Fortran kernels) | done | 7+; continuous afterward |
 | 12 Read the Docs manual | pending | 8 helpful |
 | 13 Retire Fortran executable + delete legacy Fortran + final cleanup | pending | 8–12, CI green |
 
@@ -584,10 +584,12 @@ saved run.
 
 Exit criteria:
 
-- [ ] Documented `pytest` layout under `tests/`.
-- [ ] At least a handful of true unit tests (not only full examples) for the
+- [x] `pytest` layout under `tests/`.
+- [x] At least a handful of true unit tests (not only full examples) for the
       Python object model and for the Fortran kernels.
-- [ ] CI runs unit + example suites.
+- [x] CI runs unit + example suites.
+
+**Status** In good shape and we can proceed to later phases. We will continue to add tests for new code.
 
 ---
 

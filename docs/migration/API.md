@@ -368,8 +368,11 @@ data = regcoil.load("regcoil_out.w7x.nc")   # or use live objects from a script
 # Surface cross sections. Default phi = np.array([0, 0.5, 1, 1.5]) * pi / nfp
 # (half a field period); pass any phi array. Uses Surface.cross_section(phi),
 # correct for both standard_toroidal_angle values (ADR-025).
-plot.cross_section(data.plasma, data.coil)
-plot.cross_section(data.plasma, data.coil, phi=np.linspace(0, np.pi/data.plasma.nfp, 6))
+# Both surfaces -> one subplot per phi, plasma red / coil blue:
+plot.cross_sections(data.plasma, data.coil)
+plot.cross_sections(data.plasma, data.coil, phi=np.linspace(0, np.pi/data.plasma.nfp, 6))
+# One surface -> every phi overlaid on one axes, colored by phi:
+plot.cross_sections_overlay(data.plasma)
 
 # Pareto front — one or several runs overlaid; choose the axes.
 plot.pareto(data.solutions, x="f_K", y="f_B")
