@@ -27,55 +27,27 @@ class PlasmaSurface(FourierSurface):
         wout_filename,
         ntheta=64,
         nzeta=64,
-        mesh="full",
-        straight_field_line=False,
     ):
         """Build a plasma surface from a VMEC `wout` file.
 
-        `mesh="full"` uses the outermost point of VMEC's full radial mesh
-        (legacy geometry_option_plasma=2); `mesh="half"` averages the two
-        outermost full-mesh points to land on the half mesh
-        (geometry_option_plasma=3). `straight_field_line=True` instead
-        transforms to the straight-field-line poloidal angle
-        (geometry_option_plasma=4; not implemented for non-stellarator-
-        symmetric equilibria, matching the legacy limitation).
+        Uses the outermost point of VMEC's full radial mesh
+        (legacy geometry_option_plasma=2).
         """
         data = read_vmec_wout(wout_filename)
         nfp = data["nfp"]
         lasym = data["lasym"]
 
-        if straight_field_line:
-            # Not implemented: the legacy root-solve (regcoil_fzero bracketing
-            # VMEC's theta against a fixed +/-0.3 window) is fragile even in
-            # the reference Fortran -- it fails to bracket a root ("no sign
-            # change in residual") for some equilibria/grids -- and there is
-            # no validated reference to port against.
-            raise NotImplementedError(
-                "from_wout(straight_field_line=True) is not implemented (legacy "
-                "geometry_option_plasma=4). The legacy root-solve is not robust "
-                "enough to port with confidence; use mesh='full' or mesh='half' "
-                "instead, or supply your own straight-field-line coefficients "
-                "directly via PlasmaSurface(...)."
-            )
-        else:
-            if mesh == "full":
-                weight1, weight2 = 0.0, 1.0
-            elif mesh == "half":
-                weight1, weight2 = 0.5, 0.5
-            else:
-                raise ValueError(f"mesh must be 'full' or 'half', got {mesh!r}")
+        rmnc = data["rmnc"][-1]
+        zmns = data["zmns"][-1]
+        rmns = zmnc = None
+        if lasym:
+            rmns = data["rmns"][-1]
+            zmnc = data["zmnc"][-1]
 
-            rmnc = data["rmnc"][-2] * weight1 + data["rmnc"][-1] * weight2
-            zmns = data["zmns"][-2] * weight1 + data["zmns"][-1] * weight2
-            rmns = zmnc = None
-            if lasym:
-                rmns = data["rmns"][-2] * weight1 + data["rmns"][-1] * weight2
-                zmnc = data["zmnc"][-2] * weight1 + data["zmnc"][-1] * weight2
-
-            surf = cls(
-                data["xm"], data["xn"], rmnc, zmns, rmns, zmnc,
-                nfp=nfp, ntheta=ntheta, nzeta=nzeta, stellarator_symmetric=not lasym,
-            )
+        surf = cls(
+            data["xm"], data["xn"], rmnc, zmns, rmns, zmnc,
+            nfp=nfp, ntheta=ntheta, nzeta=nzeta, stellarator_symmetric=not lasym,
+        )
 
         # VMEC stores the toroidal Boozer covariant component B_zeta ("bvco")
         # on the half mesh; extrapolate to the boundary the same way the

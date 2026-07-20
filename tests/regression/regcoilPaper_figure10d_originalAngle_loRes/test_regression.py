@@ -17,7 +17,7 @@ from ..tests_common import EQUILIBRIA, lambda_array
 
 
 def test_nescin_original_angle_lores():
-    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=64, nzeta=64, mesh="full")
+    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=64, nzeta=64)
     plasma.set_bnormal_from_bnorm_file(str(EQUILIBRIA / "bnorm.d23p4_tm"))
     coil = CoilSurface.from_nescin(
         str(EQUILIBRIA / "nescin.d23p4_tm_uniform_0.5m_offset"), nfp=plasma.nfp, ntheta=64, nzeta=64,

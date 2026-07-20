@@ -17,7 +17,7 @@ from ._golden import CHI2_B, CHI2_K, MAX_BNORMAL, MAX_K, SINGLE_VALUED_CURRENT_P
 
 @pytest.mark.slow
 def test_li383_single_lambda():
-    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_li383_1.4m.nc"), ntheta=128, nzeta=128, mesh="full")
+    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_li383_1.4m.nc"), ntheta=128, nzeta=128)
     plasma.set_bnormal_from_bnorm_file(str(EQUILIBRIA / "bnorm.li383_1.4m"))
     coil = CoilSurface.from_nescin(
         str(EQUILIBRIA / "nescin.li383_realWindingSurface"), nfp=plasma.nfp, ntheta=128, nzeta=128,
