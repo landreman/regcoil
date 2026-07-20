@@ -37,22 +37,31 @@ def test_symmetry_both_is_twice_stellarator_symmetric():
     assert both.nbf == 2 * sin_only.nbf
 
 
-def test_axisymmetric_solution_is_zero_for_both_symmetry_choices():
-    """A circular-cross-section plasma and coil (different major/minor
-    radius) admit an exactly axisymmetric current potential, independent of
-    `stellarator_symmetric` -- a resolution/basis-independent sanity check."""
-    plasma = PlasmaSurface.circular_torus(R0=6.0, a=2.0, nfp=3, ntheta=8, nzeta=8)
+def test_axisymmetric_solution_vanishes():
+    """Circular plasma/coil tori should produce a zero single-valued current
+    potential and negligible B_normal at every lambda, independent of
+    `stellarator_symmetric`.
+
+    This is a resolution-independent sanity check for the Fourier basis and
+    matrix assembly.
+    """
+    plasma = PlasmaSurface.circular_torus(R0=6.0, a=2.0, nfp=3, ntheta=32, nzeta=32)
     plasma.net_poloidal_current = 1.0e6
-    coil = CoilSurface.circular_torus(R0=6.0, a=3.0, nfp=3, ntheta=8, nzeta=8)
-    for stellarator_symmetric in (True, False):
+    coil = CoilSurface.circular_torus(R0=6.5, a=4.0, nfp=3, ntheta=32, nzeta=32)
+    lambdas = np.geomspace(1e-15, 1e100, num=3)
+
+    for stellarator_symmetric, expected_nbf in ((True, 97), (False, 194)):
         prob = Regcoil(
-            plasma, coil, mpol_potential=3, ntor_potential=2,
+            plasma, coil, mpol_potential=6, ntor_potential=7,
             net_toroidal_current=0.0,
             stellarator_symmetric=stellarator_symmetric,
         )
-        sol = prob.solve(1e-10)
-        np.testing.assert_allclose(sol.solution, 0, atol=1e-8)
-        assert sol.chi2_B < 1e-10
+        assert prob.nbf == expected_nbf
+
+        for sol in prob.scan(lambdas):
+            assert abs(sol.chi2_B) < 1e-10
+            assert abs(sol.max_Bnormal) < 1e-10
+            np.testing.assert_allclose(sol.solution, 0, atol=3e-10)
 
 
 def test_scan_matches_per_lambda_direct_solves():
