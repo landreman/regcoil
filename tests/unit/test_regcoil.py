@@ -2,10 +2,16 @@
 doesn't need a golden legacy comparison (see tests/regression/ for those).
 """
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
 from regcoil import CoilSurface, PlasmaSurface, Regcoil
+
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+EQUILIBRIA = REPO_ROOT / "equilibria"
 
 
 def _small_problem(ntheta=8, nzeta=8, mpol=3, ntor=2, R0=6.0, a_plasma=2.0, a_coil=3.0, nfp=3):
@@ -117,6 +123,27 @@ def test_solve_for_target_raises_outside_achievable_range():
     hi = prob.solve(np.inf).chi2_B
     with pytest.raises(ValueError, match="not achievable"):
         prob.solve_for_target("chi2_B", hi * 10 + 1)
+
+
+def test_solve_for_target_rejects_unachievable_max_K_targets():
+    plasma = PlasmaSurface.from_wout(
+        str(EQUILIBRIA / "wout_d23p4_tm.nc"),
+        ntheta=64,
+        nzeta=64,
+        mesh="full",
+    )
+    coil = CoilSurface.from_uniform_offset(
+        plasma, separation=0.5, ntheta=64, nzeta=64, standard_toroidal_angle=True
+    )
+    prob = Regcoil(
+        plasma, coil, mpol_potential=12, ntor_potential=12,
+    )
+
+    with pytest.raises(ValueError, match="not achievable"):
+        prob.solve_for_target("max_K", 1.0e6)
+
+    with pytest.raises(ValueError, match="not achievable"):
+        prob.solve_for_target("max_K", 2.0e8)
 
 
 def test_current_potential_and_current_density_shapes():
