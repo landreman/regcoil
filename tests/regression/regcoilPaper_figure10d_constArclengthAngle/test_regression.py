@@ -3,7 +3,7 @@
 theta reparametrization of the uniform-offset coil surface, full resolution
 -- `@pytest.mark.slow`).
 
-The point of this legacy example is that the physics (chi2_B, chi2_K,
+The point of this legacy example is that the physics (f_B, f_K,
 max_Bnormal, max_K) does not depend on the coil-surface parametrization,
 even though the individual Fourier mode coefficients of the current
 potential do (different theta coordinate on the same physical surface) --
@@ -21,7 +21,7 @@ import pytest
 from regcoil import CoilSurface, PlasmaSurface, Regcoil
 
 from ..tests_common import EQUILIBRIA, lambda_array
-from ._golden import CHI2_B, CHI2_K, LAMBDA, MAX_BNORMAL, MAX_K, SINGLE_VALUED_CURRENT_POTENTIAL_MN
+from ._golden import F_B, F_K, LAMBDA, MAX_BNORMAL, MAX_K, SINGLE_VALUED_CURRENT_POTENTIAL_MN
 
 
 @pytest.mark.slow
@@ -40,8 +40,8 @@ def test_nescin_const_arclength_highres():
     np.testing.assert_allclose(lambdas, LAMBDA, rtol=1e-12)
     sols = prob.scan(lambdas)
 
-    np.testing.assert_allclose([sol.chi2_B for sol in sols][1:], CHI2_B, rtol=3e-3)
-    np.testing.assert_allclose([sol.chi2_K for sol in sols][1:], CHI2_K, rtol=1e-4)
+    np.testing.assert_allclose([sol.f_B for sol in sols][1:], F_B, rtol=3e-3)
+    np.testing.assert_allclose([sol.f_K for sol in sols][1:], F_K, rtol=1e-4)
     np.testing.assert_allclose([sol.max_Bnormal for sol in sols][1:], MAX_BNORMAL, rtol=1e-3)
     np.testing.assert_allclose([sol.max_K for sol in sols][1:], MAX_K, rtol=1e-3)
     np.testing.assert_allclose(

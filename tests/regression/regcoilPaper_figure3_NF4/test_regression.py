@@ -12,7 +12,7 @@ import pytest
 from regcoil import CoilSurface, PlasmaSurface, Regcoil
 
 from ..tests_common import EQUILIBRIA
-from ._golden import CHI2_B, CHI2_K, MAX_BNORMAL, MAX_K, SINGLE_VALUED_CURRENT_POTENTIAL_MN
+from ._golden import F_B, F_K, MAX_BNORMAL, MAX_K, SINGLE_VALUED_CURRENT_POTENTIAL_MN
 
 
 @pytest.mark.slow
@@ -28,8 +28,8 @@ def test_li383_single_lambda():
     )
 
     sol = prob.solve(0.0)
-    np.testing.assert_allclose(sol.chi2_B, CHI2_B[0], rtol=1e-4)
-    np.testing.assert_allclose(sol.chi2_K, CHI2_K[0], rtol=1e-4)
+    np.testing.assert_allclose(sol.f_B, F_B[0], rtol=1e-4)
+    np.testing.assert_allclose(sol.f_K, F_K[0], rtol=1e-4)
     np.testing.assert_allclose(sol.max_Bnormal, MAX_BNORMAL[0], rtol=1e-4)
     np.testing.assert_allclose(sol.max_K, MAX_K[0], rtol=1e-4)
     np.testing.assert_allclose(sol.solution[: len(SINGLE_VALUED_CURRENT_POTENTIAL_MN)], SINGLE_VALUED_CURRENT_POTENTIAL_MN, rtol=1e-4)

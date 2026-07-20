@@ -289,7 +289,7 @@ class Regcoil:
 
     def solve_for_target(self, metric, value, xtol=1e-12, rtol=1e-12, max_iter=200):
         """Bisect (in log(lambda)) for the lambda whose `Solution.<metric>`
-        (e.g. `'max_K'`, `'chi2_B'`) equals `value`. `metric` is monotonic in
+        (e.g. `'max_K'`, `'f_B'`) equals `value`. `metric` is monotonic in
         lambda; the direction is read off the `lam=0`/`lam=inf` endpoints
         rather than hard-coded, replacing the legacy staged bracket-then-
         Brent search (`regcoil_auto_regularization_solve.f90`) with a direct
@@ -340,16 +340,16 @@ class Regcoil:
         Bnormal_total_flat = g_sol / self._norm_normal_plasma_flat + self._Bnormal0_flat
         Bnormal_total = _unflatten_grid(Bnormal_total_flat, self.plasma.ntheta, self.plasma.nzeta)
         max_Bnormal = float(np.max(np.abs(Bnormal_total)))
-        chi2_B = float(
+        f_B = float(
             self.nfp * self._dtheta_plasma * self._dzeta_plasma
             * np.sum(Bnormal_total_flat * Bnormal_total_flat * self._norm_normal_plasma_flat)
         )
 
         K_diff = self._d_xyz - np.einsum("mcg,m->cg", self._f_all, solution)  # (3, ncoil_grid)
         K2_times_N = np.sum(K_diff * K_diff, axis=0) / self._norm_normal_coil_flat
-        chi2_K = float(self.nfp * self._dtheta_coil * self._dzeta_coil * np.sum(K2_times_N))
+        f_K = float(self.nfp * self._dtheta_coil * self._dzeta_coil * np.sum(K2_times_N))
         max_K = float(np.sqrt(np.max(K2_times_N / self._norm_normal_coil_flat)))
-        rms_K = float(np.sqrt(chi2_K / self.coil.area))
+        rms_K = float(np.sqrt(f_K / self.coil.area))
         logger.info(
             "Finished solution build for lambda=%g in %.3f s",
             lam,
@@ -360,8 +360,8 @@ class Regcoil:
             problem=self,
             lam=lam,
             solution=solution,
-            chi2_B=chi2_B,
-            chi2_K=chi2_K,
+            f_B=f_B,
+            f_K=f_K,
             max_K=max_K,
             rms_K=rms_K,
             max_Bnormal=max_Bnormal,
@@ -383,8 +383,8 @@ class Solution:
     problem: Regcoil = field(repr=False)
     lam: float
     solution: np.ndarray
-    chi2_B: float
-    chi2_K: float
+    f_B: float
+    f_K: float
     max_K: float
     rms_K: float
     max_Bnormal: float

@@ -3,9 +3,9 @@
 Generated programmatically (see docs/migration -- not hand-transcribed) to avoid
 transcription errors in these large arrays."""
 
-CHI2_B = [0.0106199394066055]
+F_B = [0.0106199394066055]
 
-CHI2_K = [180027864932680]
+F_K = [180027864932680]
 
 MAX_BNORMAL = [0.0961657657267785]
 

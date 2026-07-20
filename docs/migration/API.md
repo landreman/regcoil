@@ -72,7 +72,7 @@ prob = Regcoil(
 )                                        # <- all Fortran work happens here
 
 sol = prob.solve(lam=1e-16)
-print(sol.chi2_B, sol.chi2_K, sol.max_K, sol.rms_K)
+print(sol.f_B, sol.f_K, sol.max_K, sol.rms_K)
 
 scan = prob.scan(np.logspace(-19, -13, 40))   # free after the eigendecomposition
 sol  = prob.solve_for_target("max_K", 8.0e6)  # bisection on the same object
@@ -189,7 +189,7 @@ eigendecomposition. Methods:
 
 A frozen dataclass, one per λ (or a vectorized variant over a λ array):
 `lam`, `solution` (mode amplitudes), `single_valued_current_potential_mn`,
-`chi2_B`, `chi2_K`, `max_K`, `rms_K`, `max_Bnormal`, `Bnormal_total`, plus **lazy**
+`f_B`, `f_K`, `max_K`, `rms_K`, `max_Bnormal`, `Bnormal_total`, plus **lazy**
 `current_potential()` / `current_density()` that expand to grids on demand
 (keeping grid-sized arrays lazy matters when scanning many λ). `save(path)` writes
 NetCDF from Python.
@@ -205,7 +205,7 @@ w, V = scipy.linalg.eigh(matrix_B, matrix_K)   # ~nbf x nbf (e.g. 600), ~0.1 s
 
 diagonalizes the whole family:
 `x(λ) = V @ ((Vᵀ·b_B + λ·Vᵀ·b_K) / (w + λ))`. Every λ afterwards is O(nbf²), and
-`chi2_B(λ)`, `chi2_K(λ)` are smooth closed-form scalar functions to bisect or
+`f_B(λ)`, `f_K(λ)` are smooth closed-form scalar functions to bisect or
 Newton on directly — replacing `regcoil_auto_regularization_solve.f90`,
 `regcoil_fzero.f`, and `regcoil_lambda_scan.f90` with ~15 lines of Python.
 

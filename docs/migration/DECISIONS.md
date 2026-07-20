@@ -322,7 +322,7 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
   solve in scipy. Compute **one** generalized eigendecomposition
   `w, V = scipy.linalg.eigh(matrix_B, matrix_K)` in `Regcoil.__init__`; then
   `x(λ) = V @ ((Vᵀ·b_B + λ·Vᵀ·b_K) / (w + λ))` gives every λ in O(nbf²), and
-  `chi2_B(λ)`, `chi2_K(λ)`, `max_K(λ)` are closed-form for scans and target
+  `f_B(λ)`, `f_K(λ)`, `max_K(λ)` are closed-form for scans and target
   searches. Retire `regcoil_auto_regularization_solve.f90`,
   `regcoil_lambda_scan.f90`, `regcoil_compute_lambda.f90`, and (for λ) `regcoil_fzero.f`.
 - **Consequences:** No Fortran BLAS/LAPACK link *for the solve* (the unrelated
@@ -390,8 +390,8 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
 - **Context:** Implementing `Regcoil`/`Solution` (Phase 8) surfaced a few items
   not fully pinned down by ADR-021/API.md.
 - **Decisions:**
-  1. **`regularization_term_option` is chi2_K only.** `matrix_K`/`RHS_K` are
-     built from `f_x, f_y, f_z` (chi2_K's definition) only; the legacy `K_xy`
+  1. **`regularization_term_option` is f_K only.** `matrix_K`/`RHS_K` are
+     built from `f_x, f_y, f_z` (f_K's definition) only; the legacy `K_xy`
      and `K_zeta` regularization variants (and Laplace–Beltrami, already
      dropped by ADR-022) are not ported -- no example or ADR calls for them,
      and API.md's `matrix_K = Σ fᵢᵀ(fᵢ/N)` already specifies exactly this.
@@ -560,3 +560,23 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
   nescin file (R/Z only) cannot represent one without loss. The
   `standard_toroidal_angle=True` (Fortran root-solve) path is unchanged and
   produces `nu = 0`.
+
+---
+
+## ADR-027: Rename `Solution.chi2_B`/`chi2_K` to `f_B`/`f_K`
+
+- **Date:** 2026-07-20
+- **Status:** accepted
+- **Context:** The legacy Fortran names `chi2_B`/`chi2_K` are misleading in the
+  Python API: they are not chi-squared statistics, just the surface-integrated
+  squared-field/current-density objectives being traded off by `lambda`.
+- **Decision:** Rename the `Solution` dataclass fields (and the local variables
+  that build them in `Regcoil._build_solution`) to `f_B`/`f_K`. Applies
+  throughout the Python package -- `src/regcoil/`, `tests/unit/`,
+  `tests/regression/` (including golden-value module names `CHI2_B`/`CHI2_K`
+  -> `F_B`/`F_K`) -- and this migration documentation. The legacy Fortran
+  source, the `examples/*/tests.py` netCDF-variable checks (which read the
+  Fortran output variables literally named `chi2_B`/`chi2_K`), and the manual
+  are untouched, since they describe the Fortran code being replaced.
+- **Consequences:** Any external code calling `solve_for_target("chi2_B", ...)`
+  or reading `Solution.chi2_B`/`chi2_K` must switch to `"f_B"`/`f_B`/`f_K`.
