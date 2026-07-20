@@ -121,15 +121,19 @@ constructor below sets/defaults it `True` except
 default there — ADR-025): moving plasma points along their normal without
 re-solving for the standard toroidal angle leaves `atan2(y, x) != zeta` in
 general, so a future cross-section plot (Phase 10) must check this attribute
-before assuming constant-`zeta` == constant-physical-angle.
+before assuming constant-`zeta` == constant-physical-angle. Such a surface is
+still represented in Fourier space via a **toroidal-angle-shift** mode set
+`nu` (`phi = zeta + nu`; ADR-026) — see `FourierSurface`.
 
 > Second derivatives are gone with Laplace–Beltrami regularization (ADR-022), so
 > `_evaluate` has no `nderiv` and returns first derivatives only.
 
 ### `FourierSurface(Surface)`
 
-The concrete workhorse. Holds `mnmax, xm, xn, rmnc, rmns, zmnc, zmns`; its
-`_evaluate` is the numpy gemm (`rmnc @ cos(angle)` etc.). The old
+The concrete workhorse. Holds `mnmax, xm, xn, rmnc, rmns, zmnc, zmns` and the
+optional toroidal-angle-shift modes `numns, numnc` (default zero); its
+`_evaluate` is the numpy gemm (`rmnc @ cos(angle)` etc.), placing the point at
+`phi = zeta + nu` (`nu` defaults to 0 → `phi = zeta`; ADR-026). The old
 `geometry_option_*` integer codes become alternate constructors:
 
 | Legacy option | New constructor |

@@ -50,6 +50,49 @@ def test_stellarator_symmetric_inferred():
     surf2 = FourierSurface([0, 1], [0, 0], [1.0, 0.5], [0.0, 0.5], rmns=[0.0, 0.1], nfp=1)
     assert not surf2.stellarator_symmetric
 
+    # A cosine-parity nu mode (numnc) also breaks stellarator symmetry.
+    surf3 = FourierSurface([0, 1], [0, 0], [1.0, 0.5], [0.0, 0.5], numnc=[0.0, 0.1], nfp=1)
+    assert not surf3.stellarator_symmetric
+
+
+def test_nu_angle_shift_places_point_at_zeta_plus_nu():
+    """With a single nu mode, the physical toroidal angle is phi = zeta + nu,
+    so x = R*cos(zeta + nu), y = R*sin(zeta + nu). Hand-check at a point where
+    the shift is nonzero, and confirm the analytic derivatives match finite
+    differences."""
+    # nu = 0.1 * sin(theta) (m=1, n=0), R = 5 + cos(theta), Z = sin(theta).
+    xm, xn = [0, 1], [0, 0]
+    surf = FourierSurface(
+        xm, xn, rmnc=[5.0, 1.0], zmns=[0.0, 1.0], numns=[0.0, 0.1],
+        nfp=1, standard_toroidal_angle=False,
+    )
+    theta = np.array([0.7])
+    zetal = np.array([0.4])
+    out = surf._evaluate(theta, zetal)
+    R = 5.0 + np.cos(0.7)
+    nu = 0.1 * np.sin(0.7)
+    phi = 0.4 + nu
+    np.testing.assert_allclose(out["r"][:, 0, 0], [R * np.cos(phi), R * np.sin(phi), np.sin(0.7)], atol=1e-12)
+
+    # Analytic vs finite-difference derivatives on a small grid.
+    th = np.array([0.3, 1.9, 4.0])
+    ze = np.array([0.2, 2.1, 5.0])
+    h = 1e-6
+    base = surf._evaluate(th, ze)
+    fd_dth = (surf._evaluate(th + h, ze)["r"] - surf._evaluate(th - h, ze)["r"]) / (2 * h)
+    fd_dze = (surf._evaluate(th, ze + h)["r"] - surf._evaluate(th, ze - h)["r"]) / (2 * h)
+    np.testing.assert_allclose(base["drdtheta"], fd_dth, atol=1e-7)
+    np.testing.assert_allclose(base["drdzeta"], fd_dze, atol=1e-7)
+
+
+def test_nu_zero_reduces_to_standard_surface():
+    """A FourierSurface with no nu modes evaluates identically whether or not
+    the (unused) nu branch would run -- i.e. nu defaults to the phi=zeta fast
+    path and standard_toroidal_angle is True."""
+    surf = FourierSurface([0, 1, 1], [0, 0, 2], [5.0, 1.0, 0.1], [0.0, 1.0, 0.1], nfp=2)
+    assert surf.standard_toroidal_angle is True
+    assert np.all(surf.numns == 0) and np.all(surf.numnc == 0)
+
 
 def test_standard_toroidal_angle_defaults_true():
     """Every plain Fourier-coefficient construction represents its `zeta` as

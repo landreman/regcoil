@@ -485,3 +485,77 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
   cross-section plotting must check this attribute (and, if plotting a
   `standard_toroidal_angle=False` surface, either say so or resample/re-root-
   solve rather than assume constant-`zeta` is a physical cross section).
+- **Refined by:** ADR-026. ADR-025's first implementation of the
+  `standard_toroidal_angle=False` construction was geometrically wrong (it
+  DFT-ed the moved points' `(R, Z)` into a plain `FourierSurface`, which
+  reconstructs at `phi = zeta` and so relocated every point toroidally); the
+  attribute/argument/field-period decisions above stand, but the surface
+  representation is fixed in ADR-026.
+
+---
+
+## ADR-026: `nu` toroidal-angle-shift Fourier modes for non-standard-toroidal-angle surfaces
+
+- **Date:** 2026-07-20
+- **Status:** accepted
+- **Context:** ADR-025's `standard_toroidal_angle=False` construction moved each
+  plasma point `separation` along its normal, took `major_R = sqrt(x²+y²)` and
+  `Z = z` of the moved point, DFT-ed those as functions of `(theta, zeta)`, and
+  built a plain `FourierSurface`. But `FourierSurface._evaluate` hard-codes the
+  physical toroidal angle `phi = zeta` (`X = R*cos(zeta)`, `Y = R*sin(zeta)`).
+  The moved point's true angle is `phi = atan2(y,x) = zeta + delta` with
+  `delta != 0` whenever the plasma normal has a toroidal component, so the
+  reconstructed surface was the offset surface with every point *rotated back*
+  toroidally to `phi = zeta` -- a genuinely different (wrong) surface. The
+  original tests only exercised axisymmetric plasmas, where `delta == 0` hides
+  the bug.
+- **Key insight:** representing a "moved along the normal" surface in Fourier
+  space is only possible if the toroidal-angle deviation is carried explicitly.
+  DFT-ing `(R, Z)` *without* it is exactly what broke. So either keep the
+  surface as an exact geometric object (no Fourier rep) or add angle-shift
+  modes. We chose the Fourier route (Option 1 from the design discussion),
+  because a coil winding surface benefits from being a smooth, resolution-
+  controlled, `filter_modes`-able Fourier surface (feature parity with the
+  `standard_toroidal_angle=True`/legacy path), and it stays within the
+  first-derivative-only surface contract (ADR-022) with no live plasma
+  reference.
+- **Decision:**
+  1. Generalize `FourierSurface` with a **toroidal-angle-shift** mode set `nu`
+     (`numns` sine part, `numnc` cosine part; same `(xm, xn)` mode numbering
+     and `m*theta - n*zeta` angle as `R`/`Z`). The Cartesian point is placed at
+     `phi = zeta + nu`: `x = R*cos(zeta+nu)`, `y = R*sin(zeta+nu)`, `z = Z`.
+     Derivatives stay analytic (`dphi/dtheta = dnu/dtheta`,
+     `dphi/dzeta = 1 + dnu/dzeta`) -- no second derivatives. Default `nu = 0`
+     reduces exactly to the previous behavior (a fast path keeps the common
+     `phi = zeta` case unchanged), so every existing standard-angle surface is
+     byte-for-byte unaffected.
+  2. Under stellarator symmetry `nu` has **sine parity** (`numnc = 0`), because
+     the stellarator-symmetry map sends `phi -> -phi` and `phi = zeta + nu`, so
+     `nu` must be odd -- the same parity as `Z`'s `zmns`. `numnc != 0` therefore
+     also breaks the `stellarator_symmetric` auto-inference.
+  3. `standard_toroidal_angle` stays an **explicit constructor argument**, not
+     derived from whether `nu` is (numerically) zero. Deriving it is fragile:
+     an axisymmetric offset yields `nu` at rounding-noise level, and a
+     construction-intent flag is what downstream code (Phase 10 plotting) wants
+     anyway. `from_uniform_offset` sets the attribute from its argument and
+     supplies `nu` modes only on the `False` path; the two are always
+     consistent because that constructor controls both.
+  4. `from_uniform_offset`'s `False` path computes `nu = atan2(y,x) - zeta`
+     (wrapped into `(-pi, pi]`; the true shift is `~separation/R << pi`, so the
+     branch is unambiguous) on the field-period grid and DFTs it alongside
+     `R`/`Z`. `filter_modes` zeroes `numns`/`numnc` with `R`/`Z` so smoothing
+     stays consistent.
+- **Consequences:** With `mpol`/`ntor` at the transform grid's Nyquist limit
+  the DFT->IDFT round-trips, so the reconstructed coil surface passes through
+  the moved-along-normal points to machine precision -- verified on a
+  non-axisymmetric plasma in
+  `tests/unit/test_coil_surface.py::test_from_uniform_offset_reproduces_moved_points_nonaxisymmetric`
+  (this test fails on the pre-ADR-026 code). Analytic `nu` derivatives are
+  checked against finite differences
+  (`tests/unit/test_surface.py::test_nu_angle_shift_places_point_at_zeta_plus_nu`),
+  so `Regcoil`'s coil normal and basis functions are correct on these
+  surfaces. NetCDF output (Phase 9) and any nescin export must now carry the
+  `nu` modes to round-trip a `standard_toroidal_angle=False` surface; a plain
+  nescin file (R/Z only) cannot represent one without loss. The
+  `standard_toroidal_angle=True` (Fortran root-solve) path is unchanged and
+  produces `nu = 0`.
