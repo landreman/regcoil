@@ -18,9 +18,9 @@ the fuller [Quickstart](quickstart.md).
 
 installation
 quickstart
+theory
 usage
 plotting
-theory
 ```
 
 ```{toctree}

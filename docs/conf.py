@@ -39,6 +39,8 @@ exclude_patterns = [
     # Internal migration/engineering planning docs, not part of the public
     # user-facing manual (see docs/migration/DECISIONS.md ADR-030).
     "migration",
+    # Developer-facing build instructions (this README).
+    "README.md",
 ]
 
 # MyST / notebook sources: both plain prose pages and executed tutorial pages

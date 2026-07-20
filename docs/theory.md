@@ -1,8 +1,7 @@
 # Theory
 
-This page summarizes the physical picture and notation used throughout the
-API; it is not a full derivation. For the complete algorithm and its
-validation, see
+This page summarizes the physical model and notation used throughout the
+API. For more details, see
 [Landreman, *Nuclear Fusion* 57, 046003 (2017)](https://arxiv.org/pdf/1609.04378.pdf)
 (also included in the repository as a PDF).
 
