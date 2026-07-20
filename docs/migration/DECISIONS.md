@@ -181,7 +181,7 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
 - **Status:** accepted
 - **Context:** Overhaul removes MATLAB; one useful visualization should move to Plotly.
 - **Decision:** Port only `m20160811_01_plotCoilsFromRegcoil.m` to Python/Plotly; delete all other `.m` files (`regcoil.m`, `m20160811_02_*.m`, entire `coilMetricScripts/`). Fold existing Python scripts (`regcoilPlot`, `compareRegcoil`, coil cutters) into the package (matplotlib where they already use it).
-- **Consequences:** Phase 9 delivers in-package CLIs; no MATLAB runtime needed.
+- **Consequences:** Phase 10 delivers in-package plotting/compare/cut and a single `regcoil` CLI (architecture fixed in ADR-029); no MATLAB runtime needed.
 
 ---
 
@@ -591,6 +591,10 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
 
 - **Date:** 2026-07-20
 - **Status:** accepted
+- **Amended:** 2026-07-20 (see ADR-029) — the `/problem` group additionally
+  stores **`Bnormal_from_net_coil_currents`** so the full Bnormal plot set is
+  reproducible from a saved file with no Fortran kernel call. See decision 2
+  below and the schema in [API.md](API.md#file-layout).
 - **Supersedes:** ADR-004 (NetCDF library on the Python side) — the output-side
   question ADR-004 left open for Phase 9 is resolved here. VMEC `wout` *reading*
   stays as ADR-004 decided (`scipy.io.netcdf_file`, `netCDF4` fallback; see the
@@ -638,7 +642,13 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
        net_poloidal_current, net_toroidal_current, stellarator_symmetric`) and a
        reference to its plasma and coil. `basis_functions`, `f_all`, `d_xyz` are
        cheap numpy and recomputed on load; `g, h, matrix_B/K, RHS_*, w, V` are
-       **not** stored.
+       **not** stored. **Exception (ADR-029):** the plasma-grid array
+       `Bnormal_from_net_coil_currents(ntheta_plasma, nzeta_plasma)` *is* stored
+       in `/problem`. It is λ-independent, ~0.1 MB, and its recompute is the
+       Fortran `h` term (`regcoil_build_g_and_h`); storing it lets the Bnormal
+       plot panel "from net coil currents" render from a saved file with no
+       kernel call, matching the standard set every other plot target already
+       satisfies. It is the only operator-derived quantity stored on `/problem`.
      - **`Solution`**: store `lam`, `solution` (the single-valued current-potential
        Fourier amplitudes — source of truth), the scalar diagnostics `f_B, f_K,
        max_K, rms_K, max_Bnormal`, **and the result-sized grids `Bnormal_total`,
@@ -708,3 +718,92 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
     old "strip Fortran NetCDF/LAPACK" bullets stay as the parallel cleanup they
     always were, now clearly secondary to the serialization work). Phase 11's
     "NetCDF round-trip" test becomes a round-trip test against this schema.
+
+---
+
+## ADR-029: Plotting and visualization architecture (Phase 10)
+
+- **Date:** 2026-07-20
+- **Status:** accepted
+- **Amends:** ADR-013 (the "fold the scripts in" intent stands; this ADR fixes the
+  architecture), ADR-028 (adds `Bnormal_from_net_coil_currents` to `/problem`).
+- **Context:** Phase 10 folds `regcoilPlot`, `compareRegcoil`, the coil cutters,
+  and the Plotly port of `m20160811_01_plotCoilsFromRegcoil.m` into `regcoil`.
+  Requirements: make **one plot type at a time** (not only the legacy fixed
+  multi-panel dashboard) yet keep a **single "plot everything"** command; plot
+  from a **live** run (no save) or a **saved** run with **no Fortran kernel and no
+  expensive BLAS** (the ADR-028 promise); support the legacy plot menagerie —
+  surface cross-sections, Pareto fronts (`f_B`/`f_K`, `max_Bnormal`/`max_K`, and
+  the mixed pairs) for one run or several overlaid, the `(θ, ζ)` field maps
+  (single-valued Φ, total Φ, K, Bnormal) across a λ scan, a 3D interactive view of
+  plasma and/or winding surfaces, and a 3D interactive view of finite-thickness
+  cut coils.
+- **Decisions:**
+  1. **Consume the object model only.** Every plotting function takes in-memory
+     `PlasmaSurface` / `CoilSurface` / `Regcoil` / `Solution` / `SolutionScan`
+     objects (or the `regcoil.load()` container), **never** file paths or raw
+     `xarray`. Because `load()` reconstructs real objects via the ADR-028
+     cheap-assembly split, a live object and a loaded object present one identical
+     interface to the plot layer. File → object is the CLI's job, not the plot
+     layer's.
+  2. **Canonical free functions in `regcoil.plot`; thin delegating methods on the
+     objects (hybrid).** `regcoil.plot.<fn>(obj, ...)` is the implementation;
+     `obj.plot_*()` convenience methods delegate to it. matplotlib and plotly are
+     imported **lazily inside** the plot functions/methods (the pattern already in
+     `Surface.plot`), so `import regcoil` never imports a plotting library and the
+     core solve keeps no plotting dependency.
+  3. **Atomic functions return their axes/figure; dashboards are pure
+     composition.** Every atomic function accepts `ax=` (matplotlib) or `fig=`
+     (plotly) and returns it. The λ-scan panel grids and `plot.all()` create the
+     layout and call the atomic functions into it — they contain **no** plotting
+     logic of their own. This single invariant is what lets "one plot at a time,"
+     the multi-panel grids, "overlay several runs on one axes," and "plot
+     everything" all share code with zero duplication.
+  4. **matplotlib for 2D, Plotly for 3D interactive.** 2D (cross-sections,
+     Pareto/λ traces, `(θ, ζ)` contour maps) → matplotlib. 3D interactive
+     (surfaces with a translucent-or-wireframe outer surface; finite-thickness cut
+     coils) → Plotly (ADR-013). No backend-abstraction layer; each function
+     documents which library's object it returns.
+  5. **Default matplotlib figure size** is `regcoil.plot.DEFAULT_FIGSIZE =
+     (14.5, 8.1)`, applied whenever a function must create its own figure (i.e.
+     `ax=` was not supplied). Passing `ax=`/`fig=` overrides it entirely.
+  6. **`cross_section` default angles.** `plot.cross_section(plasma, coil)`
+     defaults to `phi = np.array([0, 0.5, 1, 1.5]) * np.pi / nfp` (half a field
+     period, four slices — the legacy `regcoilPlot` set); a user may pass any
+     `phi` array. Cross sections are computed by a new `Surface.cross_section(phi)
+     -> (R, Z)` geometry method that derives `phi = atan2(y, x)` from the actual
+     Cartesian `r` grid and interpolates each θ-line to the requested physical
+     angle. This is correct for **both** `standard_toroidal_angle` values (ADR-025)
+     — the plot layer never assumes constant-ζ == constant physical angle.
+  7. **Composable 3D scene — `plot.plot_3d`.** A single 3D function plots **any
+     subset** of {plasma surface, winding surface, cut coils} in one view via
+     `plot.plot_3d(plasma=..., winding_surface=..., coils=...,
+     winding_surface_style="wireframe")`; any argument may be omitted. The
+     argument for the `CoilSurface` is `winding_surface=` (not `coil=`) so it does
+     not collide with `coils=`, the discrete `CutCoils`. The render style applies
+     specifically to the winding surface, so it is `winding_surface_style ∈
+     {"wireframe", "translucent", "solid"}` (not a generic `outer=`).
+  8. **Cutting is compute, separate from plotting.** `regcoil.cut(solution,
+     coils_per_half_period, thickness=..., ...) -> CutCoils` contours the total Φ,
+     maps contours to 3D curves via the coil Fourier modes, and optionally builds
+     finite-thickness ribbons. `CutCoils.save_makegrid(path)` replaces
+     `cutCoilsFromRegcoil`'s file write; `plot.plot_3d(coils=cut)` /
+     `plot.coil_3d(cut)` render it. The irreversible file write stays out of the
+     plot path.
+  9. **A `Bnormal_from_net_coil_currents` panel needs no kernel on load** because
+     ADR-028 (amended) stores that λ-independent plasma-grid array in `/problem`.
+     Without this, that one legacy panel would have forced an operator rebuild on a
+     loaded run, violating the ADR-028 promise.
+  10. **One `regcoil` CLI with subcommands** (`regcoil plot|compare|cut|...`),
+      each a thin `load() → plot function(s) → show/save` wrapper. No separate
+      `regcoilPlot`/`compareRegcoil` console names. See [API.md](API.md#command-line-interface).
+- **Consequences:**
+  - New `src/regcoil/plot.py` (or `plot/` package) holding the free functions and
+    `DEFAULT_FIGSIZE`; new `src/regcoil/cut.py` with `cut()` / `CutCoils`; a
+    `Surface.cross_section` method; convenience `plot_*` methods on the objects.
+  - `Surface.plot` (the current minimal matplotlib 3D stub) is superseded by the
+    Plotly `plot_3d` path; the matplotlib stub may stay as a lightweight fallback
+    or be removed.
+  - Plotting smoke tests (Phase 11) exercise the functions on non-interactive
+    backends against a small live run and a round-tripped saved run.
+  - `plotly` is already an allowed runtime dependency (ADR-011); no new dep.

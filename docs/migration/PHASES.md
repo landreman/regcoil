@@ -365,22 +365,68 @@ Exit criteria:
 
 ---
 
-## Phase 10 — Package tools + Plotly coil visualization
+## Phase 10 — Plotting, comparison, coil cutting + a single `regcoil` CLI
 
-**Intent:** First-class Python tooling; no standalone script requirement; no MATLAB left.
+**Intent:** First-class Python visualization/tooling that consumes the object
+model; no standalone-script requirement; no MATLAB left. Architecture is fixed by
+**ADR-029** (see also [API.md](API.md#plotting-and-visualization)).
 
-Fold into `regcoil` (CLI entry points TBD):
+**Design invariants (ADR-029):**
 
-- `regcoilPlot` → matplotlib-based plotting module
-- `compareRegcoil` → compare module
-- `cutCoilsFromRegcoil` / `cut_saddle_coil` → coil cutting module(s)
+- **Object model only.** Every plotting function takes in-memory objects
+  (`PlasmaSurface`/`CoilSurface`/`Regcoil`/`Solution`/`SolutionScan`) or the
+  `regcoil.load()` container — never file paths or raw `xarray`. A live run and a
+  saved-then-loaded run present one identical interface (ADR-028 cheap-assembly
+  split), so **no plot needs a Fortran kernel or expensive BLAS**.
+- **Hybrid placement.** Canonical free functions in `regcoil.plot`; thin
+  `obj.plot_*()` methods delegate to them. matplotlib/plotly are imported **lazily
+  inside** the functions so `import regcoil` stays plotting-free.
+- **Atomic functions return `ax=`/`fig=`; dashboards compose them.** The λ-scan
+  panel grids and `plot.all()` only lay out subplots and call the atomic
+  functions — no duplicated plotting logic. This is what makes "one plot at a
+  time," the multi-panel grids, overlaying several runs, and "plot everything"
+  share one code path.
+- **matplotlib for 2D, Plotly for 3D interactive.** `regcoil.plot.DEFAULT_FIGSIZE
+  = (14.5, 8.1)` is used whenever a matplotlib function must create its own figure.
 
-Port `m20160811_01_plotCoilsFromRegcoil.m` → Plotly; then delete that `.m` file.
+**Deliverables (replacing the legacy scripts):**
+
+- `regcoil.plot` module — atomic functions for: `cross_section` (matplotlib;
+  default `phi = np.array([0, 0.5, 1, 1.5]) * np.pi / nfp`, user-overridable, via a
+  new `Surface.cross_section(phi) -> (R, Z)` that handles both
+  `standard_toroidal_angle` values, ADR-025); `pareto` (one or several
+  `SolutionScan`s overlaid; selectable `x`/`y` among `f_B`, `f_K`, `max_Bnormal`,
+  `max_K`); `lambda_scan` (the f_B/f_K-vs-λ traces); `current_potential`
+  (`single_valued`/`total`), `current_density`, `bnormal`
+  (`plasma_current`/`net_coil`/`total`) atomic `(θ, ζ)` maps plus their
+  `*_scan` multi-λ grids; `plot_3d` (Plotly, plots **any subset** of {plasma
+  surface, winding surface, cut coils} in one view via `plasma=`,
+  `winding_surface=`, `coils=`, with `winding_surface_style` ∈
+  `wireframe`/`translucent`/`solid`); and `all()`/`dashboard()` composition. Replaces
+  `regcoilPlot` and `compareRegcoil`.
+- `regcoil.cut` module — `cut(solution, coils_per_half_period, thickness=..., ...)
+  -> CutCoils` (contour Φ → 3D curves → finite-thickness ribbons);
+  `CutCoils.save_makegrid(path)`. Replaces `cutCoilsFromRegcoil` /
+  `cut_saddle_coil`. Cutting (compute + MAKEGRID export) is separate from plotting;
+  `plot.plot_3d(coils=...)` / `plot.coil_3d(...)` renders it (the Plotly port of
+  `m20160811_01_plotCoilsFromRegcoil.m`).
+- **Single `regcoil` CLI** with subcommands (`regcoil plot|compare|cut|...`), each
+  a thin `load() → plot/cut → show/save` wrapper. No separate
+  `regcoilPlot`/`compareRegcoil` console names.
+- ADR-028 (amended) stores `Bnormal_from_net_coil_currents` in `/problem` so the
+  `bnormal(component="net_coil")` panel loads without a kernel call.
 
 Exit criteria:
 
-- [ ] Tools importable and invocable via console scripts.
-- [ ] Plotly coil figure works against a sample `regcoil_out`.
+- [ ] `regcoil.plot` atomic functions work on both a live run and a
+      round-tripped saved run, calling no Fortran kernel / no `eigh` / no
+      `build_g_and_h` in the saved-run path.
+- [ ] Each atomic function accepts `ax=`/`fig=` and returns it; `plot.all()` is
+      built by composition; `plot.pareto([...])` overlays multiple runs.
+- [ ] `plot.plot_3d(...)` renders any subset of {plasma, winding surface, cut
+      coils}, including the finite-thickness Plotly coil figure against a sample run.
+- [ ] `regcoil.cut(...)` reproduces a MAKEGRID `coils.*` file for a sample run.
+- [ ] Tools invocable via the single `regcoil` console script.
 - [ ] Zero `*.m` files in the repo.
 
 ---

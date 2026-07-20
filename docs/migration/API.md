@@ -274,7 +274,11 @@ Groups by object, each tagged with a `_class` attribute; the root carries a
                    net_poloidal_current, curpol, Bnormal_from_plasma_current
 /coil            _class=CoilSurface   : the FourierSurface fields (incl. nu modes)
 /problem         mpol_potential, ntor_potential, net_poloidal_current,
-                   net_toroidal_current, stellarator_symmetric
+                   net_toroidal_current, stellarator_symmetric,
+                   Bnormal_from_net_coil_currents(ntheta_plasma,nzeta_plasma)
+                   # ^ stored (ADR-029): λ-independent, its recompute is the
+                   #   Fortran h term, so the "net coil currents" Bnormal panel
+                   #   plots from a saved file with no kernel call
 /solutions       dim lambda(nlambda):
                    lam, solution(nlambda,nbf),
                    f_B, f_K, max_K, rms_K, max_Bnormal,
@@ -300,7 +304,10 @@ mode amplitudes.** The big operators are **never** saved.
   away, rebuilt lazily on load.
 - **`Regcoil`** stores its scalar parameters and references to plasma/coil.
   `basis_functions`, `f_all`, `d_xyz` are cheap numpy, rebuilt on load; `g`, `h`,
-  `matrix_B/K`, `RHS_*`, `w`, `V` are not stored.
+  `matrix_B/K`, `RHS_*`, `w`, `V` are not stored. **One exception (ADR-029):** the
+  λ-independent plasma-grid array `Bnormal_from_net_coil_currents` *is* stored (it
+  derives from the Fortran `h` term), so the Bnormal "from net coil currents" plot
+  panel needs no kernel on a loaded run.
 - **`Solution`** stores `lam`, `solution` (amplitudes), the scalar diagnostics,
   **and** the result-sized grids `Bnormal_total`, `current_potential`,
   `current_density`. `Bnormal_total` *must* be stored (its recompute is
@@ -317,6 +324,125 @@ mode amplitudes.** The big operators are **never** saved.
 `matrix_B/K`, `eigh`). `load()` runs only the cheap part, so a loaded problem's
 Solutions plot instantly; the operators are rebuilt lazily (with a log message)
 only if the user asks for a *new* λ via `solve()`/`scan()` on the loaded object.
+
+## Plotting and visualization
+
+Phase 10; architecture in ADR-029. The design goals: make **one plot type at a
+time** as easily as the full dashboard; plot a **live** run or a **saved** run
+identically and with **no Fortran kernel / no expensive BLAS**; and let plots be
+composed (subplots, overlays) freely.
+
+### Principles
+
+1. **Object model only.** Plot functions take in-memory objects
+   (`PlasmaSurface`, `CoilSurface`, `Regcoil`, `Solution`, `SolutionScan`) or the
+   `regcoil.load()` container — never file paths or `xarray`. `load()` rebuilds
+   real objects (ADR-028 cheap-assembly split), so a live and a loaded object are
+   the same interface. File → object is the CLI's job.
+2. **Hybrid placement.** Canonical free functions live in `regcoil.plot`; thin
+   `obj.plot_*()` methods delegate to them. matplotlib and plotly are imported
+   **lazily inside** the functions, so `import regcoil` pulls in no plotting
+   library and the core solve keeps no plotting dependency.
+3. **Atomic functions return their axes/figure; dashboards compose them.** Every
+   atomic function accepts `ax=` (matplotlib) or `fig=` (plotly) and returns it.
+   `plot.all()` and the λ-scan grids only build the layout and call the atomic
+   functions — no plotting logic of their own.
+4. **matplotlib for 2D, Plotly for 3D interactive.**
+   `regcoil.plot.DEFAULT_FIGSIZE = (14.5, 8.1)` is used whenever a matplotlib
+   function must create its own figure (i.e. no `ax=` was passed).
+
+### Functions
+
+```python
+import numpy as np
+import regcoil
+from regcoil import plot
+
+data = regcoil.load("regcoil_out.w7x.nc")   # or use live objects from a script
+
+# --- 2D, matplotlib ---
+
+# Surface cross sections. Default phi = np.array([0, 0.5, 1, 1.5]) * pi / nfp
+# (half a field period); pass any phi array. Uses Surface.cross_section(phi),
+# correct for both standard_toroidal_angle values (ADR-025).
+plot.cross_section(data.plasma, data.coil)
+plot.cross_section(data.plasma, data.coil, phi=np.linspace(0, np.pi/data.plasma.nfp, 6))
+
+# Pareto front — one or several runs overlaid; choose the axes.
+plot.pareto(data.solutions, x="f_K", y="f_B")
+plot.pareto([scanA, scanB], x="max_K", y="max_Bnormal", labels=["A", "B"])
+
+# lambda traces (f_B, f_K vs lambda), the rest of the legacy scan grid.
+plot.lambda_scan(data.solutions)
+
+# (theta, zeta) field maps — one lambda (Solution) at a time…
+plot.current_potential(data.solutions[7], kind="single_valued")   # or "total"
+plot.current_density(data.solutions[7])
+plot.bnormal(data.solutions[7], component="total")   # "plasma_current"|"net_coil"|"total"
+# …or the multi-lambda panel grid over a scan (composition of the atomic fn):
+plot.current_potential_scan(data.solutions, kind="total", nmax=16)
+plot.bnormal_scan(data.solutions, nmax=16)
+
+# --- 3D interactive, Plotly ---
+
+# One scene, ANY subset of {plasma, winding surface, cut coils}; omit what you
+# don't want. The winding surface renders as "wireframe", "translucent", or "solid".
+plot.plot_3d(plasma=data.plasma, winding_surface=data.coil, winding_surface_style="wireframe")
+plot.plot_3d(winding_surface=data.coil, coils=cut)        # winding surface + cut coils
+plot.plot_3d(plasma=data.plasma, winding_surface=data.coil, coils=cut,
+             winding_surface_style="translucent")
+
+# --- everything (pure composition of the above) ---
+plot.all(data)                       # ≈ the legacy regcoilPlot dashboard
+```
+
+Every function also has an object-method alias, e.g. `data.plasma.plot_cross_section(...)`,
+`data.solutions.plot_pareto(...)`, `data.solutions[7].plot_current_potential(...)`.
+
+### Coil cutting (compute, separate from plotting)
+
+Cutting is a computation that produces coil geometry; plotting it is downstream
+(ADR-029). The irreversible MAKEGRID file write stays out of the plot path.
+
+```python
+cut = regcoil.cut(data.solutions[7], coils_per_half_period=3, thickness=0.05)
+cut.save_makegrid("coils.w7x")       # replaces cutCoilsFromRegcoil's file output
+plot.plot_3d(winding_surface=data.coil, coils=cut)     # or plot.coil_3d(cut)
+```
+
+`cut()` contours the total current potential, maps contours to 3D curves via the
+coil Fourier modes, and (given `thickness`) builds the finite-thickness ribbons —
+the Plotly port of `m20160811_01_plotCoilsFromRegcoil.m`.
+
+## Command-line interface
+
+One console entry point, `regcoil`, with subcommands (ADR-029, ADR-015). Each
+subcommand is a thin wrapper: `regcoil.load(file)` → plot/cut → `show`/save. It is
+the only layer that touches file paths; the library functions stay object-only.
+
+```text
+regcoil plot    FILE.nc [--only NAME]... [--phi ...] [--lambda-index N]
+                        [--save OUT.(png|html)] [--no-show]
+        # No --only: the full dashboard (plot.all). --only selects atomic plots,
+        # repeatable: cross_section | pareto | lambda_scan | current_potential |
+        # current_density | bnormal | plot_3d.  --phi overrides cross-section
+        # angles; --lambda-index picks which Solution for the (theta,zeta) maps.
+
+regcoil compare FILE.nc [FILE.nc ...] [--x f_K|max_K] [--y f_B|max_Bnormal]
+                        [--save OUT.png] [--no-show]
+        # Overlays plot.pareto across several saved runs (replaces compareRegcoil).
+
+regcoil cut     FILE.nc --coils-per-half-period N [--lambda-index N]
+                        [--thickness T] [--out coils.NAME] [--plot] [--no-show]
+        # Runs regcoil.cut(...); writes a MAKEGRID coils.* file; --plot shows the
+        # 3D finite-thickness figure (replaces cutCoilsFromRegcoil / cut_saddle_coil).
+```
+
+Notes:
+- 3D subcommands (`plot_3d`, `cut --plot`) open an interactive Plotly view, or
+  write a standalone `.html` with `--save`. 2D `--save` writes an image.
+- `--no-show` (for headless/CI/scripted image dumps) skips the interactive window.
+- No `regcoilPlot` / `compareRegcoil` console names — one `regcoil` CLI only.
 
 ## Fortran extension boundary
 
