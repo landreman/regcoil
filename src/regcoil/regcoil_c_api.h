@@ -12,6 +12,8 @@ extern "C" {
  * persistent state: concurrent calls with different sizes do not
  * interfere. */
 
+int regcoil_c_omp_max_threads(void);
+
 int regcoil_c_build_inductance(
     int ntheta_plasma, int nzeta_plasma, int ntheta_coil, int nzeta_coil, int nfp,
     const double *r_plasma, const double *normal_plasma,

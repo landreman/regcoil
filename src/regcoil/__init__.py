@@ -2,10 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-import logging
-from typing import TextIO
-
 __version__ = "0.1.0"
 
 from . import _core
@@ -15,10 +11,12 @@ from .log import log
 from .plasma_surface import PlasmaSurface
 from .regcoil import Regcoil, Solution
 from .surface import Surface
+from ._core import omp_max_threads
 
 __all__ = [
     "__version__",
     "_core",
+    "omp_max_threads",
     "log",
     "Surface",
     "FourierSurface",
