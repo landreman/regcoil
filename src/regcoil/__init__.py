@@ -9,6 +9,7 @@ from . import cut
 from . import plot
 from .coil_surface import CoilSurface
 from .cut import CutCoils
+from .examples import ExampleDataset, examples
 from .fourier_surface import FourierSurface
 from .log import log
 from .plasma_surface import PlasmaSurface
@@ -30,6 +31,8 @@ __all__ = [
     "Solution",
     "SolutionScan",
     "CutCoils",
+    "ExampleDataset",
+    "examples",
     "plot",
     "cut",
     "save",
