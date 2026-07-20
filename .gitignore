@@ -26,3 +26,10 @@ build/
 
 .vscode
 nescin.out
+
+# Docs (ADR-030): Sphinx build output, autosummary-generated stubs, and the
+# MyST-NB / jupyter-cache execution cache are all regenerated at build time.
+docs/_build/
+docs/_api/
+docs/.jupyter_cache/
+.jupyter_cache/

@@ -126,7 +126,7 @@ class CoilSurface(FourierSurface):
         )
 
     def filter_modes(self, mpol_filter=None, ntor_filter=None):
-        """Zero out modes with |m| > mpol_filter or |n| > ntor_filter*nfp, in place.
+        """Zero out modes with `|m|` > mpol_filter or `|n|` > ntor_filter*nfp, in place.
 
         Filters the toroidal-angle-shift modes (`numns`/`numnc`) alongside
         `R`/`Z`, so a non-standard-toroidal-angle surface stays consistent.

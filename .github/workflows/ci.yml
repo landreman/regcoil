@@ -61,3 +61,41 @@ jobs:
           else
             pytest
           fi
+
+  docs:
+    name: docs (build + doctest + nbmake)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gfortran \
+            libblas-dev \
+            pkg-config
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install Python package + docs extra
+        run: |
+          python -m pip install -U pip
+          pip install -v ".[docs]"
+          python -c "import regcoil._core; print('regcoil._core OK')"
+
+      - name: Sphinx build (warnings are errors)
+        run: sphinx-build -W -b html docs docs/_build/html
+
+      - name: Doctest (README / quickstart snippet, ADR-030)
+        run: sphinx-build -b doctest docs docs/_build/doctest
+
+      - name: nbmake safety net over the executed doc pages
+        run: |
+          mkdir -p /tmp/doc_notebooks
+          for f in docs/quickstart.md docs/usage.md docs/plotting.md; do
+            jupytext --to ipynb --output "/tmp/doc_notebooks/$(basename "${f%.md}").ipynb" "$f"
+          done
+          pytest --nbmake /tmp/doc_notebooks --nbmake-timeout=600
