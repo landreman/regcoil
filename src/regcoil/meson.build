@@ -14,7 +14,22 @@ py.install_sources(
   'plot.py',
   'cut.py',
   '_cli.py',
+  'examples.py',
   subdir: 'regcoil',
+)
+
+# Bundled example datasets. The source files stay in the top-level equilibria/
+# directory; meson copies them into regcoil/equilibria/ inside the installed
+# package so regcoil.examples(...) can reach them via importlib.resources,
+# both in editable installs and in built wheels. See src/regcoil/examples.py.
+py.install_sources(
+  '../../equilibria/wout_li383_1.4m.nc',
+  '../../equilibria/bnorm.li383_1.4m',
+  '../../equilibria/nescin.li383_realWindingSurface',
+  '../../equilibria/wout_d23p4_tm.nc',
+  '../../equilibria/bnorm.d23p4_tm',
+  '../../equilibria/nescin.w7x_winding_surface_from_Drevlak',
+  subdir: 'regcoil/equilibria',
 )
 
 # _core.c crosses the boundary with NumPy arrays, so it needs
