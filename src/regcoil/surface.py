@@ -195,8 +195,19 @@ class Surface(ABC):
         return ax
 
     def plot_cross_section(self, other=None, phi=None, ax=None):
-        """Convenience delegate for `regcoil.plot.cross_section(self, other,
-        ...)` -- `self` may be either the plasma or the coil surface."""
+        """Convenience delegate. With `other=None`, single-surface overlay
+        via `regcoil.plot.cross_sections_overlay(self, phi=phi, ax=ax)`
+        (color by phi, returns the `ax`). With `other` given (the plasma or
+        coil counterpart of `self`), the multi-subplot grid via
+        `regcoil.plot.cross_sections(self, other, phi=phi)` (plasma red /
+        coil blue, one subplot per phi, returns a `Figure`; `ax` is unused in
+        this case since a whole grid of axes is created)."""
         from . import plot
 
-        return plot.cross_section(self, other, phi=phi, ax=ax)
+        if other is None:
+            return plot.cross_sections_overlay(self, phi=phi, ax=ax)
+
+        from .plasma_surface import PlasmaSurface
+
+        plasma, coil = (self, other) if isinstance(self, PlasmaSurface) else (other, self)
+        return plot.cross_sections(plasma, coil, phi=phi)

@@ -47,15 +47,25 @@ def _close_figures():
     plt.close("all")
 
 
-def test_cross_section_accepts_and_returns_ax():
+def test_cross_sections_overlay_accepts_and_returns_ax():
     plasma, coil, _ = _small_problem()
     fig, ax = plt.subplots()
-    returned = plot.cross_section(plasma, coil, ax=ax)
+    returned = plot.cross_sections_overlay(plasma, ax=ax)
     assert returned is ax
 
     # No ax= given -> creates its own figure of the documented default size.
-    ax2 = plot.cross_section(plasma, coil)
+    ax2 = plot.cross_sections_overlay(plasma)
     assert ax2.figure.get_size_inches() == pytest.approx(plot.DEFAULT_FIGSIZE)
+
+
+def test_cross_sections_grid_is_one_subplot_per_phi_red_plasma_blue_coil():
+    plasma, coil, _ = _small_problem()
+    phi = np.array([0.0, 0.5, 1.0, 1.5])
+    fig = plot.cross_sections(plasma, coil, phi=phi)
+    assert len(fig.axes) == len(phi)
+    for ax in fig.axes:
+        colors = {line.get_color() for line in ax.get_lines()}
+        assert colors == {"red", "blue"}
 
 
 def test_pareto_overlays_multiple_scans_on_one_axes():
@@ -120,7 +130,7 @@ def test_scan_grids_are_composition_of_atomic_functions():
     plasma, coil, _ = _small_problem()
     data = SimpleNamespace(plasma=plasma, coil=coil, solutions=scan)
     figs = plot.all(data)
-    assert len(figs) == 6  # cross-section grid, pareto, lambda_scan, 2 scan grids, 1 plotly 3d
+    assert len(figs) == 6  # cross-sections grid, pareto, lambda_scan, 2 scan grids, 1 plotly 3d
     assert type(figs[-1]).__module__.startswith("plotly")
     for f in figs[:-1]:
         assert hasattr(f, "savefig")
@@ -149,7 +159,8 @@ def test_object_convenience_methods_delegate():
     sol = scan[0]
 
     fig, ax = plt.subplots()
-    assert plasma.plot_cross_section(coil, ax=ax) is ax
+    assert plasma.plot_cross_section(ax=ax) is ax
+    assert len(plasma.plot_cross_section(coil).axes) == 4
     assert scan.plot_pareto(ax=ax) is ax
     assert scan.plot_lambda_scan(ax=ax) is ax
     assert sol.plot_current_potential(ax=ax) is ax
@@ -173,7 +184,8 @@ def test_plot_and_cut_need_no_kernel_on_loaded_run(tmp_path, monkeypatch):
     data = regcoil.load(path)
     sol = data.solutions[1]
 
-    plot.cross_section(data.plasma, data.coil)
+    plot.cross_sections(data.plasma, data.coil)
+    plot.cross_sections_overlay(data.plasma)
     plot.pareto(data.solutions)
     plot.lambda_scan(data.solutions)
     plot.current_potential(sol, kind="single_valued")
