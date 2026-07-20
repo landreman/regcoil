@@ -13,6 +13,7 @@ Fortran kernel is ``(izeta-1)*ntheta+itheta`` (itheta fastest) -- see
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 import logging
 from time import perf_counter
@@ -64,6 +65,14 @@ class Regcoil:
     every subsequent lambda is O(nbf**2) (ADR-021). Immutable after
     construction -- mutating `coil`/`plasma` afterwards does not update a
     live `Regcoil`.
+
+    `__init__` is split into a cheap assembly (surfaces, potential modes,
+    `basis_functions`, `f_all`, `d_xyz` -- no Fortran, no big BLAS) and an
+    expensive one (`_build_operators`: `build_g_and_h`, `matrix_B/K`,
+    `eigh`), so that `regcoil.load()` (ADR-028) can reconstruct a `Regcoil`
+    from disk running only the cheap part -- its stored Solutions then plot
+    with no kernel call. The operators are rebuilt lazily, via
+    `_ensure_operators`, only if a *new* lambda is solved on such an object.
     """
 
     def __init__(
@@ -75,6 +84,37 @@ class Regcoil:
         net_poloidal_current=None,
         net_toroidal_current=0.0,
         stellarator_symmetric=True,
+    ):
+        self._init_cheap(
+            plasma, coil, mpol_potential, ntor_potential,
+            net_poloidal_current, net_toroidal_current, stellarator_symmetric,
+        )
+        self._build_operators()
+
+    @classmethod
+    def _from_loaded(
+        cls, plasma, coil, mpol_potential, ntor_potential,
+        net_poloidal_current, net_toroidal_current, stellarator_symmetric,
+        Bnormal_from_net_coil_currents,
+    ):
+        """Used by `regcoil.load()`: cheap assembly only. The operators
+        (`g`, `h`, `matrix_B/K`, `w`, `V`) are left unset and rebuilt lazily
+        (see `_ensure_operators`) only if `solve()`/`scan()` is later called.
+        `Bnormal_from_net_coil_currents` is the one operator-derived
+        quantity stored on disk (its recompute needs the Fortran `h` term),
+        so it is set here directly rather than recomputed.
+        """
+        obj = cls.__new__(cls)
+        obj._init_cheap(
+            plasma, coil, mpol_potential, ntor_potential,
+            net_poloidal_current, net_toroidal_current, stellarator_symmetric,
+        )
+        obj.Bnormal_from_net_coil_currents = Bnormal_from_net_coil_currents
+        return obj
+
+    def _init_cheap(
+        self, plasma, coil, mpol_potential, ntor_potential,
+        net_poloidal_current, net_toroidal_current, stellarator_symmetric,
     ):
         if not isinstance(stellarator_symmetric, (bool, np.bool_)):
             raise TypeError(
@@ -102,7 +142,6 @@ class Regcoil:
         self.nfp = nfp = plasma.nfp
 
         xm_potential, xn_potential = _potential_fourier_modes(self.mpol_potential, self.ntor_potential, nfp)
-        mnmax_potential = xm_potential.shape[0]
 
         ntheta_coil, nzeta_coil = coil.ntheta, coil.nzeta
         theta_grid, zeta_grid = np.meshgrid(coil.theta, coil.zeta, indexing="ij")
@@ -145,18 +184,66 @@ class Regcoil:
 
         basis_functions = np.asfortranarray(basis_all.T)  # (ncoil_grid, nbf), for the Fortran kernel
 
+        norm_normal_plasma_flat = _flatten_grid(plasma.norm_normal)
+        dtheta_plasma, dzeta_plasma = plasma.dtheta, plasma.dzeta
+        dtheta_coil, dzeta_coil = coil.dtheta, coil.dzeta
+
+        # Public: the assembled problem (API.md).
+        self.xm_potential = xm_potential
+        self.xn_potential = xn_potential
+        self.nbf = nbf
+        self.basis_functions = basis_functions
+
+        # Private: implementation detail needed to build a `Solution`.
+        self._f_all = f_all
+        self._d_xyz = d_xyz
+        self._norm_normal_coil_flat = norm_normal_coil_flat
+        self._norm_normal_plasma_flat = norm_normal_plasma_flat
+        self._dtheta_plasma = dtheta_plasma
+        self._dzeta_plasma = dzeta_plasma
+        self._dtheta_coil = dtheta_coil
+        self._dzeta_coil = dzeta_coil
+
+        # Operators (expensive assembly, `_build_operators`) -- unset until built.
+        self.g = self.h = None
+        self.matrix_B = self.matrix_K = None
+        self.RHS_B = self.RHS_K = None
+        self.w = self.V = None
+        self.Bnormal_from_net_coil_currents = None
+        self._Bnormal0_flat = None
+        self._VtRHS_B = self._VtRHS_K = None
+
+    def _ensure_operators(self):
+        """Lazily rebuild the operators (Fortran kernel, big matrices,
+        eigendecomposition) if this `Regcoil` came from `regcoil.load()`
+        without them (ADR-028)."""
+        if self.g is None:
+            logger.info("Rebuilding operators for a loaded Regcoil (new lambda solve requested)")
+            self._build_operators()
+
+    def _build_operators(self):
+        plasma, coil = self.plasma, self.coil
+        nfp = self.nfp
+        net_poloidal_current = self.net_poloidal_current
+        net_toroidal_current = self.net_toroidal_current
+        basis_functions = self.basis_functions
+        f_all = self._f_all
+        d_xyz = self._d_xyz
+        norm_normal_coil_flat = self._norm_normal_coil_flat
+        norm_normal_plasma_flat = self._norm_normal_plasma_flat
+        dtheta_plasma, dzeta_plasma = self._dtheta_plasma, self._dzeta_plasma
+        dtheta_coil, dzeta_coil = self._dtheta_coil, self._dzeta_coil
+        nbf = self.nbf
+
         ntheta_plasma, nzeta_plasma = plasma.ntheta, plasma.nzeta
+        ntheta_coil, nzeta_coil = coil.ntheta, coil.nzeta
         r_plasma = np.asfortranarray(plasma.r[:, :, :nzeta_plasma])
         normal_plasma = np.asfortranarray(plasma.normal[:, :, :nzeta_plasma])
-        norm_normal_plasma_flat = _flatten_grid(plasma.norm_normal)
 
         r_coil = np.asfortranarray(coil.r)
         normal_coil = np.asfortranarray(coil.normal)
         drdtheta_coil_all = np.asfortranarray(coil.drdtheta)
         drdzeta_coil_all = np.asfortranarray(coil.drdzeta)
-
-        dtheta_plasma, dzeta_plasma = plasma.dtheta, plasma.dzeta
-        dtheta_coil, dzeta_coil = coil.dtheta, coil.dzeta
 
         logger.info(
             "Starting build_g_and_h for plasma %dx%d, coil %dx%d, nbf=%d",
@@ -224,11 +311,6 @@ class Regcoil:
             perf_counter() - eigensolve_start,
         )
 
-        # Public: the assembled problem (API.md).
-        self.xm_potential = xm_potential
-        self.xn_potential = xn_potential
-        self.nbf = nbf
-        self.basis_functions = basis_functions
         self.g = g
         self.h = h
         self.matrix_B = matrix_B
@@ -237,17 +319,8 @@ class Regcoil:
         self.RHS_K = RHS_K
         self.w = w
         self.V = V
-
-        # Private: implementation detail needed to build a `Solution`.
-        self._f_all = f_all
-        self._d_xyz = d_xyz
-        self._norm_normal_coil_flat = norm_normal_coil_flat
-        self._norm_normal_plasma_flat = norm_normal_plasma_flat
+        self.Bnormal_from_net_coil_currents = Bnormal_from_net_coil_currents
         self._Bnormal0_flat = Bnormal0_flat
-        self._dtheta_plasma = dtheta_plasma
-        self._dzeta_plasma = dzeta_plasma
-        self._dtheta_coil = dtheta_coil
-        self._dzeta_coil = dzeta_coil
         self._VtRHS_B = V.T @ RHS_B
         self._VtRHS_K = V.T @ RHS_K
 
@@ -261,14 +334,17 @@ class Regcoil:
     def solve(self, lam):
         """One regularized solve at a single lambda (`lam=np.inf` is the
         well-defined heavily-regularized limit) -> `Solution`."""
+        self._ensure_operators()
         lam = float(lam)
         solution = self.V @ self._coeffs(lam)
         return self._build_solution(lam, solution)
 
     def scan(self, lambdas):
         """Vectorized over an array of lambdas -- free after the
-        eigendecomposition cached in `__init__`. Returns a list of
-        `Solution`, one per lambda."""
+        eigendecomposition cached in `__init__`. Returns a `SolutionScan`
+        (a `Sequence[Solution]` with columnar `.lam`/`.f_B`/... accessors,
+        ADR-028)."""
+        self._ensure_operators()
         logger.info("Starting lambda scan")
         start_time = perf_counter()
         lambdas = np.atleast_1d(np.asarray(lambdas, dtype=float))
@@ -285,7 +361,7 @@ class Regcoil:
             "Finished lambda scan in %.3f s",
             perf_counter() - start_time,
         )
-        return data
+        return SolutionScan(data)
 
     def solve_for_target(self, metric, value, xtol=1e-12, rtol=1e-12, max_iter=200):
         """Bisect (in log(lambda)) for the lambda whose `Solution.<metric>`
@@ -299,6 +375,7 @@ class Regcoil:
         `lam=inf` extremes (matching the legacy "target not achievable"
         exit codes -2/-3, but as an exception rather than a sentinel).
         """
+        self._ensure_operators()
         sol_lo = self.solve(0.0)
         sol_hi = self.solve(np.inf)
         f_lo = getattr(sol_lo, metric)
@@ -368,12 +445,30 @@ class Regcoil:
             Bnormal_total=Bnormal_total,
         )
 
+    def save(self, path):
+        """Save this problem (plus its plasma and coil) to `path`
+        (NetCDF-4 via `h5netcdf`; ADR-028)."""
+        from . import _serialize
+        _serialize.save(path, problem=self)
+
+    @classmethod
+    def load(cls, path):
+        """Load a `Regcoil` (plus its plasma and coil) from `path`. The
+        expensive operators are rebuilt lazily only if a new lambda is
+        solved (ADR-028)."""
+        from . import _serialize
+        return _serialize.load_problem(path)
+
 
 @dataclass(frozen=True, eq=False)
 class Solution:
     """One regularized solve, at a single lambda. `current_potential()` /
     `current_density()` are lazy (grid-sized; expanding them for every
-    lambda in a scan would be wasteful).
+    lambda in a scan would be wasteful) for a freshly-computed `Solution`,
+    but a `Solution` reconstructed by `regcoil.load()` (ADR-028) carries the
+    precomputed grids (`_current_potential`/`_current_density`, stored on
+    disk to avoid materializing the ~0.5 GB `f_all` intermediate on load),
+    so those accessors are O(1) for a loaded run.
 
     `eq=False`: several fields are numpy arrays, so the dataclass-generated
     `__eq__`/`__hash__` (elementwise comparison inside a bool context) would
@@ -389,6 +484,8 @@ class Solution:
     rms_K: float
     max_Bnormal: float
     Bnormal_total: np.ndarray
+    _current_potential: np.ndarray | None = field(default=None, repr=False)
+    _current_density: np.ndarray | None = field(default=None, repr=False)
 
     @property
     def single_valued_current_potential_mn(self):
@@ -397,6 +494,8 @@ class Solution:
     def current_potential(self):
         """(ntheta_coil, nzeta_coil) total current potential Phi (one field
         period), including the secular net-current term."""
+        if self._current_potential is not None:
+            return self._current_potential
         prob = self.problem
         coil = prob.coil
         Phi_sv = _unflatten_grid(prob.basis_functions @ self.solution, coil.ntheta, coil.nzeta)
@@ -407,7 +506,72 @@ class Solution:
     def current_density(self):
         """(3, ntheta_coil, nzeta_coil) Cartesian surface current density K
         (one field period)."""
+        if self._current_density is not None:
+            return self._current_density
         prob = self.problem
         K_diff = prob._d_xyz - np.einsum("mcg,m->cg", prob._f_all, self.solution)  # (3, ncoil_grid)
         K_flat = K_diff / prob._norm_normal_coil_flat[None, :]
         return _unflatten_grid(K_flat, prob.coil.ntheta, prob.coil.nzeta)
+
+    def save(self, path):
+        """Save this solution (plus its problem, plasma, and coil) to `path`
+        (NetCDF-4 via `h5netcdf`; ADR-028)."""
+        from . import _serialize
+        _serialize.save(path, solutions=[self])
+
+    @classmethod
+    def load(cls, path):
+        """Load a single-lambda `Solution` (plus its problem, plasma, and
+        coil) from `path`. Raises `ValueError` if `path` holds more than one
+        lambda -- use `regcoil.load(path).solutions` for a scan."""
+        from . import _serialize
+        return _serialize.load_solution(path)
+
+
+class SolutionScan(Sequence):
+    """A lambda scan: a `Sequence[Solution]` that iterates/indexes as
+    ordinary `Solution` objects, plus columnar `.lam`/`.f_B`/`.f_K`/`.max_K`/
+    `.rms_K`/`.max_Bnormal` array accessors for direct Pareto/scan plotting
+    (ADR-028). Returned by `Regcoil.scan()` and `regcoil.load(...).solutions`.
+    """
+
+    def __init__(self, solutions):
+        self._solutions = list(solutions)
+
+    def __len__(self):
+        return len(self._solutions)
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return SolutionScan(self._solutions[index])
+        return self._solutions[index]
+
+    def __repr__(self):
+        return f"SolutionScan({len(self._solutions)} solutions)"
+
+    def _column(self, name):
+        return np.array([getattr(sol, name) for sol in self._solutions])
+
+    @property
+    def lam(self):
+        return self._column("lam")
+
+    @property
+    def f_B(self):
+        return self._column("f_B")
+
+    @property
+    def f_K(self):
+        return self._column("f_K")
+
+    @property
+    def max_K(self):
+        return self._column("max_K")
+
+    @property
+    def rms_K(self):
+        return self._column("rms_K")
+
+    @property
+    def max_Bnormal(self):
+        return self._column("max_Bnormal")

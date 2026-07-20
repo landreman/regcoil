@@ -17,7 +17,6 @@ fc = meson.get_compiler('fortran')
 add_project_arguments(
   '-ffree-line-length-none',
   '-fallow-argument-mismatch',
-  '-DNETCDF',
   language: 'fortran',
 )
 
@@ -33,41 +32,16 @@ else
   openmp_dep = dependency('openmp')
 endif
 
-netcdf_dep = dependency('netcdf')
-
-# gfortran's `include "netcdf.inc"` does not search standard system paths
-# unless they are passed with -I.  meson strips standard paths (e.g.
-# /usr/include) from pkg-config include dirs, so retrieve the includedir
-# from pkg-config and inject it explicitly.
-_nc_inc = run_command('pkg-config', '--variable=includedir', 'netcdf', check: false)
-if _nc_inc.returncode() == 0 and _nc_inc.stdout().strip() != ''
-  add_project_arguments('-I' + _nc_inc.stdout().strip(), language: 'fortran')
-endif
-
-netcdff_dep = dependency('netcdf-fortran', required: false)
-if not netcdff_dep.found()
-  netcdff_dep = dependency('netcdff', required: false)
-endif
-if not netcdff_dep.found()
-  # Fallback when pkg-config names differ (still need the Fortran library).
-  netcdff_lib = fc.find_library('netcdff', required: true)
-  netcdff_dep = declare_dependency(dependencies: netcdff_lib)
-endif
-
-lapack_dep = dependency('lapack', required: false)
 blas_dep = dependency('blas', required: false)
-if not lapack_dep.found() or not blas_dep.found()
+if not blas_dep.found()
   if host_machine.system() == 'darwin'
-    accelerate_dep = declare_dependency(link_args: ['-framework', 'Accelerate'])
-    lapack_dep = accelerate_dep
-    blas_dep = declare_dependency()
+    blas_dep = declare_dependency(link_args: ['-framework', 'Accelerate'])
   else
-    lapack_dep = fc.find_library('lapack', required: true)
     blas_dep = fc.find_library('blas', required: true)
   endif
 endif
 
-regcoil_deps = [openmp_dep, netcdf_dep, netcdff_dep, blas_dep, lapack_dep]
+regcoil_deps = [openmp_dep, blas_dep]
 
 subdir('fortran')
 subdir('src/regcoil')

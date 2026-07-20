@@ -141,6 +141,17 @@ class CoilSurface(FourierSurface):
         self.numns[mask] = 0
         self.numnc[mask] = 0
 
+    def save(self, path):
+        """Save this coil surface to `path` (NetCDF-4 via `h5netcdf`; ADR-028)."""
+        from . import _serialize
+        _serialize.save(path, coil=self)
+
+    @classmethod
+    def load(cls, path):
+        """Load a `CoilSurface` from `path`."""
+        from . import _serialize
+        return _serialize.load_coil(path)
+
 
 def _offset_along_normal(plasma, separation, ntheta_transform, nzeta_transform):
     """Sample `plasma` on a `(theta, zeta)` grid spanning one field period,

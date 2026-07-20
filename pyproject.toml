@@ -14,12 +14,12 @@ dependencies = [
     "numpy",
     "scipy",
     "matplotlib",
-    "f90nml",
     "plotly",
+    "h5netcdf",
+    "h5py",
 ]
 
 [project.optional-dependencies]
-netcdf = ["netCDF4"]
 # meson / ninja / meson-python needed in-env for editable installs (see README).
 dev = ["pytest", "ninja", "meson", "meson-python>=0.16.0"]
 
