@@ -49,7 +49,11 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
 ## ADR-004: NetCDF library on the Python side
 
 - **Date:** 2026-07-17
-- **Status:** proposed (**needs explicit choice**)
+- **Status:** resolved — split between reading and writing (see below); superseded on the output side by ADR-028.
+- **Resolution:** **Reading** VMEC `wout` uses `scipy.io.netcdf_file` with a
+  `netCDF4` fallback (the hybrid, option 3; see the Phase 6 note in ADR-023).
+  **Writing** REGCOIL's own save/load output uses NetCDF-4 via `h5netcdf`
+  (ADR-028), not `netCDF4` and not classic NetCDF-3.
 - **Context:** Tests today use `scipy.io.netcdf_file`. Output is written via Fortran `ezcdf`. VMEC `wout` may be NetCDF. Allowed deps may include optional `netCDF4`. Minimal-dependency principle applies.
 - **Options:**
   1. **`netCDF4`** — full NetCDF4/HDF5 features; common for VMEC `wout`; extra dependency (and system HDF5/NetCDF C libs in some installs).
@@ -580,3 +584,127 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
   are untouched, since they describe the Fortran code being replaced.
 - **Consequences:** Any external code calling `solve_for_target("chi2_B", ...)`
   or reading `Solution.chi2_B`/`chi2_K` must switch to `"f_B"`/`f_B`/`f_K`.
+
+---
+
+## ADR-028: Save/load format and object serialization (Phase 9)
+
+- **Date:** 2026-07-20
+- **Status:** accepted
+- **Supersedes:** ADR-004 (NetCDF library on the Python side) — the output-side
+  question ADR-004 left open for Phase 9 is resolved here. VMEC `wout` *reading*
+  stays as ADR-004 decided (`scipy.io.netcdf_file`, `netCDF4` fallback; see the
+  Phase 6 note in ADR-023); this ADR governs REGCOIL's own saved output.
+- **Context:** Phase 9's intent is object serialization — saving and loading
+  `PlasmaSurface`, `CoilSurface`, `Regcoil`, and `Solution` objects (and the
+  `Solution` list from a lambda scan), typically all together but optionally one
+  at a time. There is **no requirement to preserve the legacy Fortran
+  `regcoil_out.*.nc` format**; this is a fresh Python-defined schema. The driving
+  use case is that everything a user might want to plot from a saved run — 3D
+  surface shapes, surface cross-sections, the Pareto front between `f_B`/`f_K` or
+  `max_Bnormal`/`max_K`, the current potential and current density on the
+  `(theta, zeta)` grid, `Bnormal` on the plasma — must be available quickly
+  (order 1 s at 128×128) **without calling any Fortran kernel or expensive BLAS,
+  and ideally without reconstructing any Python object at all.**
+- **Decisions:**
+  1. **Format: NetCDF-4 written via `h5netcdf`.** HDF5 underneath (no NetCDF C
+     library needed in wheels/CI), but the NetCDF-4 data model gives named,
+     shared dimensions (`mnmax_plasma`, `mnmax_coil`, `nbf`, `nlambda`,
+     `ntheta_coil`, …) so the file is self-documenting and directly
+     `xarray.open_dataset`-able — a user can scatter `f_B` vs `f_K` for a Pareto
+     front with no `regcoil` import. `h5netcdf` becomes a **required** dependency
+     for I/O (core solve stays independent of it). Rejected: raw `h5py` (throws
+     away free named dimensions for no benefit here); `netCDF4` (equivalent data
+     model but drags in the NetCDF/HDF5 C libraries); `scipy.io.netcdf_file`
+     (NetCDF-3: no groups, no compression — can't express the object graph);
+     JSON (bloats/precision-risks the large float arrays). The ecosystem-tradition
+     argument for NetCDF (VMEC `wout`, legacy `regcoil_out`) is explicitly **not**
+     weighted — HDF5 is equally common in the fusion ecosystem.
+  2. **Store the source of truth, plus exactly those derived quantities whose
+     recomputation needs the Fortran kernel or the big operators.** The dividing
+     line: recompute anything derivable from just the surfaces + the mode
+     amplitudes; store anything that would otherwise require `g`, `h`,
+     `matrix_B`/`matrix_K`, or the eigendecomposition `V`. **The big operators
+     are never saved** (by default or otherwise in Phase 9). Concretely:
+     - **Surfaces** (`PlasmaSurface`/`CoilSurface`): store only source of truth —
+       `xm, xn, rmnc, rmns, zmnc, zmns, numns, numnc` (the `nu` modes per
+       ADR-026), `nfp, ntheta, nzeta, stellarator_symmetric,
+       standard_toroidal_angle`. `r`, `normal`, `area`, `volume` are one gemm
+       away, recomputed on load. `PlasmaSurface` additionally stores
+       `net_poloidal_current`, `curpol`, and **`Bnormal_from_plasma_current`**
+       (the last is unrecoverable — it is set after construction from a
+       bnorm/FOCUS file or a user array).
+     - **`Regcoil`**: store scalar params (`mpol_potential, ntor_potential,
+       net_poloidal_current, net_toroidal_current, stellarator_symmetric`) and a
+       reference to its plasma and coil. `basis_functions`, `f_all`, `d_xyz` are
+       cheap numpy and recomputed on load; `g, h, matrix_B/K, RHS_*, w, V` are
+       **not** stored.
+     - **`Solution`**: store `lam`, `solution` (the single-valued current-potential
+       Fourier amplitudes — source of truth), the scalar diagnostics `f_B, f_K,
+       max_K, rms_K, max_Bnormal`, **and the result-sized grids `Bnormal_total`,
+       `current_potential`, and `current_density`.**
+  3. **Store the result-sized grids rather than recompute them.** `Bnormal_total`
+     *must* be stored (its recompute is `g @ solution`, needing the expensive
+     kernel). `current_potential`/`current_density` *could* be recomputed from
+     the amplitudes, but doing so materializes the `f_all` intermediate
+     (`(nbf, 3, ncoil_grid)` ≈ 0.5 GB and ~1 s at 128×128 with `nbf ≈ 1250`),
+     whereas the *results* are tiny (~0.4 MB per λ for all three grids; ~26 MB
+     for a 40-λ scan). Storing the small results gives zero-compute,
+     zero-object-reconstruction plotting and avoids the memory spike, at the cost
+     of harmless redundancy with the stored amplitudes. This is the mechanism by
+     which the "quick plotting, nothing expensive" requirement is met.
+  4. **A lambda scan is flattened on disk along a `lambda` dimension**, not stored
+     as per-solution groups. A scan is homogeneous by construction (one shared
+     `Regcoil` → one plasma, one coil, one `nbf`, one grid), and the dominant
+     analysis reads (`f_B(:)`, `max_K(:)`, … for a Pareto front) want columnar
+     arrays. One `/solutions` group holds `lam(nlambda)`, `solution(nlambda,
+     nbf)`, `f_B(nlambda)`, …, `Bnormal_total(nlambda, ntheta_plasma,
+     nzeta_plasma)`, etc. A single `solve()` result is the `nlambda = 1` case.
+     This flattening is chosen on its own merits, **not** because the legacy
+     Fortran indexed by `ilambda`.
+  5. **In memory, a scan is a `SolutionScan`** — a `Sequence[Solution]` that
+     iterates/indexes as `Solution` objects (uniform with `solve()`'s return and
+     preserving each solution's lazy `current_potential()`/`current_density()`)
+     **and** exposes vectorized `.lam`, `.f_B`, `.f_K`, `.max_K`, `.rms_K`,
+     `.max_Bnormal` arrays for direct Pareto/scan plotting. `Regcoil.scan()` and
+     `regcoil.load()` both return it (a change from `scan()`'s current plain
+     `list`).
+  6. **Object graph and API.** File layout is groups by object with a `_class`
+     attribute per group and a `format_version` at the root (for dispatch and
+     future migration): `/plasma`, `/coil`, `/problem`, `/solutions`. The API is
+     a polymorphic module-level pair plus thin instance methods:
+     - `regcoil.save(path, *, plasma=None, coil=None, problem=None,
+       solutions=None)` writes only the groups it is given, deduping the shared
+       problem/surfaces (never N copies of the problem for an N-λ scan).
+       `solutions` transitively carries its `problem` → `coil`, `plasma`, so
+       `regcoil.save(path, solutions=scan)` writes the whole bundle.
+     - `obj.save(path)` delegates to `regcoil.save` with just that object.
+     - `regcoil.load(path)` returns a container exposing `.plasma`, `.coil`,
+       `.problem`, `.solutions` (any may be `None`); `Class.load(path)` returns
+       the single object, erroring if that group is absent.
+  7. **Loaded objects and the cheap/expensive assembly split.** To make a loaded
+     `Regcoil` power its Solutions' `current_potential()`/`current_density()`
+     without the operators, `Regcoil.__init__` is split into a **cheap** assembly
+     (surfaces, potential modes, `basis_functions`, `f_all`, `d_xyz` — no Fortran,
+     no big BLAS) and an **expensive** assembly (`build_g_and_h`, `matrix_B/K`,
+     RHS, `eigh`). `load()` runs only the cheap part; a loaded `Regcoil` gains
+     operators lazily (re-running the expensive assembly, with a log message) only
+     if the user asks for a *new* λ via `solve()`/`scan()`. Reconstructing already
+     saved Solutions for plotting never triggers this.
+- **Consequences:**
+  - `h5netcdf` is added to the runtime dependencies in `pyproject.toml`
+    (updating the ADR-011 dependency list); the core solve remains importable and
+    runnable without it, but `save`/`load` require it.
+  - Saved files are readable by generic tooling (`xarray`, `h5py`,
+    `ncdump`) with no `regcoil` import, satisfying the "plot from saved output"
+    goal directly; and by `regcoil.load` for full object reconstruction.
+  - Redundancy between the stored result grids and the stored amplitudes is
+    accepted; the file is a data product, not a minimal object pickle, and a
+    hand-edited file could make the two inconsistent.
+  - A `standard_toroidal_angle=False` coil surface round-trips only because the
+    `nu` modes are in the stored source of truth (ADR-026); there is no lossy
+    R/Z-only path.
+  - PHASES.md Phase 9 is rewritten around "save/load object serialization" (the
+    old "strip Fortran NetCDF/LAPACK" bullets stay as the parallel cleanup they
+    always were, now clearly secondary to the serialization work). Phase 11's
+    "NetCDF round-trip" test becomes a round-trip test against this schema.

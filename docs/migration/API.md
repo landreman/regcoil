@@ -42,13 +42,15 @@ Distribution and import name: **`regcoil`** (ADR-015).
   1. **Keep** the non-stellarator-symmetry option (boolean `stellarator_symmetric`).
   2. **Remove** Laplace–Beltrami regularization → second derivatives / `nderiv`
      drop out of surface evaluation and matrix assembly (ADR-022).
-  3. **NetCDF written from Python.**
+  3. **Save/load is Python-side NetCDF-4 via `h5netcdf`** (object serialization;
+     ADR-028) — see [Saving and loading](#saving-and-loading).
   4. **`Regcoil` accepts a `Surface`** (documented arrays it reads let an outer
      optimization loop pass its own geometry).
 - **Binding / build:** `iso_c_binding` + thin C extension `regcoil._core`
   (ADR-017), built with `meson-python` (ADR-002).
-- **Deps:** numpy, scipy, matplotlib, plotly, netCDF library per ADR-004; pytest
-  for tests. Fortran needs a compiler, OpenMP, and BLAS (for `build_g_and_h`'s
+- **Deps:** numpy, scipy, matplotlib, plotly; `h5netcdf` for save/load (ADR-028);
+  `scipy.io`/optional `netCDF4` for VMEC `wout` reading (ADR-004); pytest for
+  tests. Fortran needs a compiler, OpenMP, and BLAS (for `build_g_and_h`'s
   DGEMM) -- no LAPACK, no NetCDF. No SIMSOPT/DESC.
 
 ## What a driver script looks like
@@ -74,12 +76,21 @@ prob = Regcoil(
 sol = prob.solve(lam=1e-16)
 print(sol.f_B, sol.f_K, sol.max_K, sol.rms_K)
 
-scan = prob.scan(np.logspace(-19, -13, 40))   # free after the eigendecomposition
+scan = prob.scan(np.logspace(-19, -13, 40))   # a SolutionScan (free after the eigendecomposition)
 sol  = prob.solve_for_target("max_K", 8.0e6)  # bisection on the same object
 
-sol.save("regcoil_out.nc")
 K = sol.current_density()          # (3, ntheta_coil, nzeta_coil)
 Phi = sol.current_potential()      # (ntheta_coil, nzeta_coil)
+
+# Save the whole run (problem + its plasma & coil + every solution) in one line:
+import regcoil
+regcoil.save("regcoil_out.w7x.nc", solutions=scan)
+
+# ... later, in a plotting script that never touches the Fortran kernel:
+data = regcoil.load("regcoil_out.w7x.nc")
+data.plasma.plot()                              # geometry recomputed from Fourier modes
+plt.plot(data.solutions.f_K, data.solutions.f_B)  # Pareto front, straight from stored scalars
+data.solutions[7].current_potential()           # stored grid, no recompute
 ```
 
 Three objects, one expensive constructor, cheap solves.
@@ -187,12 +198,18 @@ eigendecomposition. Methods:
 
 ### `Solution`
 
-A frozen dataclass, one per λ (or a vectorized variant over a λ array):
-`lam`, `solution` (mode amplitudes), `single_valued_current_potential_mn`,
-`f_B`, `f_K`, `max_K`, `rms_K`, `max_Bnormal`, `Bnormal_total`, plus **lazy**
-`current_potential()` / `current_density()` that expand to grids on demand
-(keeping grid-sized arrays lazy matters when scanning many λ). `save(path)` writes
-NetCDF from Python.
+A frozen dataclass, one per λ: `lam`, `solution` (mode amplitudes),
+`single_valued_current_potential_mn`, `f_B`, `f_K`, `max_K`, `rms_K`,
+`max_Bnormal`, `Bnormal_total`, plus **lazy** `current_potential()` /
+`current_density()` that expand to grids on demand (keeping grid-sized arrays
+lazy matters when scanning many λ). `save(path)` writes the object to
+NetCDF-4 (see [Saving and loading](#saving-and-loading)).
+
+A **λ scan** returns a `SolutionScan`, a `Sequence[Solution]` that iterates and
+indexes as ordinary `Solution` objects **and** exposes the per-λ scalars as
+columnar arrays (`.lam`, `.f_B`, `.f_K`, `.max_K`, `.rms_K`, `.max_Bnormal`)
+for direct Pareto/scan plotting. `Regcoil.scan()` and `regcoil.load()` both
+return it (ADR-028).
 
 ## The solve, in numpy/scipy
 
@@ -208,6 +225,98 @@ diagonalizes the whole family:
 `f_B(λ)`, `f_K(λ)` are smooth closed-form scalar functions to bisect or
 Newton on directly — replacing `regcoil_auto_regularization_solve.f90`,
 `regcoil_fzero.f`, and `regcoil_lambda_scan.f90` with ~15 lines of Python.
+
+## Saving and loading
+
+All I/O is Python (ADR-028). Files are **NetCDF-4 written via `h5netcdf`** — HDF5
+underneath (no NetCDF C library in the wheels/CI), but with named, shared
+dimensions so the file is self-documenting and directly `xarray.open_dataset`-able.
+There is no attempt to preserve the legacy Fortran `regcoil_out.*.nc` layout; this
+is a fresh Python-defined schema.
+
+### API
+
+One polymorphic module-level pair, plus thin instance methods:
+
+```python
+import regcoil
+
+# One line saves the whole run. `solutions` transitively carries its
+# problem -> coil, plasma, so all four object kinds land in one file:
+regcoil.save("regcoil_out.w7x.nc", solutions=scan)
+regcoil.save("regcoil_out.w7x.nc", problem=prob, solutions=scan)  # explicit, same file
+
+# Any subset is fine; only the groups you pass are written:
+plasma.save("plasma.nc")          # == regcoil.save("plasma.nc", plasma=plasma)
+prob.save("prob.nc"); sol.save("sol.nc")
+
+# load() returns a container; any attribute may be None if that group is absent:
+data = regcoil.load("regcoil_out.w7x.nc")
+data.plasma, data.coil, data.problem, data.solutions   # solutions is a SolutionScan
+
+# Per-class load returns the single object (errors if that group is missing):
+PlasmaSurface.load("plasma.nc");  Regcoil.load("prob.nc")
+```
+
+`regcoil.save(path, *, plasma=None, coil=None, problem=None, solutions=None)`
+writes only the groups it is given and **dedupes the shared problem/surfaces** —
+an N-λ scan stores its `Regcoil` (and plasma, coil) once, not N times.
+
+### File layout
+
+Groups by object, each tagged with a `_class` attribute; the root carries a
+`format_version` for dispatch and future migration:
+
+```
+/                format_version, regcoil __version__
+/plasma          _class=PlasmaSurface : xm,xn,rmnc,rmns,zmnc,zmns,numns,numnc,
+                   nfp,ntheta,nzeta,stellarator_symmetric,standard_toroidal_angle,
+                   net_poloidal_current, curpol, Bnormal_from_plasma_current
+/coil            _class=CoilSurface   : the FourierSurface fields (incl. nu modes)
+/problem         mpol_potential, ntor_potential, net_poloidal_current,
+                   net_toroidal_current, stellarator_symmetric
+/solutions       dim lambda(nlambda):
+                   lam, solution(nlambda,nbf),
+                   f_B, f_K, max_K, rms_K, max_Bnormal,
+                   Bnormal_total(nlambda,ntheta_plasma,nzeta_plasma),
+                   current_potential(nlambda,ntheta_coil,nzeta_coil),
+                   current_density(nlambda,3,ntheta_coil,nzeta_coil)
+```
+
+A λ scan is **flattened along a `lambda` dimension** (a scan is homogeneous by
+construction — one shared problem, one `nbf`, one grid — and analysis reads want
+columnar arrays); a single `solve()` is the `nlambda=1` case.
+
+### What is stored vs recomputed
+
+The rule (ADR-028): **store the source of truth, plus exactly those derived
+quantities whose recomputation would need the Fortran kernel or the big operators
+(`g`, `h`, `matrix_B/K`, `V`); recompute everything else from the surfaces and the
+mode amplitudes.** The big operators are **never** saved.
+
+- **Surfaces** store only their Fourier source of truth (plus the plasma's
+  `Bnormal_from_plasma_current`, `net_poloidal_current`, `curpol`, which are not
+  recoverable from the coefficients). `r`, `normal`, `area`, `volume` are one gemm
+  away, rebuilt lazily on load.
+- **`Regcoil`** stores its scalar parameters and references to plasma/coil.
+  `basis_functions`, `f_all`, `d_xyz` are cheap numpy, rebuilt on load; `g`, `h`,
+  `matrix_B/K`, `RHS_*`, `w`, `V` are not stored.
+- **`Solution`** stores `lam`, `solution` (amplitudes), the scalar diagnostics,
+  **and** the result-sized grids `Bnormal_total`, `current_potential`,
+  `current_density`. `Bnormal_total` *must* be stored (its recompute is
+  `g @ solution`); the other two are stored because recomputing them would
+  materialize the ~0.5 GB `f_all` intermediate at 128×128, whereas the result
+  grids are ~0.4 MB/λ. Storing them makes every plot target available with **no
+  Fortran call, no expensive BLAS, and no object reconstruction** — the goal a
+  saved file exists to serve.
+
+### Loaded objects
+
+`Regcoil.__init__` is split into a **cheap** assembly (surfaces, potential modes,
+`basis_functions`, `f_all`, `d_xyz`) and an **expensive** one (`build_g_and_h`,
+`matrix_B/K`, `eigh`). `load()` runs only the cheap part, so a loaded problem's
+Solutions plot instantly; the operators are rebuilt lazily (with a log message)
+only if the user asks for a *new* λ via `solve()`/`scan()` on the loaded object.
 
 ## Fortran extension boundary
 
@@ -347,4 +456,4 @@ re-slimmed. `numpy.distutils` is gone as of Python 3.12, so no f2py path.
   against the physics tolerances (the contract, not binary-identical NetCDF).
 - Key numeric checks: `build_g_and_h` vs `build_inductance @ basis_functions`;
   the offset-surface coefficients vs the legacy routine; the closed-form λ family
-  vs direct per-λ solves; NetCDF round-trip.
+  vs direct per-λ solves; save/load round-trip against the ADR-028 schema.
