@@ -16,6 +16,7 @@ dependencies = [
     "matplotlib",
     "plotly",
     "h5netcdf",
+    "h5py",
 ]
 
 [project.optional-dependencies]
