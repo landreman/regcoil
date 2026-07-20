@@ -593,18 +593,78 @@ Exit criteria:
 
 ## Phase 12 — Read the Docs manual
 
-**Intent:** Replace LaTeX `manual/` and remove the old docs GitHub Actions workflow.
+**Intent:** Replace the LaTeX `manual/` with a Read the Docs manual for the Python
+object-model API, and remove the old docs GitHub Actions workflow. Stack and the
+runnable-code guarantee are fixed by **ADR-030** (which supersedes ADR-014).
 
-- Sphinx (or MkDocs) under `docs/`; RTD config; port content from `overview.tex`, `inputParameters.tex`, etc.
-- Retire `manual/` as canonical docs.
-- **Delete** `.github/workflows/publish_manual.yml` (LaTeX → gh-pages). Do not keep or adapt that workflow; docs publishing is via Read the Docs (and optionally a lightweight CI docs-build check that is not `publish_manual.yml`).
+**Stack (ADR-030):**
+
+- **Sphinx + Read the Docs**, `furo` theme.
+- **API reference** via `sphinx.ext.autosummary` with `:recursive:` +
+  `:toctree: _api/`, grouped by topic with a one-line description per entry (the
+  yancc `api.html` style); NumPy-style docstrings through `sphinx.ext.napoleon`;
+  per-object **[source]** links via `sphinx.ext.linkcode` / `sphinx_github_style`.
+- **Runnable docs.** Prose/tutorial pages are **jupytext-paired MyST-Markdown**
+  (`.md`, no committed outputs) executed at build time by **MyST-NB** with
+  `nb_execution_mode = "cache"` and `nb_execution_raise_on_error = True`, so a
+  broken code cell fails the build. The `README.md` quickstart snippet is checked
+  by `sphinx.ext.doctest`.
+- **CI safety net.** A `docs` job runs `pytest --nbmake docs`, `sphinx-build -W`,
+  and `make -C docs doctest` on the normal matrix — doc breakage surfaces in PRs
+  independently of the RTD service.
+- **Build environment.** `.readthedocs.yaml` installs `gfortran` +
+  `libopenblas-dev` (`build.apt_packages`) and pip-installs the package with its
+  `docs` extra so executed pages run the real Fortran path; `fail_on_warning: true`.
+- **Cheap execution where possible.** Ship one or two small saved runs (`.nc`)
+  under `docs/`; kernel-free pages `load()` + plot them and (per ADR-028) need no
+  Fortran/BLAS. Only a single "construct + solve from scratch" tutorial exercises
+  the compiled extension.
+
+**Proposed `docs/` layout:**
+
+```text
+README.md                 # short quickstart (doctest-validated snippet)
+.readthedocs.yaml         # apt gfortran+libopenblas, docs extra, fail_on_warning
+docs/
+  conf.py                 # autosummary + napoleon + myst_nb + furo + linkcode
+  index.md                # includes README quickstart; toctrees
+  installation.md         # pip + build deps (from the current README install section)
+  quickstart.md           # fuller runnable quickstart (executed)
+  usage.md                # typical workflow: surfaces → Regcoil → scan → save (executed)
+  plotting.md             # every plot type: cross_section, pareto, lambda_scan,
+                          #   current_potential(_scan), current_density,
+                          #   bnormal(_scan), plot_3d, cut → coils (executed)
+  api.md                  # yancc-style autosummary, grouped by topic
+  theory.md               # essential physics ported from manual/*.tex
+  _static/ , sample_run.nc
+```
+
+**Content:** port the essential physics/overview from `manual/overview.tex` (and
+related `*.tex`) into `theory.md`; the API reference documents the object-model
+API (surfaces, `Regcoil`, `Solution`, `SolutionScan`, `regcoil.plot`,
+`regcoil.cut`, `regcoil.save`/`load`) and the **string options** — **no**
+namelist/JSON input reference (ADR-019). Fold the untracked root scratch scripts
+(`run_example.py`, `run_fast_example.py`, `run_slow_example.py`,
+`test_cross_section_plot.py`) into the usage/plotting pages (or `examples/`), then
+delete them from the repo root.
+
+- **Delete** `.github/workflows/publish_manual.yml` (LaTeX → gh-pages) entirely;
+  do not adapt it. Docs publishing is Read the Docs plus the CI `docs` job above.
 
 Exit criteria:
 
-- [ ] Docs build on RTD (or equivalent non-`publish_manual` CI job).
-- [ ] Reference documents the object-model API (surfaces, `Regcoil`, `Solution`)
-      and the string options; no namelist/JSON input reference.
-- [ ] LaTeX manual no longer the canonical user doc.
+- [ ] `README.md` has a short quickstart, validated by `sphinx.ext.doctest` in CI.
+- [ ] Docs build on Read the Docs with the Fortran extension compiled;
+      `fail_on_warning: true`.
+- [ ] Pages exist for installation, typical usage, **every** plot type, and an
+      `autosummary` API reference in the yancc style; the reference documents the
+      object-model API and the string options — no namelist/JSON input reference.
+- [ ] Every code cell in the docs is executed at build with
+      `nb_execution_raise_on_error = True`, **and** runs under `pytest --nbmake`
+      in the normal CI matrix; a `sphinx-build -W` smoke build passes.
+- [ ] Tutorial sources are plain-text jupytext MyST-Markdown with no committed
+      cell outputs.
+- [ ] LaTeX `manual/` is no longer the canonical user doc.
 - [ ] `.github/workflows/publish_manual.yml` is removed from the repo.
 
 ---

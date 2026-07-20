@@ -188,10 +188,11 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
 ## ADR-014: Documentation stack
 
 - **Date:** 2026-07-17
-- **Status:** accepted
+- **Status:** superseded
 - **Context:** LaTeX manual + `.github/workflows/publish_manual.yml` (build PDF, deploy to gh-pages) is dated relative to a Python package.
 - **Decision:** Replace with **Read the Docs** (Sphinx preferred default; MkDocs acceptable if chosen in Phase 11). Retire `manual/` as canonical docs. **Delete** `publish_manual.yml` entirely—do not migrate that workflow to RTD.
 - **Consequences:** New `docs/` structure; no gh-pages LaTeX publish job; doc deps are docs-only, not runtime.
+- **Superseded by:** ADR-030 (keeps Read the Docs + retire `manual/` + delete `publish_manual.yml`; fixes the remaining open choices — Sphinx over MkDocs, theme, executed-notebook mechanism, and where code runs).
 
 ---
 
@@ -816,3 +817,91 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
   - Plotting smoke tests (Phase 11) exercise the functions on non-interactive
     backends against a small live run and a round-tripped saved run.
   - `plotly` is already an allowed runtime dependency (ADR-011); no new dep.
+
+---
+
+## ADR-030: Documentation stack details (Phase 12)
+
+- **Date:** 2026-07-20
+- **Status:** accepted
+- **Supersedes:** ADR-014 (keeps its three firm decisions — publish on Read the
+  Docs, retire `manual/` as canonical, delete `publish_manual.yml` outright — and
+  resolves the choices it left open).
+- **Context:** Phase 12 replaces the LaTeX `manual/` with a Read the Docs manual.
+  Requirements gathered for this phase: a short quickstart in `README.md`; pages
+  for installation, typical usage, **every** plot type, and an API reference; an
+  API-reference presentation in the style of yancc's `api.html` (grouped
+  `autosummary` tables with per-entry one-line descriptions and links to source);
+  and a hard guarantee that **code shown in the docs actually runs as written**,
+  ideally by executing the doc pages the way DESC executes notebooks in its build.
+  DESC's own model (checked-in `.ipynb` with committed outputs and
+  `nbsphinx_allow_errors = True`) meets the "notebooks in the docs" goal but not
+  the "proven to run" goal, and its multi-MB JSON blobs diff and merge badly. A
+  pyREGCOIL-specific wrinkle: constructing and *solving* a `Regcoil` calls the
+  compiled Fortran kernel, but by ADR-028's cheap-assembly split, `load()`-ing a
+  saved run and plotting it needs **no** Fortran kernel and no expensive BLAS — so
+  most doc pages can execute with zero build toolchain if they load a shipped run.
+- **Decisions:**
+  1. **Sphinx, not MkDocs.** The requested API look is a Sphinx `autosummary`
+     page, and the surrounding stellarator-code ecosystem (yancc, DESC, SIMSOPT)
+     is uniformly Sphinx, so contributors and users are already fluent in it.
+  2. **Theme: `furo`.** Modern look, first-class dark mode, pairs cleanly with
+     MyST-NB. (Chosen over `sphinx-book-theme`.)
+  3. **API reference via `sphinx.ext.autosummary` with `:recursive:` +
+     `:toctree: _api/`, grouped by topic, one line per entry — the yancc pattern.**
+     Groups: Surfaces (`Surface`, `FourierSurface`, `PlasmaSurface`,
+     `CoilSurface`), Problem & solution (`Regcoil`, `Solution`, `SolutionScan`),
+     Plotting (`regcoil.plot.*`), Coil cutting (`regcoil.cut`, `CutCoils`),
+     Save/load (`regcoil.save`/`load`). Docstrings are NumPy-style, rendered by
+     `sphinx.ext.napoleon`; `sphinx.ext.linkcode` (or `sphinx_github_style`, as in
+     yancc) adds a per-object **[source]** link to the exact lines on GitHub.
+  4. **Executed pages via MyST-NB, failing the build on any cell error.**
+     `nb_execution_mode = "cache"` (jupyter-cache, so unchanged pages are not
+     re-run) and `nb_execution_raise_on_error = True` (a broken cell fails the
+     build — this is what makes "the code runs" a checked invariant, unlike DESC's
+     `allow_errors`). This is the primary runnable-code mechanism, replacing
+     `nbsphinx`.
+  5. **Doc-page source is jupytext-paired MyST-Markdown (`.md`), with no committed
+     cell outputs.** Plain-text, reviewable diffs; still openable/editable as a
+     notebook in Jupyter via the jupytext pairing; outputs are produced at build
+     time by decision 4, never stored in git. This deliberately avoids DESC's
+     multi-MB `.ipynb`-with-outputs blobs.
+  6. **A second safety net in CI: `pytest --nbmake` over the doc pages, on the
+     normal test matrix**, plus a `sphinx-build -W` (warnings-as-errors) smoke
+     build. This catches doc breakage in ordinary PRs across Python versions
+     before Read the Docs ever builds, and does not depend on the RTD service.
+  7. **The `README.md` quickstart snippet is validated by `sphinx.ext.doctest`**
+     (`make -C docs doctest` in CI). The README carries a short quickstart; a
+     fuller, executed quickstart lives in `docs/quickstart.md`. `doctest` is used
+     only for that short snippet — tutorials use MyST-NB (decision 4), not doctest.
+  8. **Read the Docs compiles the Fortran extension** so executed pages run the
+     real code path: `.readthedocs.yaml` sets `build.apt_packages: [gfortran,
+     libopenblas-dev]` and pip-installs the package with its docs extra. RTD is the
+     canonical published build; `sphinx.fail_on_warning: true`. (The alternative —
+     execute in GitHub Actions and have RTD only render pre-executed artifacts — is
+     the documented fallback if RTD build time becomes a problem; it is not the
+     default because it reintroduces stored-artifact plumbing.)
+  9. **Ship one or two small saved runs (`.nc`) under `docs/`; kernel-free pages
+     `load()` + plot them.** By the ADR-028 promise, those pages (installation,
+     the plotting gallery, most of "typical usage") execute with no Fortran and no
+     BLAS. Only a single "construct + solve from scratch" tutorial requires the
+     compiled extension, so decision 8's toolchain is exercised on a minimal
+     surface and the bulk of the docs stay cheap to build.
+- **Consequences:**
+  - New `docs/` layout (see [PHASES.md](PHASES.md#phase-12) Phase 12): `conf.py`,
+    `index.md`, `installation.md`, `quickstart.md`, `usage.md`, `plotting.md`,
+    `api.md`, `theory.md`, `_static/`, and small `*.nc` sample run(s).
+  - New `.readthedocs.yaml` (apt gfortran + libopenblas, docs extra, fail on
+    warning); a `docs` extra in `pyproject.toml`'s optional dependencies:
+    `sphinx`, `furo`, `myst-nb`, `jupytext`, `sphinx-copybutton`,
+    `sphinx-github-style` (or `linkcode`), `nbmake` (dev/CI). Docs deps are
+    docs/dev-only, never runtime (carries ADR-014's separation).
+  - CI gains a docs job: `pytest --nbmake docs`, `sphinx-build -W`, and
+    `make -C docs doctest`.
+  - `manual/` is retired as canonical and `.github/workflows/publish_manual.yml`
+    is deleted (ADR-014 / Phase 12 unchanged); the theory page ports the essential
+    physics from `manual/*.tex`.
+  - Untracked root scratch scripts (`run_example.py`, `run_fast_example.py`,
+    `run_slow_example.py`, `test_cross_section_plot.py`) are candidate raw material
+    for the usage/plotting pages and should be removed from the repo root once
+    their content is folded into docs (or into `examples/`).
