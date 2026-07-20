@@ -25,7 +25,6 @@ import scipy.optimize
 
 from . import _core
 
-SYMMETRY_OPTIONS = ("stellarator_symmetric", "cos_only", "both")
 logger = logging.getLogger(__name__)
 
 
@@ -75,10 +74,14 @@ class Regcoil:
         ntor_potential,
         net_poloidal_current=None,
         net_toroidal_current=0.0,
-        symmetry="stellarator_symmetric",
+        stellarator_symmetric=True,
     ):
-        if symmetry not in SYMMETRY_OPTIONS:
-            raise ValueError(f"symmetry must be one of {SYMMETRY_OPTIONS}, got {symmetry!r}")
+        if not isinstance(stellarator_symmetric, (bool, np.bool_)):
+            raise TypeError(
+                "stellarator_symmetric must be a bool: "
+                "True for stellarator-symmetric basis only, "
+                "False for both sine and cosine basis families"
+            )
         if coil.nfp != plasma.nfp:
             raise ValueError(f"plasma.nfp ({plasma.nfp}) != coil.nfp ({coil.nfp})")
         if net_poloidal_current is None:
@@ -95,7 +98,7 @@ class Regcoil:
         self.ntor_potential = int(ntor_potential)
         self.net_poloidal_current = float(net_poloidal_current)
         self.net_toroidal_current = float(net_toroidal_current)
-        self.symmetry = symmetry
+        self.stellarator_symmetric = bool(stellarator_symmetric)
         self.nfp = nfp = plasma.nfp
 
         xm_potential, xn_potential = _potential_fourier_modes(self.mpol_potential, self.ntor_potential, nfp)
@@ -122,14 +125,13 @@ class Regcoil:
 
         basis_blocks = []
         f_blocks = []
-        if symmetry in ("stellarator_symmetric", "both"):
-            basis_blocks.append(sinangle)
-            f_blocks.append(cosangle[:, None, :] * coef)
-        if symmetry in ("cos_only", "both"):
+        basis_blocks.append(sinangle)
+        f_blocks.append(cosangle[:, None, :] * coef)
+        if not self.stellarator_symmetric:
             basis_blocks.append(cosangle)
             f_blocks.append(-sinangle[:, None, :] * coef)
 
-        if symmetry == "both":
+        if not self.stellarator_symmetric:
             xm_potential = np.concatenate([xm_potential, xm_potential])
             xn_potential = np.concatenate([xn_potential, xn_potential])
 

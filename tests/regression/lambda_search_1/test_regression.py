@@ -16,7 +16,7 @@ from ..tests_common import EQUILIBRIA
 
 
 def _build_problem():
-    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=64, nzeta=64, mesh="full")
+    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=64, nzeta=64)
     coil = CoilSurface.from_uniform_offset(plasma, separation=0.5, ntheta=64, nzeta=64, standard_toroidal_angle=True)
     return Regcoil(
         plasma, coil, mpol_potential=12, ntor_potential=12,

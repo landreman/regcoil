@@ -26,7 +26,7 @@ from ._golden import CHI2_B, CHI2_K, LAMBDA, MAX_BNORMAL, MAX_K, SINGLE_VALUED_C
 
 @pytest.mark.slow
 def test_nescin_const_arclength_highres():
-    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=128, nzeta=128, mesh="full")
+    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=128, nzeta=128)
     plasma.set_bnormal_from_bnorm_file(str(EQUILIBRIA / "bnorm.d23p4_tm"))
     coil = CoilSurface.from_nescin(
         str(EQUILIBRIA / "nescin.d23p4_tm_uniform_0.5m_offset_eqarc"), nfp=plasma.nfp, ntheta=128, nzeta=128,

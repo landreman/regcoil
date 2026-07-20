@@ -23,7 +23,7 @@ Companion docs:
 4. **Stateless Fortran** — delete `regcoil_variables`; entry points are pure `intent(in)`/`intent(out)` functions returning `info` (no `stop`), with no globals, no derived types crossing the boundary, and no persistent handle. (ADR-020)
 5. **Linear algebra in numpy/scipy** — matrix products and the regularized solve are numpy/scipy; one generalized eigendecomposition makes the whole λ family closed-form (no Fortran BLAS/LAPACK *for the solve*, no Brent; the unrelated DGEMM call inside `regcoil_build_g_and_h`, ADR-020, is a performance choice for that one kernel, not a solve). (ADR-021)
 6. **Scriptable object model** — `PlasmaSurface`, `CoilSurface`, `Regcoil`, `Solution`; existing initialization methods survive as alternate constructors; no input-file format. (ADR-019)
-7. **String-valued qualitative options** — qualitatively different modes are string enums in the API (e.g. `symmetry="stellarator_symmetric"`; ADR-009 spirit via ADR-019).
+7. **Boolean symmetry switch for `Regcoil`** — `stellarator_symmetric=True` uses the stellarator-symmetric basis; `False` includes both sine and cosine basis families (ADR-019).
 8. **NetCDF only from Python** — no NetCDF compile/link dependency in Fortran.
 9. **Fold tooling into the package** — `regcoilPlot`, `compareRegcoil`, and coil-cutting scripts become `regcoil` modules / CLI entry points.
 10. **Plotly coil plot** — port `m20160811_01_plotCoilsFromRegcoil.m` to Python with Plotly; **remove all other MATLAB** sources.
@@ -41,7 +41,7 @@ Companion docs:
   - **Do not** depend on **SIMSOPT**, **DESC**, or other large stellarator stacks.
 - **Pytest** is the Python test runner (unit, integration, examples).
 - Prefer **instance-friendly** APIs (classes / derived types) over process-global state.
-- Prefer **string enums** for qualitative choices; keep integers for counts, indices, and resolutions.
+- Prefer explicit typed options for qualitative choices; keep integers for counts, indices, and resolutions.
 - One phase per PR when practical; do not mix directory moves with physics refactors.
 - Record non-obvious choices in [DECISIONS.md](DECISIONS.md).
 
@@ -80,7 +80,7 @@ pip package: regcoil
 - `pip install -e .` on a documented CI image (gfortran + OpenMP + BLAS; no LAPACK or NetCDF Fortran needed for the extension).
 - A driver script builds `PlasmaSurface` / `CoilSurface` / `Regcoil` and gets a `Solution` matching a legacy example within tolerance; `scan(...)` and `solve_for_target(...)` match `lambda_search_*`.
 - Two `Regcoil` instances with different resolutions coexist and don't interfere (the kernel is stateless).
-- Qualitative options are string enums in the Python API (e.g. `symmetry`).
+- `Regcoil` symmetry is controlled by the boolean `stellarator_symmetric`.
 - Example regressions pass; pytest unit tests cover the Python object model and the Fortran kernels.
 - `regcoil plot|compare|cut-coils` (names TBD) replace standalone scripts; Plotly coil visualization exists; no `.m` files remain.
 - SVD scan, adjoint, WSO, and Laplace–Beltrami are gone; no `regcoil_variables`, handle API, or in-Fortran solve remain.
@@ -93,4 +93,4 @@ pip package: regcoil
 - Prefer parity with examples before deleting the legacy Fortran driver or solve chain.
 - Keep the Fortran boundary stateless and pure (ADR-020): explicit extents, `info` return, no `stop`, no module state, no LAPACK. Do all linear algebra in numpy/scipy (ADR-021).
 - Do not add dependencies outside the allowed list without a new ADR.
-- Prefer string enums for qualitative options; parameters are set in Python code, not input files (ADR-019).
+- Use explicit typed options (for `Regcoil`, boolean `stellarator_symmetric`); parameters are set in Python code, not input files (ADR-019).
