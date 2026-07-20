@@ -52,39 +52,69 @@ def _pick_lambda_indices(solutions, nmax):
     return order[pick]
 
 
-def cross_section(plasma, coil=None, phi=None, ax=None):
-    """Surface cross section(s) at fixed physical toroidal angle(s), via
-    `Surface.cross_section` (correct for both `standard_toroidal_angle`
-    values, ADR-025). Default `phi = [0, 0.5, 1, 1.5] * pi / nfp`.
+def cross_sections_overlay(surf, phi=None, ax=None):
+    """One surface's cross section(s) at fixed physical toroidal angle(s),
+    overlaid on a single axes and colored by `phi`, via `Surface.cross_section`
+    (correct for both `standard_toroidal_angle` values, ADR-025). Default
+    `phi = [0, 0.5, 1, 1.5] * pi / nfp`.
     """
     ax = _new_ax(ax)
     if phi is None:
-        phi = np.array([0, 0.5, 1, 1.5]) * np.pi / plasma.nfp
+        phi = np.array([0, 0.5, 1, 1.5]) * np.pi / surf.nfp
     phi = np.atleast_1d(np.asarray(phi, dtype=float))
 
     import matplotlib.pyplot as plt
 
     colors = plt.cm.viridis(np.linspace(0, 0.85, len(phi)))
 
-    def _plot_one(surf, style, label_prefix):
-        R, Z = surf.cross_section(phi)
-        for i in range(len(phi)):
-            r_closed = np.append(R[i], R[i, 0])
-            z_closed = np.append(Z[i], Z[i, 0])
-            ax.plot(
-                r_closed, z_closed, style, color=colors[i],
-                label=f"{label_prefix}, phi={phi[i]:.3f}",
-            )
-
-    _plot_one(plasma, "-", "plasma")
-    if coil is not None:
-        _plot_one(coil, "--", "coil")
+    R, Z = surf.cross_section(phi)
+    for i in range(len(phi)):
+        r_closed = np.append(R[i], R[i, 0])
+        z_closed = np.append(Z[i], Z[i, 0])
+        ax.plot(r_closed, z_closed, ".-", color=colors[i], label=f"phi={phi[i]:.3f}")
 
     ax.set_aspect("equal", adjustable="box")
     ax.set_xlabel("R [m]")
     ax.set_ylabel("Z [m]")
     ax.legend(fontsize="x-small")
     return ax
+
+
+def cross_sections(plasma, coil, phi=None, fig=None):
+    """Grid of subplots, one per physical toroidal angle in `phi`, each
+    showing the plasma (red) and coil (blue) cross section at that angle
+    (composition of `cross_sections_overlay`'s underlying geometry, but with
+    surface-identity color coding instead of phi color coding, to avoid the
+    clutter of overlaying every phi on one axes). Default
+    `phi = [0, 0.5, 1, 1.5] * pi / nfp`.
+    """
+    import matplotlib.pyplot as plt
+
+    if phi is None:
+        phi = np.array([0, 0.5, 1, 1.5]) * np.pi / plasma.nfp
+    phi = np.atleast_1d(np.asarray(phi, dtype=float))
+
+    R_plasma, Z_plasma = plasma.cross_section(phi)
+    R_coil, Z_coil = coil.cross_section(phi)
+
+    nrows, ncols = _grid_shape(len(phi))
+    if fig is None:
+        fig = plt.figure(figsize=DEFAULT_FIGSIZE)
+    axes = _make_grid_axes(fig, nrows, ncols)
+    for ax, i in zip(axes.flat, range(len(phi))):
+        r_p = np.append(R_plasma[i], R_plasma[i, 0])
+        z_p = np.append(Z_plasma[i], Z_plasma[i, 0])
+        r_c = np.append(R_coil[i], R_coil[i, 0])
+        z_c = np.append(Z_coil[i], Z_coil[i, 0])
+        ax.plot(r_p, z_p, ".-", color="red", label="plasma")
+        ax.plot(r_c, z_c, ".-", color="blue", label="coil")
+        ax.set_aspect("equal", adjustable="box")
+        ax.set_xlabel("R [m]")
+        ax.set_ylabel("Z [m]")
+        ax.set_title(f"phi={phi[i]:.3f}", fontsize="small")
+        ax.legend(fontsize="x-small")
+    fig.tight_layout()
+    return fig
 
 
 def pareto(scans, x="f_K", y="f_B", labels=None, ax=None):
@@ -350,11 +380,11 @@ def all(data, nmax=16):
     solutions = getattr(data, "solutions", None)
 
     if plasma is not None:
-        fig, axes = plt.subplots(2, 2, figsize=DEFAULT_FIGSIZE)
         phis = np.array([0, 0.5, 1, 1.5]) * np.pi / plasma.nfp
-        for ax, phi in zip(axes.flat, phis):
-            cross_section(plasma, coil, phi=np.array([phi]), ax=ax)
-        fig.tight_layout()
+        if coil is not None:
+            fig = cross_sections(plasma, coil, phi=phis)
+        else:
+            fig = cross_sections_overlay(plasma, phi=phis).figure
         figs.append(fig)
 
     if solutions is not None:
