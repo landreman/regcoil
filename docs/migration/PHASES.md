@@ -279,7 +279,7 @@ search are free after one eigendecomposition. Replaces the former "SciPy Brent"
 phase (ADR-021 supersedes ADR-003).
 
 - `Regcoil(plasma, coil, mpol_potential, ntor_potential, net_poloidal_current,
-  net_toroidal_current, symmetry)`: builds `basis_functions` and the potential
+  net_toroidal_current, stellarator_symmetric)`: builds `basis_functions` and the potential
   modes (numpy), calls `regcoil_build_g_and_h` for `g`/`h`, forms
   `matrix_B = gᵀ(g/N)`, `matrix_K = Σ fᵢᵀ(fᵢ/N)`, `RHS_B`, `RHS_K`, and computes
   `w, V = scipy.linalg.eigh(matrix_B, matrix_K)`. **Immutable** thereafter.

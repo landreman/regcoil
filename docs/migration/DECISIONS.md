@@ -121,8 +121,9 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
   3. Accept both indefinitely (discouraged).
 - **Decision (tentative):** Prefer (2) during migration, then (1). Exact string spellings documented in RTD and mirrored in JSON schema / examples.
 - **Consequences:** Example `regcoil_in.*` files need updating; validate_input logic moves to Python.
-- **Superseded by:** ADR-019. The **string-enum** decision for qualitative options
-  carries forward into the Python API (e.g. `symmetry="stellarator_symmetric"`);
+- **Superseded by:** ADR-019. The qualitative symmetry choice in `Regcoil`
+  carries forward into the Python API as boolean `stellarator_symmetric`
+  (`True` => stellarator-symmetric basis only, `False` => both sine and cosine);
   the namelist/JSON/integer-translation machinery is dropped with the input-file
   format.
 

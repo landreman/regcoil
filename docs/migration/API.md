@@ -39,7 +39,7 @@ Distribution and import name: **`regcoil`** (ADR-015).
   auto-regularization + Brent (`regcoil_auto_regularization_solve`, `regcoil_fzero`,
   `regcoil_lambda_scan`).
 - **Resolved open decisions (from the design session):**
-  1. **Keep** the non-stellarator-symmetry option (`symmetry` string enum).
+  1. **Keep** the non-stellarator-symmetry option (boolean `stellarator_symmetric`).
   2. **Remove** Laplace–Beltrami regularization → second derivatives / `nderiv`
      drop out of surface evaluation and matrix assembly (ADR-022).
   3. **NetCDF written from Python.**
@@ -174,7 +174,7 @@ only calls Fortran when `standard_toroidal_angle=True`; its default
 
 Constructed from a `plasma`, a `coil`, and solver parameters
 (`mpol_potential`, `ntor_potential`, `net_poloidal_current`,
-`net_toroidal_current`, `symmetry`). Holds the potential Fourier modes
+`net_toroidal_current`, `stellarator_symmetric`). Holds the potential Fourier modes
 (`xm_potential`, `xn_potential`, `nbf`), `basis_functions`, `g`, `h`,
 `matrix_B`, `matrix_K`, `RHS_B`, `RHS_K`, and the cached generalized
 eigendecomposition. Methods:

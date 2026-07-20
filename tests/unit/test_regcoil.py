@@ -14,7 +14,7 @@ def _small_problem(ntheta=8, nzeta=8, mpol=3, ntor=2, R0=6.0, a_plasma=2.0, a_co
     coil = CoilSurface.circular_torus(R0=R0, a=a_coil, nfp=nfp, ntheta=ntheta, nzeta=nzeta)
     return Regcoil(
         plasma, coil, mpol_potential=mpol, ntor_potential=ntor,
-        net_toroidal_current=0.0, symmetry="stellarator_symmetric",
+        net_toroidal_current=0.0, stellarator_symmetric=True,
     )
 
 
@@ -32,22 +32,23 @@ def test_symmetry_both_is_twice_stellarator_symmetric():
     sin_only = _small_problem()
     both = Regcoil(
         sin_only.plasma, sin_only.coil, mpol_potential=3, ntor_potential=2,
-        net_toroidal_current=0.0, symmetry="both",
+        net_toroidal_current=0.0, stellarator_symmetric=False,
     )
     assert both.nbf == 2 * sin_only.nbf
 
 
-def test_axisymmetric_solution_is_zero_for_every_symmetry_option():
+def test_axisymmetric_solution_is_zero_for_both_symmetry_choices():
     """A circular-cross-section plasma and coil (different major/minor
     radius) admit an exactly axisymmetric current potential, independent of
-    `symmetry` -- a resolution/basis-independent sanity check."""
+    `stellarator_symmetric` -- a resolution/basis-independent sanity check."""
     plasma = PlasmaSurface.circular_torus(R0=6.0, a=2.0, nfp=3, ntheta=8, nzeta=8)
     plasma.net_poloidal_current = 1.0e6
     coil = CoilSurface.circular_torus(R0=6.0, a=3.0, nfp=3, ntheta=8, nzeta=8)
-    for symmetry in ("stellarator_symmetric", "cos_only", "both"):
+    for stellarator_symmetric in (True, False):
         prob = Regcoil(
             plasma, coil, mpol_potential=3, ntor_potential=2,
-            net_toroidal_current=0.0, symmetry=symmetry,
+            net_toroidal_current=0.0,
+            stellarator_symmetric=stellarator_symmetric,
         )
         sol = prob.solve(1e-10)
         np.testing.assert_allclose(sol.solution, 0, atol=1e-8)
@@ -125,7 +126,7 @@ def test_regcoil_rejects_mismatched_nfp():
     with pytest.raises(ValueError, match="nfp"):
         Regcoil(
             plasma, coil, mpol_potential=3, ntor_potential=2,
-            symmetry="stellarator_symmetric",
+            stellarator_symmetric=True,
         )
 
 
