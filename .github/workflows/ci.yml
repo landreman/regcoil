@@ -6,12 +6,13 @@ on:
 
 jobs:
   build-and-test:
-    name: build (${{ matrix.os }})
+    name: build (${{ matrix.os }}, py${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - uses: actions/checkout@v7
@@ -44,7 +45,7 @@ jobs:
 
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install Python package (builds Fortran extension via pip)
         run: |
@@ -53,4 +54,10 @@ jobs:
           python -c "import regcoil._core; print('regcoil._core OK')"
 
       - name: Run pytest tests
-        run: pytest -m "not slow"
+        run: |
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            # Slow tests are REALLY slow on the Linux runners so only run them on macOS.
+            pytest -m "not slow"
+          else
+            pytest
+          fi
