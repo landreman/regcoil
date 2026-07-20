@@ -13,7 +13,7 @@ Python packaging / migration plans: [`docs/migration/`](docs/migration/OVERVIEW.
 
 ### Install (Python package)
 
-Requires **gfortran**, **BLAS/LAPACK**, **OpenMP**, and **NetCDF C + Fortran** (until Phase 8). On macOS Homebrew Apple Silicon see [`docs/migration/LOCAL.md`](docs/migration/LOCAL.md).
+Requires **gfortran**, **BLAS**, and **OpenMP** (the Python package's stateless Fortran kernels need no LAPACK and no NetCDF, as of Phase 9). The legacy executable below still needs **LAPACK** and **NetCDF C + Fortran** until Phase 13. On macOS Homebrew Apple Silicon see [`docs/migration/LOCAL.md`](docs/migration/LOCAL.md).
 
 Editable installs with meson-python need build tools in the *same* environment (pip’s isolated build env is discarded after install):
 

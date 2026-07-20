@@ -9,9 +9,10 @@ from .coil_surface import CoilSurface
 from .fourier_surface import FourierSurface
 from .log import log
 from .plasma_surface import PlasmaSurface
-from .regcoil import Regcoil, Solution
+from .regcoil import Regcoil, Solution, SolutionScan
 from .surface import Surface
 from ._core import omp_max_threads
+from ._serialize import load, save
 
 __all__ = [
     "__version__",
@@ -24,4 +25,7 @@ __all__ = [
     "CoilSurface",
     "Regcoil",
     "Solution",
+    "SolutionScan",
+    "save",
+    "load",
 ]

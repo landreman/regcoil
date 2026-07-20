@@ -6,8 +6,9 @@ Fortran sources: `fortran/` (including `fortran/mini_libstell/`). The root `make
 
 ## Dependencies
 
-- **Fortran:** `gfortran` (or Open MPI’s `mpif90` wrapper), BLAS/LAPACK, OpenMP
-- **NetCDF:** C + Fortran libraries (`netcdf`, `netcdf-fortran`) until Phase 8
+- **Fortran (legacy executable, `make`):** `gfortran` (or Open MPI’s `mpif90` wrapper), BLAS/LAPACK, OpenMP
+- **NetCDF (legacy executable only):** C + Fortran libraries (`netcdf`, `netcdf-fortran`) until Phase 13
+- **Fortran (Python package, `pip`/meson):** `gfortran`, BLAS, OpenMP only -- no LAPACK, no NetCDF, as of Phase 9 (ADR-020, ADR-028)
 - **Python (examples):** `numpy`, `scipy` (tests use `scipy.io.netcdf_file`)
 - **Python (package):** see root `pyproject.toml` / `pip install ".[dev]"` (meson-python; builds `regcoil._core`)
 
@@ -44,7 +45,7 @@ ls /opt/homebrew/include/netcdf.inc
 # or: brew list netcdf-fortran
 ```
 
-For **pip** builds on Apple Silicon, ensure Homebrew `pkg-config` can see NetCDF (`brew install pkg-config netcdf netcdf-fortran`). Meson uses `dependency('netcdf')` / `netcdf-fortran` and Accelerate when LAPACK pkg-config is missing.
+For **pip** builds on Apple Silicon, `meson.build` only needs BLAS (Accelerate is used automatically when a BLAS pkg-config file isn't found) and OpenMP -- no NetCDF/LAPACK `brew` packages are required for the package build (Phase 9).
 
 ## Tests today
 

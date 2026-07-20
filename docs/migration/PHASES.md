@@ -20,7 +20,7 @@ Ordered work packages for the overhaul. Each phase should be a reviewable PR (or
 | 6 Python surface object model (`Surface`/`FourierSurface`/`Plasma`/`Coil`) | done | 5 (mostly independent) |
 | 7 Slim stateless Fortran kernel + offset surface | done | 5 |
 | 8 Python `Regcoil` assembly + λ-family solve | done | 6, 7 |
-| 9 Save/load (object serialization); strip Fortran NetCDF/LAPACK | pending | 8 |
+| 9 Save/load (object serialization); strip Fortran NetCDF/LAPACK | done | 8 |
 | 10 Package tools (plot, compare, cut) + Plotly coil plot | pending | 9 helpful |
 | 11 Unit tests (Python + Fortran kernels) | pending | 7+; continuous afterward |
 | 12 Read the Docs manual | pending | 8 helpful |
@@ -398,16 +398,65 @@ LAPACK and NetCDF have no permanent consumer and go away).
 
 Exit criteria:
 
-- [ ] `regcoil.save(..., solutions=scan)` writes one file with all four object
+- [x] `regcoil.save(..., solutions=scan)` writes one file with all four object
       kinds; `regcoil.load(...)` round-trips them (surfaces, problem params, and
       every `Solution` field) within tolerance.
-- [ ] A round-tripped run reproduces every plot-target quantity (surface grids,
+- [x] A round-tripped run reproduces every plot-target quantity (surface grids,
       current potential/density, `Bnormal_total`, `Bnormal_from_net_coil_currents`,
       the Pareto scalars) with **no** `build_g_and_h` / `eigh` / DGEMM call.
-- [ ] `plasma.save`/`prob.save`/`sol.save` and the per-class `load` handle the
+- [x] `plasma.save`/`prob.save`/`sol.save` and the per-class `load` handle the
       single-object (subset) case.
-- [ ] Extension links only the compiler runtime, OpenMP, and BLAS (no LAPACK, no NetCDF).
-- [ ] CI does not install Fortran NetCDF for the package build.
+- [x] Extension links only the compiler runtime, OpenMP, and BLAS (no LAPACK, no NetCDF).
+- [x] CI does not install Fortran NetCDF for the package build.
+
+**Status: done.** `regcoil.save`/`regcoil.load` (`src/regcoil/_serialize.py`)
+implement the ADR-028 schema (`/plasma`, `/coil`, `/problem`, `/solutions`
+groups, NetCDF-4 via `h5netcdf`, `format_version` + `_class` tags); thin
+`obj.save(path)` / `Class.load(path)` methods on `PlasmaSurface`,
+`CoilSurface`, `Regcoil`, and `Solution` delegate to it, handling the
+single-object case (`Solution.load` raises `ValueError` on a multi-lambda
+file, matching the `Class.load` "errors if that group is missing/ambiguous"
+contract). `Regcoil.__init__` is split into `_init_cheap` (surfaces,
+potential modes, `basis_functions`, `f_all`, `d_xyz`) and `_build_operators`
+(`build_g_and_h`, `matrix_B/K`, `eigh`); `regcoil.load()` reconstructs via
+`Regcoil._from_loaded`, running only the cheap part and taking
+`Bnormal_from_net_coil_currents` from disk, so a loaded run's Solutions
+(which already carry their stored `current_potential`/`current_density`/
+`Bnormal_total` grids) need no kernel/eigh/DGEMM call; `_ensure_operators`
+rebuilds the operators lazily, with a log message, only if `solve()`/
+`scan()`/`solve_for_target()` is called on a loaded `Regcoil`.
+`Regcoil.scan()` now returns a `SolutionScan` (`Sequence[Solution]` plus
+columnar `.lam`/`.f_B`/`.f_K`/`.max_K`/`.rms_K`/`.max_Bnormal`), also
+returned by `regcoil.load(...).solutions`. `tests/unit/test_serialize.py`
+covers the full-bundle round trip (every stored field, byte-for-byte via
+`np.testing.assert_allclose`), the "no kernel/eigh" promise (via
+monkeypatching `_core.build_g_and_h`/`scipy.linalg.eigh` to raise), a
+non-`standard_toroidal_angle` coil surface (nonzero `nu` modes, ADR-026),
+the four single-object save/load paths, per-class `load` error paths, and
+the transitive plasma/coil/problem dedup for a scan. Root `meson.build` now
+declares only `openmp_dep`/`blas_dep` (`fc.find_library('blas')` or, on
+macOS, the `Accelerate` framework when no BLAS pkg-config file is found) --
+`netcdf_dep`/`netcdff_dep`/`lapack_dep` and the `-DNETCDF` flag are gone, so
+the extension links only the compiler runtime, OpenMP, and BLAS (verified
+via `otool -L _core*.so`); the legacy `program regcoil` executable (built
+separately by the root `makefile`, ADR-006) is untouched and still needs
+NetCDF/LAPACK until Phase 13, so CI's `apt`/`brew` install steps are
+unchanged, but the package-build step no longer requires those libraries to
+succeed. `h5netcdf` is added to `pyproject.toml`'s runtime dependencies
+(ADR-028) but imported lazily inside `_serialize.py`'s functions, so
+`import regcoil` and the core solve stay independent of it. Bullets 6–7
+(confirm no Fortran NetCDF on the VMEC-read path; strip `ezcdf`/`NETCDF`
+from the extension) were already true at the Fortran-source level going
+into this phase (`fortran/meson.build`'s `regcoil_lib_src` never included
+`ezcdf`/VMEC-read files) -- what remained, and is now fixed, was the
+top-level `meson.build` still linking the unused libraries. Bullet 8
+(`mini_libstell` removal) is **not** done here: PHASES.md's own Phase 13
+exit criteria separately lists "mini_libstell is completely removed", the
+directory is still required by the root `makefile`'s legacy-executable
+build (`LIBSTELL_DIR`/`mini_libstell.a`) per ADR-006, and ADR-005 (its
+disposition) is still `proposed`/TBD -- so it is left in place and deferred
+to Phase 13, consistent with the actual (checked) exit criteria above, which
+do not mention it.
 
 ---
 

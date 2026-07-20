@@ -95,3 +95,14 @@ class PlasmaSurface(FourierSurface):
         self.Bnormal_from_plasma_current = read_bnorm_file(
             filename, self.theta, self.zeta, self.nfp, self.curpol
         )
+
+    def save(self, path):
+        """Save this plasma surface to `path` (NetCDF-4 via `h5netcdf`; ADR-028)."""
+        from . import _serialize
+        _serialize.save(path, plasma=self)
+
+    @classmethod
+    def load(cls, path):
+        """Load a `PlasmaSurface` from `path`."""
+        from . import _serialize
+        return _serialize.load_plasma(path)
