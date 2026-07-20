@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class CoilSurface(FourierSurface):
-    """Nearly bare: coil-side Fourier filtering, plus `from_uniform_offset`
+    """Coil-side Fourier filtering, plus `from_uniform_offset`
     (the only constructor that calls Fortran, and only when
     `standard_toroidal_angle=True`).
     """
@@ -69,6 +69,20 @@ class CoilSurface(FourierSurface):
         nzeta_transform = nzeta if nzeta_transform is None else nzeta_transform
 
         if standard_toroidal_angle:
+            if not plasma.standard_toroidal_angle:
+                raise ValueError(
+                    "Cannot construct a standard-toroidal-angle uniform-offset surface from a "
+                    "non-standard-toroidal-angle plasma surface. Use "
+                    "`CoilSurface.from_uniform_offset(..., standard_toroidal_angle=False)` "
+                    "instead."
+                )
+            if not isinstance(plasma, FourierSurface):
+                raise ValueError(
+                    "Cannot construct a standard-toroidal-angle uniform-offset surface from a "
+                    "non-Fourier plasma surface. Use "
+                    "`CoilSurface.from_uniform_offset(..., standard_toroidal_angle=False)` "
+                    "instead."
+                )
             from . import _core
 
             logger.info(
