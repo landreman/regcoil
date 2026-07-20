@@ -20,7 +20,7 @@ Ordered work packages for the overhaul. Each phase should be a reviewable PR (or
 | 6 Python surface object model (`Surface`/`FourierSurface`/`Plasma`/`Coil`) | done | 5 (mostly independent) |
 | 7 Slim stateless Fortran kernel + offset surface | done | 5 |
 | 8 Python `Regcoil` assembly + λ-family solve | done | 6, 7 |
-| 9 NetCDF I/O in Python; strip Fortran NetCDF/LAPACK | pending | 8 |
+| 9 Save/load (object serialization); strip Fortran NetCDF/LAPACK | pending | 8 |
 | 10 Package tools (plot, compare, cut) + Plotly coil plot | pending | 9 helpful |
 | 11 Unit tests (Python + Fortran kernels) | pending | 7+; continuous afterward |
 | 12 Read the Docs manual | pending | 8 helpful |
@@ -342,25 +342,71 @@ design, and the `geometry_option_coil=4` approximation.
 
 ---
 
-## Phase 9 — NetCDF I/O in Python; strip Fortran NetCDF/LAPACK
+## Phase 9 — Save / load (object serialization); strip Fortran NetCDF/LAPACK
 
-**Intent:** All I/O in Python; the extension links only the Fortran runtime,
-OpenMP, and BLAS (library choice: ADR-004). BLAS stays because
-`regcoil_build_g_and_h` (Phase 7) uses DGEMM; LAPACK and NetCDF do not have an
-equivalent permanent consumer and go away.
+**Intent:** Persist and restore the object model — `PlasmaSurface`,
+`CoilSurface`, `Regcoil`, `Solution`, and the `SolutionScan` from a λ scan —
+typically all together in one file, optionally one object at a time. A saved run
+is a self-contained data product: everything a user might plot (surface shapes,
+cross-sections, the `f_B`/`f_K` and `max_Bnormal`/`max_K` Pareto fronts, the
+current potential / current density / `Bnormal` on the `(θ, ζ)` grid) must load
+in ~1 s at 128×128 **without any Fortran kernel or expensive BLAS**, and be
+readable by generic tooling (`xarray`, `h5py`) with no `regcoil` import. Format,
+schema, and the store-vs-recompute rule are fixed by **ADR-028** (see also
+[API.md](API.md#saving-and-loading)). This phase also finishes the Fortran-side
+cleanup that all-Python I/O unblocks: the extension ends up linking only the
+Fortran runtime, OpenMP, and BLAS (BLAS stays for `regcoil_build_g_and_h`'s DGEMM;
+LAPACK and NetCDF have no permanent consumer and go away).
 
-1. `Solution.save(path)` writes `regcoil_out.*.nc` from Python (and a reader for
-   tools/tests).
-2. VMEC `wout` ingest is already Python (Phase 6); confirm no Fortran NetCDF is
-   reached on the supported path.
-3. Strip `ezcdf` / `NETCDF` and the NetCDF `read_wout` path from the extension.
-4. Remove `mini_libstell`, relocating any essential kinds/constants and anything
-   else necessary to the fortran files that will be kept in the end.  — see ADR-005.
+**Serialization (ADR-028):**
+
+1. **Format: NetCDF-4 via `h5netcdf`** (a required dependency for I/O; the core
+   solve stays independent of it). No attempt to preserve the legacy Fortran
+   `regcoil_out.*.nc` layout — this is a fresh Python-defined schema with named
+   dimensions, grouped by object (`/plasma`, `/coil`, `/problem`, `/solutions`),
+   each group tagged `_class` and the root tagged `format_version`.
+2. **API:** module-level `regcoil.save(path, *, plasma=None, coil=None,
+   problem=None, solutions=None)` (writes only the groups given, deduping the
+   shared problem/surfaces — an N-λ scan stores its `Regcoil`, plasma, and coil
+   once) and `regcoil.load(path) -> container` (`.plasma`, `.coil`, `.problem`,
+   `.solutions`, any of which may be `None`; `.solutions` is a `SolutionScan`).
+   Thin `obj.save(path)` methods and `Class.load(path)` delegate to these.
+3. **Store the source of truth + only the derived quantities whose recompute
+   needs the Fortran kernel or the big operators (`g`, `h`, `matrix_B/K`, `V`);
+   the big operators are never saved.** Surfaces store their Fourier modes (plus
+   the plasma's `Bnormal_from_plasma_current`, `net_poloidal_current`, `curpol`);
+   `/problem` stores the scalar parameters **and `Bnormal_from_net_coil_currents`**
+   (needs `h`, so it can't be recomputed cheaply — added by ADR-028's Phase-10
+   amendment); `/solutions` is flattened along a `lambda` dimension and stores
+   `lam`, `solution` (amplitudes), `f_B`/`f_K`/`max_K`/`rms_K`/`max_Bnormal`, and
+   the result-sized grids `Bnormal_total`, `current_potential`, `current_density`.
+4. **Split `Regcoil.__init__`** into a cheap assembly (surfaces, potential modes,
+   `basis_functions`, `f_all`, `d_xyz`) and an expensive one (`build_g_and_h`,
+   `matrix_B/K`, `eigh`), so `load()` runs only the cheap part and loaded
+   Solutions plot with no kernel; operators rebuild lazily only if a *new* λ is
+   solved on the loaded object.
+5. Add `SolutionScan` (a `Sequence[Solution]` with columnar `.lam`/`.f_B`/… array
+   accessors) as the return type of `Regcoil.scan()` and `regcoil.load()`.
+
+**Fortran-side cleanup (unblocked by all-Python I/O):**
+
+6. VMEC `wout` ingest is already Python (Phase 6, ADR-004); confirm no Fortran
+   NetCDF is reached on the supported path.
+7. Strip `ezcdf` / `NETCDF` and the NetCDF `read_wout` path from the extension.
+8. Remove `mini_libstell`, relocating any essential kinds/constants to the Fortran
+   files kept in the end — see ADR-005.
 
 Exit criteria:
 
+- [ ] `regcoil.save(..., solutions=scan)` writes one file with all four object
+      kinds; `regcoil.load(...)` round-trips them (surfaces, problem params, and
+      every `Solution` field) within tolerance.
+- [ ] A round-tripped run reproduces every plot-target quantity (surface grids,
+      current potential/density, `Bnormal_total`, `Bnormal_from_net_coil_currents`,
+      the Pareto scalars) with **no** `build_g_and_h` / `eigh` / DGEMM call.
+- [ ] `plasma.save`/`prob.save`/`sol.save` and the per-class `load` handle the
+      single-object (subset) case.
 - [ ] Extension links only the compiler runtime, OpenMP, and BLAS (no LAPACK, no NetCDF).
-- [ ] Tests read outputs via the chosen Python NetCDF stack.
 - [ ] CI does not install Fortran NetCDF for the package build.
 
 ---

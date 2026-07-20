@@ -639,10 +639,14 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
        (the last is unrecoverable — it is set after construction from a
        bnorm/FOCUS file or a user array).
      - **`Regcoil`**: store scalar params (`mpol_potential, ntor_potential,
-       net_poloidal_current, net_toroidal_current, stellarator_symmetric`) and a
-       reference to its plasma and coil. `basis_functions`, `f_all`, `d_xyz` are
-       cheap numpy and recomputed on load; `g, h, matrix_B/K, RHS_*, w, V` are
-       **not** stored. **Exception (ADR-029):** the plasma-grid array
+       net_poloidal_current, net_toroidal_current, stellarator_symmetric`), a
+       reference to its plasma and coil, **and `Bnormal_from_net_coil_currents`**
+       (the per-problem, λ-independent grid `h`-reshaped/`|N|`; it needs the
+       kernel output `h` to recompute, so it is stored rather than rebuilt --
+       added by the Phase-10 amendment below so the
+       `bnormal(component="net_coil")` plot panel loads without a kernel call).
+       `basis_functions`, `f_all`, `d_xyz` are cheap numpy and recomputed on
+       load; `g, h, matrix_B/K, RHS_*, w, V` are **not** stored. **Exception (ADR-029):** the plasma-grid array
        `Bnormal_from_net_coil_currents(ntheta_plasma, nzeta_plasma)` *is* stored
        in `/problem`. It is λ-independent, ~0.1 MB, and its recompute is the
        Fortran `h` term (`regcoil_build_g_and_h`); storing it lets the Bnormal
@@ -718,6 +722,11 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
     old "strip Fortran NetCDF/LAPACK" bullets stay as the parallel cleanup they
     always were, now clearly secondary to the serialization work). Phase 11's
     "NetCDF round-trip" test becomes a round-trip test against this schema.
+- **Amendments:**
+  - *(Phase 10, ADR-029):* `/problem` also stores `Bnormal_from_net_coil_currents`
+    (the λ-independent, `h`-derived grid) so the `bnormal(component="net_coil")`
+    plot panel loads without a kernel call. Folded into decision 2's `Regcoil`
+    storage list above.
 
 ---
 

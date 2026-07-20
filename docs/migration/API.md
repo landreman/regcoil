@@ -275,6 +275,7 @@ Groups by object, each tagged with a `_class` attribute; the root carries a
 /coil            _class=CoilSurface   : the FourierSurface fields (incl. nu modes)
 /problem         mpol_potential, ntor_potential, net_poloidal_current,
                    net_toroidal_current, stellarator_symmetric,
+                   Bnormal_from_net_coil_currents(ntheta_plasma,nzeta_plasma),
                    Bnormal_from_net_coil_currents(ntheta_plasma,nzeta_plasma)
                    # ^ stored (ADR-029): λ-independent, its recompute is the
                    #   Fortran h term, so the "net coil currents" Bnormal panel
@@ -302,7 +303,9 @@ mode amplitudes.** The big operators are **never** saved.
   `Bnormal_from_plasma_current`, `net_poloidal_current`, `curpol`, which are not
   recoverable from the coefficients). `r`, `normal`, `area`, `volume` are one gemm
   away, rebuilt lazily on load.
-- **`Regcoil`** stores its scalar parameters and references to plasma/coil.
+- **`Regcoil`** stores its scalar parameters, references to plasma/coil, and the
+  λ-independent `Bnormal_from_net_coil_currents` grid (it needs the kernel output
+  `h` to recompute, and it backs the `bnormal(component="net_coil")` plot panel).
   `basis_functions`, `f_all`, `d_xyz` are cheap numpy, rebuilt on load; `g`, `h`,
   `matrix_B/K`, `RHS_*`, `w`, `V` are not stored. **One exception (ADR-029):** the
   λ-independent plasma-grid array `Bnormal_from_net_coil_currents` *is* stored (it
