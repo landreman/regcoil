@@ -284,7 +284,7 @@ phase (ADR-021 supersedes ADR-003).
   `matrix_B = gᵀ(g/N)`, `matrix_K = Σ fᵢᵀ(fᵢ/N)`, `RHS_B`, `RHS_K`, and computes
   `w, V = scipy.linalg.eigh(matrix_B, matrix_K)`. **Immutable** thereafter.
 - `Solution` (frozen dataclass): `lam`, `solution`,
-  `single_valued_current_potential_mn`, `chi2_B`, `chi2_K`, `max_K`, `rms_K`,
+  `single_valued_current_potential_mn`, `f_B`, `f_K`, `max_K`, `rms_K`,
   `max_Bnormal`, `Bnormal_total`; lazy `current_potential()` / `current_density()`.
 - `solve(lam)`, `scan(lambdas)` (vectorized), `solve_for_target(metric, value)`
   (bisection/Newton on the closed-form `chi2`/`max_K` vs λ). No Fortran Brent,
@@ -326,7 +326,7 @@ cached `scipy.linalg.eigh(matrix_B, matrix_K)` eigendecomposition;
 `solve_for_target(metric, value)` bisects in `log(lambda)` and raises
 `ValueError` for an unreachable target (see ADR-024) rather than porting the
 legacy staged Brent search. `Solution.current_potential()`/`current_density()`
-are lazy grid expansions; `chi2_B`/`chi2_K`/`max_K`/`rms_K`/`max_Bnormal`/
+are lazy grid expansions; `f_B`/`f_K`/`max_K`/`rms_K`/`max_Bnormal`/
 `Bnormal_total` are eager (computed once per solve, matching legacy
 diagnostics). Regression tests under `tests/regression/*/test_regression.py`
 build the problem directly via the object model (no legacy executable, no
@@ -337,7 +337,7 @@ avoid hand-transcription errors); the four `ntheta_plasma=128` cases are
 `tests/unit/test_regcoil.py` covers the object-model behavior independent of
 any golden legacy value (basis-function/mode-count sanity, `scan` vs. `solve`
 consistency, two-instance non-interference, `solve_for_target` bracketing).
-See ADR-024 for the chi2_K-only regularization, the `ValueError`-on-unreachable-target
+See ADR-024 for the f_K-only regularization, the `ValueError`-on-unreachable-target
 design, and the `geometry_option_coil=4` approximation.
 
 ---

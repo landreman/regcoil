@@ -5,7 +5,7 @@
 Golden values are read by hand from the example's `tests.py`. The lambda=0
 (unregularized) mode coefficients are hyper-sensitive to small differences
 between the online offset-surface algorithm here and the legacy one, so
-(like the original test) only chi2_B/chi2_K/max_Bnormal/max_K and the
+(like the original test) only f_B/f_K/max_Bnormal/max_K and the
 lambda[1] mode coefficients are checked, skipping the lambda=0 entry.
 """
 
@@ -35,18 +35,18 @@ def test_uniform_offset_lores():
     )
     sols = prob.scan(lambdas)
 
-    chi2_B = np.array([sol.chi2_B for sol in sols])
+    f_B = np.array([sol.f_B for sol in sols])
     np.testing.assert_allclose(
-        chi2_B[1:],
+        f_B[1:],
         [0.174519878306313, 0.233148551834137, 0.310446213587783, 0.411565852326815,
          0.542616084841207, 0.710568315783369, 0.922890554110523, 1.18673864681126,
          1.50770781013225],
         rtol=0.03,
     )
 
-    chi2_K = np.array([sol.chi2_K for sol in sols])
+    f_K = np.array([sol.f_K for sol in sols])
     np.testing.assert_allclose(
-        chi2_K[1:],
+        f_K[1:],
         [1.74957088182873e15, 1.6989658516062e15, 1.64892520707378e15, 1.59982527129183e15,
          1.55209554042516e15, 1.50621123410416e15, 1.46269693947801e15, 1.42212837760326e15,
          1.38509938973785e15],

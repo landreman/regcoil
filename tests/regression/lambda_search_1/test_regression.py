@@ -29,14 +29,14 @@ def test_lambda_zero_and_infinite_limits():
     prob = _build_problem()
 
     sol_inf = prob.solve(np.inf)
-    np.testing.assert_allclose(sol_inf.chi2_B, 13.1506816246147, rtol=0.001)
-    np.testing.assert_allclose(sol_inf.chi2_K, 1.21300287142288e15, rtol=0.001)
+    np.testing.assert_allclose(sol_inf.f_B, 13.1506816246147, rtol=0.001)
+    np.testing.assert_allclose(sol_inf.f_K, 1.21300287142288e15, rtol=0.001)
     np.testing.assert_allclose(sol_inf.max_Bnormal, 0.800268516799401, rtol=0.001)
     np.testing.assert_allclose(sol_inf.max_K, 2754022.92888632, rtol=0.001)
 
     sol_0 = prob.solve(0.0)
-    np.testing.assert_allclose(sol_0.chi2_B, 7.71670836033572e-06, rtol=0.001)
-    np.testing.assert_allclose(sol_0.chi2_K, 1.99560519855456e16, rtol=0.001)
+    np.testing.assert_allclose(sol_0.f_B, 7.71670836033572e-06, rtol=0.001)
+    np.testing.assert_allclose(sol_0.f_K, 1.99560519855456e16, rtol=0.001)
     np.testing.assert_allclose(sol_0.max_Bnormal, 0.00131646260910012, rtol=0.001)
     np.testing.assert_allclose(sol_0.max_K, 126095244.116546, rtol=0.001)
 
@@ -45,4 +45,4 @@ def test_solve_for_target_max_K():
     prob = _build_problem()
     sol = prob.solve_for_target("max_K", 8.0e6)
     np.testing.assert_allclose(sol.max_K, 8.0e6, rtol=1e-3)
-    np.testing.assert_allclose(sol.chi2_B, 0.337712583344148, rtol=1e-4)
+    np.testing.assert_allclose(sol.f_B, 0.337712583344148, rtol=1e-4)

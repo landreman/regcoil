@@ -65,7 +65,7 @@ def test_axisymmetric_solution_vanishes():
         assert prob.nbf == expected_nbf
 
         for sol in prob.scan(lambdas):
-            assert abs(sol.chi2_B) < 1e-10
+            assert abs(sol.f_B) < 1e-10
             assert abs(sol.max_Bnormal) < 1e-10
             np.testing.assert_allclose(sol.solution, 0, atol=3e-10)
 
@@ -77,8 +77,8 @@ def test_scan_matches_per_lambda_direct_solves():
     for lam, sol in zip(lambdas, scanned):
         direct = prob.solve(lam)
         np.testing.assert_allclose(sol.solution, direct.solution, rtol=1e-10, atol=1e-12)
-        assert sol.chi2_B == pytest.approx(direct.chi2_B, rel=1e-10)
-        assert sol.chi2_K == pytest.approx(direct.chi2_K, rel=1e-10)
+        assert sol.f_B == pytest.approx(direct.f_B, rel=1e-10)
+        assert sol.f_K == pytest.approx(direct.f_K, rel=1e-10)
         assert sol.max_K == pytest.approx(direct.max_K, rel=1e-10)
 
 
@@ -111,18 +111,18 @@ def test_two_problems_different_resolutions_do_not_interfere():
 
 def test_solve_for_target_matches_direct_solve_at_the_target():
     prob = _small_problem(ntheta=12, nzeta=12, mpol=4, ntor=3)
-    lo = prob.solve(0.0).chi2_B
-    hi = prob.solve(np.inf).chi2_B
+    lo = prob.solve(0.0).f_B
+    hi = prob.solve(np.inf).f_B
     target = 0.5 * (lo + hi)
-    sol = prob.solve_for_target("chi2_B", target)
-    assert sol.chi2_B == pytest.approx(target, rel=1e-6)
+    sol = prob.solve_for_target("f_B", target)
+    assert sol.f_B == pytest.approx(target, rel=1e-6)
 
 
 def test_solve_for_target_raises_outside_achievable_range():
     prob = _small_problem()
-    hi = prob.solve(np.inf).chi2_B
+    hi = prob.solve(np.inf).f_B
     with pytest.raises(ValueError, match="not achievable"):
-        prob.solve_for_target("chi2_B", hi * 10 + 1)
+        prob.solve_for_target("f_B", hi * 10 + 1)
 
 
 def test_solve_for_target_rejects_unachievable_max_K_targets():
