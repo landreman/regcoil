@@ -86,7 +86,10 @@ build-verbosity = 1
 test-requires = "pytest"
 # Regression tests marked slow take many minutes; the point here is to prove the
 # wheel imports and computes, not to re-run the science suite on every arch.
-test-command = "pytest -m 'not slow' {project}/tests"
+# Must cd into {project} first: some tests open equilibria/*.nc via a path
+# relative to cwd (see tests/unit/test_surface.py), which only resolves at the
+# repo root -- cibuildwheel otherwise runs pytest from a scratch venv dir.
+test-command = "cd {project} && pytest -m 'not slow' tests"
 
 [tool.cibuildwheel.linux]
 # manylinux_2_28 is AlmaLinux 8: dnf, and openblas rather than reference blas.
