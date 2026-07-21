@@ -8,10 +8,34 @@ This program is described in the paper
 `M Landreman, "An improved current potential method for fast computation of stellarator coil shapes," Nuclear Fusion 57, 046003 (2017)`,
 which is available in this repository and also [at arXiv:1609.04378](https://arxiv.org/pdf/1609.04378.pdf).
 
-**Full documentation, including installation, a tutorial, every plot type, and
-the API reference, is at [regcoil.readthedocs.io](https://regcoil.readthedocs.io).**
+This repository provides a pip-installable python package, with compiled kernels
+for the computationally intensive steps.
+The original fortran implementation of the REGCOIL algorithm is available in the
+companion repository
+https://github.com/landreman/regcoil_fortran
 
-Python packaging / migration plans: [`docs/migration/`](docs/migration/OVERVIEW.md).
+### Installation
+
+This package is not yet available on pypi, but releases there are planned soon.
+To install, clone the repository and then pip-install:
+```bash
+git clone https://github.com/landreman/regcoil.git
+cd regcoil
+pip install .
+```
+
+For editable installs, it is necessary to include the ``--no-build-isolation``
+flag due to a quirk of the meson build system:
+
+```bash
+pip install -e ".[dev]" --no-build-isolation
+```
+
+Tests can be run using
+
+```bash
+pytest
+```
 
 ### Quickstart
 
@@ -20,62 +44,31 @@ Python packaging / migration plans: [`docs/migration/`](docs/migration/OVERVIEW.
 ```python
 import regcoil
 
-ds = regcoil.examples("NCSX")
-plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=24, nzeta=24)
+ds = regcoil.examples("NCSX")  # Or "W7-X"
+# ds then provides paths to a vmec wout file, bnorm file, and coil winding surface in nescin format
+
+# Define the plasma boundary surface:
+plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=64, nzeta=64)
+# Assign B_normal data associated with the plasma current:
 plasma.set_bnormal_from_bnorm_file(ds.bnorm)
+
+# Define a coil winding surface:
 coil = regcoil.CoilSurface.from_uniform_offset(
-    plasma, separation=0.3, ntheta=24, nzeta=24, mpol=8, ntor=8
+    plasma, separation=0.3, ntheta=64, nzeta=64, mpol=12, ntor=12
 )
 
-problem = regcoil.Regcoil(plasma, coil, mpol_potential=8, ntor_potential=8)
+problem = regcoil.Regcoil(plasma, coil, mpol_potential=12, ntor_potential=12)
 solution = problem.solve(lam=1e-14)
+# You can also solve for a range of lambda values, or search for lambda that 
+# results in a desired f_B, f_K, max_K, etc
 print(f"f_B = {solution.f_B:.1e}, f_K = {solution.f_K:.1e}")
 # f_B = 1.9e-01, f_K = 9.7e+13
+
+# Results can then be saved and plotted.
 ```
 
 <!-- quickstart-end -->
 
-`regcoil.examples` bundles a handful of ready-to-use VMEC/BNORM/NESCIN datasets
-(`"NCSX"`, `"W7-X"`, ...) so the snippet above runs with no external files. See
-[the quickstart page](https://regcoil.readthedocs.io/en/latest/quickstart.html)
-for a fuller walkthrough (λ scans, plotting, saving/loading, cutting coils).
+Full documentation, covering installation, typical usage, details of available plot types, and
+the API reference, will be available soon at [regcoil.readthedocs.io](https://regcoil.readthedocs.io).
 
-### Install (Python package)
-
-Requires **gfortran**, **BLAS**, and **OpenMP** (the Python package's stateless Fortran kernels need no LAPACK and no NetCDF, as of Phase 9). The legacy executable below still needs **LAPACK** and **NetCDF C + Fortran** until Phase 13. On macOS Homebrew Apple Silicon see [`docs/migration/LOCAL.md`](docs/migration/LOCAL.md).
-
-Editable installs with meson-python need build tools in the *same* environment (pip’s isolated build env is discarded after install):
-
-```bash
-pip install -e ".[dev]" --no-build-isolation
-```
-
-If build tools are not yet installed:
-
-```bash
-pip install meson ninja "meson-python>=0.16" pytest
-pip install -e ".[dev]" --no-build-isolation
-```
-
-Non-editable install (fine for CI / one-shot use; uses build isolation):
-
-```bash
-pip install ".[dev]"
-```
-
-Run tests (requires the installed python package):
-
-```bash
-pytest
-```
-
-### Build and test (legacy executable)
-
-The Fortran sources live under `fortran/`. The root `makefile` still builds the `regcoil` binary at the repo root for example regressions:
-
-```bash
-make
-make test
-```
-
-On macOS with Homebrew NetCDF (Apple Silicon), the default makefile paths under `/usr/local` are often wrong—see [`docs/migration/LOCAL.md`](docs/migration/LOCAL.md) for the `EXTRA_*` flag overrides that work locally.
