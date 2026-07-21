@@ -2,7 +2,7 @@
 
 A regularized current potential method for fast computation of the shapes of stellarator coils
 
-![](https://github.com/landreman/regcoil/blob/master/manual/m20170111_01_compareNescoilToRegcoilCoils.png)
+![](https://github.com/landreman/regcoil/blob/master/docs/m20170111_01_compareNescoilToRegcoilCoils.png)
 
 This program is described in the paper
 `M Landreman, "An improved current potential method for fast computation of stellarator coil shapes," Nuclear Fusion 57, 046003 (2017)`,
