@@ -29,7 +29,7 @@ Companion docs:
 10. **Plotly coil plot** — port `m20160811_01_plotCoilsFromRegcoil.m` to Python with Plotly; **remove all other MATLAB** sources.
 11. **Remove SVD scan** — delete `regcoil_svd_scan` and `general_option == 3` pathways.
 12. **Remove adjoint / winding-surface optimization** — delete sensitivity / adjoint Fortran and `windingSurfaceOptimization/`.
-13. **Unit + regression tests** — pytest for Python and integration; unit tests for Fortran cores (framework TBD; see ADR-008). CI on GitHub Actions.
+13. **Unit + regression tests** — pytest for Python and integration; unit tests for the Fortran kernels go through the `regcoil._core` extension, no separate Fortran test framework (ADR-008). CI on GitHub Actions.
 14. **Modern docs** — replace the LaTeX manual with a Read the Docs site (Sphinx or equivalent); **remove** `.github/workflows/publish_manual.yml`.
 15. **Layout** — `src/`, `tests/`, `docs/`, `fortran/` (or similar) + `pyproject.toml`.
 
