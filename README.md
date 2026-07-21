@@ -21,14 +21,14 @@ To install, clone the repository and then pip-install:
 ```bash
 git clone https://github.com/landreman/regcoil.git
 cd regcoil
-pip install .[dev]
+pip install ".[dev]"
 ```
 
 For editable installs, it is necessary to include the ``--no-build-isolation``
 flag due to a quirk of the meson build system:
 
 ```bash
-pip install -e ".[dev]" --no-build-isolation
+pip install --no-build-isolation -e ".[dev]"
 ```
 
 Tests can be run using
@@ -45,7 +45,8 @@ pytest
 import regcoil
 
 ds = regcoil.examples("NCSX")  # Or "W7-X"
-# ds then provides paths to a vmec wout file, bnorm file, and coil winding surface in nescin format
+# ds then provides paths to a vmec wout file, bnorm file,
+# and coil winding surface in nescin format
 
 # Define the plasma boundary surface:
 plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=64, nzeta=64)
