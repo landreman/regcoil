@@ -381,7 +381,7 @@ def test_from_uniform_offset_reparameterization_preserves_the_surface(standard_t
         separation=0.5, ntheta=128, nzeta=128, mpol=32, ntor=32,
         standard_toroidal_angle=standard_toroidal_angle,
     )
-    plain = CoilSurface.from_uniform_offset(plasma, **kwargs)
+    plain = CoilSurface.from_uniform_offset(plasma, theta_reparameterization=None, **kwargs)
     mapped = CoilSurface.from_uniform_offset(
         plasma, theta_reparameterization="uniform_arclength", **kwargs
     )
@@ -395,15 +395,27 @@ def test_from_uniform_offset_reparameterization_preserves_the_surface(standard_t
 
 def test_from_uniform_offset_without_reparameterization_has_no_theta_map():
     plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
-    coil = CoilSurface.from_uniform_offset(plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1)
+    coil = CoilSurface.from_uniform_offset(
+        plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1,
+        theta_reparameterization=None,
+    )
     assert coil.theta_map is None
+
+
+def test_from_uniform_offset_reparameterizes_by_default():
+    """`theta_reparameterization` defaults to `"uniform_arclength"`, so the
+    returned surface carries the corresponding `theta_map`."""
+    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
+    coil = CoilSurface.from_uniform_offset(plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1)
+    assert coil.theta_map is not None
+    assert coil.theta_map.scheme == UniformArclength()
 
 
 def test_from_uniform_offset_reparameterization_equalizes_arclength():
     """The point of the feature, on the construction it exists for."""
     plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=8, nzeta=8)
     kwargs = dict(separation=0.5, ntheta=64, nzeta=64, mpol=24, ntor=24)
-    plain = CoilSurface.from_uniform_offset(plasma, **kwargs)
+    plain = CoilSurface.from_uniform_offset(plasma, theta_reparameterization=None, **kwargs)
     mapped = CoilSurface.from_uniform_offset(
         plasma, theta_reparameterization="uniform_arclength", **kwargs
     )

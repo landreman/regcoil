@@ -150,7 +150,8 @@ def test_from_uniform_offset_reproduces_moved_points_nonaxisymmetric():
     )
     sep, nt, nz = 0.4, 16, 14
     coil = CoilSurface.from_uniform_offset(
-        plasma, separation=sep, ntheta=nt, nzeta=nz, mpol=nt // 2, ntor=nz // 2
+        plasma, separation=sep, ntheta=nt, nzeta=nz, mpol=nt // 2, ntor=nz // 2,
+        theta_reparameterization=None,
     )
 
     assert coil.standard_toroidal_angle is False

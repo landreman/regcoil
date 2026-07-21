@@ -35,7 +35,7 @@ class CoilSurface(FourierSurface):
         cls, plasma, separation, ntheta=64, nzeta=64, mpol=24, ntor=24,
         standard_toroidal_angle=False,
         ntheta_transform=None, nzeta_transform=None, tol=1e-10,
-        theta_reparameterization=None,
+        theta_reparameterization="uniform_arclength",
     ):
         """A surface offset uniformly outward from `plasma` by `separation`
         meters along its normal.
@@ -66,11 +66,14 @@ class CoilSurface(FourierSurface):
           offset surface is self-intersecting, which leaves some target angles
           unreachable.
 
-        `theta_reparameterization` (default None) reparameterizes the coil
-        surface's poloidal angle without changing its shape -- a
-        `UniformArclength` or `CurvatureWeighted` instance, or the shorthand
-        string `"uniform_arclength"` / `"curvature"` (see
-        `regcoil.reparameterize`). The legacy `geometry_option_coil=4` is
+        `theta_reparameterization` (default `"uniform_arclength"`)
+        reparameterizes the coil surface's poloidal angle without changing its
+        shape -- a `UniformArclength` or `CurvatureWeighted` instance, or the
+        shorthand string `"uniform_arclength"` / `"curvature"` (see
+        `regcoil.reparameterize`); pass `None` to keep the plasma's poloidal
+        angle. The legacy `geometry_option_coil=2` is
+        `standard_toroidal_angle=True, theta_reparameterization=None`, and
+        `geometry_option_coil=4` is
         `standard_toroidal_angle=True, theta_reparameterization="uniform_arclength"`.
         The map is built from, and applied to, the offset points *before* the
         Fourier transform, so the fit happens once and in the good angle; the

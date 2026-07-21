@@ -193,6 +193,7 @@ def test_uniform_offset_surface_matches_legacy_golden():
     coil = CoilSurface.from_uniform_offset(
         plasma, separation=0.4, ntheta=8, nzeta=8, mpol=3, ntor=2,
         standard_toroidal_angle=True, ntheta_transform=6, nzeta_transform=5, tol=1e-10,
+        theta_reparameterization=None,
     )
 
     np.testing.assert_array_equal(coil.xm, XM_OUT)

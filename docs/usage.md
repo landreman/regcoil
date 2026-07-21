@@ -48,18 +48,19 @@ coil = regcoil.CoilSurface.from_uniform_offset(
 
 ### Reparameterizing the poloidal angle
 
-An offset surface inherits its poloidal angle from the plasma, and that angle
-is often poorly distributed on the offset surface -- points bunch up where the
-offset compresses the surface and spread out elsewhere. Passing
-`theta_reparameterization` relabels the points, leaving the shape untouched
-but making the angle better behaved:
+If the offset surface simply inherited its poloidal angle from the plasma,
+that angle would often be poorly distributed -- points bunch up where the
+offset compresses the surface and spread out elsewhere. `from_uniform_offset`
+therefore relabels the points by default (`theta_reparameterization=
+"uniform_arclength"`), leaving the shape untouched but making the angle better
+behaved. Pass `theta_reparameterization=None` to keep the plasma's angle:
 
 ```{code-cell} ipython3
 import numpy as np
 
-uniform = regcoil.CoilSurface.from_uniform_offset(
+inherited = regcoil.CoilSurface.from_uniform_offset(
     plasma, separation=0.3, ntheta=64, nzeta=64, mpol=12, ntor=12,
-    theta_reparameterization="uniform_arclength",
+    theta_reparameterization=None,
 )
 
 def arclength_spread(surf):
@@ -67,8 +68,8 @@ def arclength_spread(surf):
     speed = np.sqrt(np.sum(dr * dr, axis=0))
     return ((speed.max(axis=0) - speed.min(axis=0)) / speed.mean(axis=0)).max()
 
-print(f"default angle:          {arclength_spread(coil):.3f}")
-print(f"uniform-arclength angle: {arclength_spread(uniform):.3f}")
+print(f"inherited angle:         {arclength_spread(inherited):.3f}")
+print(f"uniform-arclength angle: {arclength_spread(coil):.3f}")
 ```
 
 `"uniform_arclength"` makes `|dr/dtheta|` independent of `theta`;
