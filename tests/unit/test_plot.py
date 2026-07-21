@@ -148,6 +148,7 @@ def test_plot_3d_renders_any_subset():
 
     for fig in (fig_plasma_only, fig_coil_only, fig_coils_only, fig_all):
         assert type(fig).__module__.startswith("plotly")
+    assert len(fig_plasma_only.data) > 1
     assert len(fig_all.data) > len(fig_plasma_only.data)
     assert len(fig_all.data) > len(fig_coil_only.data)
     assert len(fig_all.data) > len(fig_coils_only.data)

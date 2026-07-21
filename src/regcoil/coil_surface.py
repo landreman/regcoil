@@ -35,6 +35,7 @@ class CoilSurface(FourierSurface):
         cls, plasma, separation, ntheta=64, nzeta=64, mpol=24, ntor=24,
         standard_toroidal_angle=False,
         ntheta_transform=None, nzeta_transform=None, tol=1e-10,
+        theta_reparameterization=None,
     ):
         """A surface offset uniformly outward from `plasma` by `separation`
         meters along its normal.
@@ -64,6 +65,16 @@ class CoilSurface(FourierSurface):
           `standard_toroidal_angle=True` is set on the result. Raises if the
           offset surface is self-intersecting, which leaves some target angles
           unreachable.
+
+        `theta_reparameterization` (default None) reparameterizes the coil
+        surface's poloidal angle without changing its shape -- a
+        `UniformArclength` or `CurvatureWeighted` instance, or the shorthand
+        string `"uniform_arclength"` / `"curvature"` (see
+        `regcoil.reparameterize`). The legacy `geometry_option_coil=4` is
+        `standard_toroidal_angle=True, theta_reparameterization="uniform_arclength"`.
+        The map is built from, and applied to, the offset points *before* the
+        Fourier transform, so the fit happens once and in the good angle; the
+        resulting `ThetaMap` is kept on the returned surface as `theta_map`.
         """
         lasym = not plasma.stellarator_symmetric
         ntheta_transform = ntheta if ntheta_transform is None else ntheta_transform
@@ -93,8 +104,20 @@ class CoilSurface(FourierSurface):
                 ntor,
             )
             kernel_start = perf_counter()
+
+            def curve(theta, zeta):
+                theta_2d, zeta_2d = np.meshgrid(theta, zeta, indexing="ij")
+                return _offset_curve_at_standard_toroidal_angle(
+                    plasma, separation, theta_2d, zeta_2d, float(tol)
+                )
+
+            tmap = _build_theta_map(
+                theta_reparameterization, curve, plasma,
+                int(ntheta_transform), int(nzeta_transform),
+            )
             theta_grid, zeta_grid, major_r, z_val = _offset_at_standard_toroidal_angle(
-                plasma, separation, int(ntheta_transform), int(nzeta_transform), float(tol)
+                plasma, separation, int(ntheta_transform), int(nzeta_transform), float(tol),
+                theta=_map_theta(tmap, int(ntheta_transform), int(nzeta_transform), plasma.nfp),
             )
             logger.info(
                 "Finished uniform offset surface root solve in %.3f s",
@@ -102,8 +125,18 @@ class CoilSurface(FourierSurface):
             )
             nu_val = np.zeros_like(major_r)
         else:
+
+            def curve(theta, zeta):
+                theta_2d, zeta_2d = np.meshgrid(theta, zeta, indexing="ij")
+                return _offset_points(plasma, separation, theta_2d, zeta_2d)
+
+            tmap = _build_theta_map(
+                theta_reparameterization, curve, plasma,
+                int(ntheta_transform), int(nzeta_transform),
+            )
             theta_grid, zeta_grid, major_r, z_val, nu_val = _offset_along_normal(
-                plasma, separation, int(ntheta_transform), int(nzeta_transform)
+                plasma, separation, int(ntheta_transform), int(nzeta_transform),
+                theta=_map_theta(tmap, int(ntheta_transform), int(nzeta_transform), plasma.nfp),
             )
 
         (
@@ -116,12 +149,14 @@ class CoilSurface(FourierSurface):
             # root-solve tolerance); do not carry meaningless modes.
             numns_out = numnc_out = None
 
-        return cls(
+        surface = cls(
             xm_out, xn_out, rmnc_out, zmns_out, rmns_out, zmnc_out,
             nfp=plasma.nfp, ntheta=ntheta, nzeta=nzeta,
             standard_toroidal_angle=standard_toroidal_angle,
             numns=numns_out, numnc=numnc_out,
         )
+        surface.theta_map = tmap
+        return surface
 
     def filter_modes(self, mpol_filter=None, ntor_filter=None):
         """Zero out modes with `|m|` > mpol_filter or `|n|` > ntor_filter*nfp, in place.
@@ -149,6 +184,30 @@ class CoilSurface(FourierSurface):
         """Load a `CoilSurface` from `path`."""
         from . import _serialize
         return _serialize.load_coil(path)
+
+
+def _build_theta_map(scheme, curve, plasma, ntheta_transform, nzeta_transform):
+    """`None` if no reparameterization was requested, else the `ThetaMap` for
+    `curve`. Split out only so the two `from_uniform_offset` branches share it."""
+    if scheme is None:
+        return None
+    from .reparameterize import theta_map
+
+    return theta_map(
+        curve, scheme, nfp=plasma.nfp,
+        ntheta=ntheta_transform, nzeta=nzeta_transform,
+        stellarator_symmetric=plasma.stellarator_symmetric,
+    )
+
+
+def _map_theta(tmap, ntheta_transform, nzeta_transform, nfp):
+    """The `(ntheta_transform, nzeta_transform)` array of plasma poloidal
+    angles to sample at, or `None` for the plain uniform grid."""
+    if tmap is None:
+        return None
+    theta_grid = 2 * np.pi * np.arange(ntheta_transform) / ntheta_transform
+    zeta_grid = (2 * np.pi / nfp) * np.arange(nzeta_transform) / nzeta_transform
+    return tmap(theta_grid, zeta_grid)
 
 
 def _offset_points(plasma, separation, theta, zeta):
@@ -248,31 +307,61 @@ def _solve_zeta_for_phi(plasma, separation, theta, phi_target, tol, max_iteratio
     return c
 
 
-def _offset_at_standard_toroidal_angle(plasma, separation, ntheta_transform, nzeta_transform, tol):
+def _offset_at_standard_toroidal_angle(
+    plasma, separation, ntheta_transform, nzeta_transform, tol, theta=None
+):
     """Sample the uniform-offset surface on a `(theta, zeta)` grid in which
     `zeta` *is* the standard toroidal angle, by solving
     `atan2(y, x) = zeta` at each grid point (`_solve_zeta_for_phi`).
+
+    `theta` (default: the uniform grid) is the `(ntheta_transform,
+    nzeta_transform)` array of *plasma* poloidal angles to sample at -- how a
+    theta reparameterization enters, since it makes the sampled theta depend
+    on zeta.
 
     Returns `(theta_grid, zeta_grid, major_R, Z)`; there is no `nu` because
     `phi = zeta` holds by construction.
     """
     theta_grid = 2 * np.pi * np.arange(ntheta_transform) / ntheta_transform
     zeta_grid = (2 * np.pi / plasma.nfp) * np.arange(nzeta_transform) / nzeta_transform
-    theta_2d, zeta_2d = np.meshgrid(theta_grid, zeta_grid, indexing="ij")
+    theta_2d = (
+        np.broadcast_to(theta_grid[:, None], (ntheta_transform, nzeta_transform))
+        if theta is None
+        else np.asarray(theta, dtype=float)
+    )
+    zeta_2d = np.broadcast_to(zeta_grid, theta_2d.shape)
 
-    zeta_solution = _solve_zeta_for_phi(plasma, separation, theta_2d, zeta_2d, tol)
-    r_offset = _offset_points(plasma, separation, theta_2d, zeta_solution)
-
-    major_r = np.sqrt(r_offset[0] ** 2 + r_offset[1] ** 2)
+    r_offset = _offset_curve_at_standard_toroidal_angle(
+        plasma, separation, theta_2d, zeta_2d, tol
+    )
+    major_r = np.hypot(r_offset[0], r_offset[1])
     return theta_grid, zeta_grid, major_r, r_offset[2]
 
 
-def _offset_along_normal(plasma, separation, ntheta_transform, nzeta_transform):
+def _offset_curve_at_standard_toroidal_angle(plasma, separation, theta, phi_target, tol):
+    """The offset point at poloidal angle `theta` whose *physical* toroidal
+    angle is `phi_target`: solve for the surface parameter `zeta`, then place
+    the point. Paired arrays of any matching shape.
+
+    Kept separate from `_offset_at_standard_toroidal_angle` so that the theta
+    reparameterization can use it as its `curve` callable on a refined theta
+    grid, before any Fourier fit happens.
+    """
+    zeta_solution = _solve_zeta_for_phi(plasma, separation, theta, phi_target, tol)
+    return _offset_points(plasma, separation, theta, zeta_solution)
+
+
+def _offset_along_normal(plasma, separation, ntheta_transform, nzeta_transform, theta=None):
     """Sample `plasma` on a `(theta, zeta)` grid spanning one field period,
     move each point `separation` along its local unit normal, and return the
     grid plus the moved points' `(major_R, Z, nu)`, where
     `nu = atan2(y, x) - zeta` is the deviation of the moved point's physical
     toroidal angle from the surface parameter `zeta` (see `FourierSurface`).
+
+    `theta` (default: the uniform grid) is the `(ntheta_transform,
+    nzeta_transform)` array of plasma poloidal angles to sample at, which is
+    how a theta reparameterization enters. Supplying it requires `plasma` to
+    implement `evaluate_at`, since the sample points no longer form a grid.
 
     Relies on `plasma`'s nfp-periodicity (the Fourier representation's `xn`
     is a multiple of `nfp`) to guarantee that the moved points are themselves
@@ -285,20 +374,28 @@ def _offset_along_normal(plasma, separation, ntheta_transform, nzeta_transform):
     theta_grid = 2 * np.pi * np.arange(ntheta_transform) / ntheta_transform
     zeta_grid = (2 * np.pi / plasma.nfp) * np.arange(nzeta_transform) / nzeta_transform
 
-    evaluated = plasma._evaluate(theta_grid, zeta_grid)
-    r = evaluated["r"]
-    drdtheta = evaluated["drdtheta"]
-    drdzeta = evaluated["drdzeta"]
+    if theta is None:
+        # The sample points form a tensor grid, so use the (faster) grid
+        # evaluation, which every Surface supports.
+        evaluated = plasma._evaluate(theta_grid, zeta_grid)
+        r = evaluated["r"]
+        drdtheta = evaluated["drdtheta"]
+        drdzeta = evaluated["drdzeta"]
 
-    # N = dr/dzeta x dr/dtheta, matching Surface.normal's sign convention.
-    normal = np.empty_like(r)
-    normal[0] = drdzeta[1] * drdtheta[2] - drdtheta[1] * drdzeta[2]
-    normal[1] = drdzeta[2] * drdtheta[0] - drdtheta[2] * drdzeta[0]
-    normal[2] = drdzeta[0] * drdtheta[1] - drdtheta[0] * drdzeta[1]
-    normal /= np.sqrt(np.sum(normal * normal, axis=0))
+        # N = dr/dzeta x dr/dtheta, matching Surface.normal's sign convention.
+        normal = np.empty_like(r)
+        normal[0] = drdzeta[1] * drdtheta[2] - drdtheta[1] * drdzeta[2]
+        normal[1] = drdzeta[2] * drdtheta[0] - drdtheta[2] * drdzeta[0]
+        normal[2] = drdzeta[0] * drdtheta[1] - drdtheta[0] * drdzeta[1]
+        normal /= np.sqrt(np.sum(normal * normal, axis=0))
 
-    r_offset = r + separation * normal
-    major_r = np.sqrt(r_offset[0] ** 2 + r_offset[1] ** 2)
+        r_offset = r + separation * normal
+    else:
+        theta_2d = np.asarray(theta, dtype=float)
+        zeta_2d = np.broadcast_to(zeta_grid, theta_2d.shape)
+        r_offset = _offset_points(plasma, separation, theta_2d, zeta_2d)
+
+    major_r = np.hypot(r_offset[0], r_offset[1])
     z_val = r_offset[2]
 
     # Toroidal-angle shift of the moved point relative to zeta. Wrap into

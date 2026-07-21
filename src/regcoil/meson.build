@@ -10,6 +10,7 @@ py.install_sources(
   'fourier_surface.py',
   'plasma_surface.py',
   'coil_surface.py',
+  'reparameterize.py',
   'regcoil.py',
   'plot.py',
   'cut.py',

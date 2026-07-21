@@ -13,6 +13,22 @@
    regcoil.CoilSurface
 ```
 
+## Theta reparameterization
+
+Reparameterize a surface's poloidal angle without changing its shape --
+`Surface.reparameterize_theta`, or
+`CoilSurface.from_uniform_offset(theta_reparameterization=...)`.
+
+```{eval-rst}
+.. autosummary::
+   :toctree: _api/
+   :recursive:
+
+   regcoil.UniformArclength
+   regcoil.CurvatureWeighted
+   regcoil.ThetaMap
+```
+
 ## Problem and solution
 
 ```{eval-rst}

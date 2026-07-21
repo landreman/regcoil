@@ -46,6 +46,43 @@ coil = regcoil.CoilSurface.from_uniform_offset(
 )
 ```
 
+### Reparameterizing the poloidal angle
+
+An offset surface inherits its poloidal angle from the plasma, and that angle
+is often poorly distributed on the offset surface -- points bunch up where the
+offset compresses the surface and spread out elsewhere. Passing
+`theta_reparameterization` relabels the points, leaving the shape untouched
+but making the angle better behaved:
+
+```{code-cell} ipython3
+import numpy as np
+
+uniform = regcoil.CoilSurface.from_uniform_offset(
+    plasma, separation=0.3, ntheta=64, nzeta=64, mpol=12, ntor=12,
+    theta_reparameterization="uniform_arclength",
+)
+
+def arclength_spread(surf):
+    dr = surf.drdtheta[:, :, : surf.nzeta]
+    speed = np.sqrt(np.sum(dr * dr, axis=0))
+    return ((speed.max(axis=0) - speed.min(axis=0)) / speed.mean(axis=0)).max()
+
+print(f"default angle:          {arclength_spread(coil):.3f}")
+print(f"uniform-arclength angle: {arclength_spread(uniform):.3f}")
+```
+
+`"uniform_arclength"` makes `|dr/dtheta|` independent of `theta`;
+`"curvature"` instead concentrates points where the cross section bends
+sharply. For finer control pass a
+{class}`~regcoil.UniformArclength` or {class}`~regcoil.CurvatureWeighted`
+instance. The resulting {class}`~regcoil.ThetaMap` is kept on the surface as
+`coil.theta_map`, and its `diagnostics` report how well the target was met.
+
+Because the current-potential basis `sin(m*theta - n*zeta)` is defined in the
+coil surface's `theta`, this changes the solution space -- a better-conditioned
+basis is the reason to do it -- so it is a physics-visible choice, not a
+cosmetic one.
+
 ## 2. Assembling the problem
 
 `Regcoil` builds the basis functions, calls the Fortran kernel

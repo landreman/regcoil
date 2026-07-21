@@ -927,7 +927,7 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
 ## ADR-031: Theta reparameterization, and retiring the offset-surface Fortran kernel
 
 - **Date:** 2026-07-21
-- **Status:** proposed
+- **Status:** accepted
 - **Amends:** ADR-020 (removes `regcoil_uniform_offset_surface` from the stateless
   kernel boundary; the two inductance entry points are unchanged).
 - **Context:** Legacy `geometry_option_coil=4` reparameterized the coil surface's
@@ -1068,6 +1068,31 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
     correctness check on the reparameterization. Additional invariants:
     `area`/`volume` unchanged to truncation error, stellarator symmetry preserved
     (`rmns`/`zmnc` still zero), identity map on an already-uniform surface.
+    *Done (2026-07-21):* that test now runs the real `=4` construction
+    (`standard_toroidal_angle=True` + `"uniform_arclength"`) and reproduces the
+    legacy goldens. On W7-X at `separation=0.3`, the relative spread of
+    `|dr/dtheta|` over `theta` drops from **1.504 to 0.019**.
+  - **Reparameterization generally *widens* the Fourier spectrum**, which
+    qualifies decision 9's generic `Surface.reparameterize_theta` path:
+    composing a band-limited `R(theta)` with a non-affine `g` is not
+    band-limited, so the refit needs a higher `mpol` than the original surface
+    used (more so for `CurvatureWeighted`, which spreads points out in
+    low-curvature regions). Reparameterizing a VMEC plasma surface is therefore
+    usually a net loss — VMEC's angle is already chosen for spectral width. The
+    win is specifically on a surface whose angle was *inherited* rather than
+    chosen, i.e. the uniform-offset coil surface, which is the case
+    `from_uniform_offset(theta_reparameterization=...)` covers and the reason
+    that path (one fit, in the good angle) is the primary API.
+  - Decision 6's anchor has to be exact, not just accurate: the spectral
+    cumulative integral's `F(0) = 0` cancellation leaves roundoff at large
+    `ntheta`, and the periodic spline that inverts the map rejects endpoints
+    that differ at all. `_cumulative_integral` subtracts `F[0]` explicitly.
+  - Measuring the map is subtler than building it. Two natural-looking checks
+    are wrong: evaluating curvature at a segment *endpoint* rather than its
+    midpoint leaves an O(h) error, and spectrally differentiating the map on
+    the coarse output grid under-resolves it. The trustworthy check is chord
+    lengths on the base surface at the mapped angles, which converges as
+    O(1/N²) — it needs no derivative of the map and no refit.
   - The current-potential basis `sin(m*theta - n*zeta)` lives in the coil
     surface's theta, so reparameterization changes the solution space and the
     regularization. This is the point (a better-conditioned basis), but it is

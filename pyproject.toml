@@ -17,6 +17,7 @@ dependencies = [
     "plotly",
     "h5netcdf",
     "h5py",
+    "contourpy",
 ]
 
 [project.optional-dependencies]
