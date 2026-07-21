@@ -3,10 +3,7 @@
 ! Every entry point below is a thin bind(C) wrapper around a pure Fortran
 ! kernel (regcoil_kernels_mod / regcoil_uniform_offset_surface_mod): it
 ! reshapes the caller's raw buffers via c_f_pointer, calls the kernel, and
-! turns a nonzero `info` into the returned error code. No opaque handle, no
-! module state -- see ADR-020. (The earlier Phase 4/5 opaque-handle API,
-! regcoil_t-backed, is retired; the namelist-driven solve chain it wrapped is
-! superseded per ADR-019.)
+! turns a nonzero `info` into the returned error code.
 
 module regcoil_c_api
   use iso_c_binding

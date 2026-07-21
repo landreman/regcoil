@@ -1,6 +1,6 @@
 # regcoil
 
-A regularized current potential method for fast computation of the shapes of
+A regularized current potential method for fast and reliable computation of the shapes of
 stellarator coils, described in
 [Landreman, *Nuclear Fusion* 57, 046003 (2017)](https://arxiv.org/pdf/1609.04378.pdf).
 

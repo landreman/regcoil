@@ -7,14 +7,10 @@
 
 Building the extension needs:
 
-- **gfortran**
-- **BLAS** (on macOS, the Accelerate framework is used automatically if no
+- gfortran
+- BLAS (on macOS, the Accelerate framework is used automatically if no
   BLAS `pkg-config` file is found)
-- **OpenMP**
-
-No LAPACK and no NetCDF are required to build or import the package: the
-stateless Fortran kernels only need BLAS, and all file I/O (VMEC `wout`,
-BNORM, NESCIN, and `regcoil`'s own save/load format) is pure Python.
+- OpenMP
 
 ## Install with pip
 
@@ -46,33 +42,9 @@ python -c "import regcoil._core; print('regcoil._core OK')"
 pytest
 ```
 
-The high-resolution (`ntheta_plasma=128`) regression cases are marked `slow`
-and skipped by default:
+The high-resolution (`ntheta_plasma=nzeta_plasma=128`) regression cases are marked `slow`
+and can be skipped if desired:
 
 ```bash
-pytest -m "not slow"   # matches CI on Linux
-pytest                 # run everything, including slow cases
+pytest -m "not slow"
 ```
-
-## macOS (Homebrew, Apple Silicon)
-
-See [`docs/migration/LOCAL.md`](https://github.com/landreman/pyREGCOIL/blob/master/docs/migration/LOCAL.md)
-in the repository for Homebrew-specific notes, including the venv/conda
-interaction that can otherwise cause `import regcoil._core` to fail with a
-missing HDF5 symbol.
-
-## The legacy Fortran executable
-
-The repository also still builds a standalone Fortran executable via the root
-`makefile`, used for regression comparisons during the ongoing Python
-migration ([`docs/migration/`](https://github.com/landreman/pyREGCOIL/tree/master/docs/migration)).
-It requires LAPACK and NetCDF (C + Fortran) in addition to the requirements
-above:
-
-```bash
-make
-make test
-```
-
-This executable is not part of the pip-installed `regcoil` package and is not
-required to use `regcoil` from Python.

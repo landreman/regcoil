@@ -1,8 +1,5 @@
 # API reference
 
-Grouped by topic; each entry links to its full docstring and to the exact
-source lines on GitHub.
-
 ## Surfaces
 
 ```{eval-rst}

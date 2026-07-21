@@ -44,14 +44,14 @@ over the Fourier coefficients of $\Phi_{sv}$, for a chosen regularization
 parameter $\lambda$:
 
 $$
-\chi^2 = \chi^2_B + \lambda\, \chi^2_K,
+\f = \f_B + \lambda\, \f_K,
 \qquad
-\chi^2_B = \int d^2a\, \big(\mathbf{B}\cdot\hat{\mathbf{n}}\big)^2,
+\f_B = \int d^2a\, \big(\mathbf{B}\cdot\hat{\mathbf{n}}\big)^2,
 \qquad
-\chi^2_K = \int d^2a\, K^2,
+\f_K = \int d^2a\, K^2,
 $$
 
-where the $\chi^2_B$ integral is over the plasma surface and the $\chi^2_K$
+where the $\f_B$ integral is over the plasma surface and the $\f_K$
 integral is over the coil surface. Because both terms are quadratic in the
 unknown Fourier coefficients, the minimizer is a linear solve; scanning many
 values of $\lambda$ (`Regcoil.scan`) or bisecting for a target
@@ -60,15 +60,14 @@ values of $\lambda$ (`Regcoil.scan`) or bisecting for a target
 the `Regcoil` API reference).
 
 In the Python API these two objectives are named `Solution.f_B` and
-`Solution.f_K` (renamed from the paper's/legacy code's `chi2_B`/`chi2_K` for
-Python naming conventions — nothing about the definitions changed). `lam=0`
+`Solution.f_K` (renamed from the paper's/legacy code's `chi2_B`/`chi2_K`). `lam=0`
 recovers the least-squares fit with no regularization; `lam=np.inf` recovers
 the (well-defined) heavily-regularized limit.
 
 ## The trade-off
 
-Smaller $\lambda$ drives $\chi^2_B \to 0$ (better field accuracy) at the cost
-of larger, more convoluted currents (larger $\chi^2_K$, `max_K`, `rms_K`);
+Smaller $\lambda$ drives $\f_B \to 0$ (better field accuracy) at the cost
+of larger, more convoluted currents (larger $\f_K$, `max_K`, `rms_K`);
 larger $\lambda$ favors simpler, lower-current coils at the cost of field
 accuracy. Plotting `f_B` against `f_K` across a scan traces out this
 Pareto front — see [`regcoil.plot.pareto`](plotting.md#pareto-fronts).
@@ -82,8 +81,7 @@ levels. See [Cutting into discrete coils](plotting.md#cutting-into-discrete-coil
 
 ## Units
 
-As in VMEC, all inputs and outputs are SI: meters, Tesla, Amperes, and
-combinations thereof.
+All inputs and outputs are SI: meters, Tesla, Amperes, and combinations thereof.
 
 ## Parallelization
 

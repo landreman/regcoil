@@ -337,7 +337,7 @@ fail:
 static PyMethodDef core_methods[] = {
     {"omp_max_threads", core_omp_max_threads, METH_NOARGS,
      "omp_max_threads() -> int\n\n"
-     "Return omp_get_max_threads() from the linked Fortran runtime."},
+     "Return omp_get_max_threads() from the compiled extension. This function is useful for determining how many threads are seen by the compiled kernels."},
     {"build_inductance", core_build_inductance, METH_VARARGS,
      "build_inductance(r_plasma, normal_plasma, r_coil, normal_coil, drdtheta_coil, drdzeta_coil,\n"
      "                  nfp, net_poloidal_current, net_toroidal_current, dtheta_coil, dzeta_coil)\n"

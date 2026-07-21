@@ -21,7 +21,7 @@ To install, clone the repository and then pip-install:
 ```bash
 git clone https://github.com/landreman/regcoil.git
 cd regcoil
-pip install .
+pip install .[dev]
 ```
 
 For editable installs, it is necessary to include the ``--no-build-isolation``
@@ -69,6 +69,6 @@ print(f"f_B = {solution.f_B:.1e}, f_K = {solution.f_K:.1e}")
 
 <!-- quickstart-end -->
 
-Full documentation, covering installation, typical usage, details of available plot types, and
-the API reference, will be available soon at [regcoil.readthedocs.io](https://regcoil.readthedocs.io).
+Full documentation, covering installation, typical usage, saving/loading data, plotting, and
+the API reference, are available at [regcoil.readthedocs.io](https://regcoil.readthedocs.io).
 

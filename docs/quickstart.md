@@ -32,9 +32,7 @@ This is the same snippet as the repository README, checked here with
 f_B = 1.9e-01, f_K = 9.7e+13
 ```
 
-The rest of this page walks through the same steps with more explanation,
-executed live as part of the documentation build (ADR-030) — every cell below
-is guaranteed to run, not just to look plausible.
+The rest of this page walks through the same steps with more explanation.
 
 ## Bundled example data
 

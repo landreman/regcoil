@@ -109,10 +109,7 @@ regcoil.plot.current_density(solution);
 
 ## B_normal
 
-`component` is `'plasma_current'`, `'net_coil'`, or `'total'` (default). The
-`'net_coil'` panel needs no Fortran kernel even on a round-tripped saved run,
-because `Regcoil.Bnormal_from_net_coil_currents` is stored on disk (ADR-028's
-Phase-10 amendment):
+`component` is `'plasma_current'`, `'net_coil'`, or `'total'` (default).
 
 ```{code-cell} ipython3
 regcoil.plot.bnormal(solution, component="total");

@@ -22,7 +22,7 @@ dependencies = [
 [project.optional-dependencies]
 # meson / ninja / meson-python needed in-env for editable installs (see README).
 dev = ["pytest", "ninja", "meson", "meson-python>=0.16.0"]
-# Sphinx + Read the Docs stack (ADR-030). Docs-only; never a runtime dependency.
+# Sphinx + Read the Docs stack, not runtime dependencies:
 docs = [
     "sphinx",
     "furo",

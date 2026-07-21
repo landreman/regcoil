@@ -2,7 +2,7 @@
 # Read the Docs configuration file, see:
 # https://docs.readthedocs.io/en/stable/config-file/v2.html
 #
-# ADR-030: RTD compiles the Fortran extension (gfortran + BLAS) so that
+# RTD compiles the Fortran extension (gfortran + BLAS) so that
 # executed doc pages (MyST-NB) run the real regcoil code path, not a mock.
 
 version: 2
@@ -23,7 +23,7 @@ build:
       # single quotes, so a nested `'...'` (e.g. inside print()) breaks the
       # shell parsing ("Unterminated quoted string"). Keep this to plain
       # double quotes only; a failed import already prints a legible traceback.
-      - python -c "import regcoil._core"
+      - python -c "import regcoil._core; print(42)"
 
 sphinx:
   configuration: docs/conf.py

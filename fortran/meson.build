@@ -1,11 +1,9 @@
 # mini_libstell + REGCOIL Fortran sources linked into the Python extension.
 #
-# Phase 7 (ADR-020): the extension boundary is now 2-3 stateless kernels, so
+# The extension boundary is now ~4 stateless kernels, so
 # most of the legacy regcoil_variables-coupled chain (namelist I/O, geometry
 # init, build_matrices/prepare_solve/solve/diagnostics, lambda scan) is no
-# longer compiled in here. Those files still exist for the legacy `program
-# regcoil` executable (ADR-006), built separately via the top-level makefile
-# with its own source list (makefile.depend) -- untouched by this file.
+# longer compiled in here.
 
 mini_libstell_src = files(
   'mini_libstell/stel_kinds.f',

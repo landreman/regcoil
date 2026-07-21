@@ -14,8 +14,7 @@ kernelspec:
 # Typical usage
 
 This page walks through a complete, realistic workflow: build surfaces, solve
-a λ family, hit a target coil-current density, and save/load the result. Every
-cell on this page is executed as part of the documentation build (ADR-030).
+a λ family, hit a target coil-current density, and save/load the result.
 
 ```{code-cell} ipython3
 import numpy as np
