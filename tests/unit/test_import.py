@@ -3,6 +3,9 @@
 from io import StringIO
 import re
 
+# packaging arrives transitively with matplotlib, a hard runtime dependency.
+from packaging.version import Version
+
 import regcoil
 
 
@@ -29,5 +32,16 @@ def test_omp_max_threads():
     assert regcoil.omp_max_threads() >= 1
 
 
-def test_version():
-    assert regcoil.__version__
+def test_version_matches_installed_distribution_metadata():
+    """regcoil.__version__ must agree with what pip/PyPI see.
+
+    The version literal lives only in pyproject.toml; __init__ reads it back
+    from the installed distribution.  This guards against a build that somehow
+    ships mismatched metadata, and documents the invariant the release workflow
+    also checks against the git tag.
+    """
+    from importlib.metadata import version
+
+    assert regcoil.__version__ == version("regcoil")
+    # A PEP 440 parse is the same check PyPI will apply at upload time.
+    Version(regcoil.__version__)
