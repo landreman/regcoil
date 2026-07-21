@@ -8,8 +8,7 @@ module regcoil_kernels_mod
   ! from multiple threads with different problem sizes since all working
   ! storage is local (stack/automatic), never module-level.
 
-  use stel_kinds, only: dp
-  use stel_constants, only: pi, mu0
+  use regcoil_kinds_mod, only: dp, pi, mu0
 
   implicit none
 

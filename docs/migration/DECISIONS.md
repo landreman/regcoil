@@ -68,24 +68,35 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
 ## ADR-005: Fate of `mini_libstell`
 
 - **Date:** 2026-07-17
-- **Status:** proposed
+- **Status:** resolved (Phase 13, 2026-07-21)
 - **Context:** Bundled `mini_libstell/` supplies kinds, constants, VMEC wout read, ezcdf, etc. Full STELLOPT `libstell` is an alternate makefile path.
 - **Options:**
   1. Vendor a trimmed mini_libstell inside `fortran/` (no ezcdf/NetCDF)
   2. Depend on external libstell (discouraged for pip; also conflicts with minimal deps)
   3. Replace wout/nescin reads entirely in Python and keep only kinds/constants in Fortran
-- **Decision:** TBD; prefer (1) or (3) so `pip install` stays self-contained and avoids STELLOPT coupling.
-- **Consequences:** Phase 8 must list which mini_libstell files remain.
+- **Decision:** Went further than (3): `mini_libstell/` is deleted outright. By Phase 13 the retained
+  Fortran (`regcoil_fzero.f`, `regcoil_kernels_mod.f90`, `regcoil_uniform_offset_surface_mod.f90`,
+  `regcoil_c_api.f90`) only ever needed `dp`/`rprec`, `pi`, `twopi`, `mu0` — trimming
+  `mini_libstell` further would have left a directory with two ~15-line files, so those
+  constants are defined directly in a new `fortran/regcoil_kinds_mod.f90` instead. All wout/nescin
+  reads were already done in Python (Phase 9).
+- **Consequences:** `mini_libstell` and its makefile are gone; the Fortran extension has one
+  small kinds/constants module of its own instead of a vendored library.
 
 ---
 
 ## ADR-006: Dual executable during transition
 
 - **Date:** 2026-07-17
-- **Status:** accepted
+- **Status:** resolved (Phase 13, 2026-07-21)
 - **Context:** Risk of silent physics drift while moving the driver to Python.
 - **Decision:** Keep building the Fortran `regcoil` executable until Python-path example parity is proven in CI; remove in Phase 12.
 - **Consequences:** Slightly larger build; clearer rollback; PRs should say which entry path CI uses.
+- **Resolution:** Parity was proven via `tests/regression/` (golden values ported from the
+  legacy examples, Phase 8) and the full pytest suite, so the actual removal landed in
+  Phase 13 rather than Phase 12 (Phase 12 was Read the Docs, per the current phase table) —
+  `program regcoil`, `regcoil_variables.f90`, and the root `makefile` are deleted; CI no
+  longer builds the legacy executable.
 
 ---
 
@@ -102,7 +113,7 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
 ## ADR-008: How to unit-test Fortran cores
 
 - **Date:** 2026-07-17
-- **Status:** proposed (**needs explicit choice**)
+- **Status:** resolved (Phase 13, 2026-07-21)
 - **Context:** Need unit tests for matrix/solve code, not only full-example regressions. Python testing standard is **pytest**. Minimal dependencies—avoid heavy Fortran test frameworks unless clearly worth it.
 - **Options:**
   1. **pytest + Python extension** — call Fortran through the regcoil extension with small manufactured inputs; assert residuals/norms. No new Fortran test dep. Couples unit tests to bindings existing (Phase 4+).
@@ -111,6 +122,11 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
 - **Decision:** TBD before Phase 10 ramps up (a spike during Phase 4–5 is enough to choose).
 - **Recommendation lean:** prefer (1) or (3) to keep deps minimal and one test runner (`pytest`) in CI.
 - **Consequences:** CI workflow shape; where developers add numeric regression cases.
+- **Resolution:** Option (1). `tests/unit/test_kernels.py` (with golden fixtures in
+  `tests/unit/_golden_kernels.py`) exercises `regcoil_build_inductance`,
+  `regcoil_build_g_and_h`, and `regcoil_uniform_offset_surface` through the compiled
+  `regcoil._core` extension with small manufactured inputs. No Fortran test framework was
+  added; `pytest` remains the only test runner in CI.
 
 ---
 

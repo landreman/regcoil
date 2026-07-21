@@ -6,7 +6,7 @@ Reach them at runtime through the :data:`examples` registry::
 
     import regcoil
 
-    ds = regcoil.examples("NCSX")
+    ds = regcoil.examples("W7-X")
     plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=128, nzeta=128)
     plasma.set_bnormal_from_bnorm_file(ds.bnorm)
     coil = regcoil.CoilSurface.from_nescin(ds.nescin, nfp=plasma.nfp)

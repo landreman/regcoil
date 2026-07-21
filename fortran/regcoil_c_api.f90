@@ -7,7 +7,7 @@
 
 module regcoil_c_api
   use iso_c_binding
-  use stel_kinds, only: dp
+  use regcoil_kinds_mod, only: dp
      use omp_lib, only: omp_get_max_threads
   use regcoil_kernels_mod, only: regcoil_build_inductance, regcoil_build_g_and_h
   use regcoil_uniform_offset_surface_mod, only: regcoil_uniform_offset_surface

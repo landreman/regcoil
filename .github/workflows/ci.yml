@@ -24,24 +24,12 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             gfortran \
             libblas-dev \
-            liblapack-dev \
-            libnetcdf-dev \
-            libnetcdff-dev \
             pkg-config
 
       - name: Install system deps (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install gcc netcdf netcdf-fortran pkg-config
-
-      - name: Build legacy Fortran executable
-        run: |
-          if [ "${{ runner.os }}" = "Linux" ]; then
-            make -j4 MACHINE=github_ubuntu
-          else
-            make -j4 MACHINE=github_macos
-          fi
-          test -x ./regcoil
+          brew install gcc pkg-config
 
       - uses: actions/setup-python@v6
         with:

@@ -8,8 +8,7 @@ module regcoil_uniform_offset_surface_mod
   ! working array is local, so concurrent calls with different problem sizes
   ! do not interfere.
 
-  use stel_kinds, only: dp
-  use stel_constants, only: pi, twopi
+  use regcoil_kinds_mod, only: dp, pi, twopi
 
   implicit none
 

@@ -92,7 +92,7 @@ C   890531  REVISION DATE from Version 3.2
 C   891214  Prologue converted to Version 4.0 format.  (BAB)
 C   920501  Reformatted the REFERENCES section.  (WRB)
 C***END PROLOGUE  FZERO
-      USE stel_kinds
+      USE regcoil_kinds_mod, ONLY: RPREC, DP
       IMPLICIT NONE
       REAL(RPREC), PARAMETER :: ZERO = 0, ONE = 1
       REAL(RPREC) :: A,ACBS,ACMB,AE,AW,B,C,CMB,ER,FA,FB,FC,FX,FZ,P,Q,R,

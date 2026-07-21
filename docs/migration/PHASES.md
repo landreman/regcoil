@@ -24,7 +24,7 @@ Ordered work packages for the overhaul. Each phase should be a reviewable PR (or
 | 10 Package tools (plot, compare, cut) + Plotly coil plot | done | 9 helpful |
 | 11 Unit tests (Python + Fortran kernels) | done | 7+; continuous afterward |
 | 12 Read the Docs manual | done | 8 helpful |
-| 13 Retire Fortran executable + delete legacy Fortran + final cleanup | pending | 8–12, CI green |
+| 13 Retire Fortran executable + delete legacy Fortran + final cleanup | done | 8–12, CI green |
 
 ---
 
@@ -739,17 +739,26 @@ the existing `pytest` suite all pass):
 
 ## Phase 13 — Retire executable, delete legacy Fortran, final cleanup
 
+**Done.** `fortran/` now holds only the stateless kernel boundary
+(`regcoil_kinds_mod.f90`, `regcoil_fzero.f`, `regcoil_kernels_mod.f90`,
+`regcoil_uniform_offset_surface_mod.f90`, `regcoil_c_api.f90`) plus its
+`meson.build`. The root `makefile`/`makefile.depend`, the whole legacy
+`regcoil_variables`-coupled chain (`regcoil.f90` and everything that took
+`type(regcoil_t)`), `fortran/mini_libstell/`, and the now-orphaned
+`examples/` directory (namelist inputs + `runExamples.py`, superseded by
+`tests/regression/`) are deleted. CI no longer builds a Fortran executable.
+
 Exit criteria:
 
-- [ ] Fortran `program regcoil` removed or unsupported.
-- [ ] `regcoil_variables.f90`, the `regcoil_t` handle API, and the in-Fortran
+- [x] Fortran `program regcoil` removed or unsupported.
+- [x] `regcoil_variables.f90`, the `regcoil_t` handle API, and the in-Fortran
       solve/prepare/diagnostics + λ-search sources are deleted (superseded by the
       stateless kernels and the numpy/scipy solve).
-- [ ] mini_libstell is completely removed.
-- [ ] Packaging is the canonical build; makefile gone or developer-only.
-- [ ] README points at pip install, the scripting API, pytest, and RTD.
-- [ ] `publish_manual.yml` already gone (Phase 12); no leftover gh-pages LaTeX publish path.
-- [ ] Open ADRs resolved or explicitly deferred; migration docs marked complete.
+- [x] mini_libstell is completely removed.
+- [x] Packaging is the canonical build; makefile gone or developer-only.
+- [x] README points at pip install, the scripting API, pytest, and RTD.
+- [x] `publish_manual.yml` already gone (Phase 12); no leftover gh-pages LaTeX publish path.
+- [x] Open ADRs resolved or explicitly deferred; migration docs marked complete.
 
 ---
 

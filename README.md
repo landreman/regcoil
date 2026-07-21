@@ -2,7 +2,7 @@
 
 A regularized current potential method for fast computation of the shapes of stellarator coils
 
-![](https://github.com/landreman/regcoil/blob/master/manual/m20170111_01_compareNescoilToRegcoilCoils.png)
+![](https://github.com/landreman/regcoil/blob/master/docs/m20170111_01_compareNescoilToRegcoilCoils.png)
 
 This program is described in the paper
 `M Landreman, "An improved current potential method for fast computation of stellarator coil shapes," Nuclear Fusion 57, 046003 (2017)`,
@@ -44,7 +44,7 @@ pytest
 ```python
 import regcoil
 
-ds = regcoil.examples("NCSX")  # Or "W7-X"
+ds = regcoil.examples("W7-X")  # Or "NCSX"
 # ds then provides paths to a vmec wout file, bnorm file,
 # and coil winding surface in nescin format
 
@@ -63,7 +63,7 @@ solution = problem.solve(lam=1e-14)
 # You can also solve for a range of lambda values, or search for lambda that 
 # results in a desired f_B, f_K, max_K, etc
 print(f"f_B = {solution.f_B:.1e}, f_K = {solution.f_K:.1e}")
-# f_B = 1.9e-01, f_K = 9.7e+13
+# f_B = 2.7e-01, f_K = 1.1e+15
 
 # Results can then be saved and plotted.
 ```

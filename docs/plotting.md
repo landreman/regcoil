@@ -20,9 +20,6 @@ method (e.g. `Solution.plot_current_potential()`) delegates to the matching
 free function. matplotlib/Plotly are imported lazily inside these functions,
 so `import regcoil` never pulls in a plotting library.
 
-This page is executed as part of the documentation build; every figure below
-is produced live from a real (small) solve, not pasted in.
-
 ```{code-cell} ipython3
 %matplotlib inline
 
@@ -35,13 +32,13 @@ import regcoil
 # own frontend understands but a static Sphinx page cannot render.
 pio.renderers.default = "notebook_connected"
 
-ds = regcoil.examples("NCSX")
-plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=24, nzeta=24)
+ds = regcoil.examples("W7-X")
+plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=64, nzeta=64)
 plasma.set_bnormal_from_bnorm_file(ds.bnorm)
 coil = regcoil.CoilSurface.from_uniform_offset(
-    plasma, separation=0.3, ntheta=24, nzeta=24, mpol=8, ntor=8
+    plasma, separation=0.3, ntheta=64, nzeta=64, mpol=12, ntor=12
 )
-problem = regcoil.Regcoil(plasma, coil, mpol_potential=8, ntor_potential=8)
+problem = regcoil.Regcoil(plasma, coil, mpol_potential=12, ntor_potential=12)
 
 lambdas = np.array([0.0, 1e-16, 1e-15, 1e-14, 1e-13, 1e-12])
 scan = problem.scan(lambdas)
@@ -137,7 +134,7 @@ explicit step from plotting, and its `CutCoils.save_makegrid` is the only
 irreversible file write on this page:
 
 ```{code-cell} ipython3
-cut_coils = regcoil.cut.cut(solution, coils_per_half_period=3, thickness=0.05)
+cut_coils = regcoil.cut.cut(solution, coils_per_half_period=5, thickness=0.05)
 regcoil.plot.coil_3d(cut_coils)
 ```
 

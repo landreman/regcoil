@@ -59,11 +59,11 @@ Distribution and import name: **`regcoil`** (ADR-015).
 import numpy as np
 from regcoil import PlasmaSurface, CoilSurface, Regcoil
 
-plasma = PlasmaSurface.from_wout("wout_w7x.nc", ntheta=64, nzeta=64, mesh="half")
+plasma = PlasmaSurface.from_wout("wout_w7x.nc", ntheta=64, nzeta=64)
 plasma.set_bnormal_from_bnorm_file("bnorm.w7x")     # or: plasma.Bnormal = <array>
 
 coil = CoilSurface.from_uniform_offset(plasma, separation=0.5,
-                                       ntheta=64, nzeta=64, mpol=24, ntor=24)
+                                       ntheta=64, nzeta=64, mpol=12, ntor=12)
 # alternatives, same downstream:
 #   CoilSurface.from_nescin("nescin.w7x", ntheta=64, nzeta=64)
 #   CoilSurface.circular_torus(R0=5.5, a=1.5, nfp=5, ntheta=64, nzeta=64)

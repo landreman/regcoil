@@ -41,6 +41,7 @@ exclude_patterns = [
     "migration",
     # Developer-facing build instructions (this README).
     "README.md",
+    "m20170111_01_compareNescoilToRegcoilCoils.png",
 ]
 
 # MyST / notebook sources: both plain prose pages and executed tutorial pages
