@@ -921,3 +921,154 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
     `run_slow_example.py`, `test_cross_section_plot.py`) are candidate raw material
     for the usage/plotting pages and should be removed from the repo root once
     their content is folded into docs (or into `examples/`).
+
+---
+
+## ADR-031: Theta reparameterization, and retiring the offset-surface Fortran kernel
+
+- **Date:** 2026-07-21
+- **Status:** proposed
+- **Amends:** ADR-020 (removes `regcoil_uniform_offset_surface` from the stateless
+  kernel boundary; the two inductance entry points are unchanged).
+- **Context:** Legacy `geometry_option_coil=4` reparameterized the coil surface's
+  poloidal angle so that the constant-`phi` cross section has uniform arclength
+  (`regcoil_init_coil_surface.f90`, the constant-arclength iteration). That was
+  never ported — `tests/regression/regcoilPaper_figure10d_but_geometry_option_coil_4_loRes`
+  is a placeholder that reuses the `=2` construction and the `=2` golden values.
+  We want it back, generalized: an arbitrary periodic reparameterization
+  `theta_old = g(theta_new, zeta)` that leaves the physical surface unchanged,
+  with two schemes (uniform arclength; incremental arclength inversely
+  proportional to curvature) and applicable in principle to any `Surface`.
+
+  Two facts shape the design.
+
+  **(a) A theta-map can only slide points along constant-`zeta` curves.** When
+  `standard_toroidal_angle=False` (the `from_uniform_offset` default since
+  ADR-025/026), `phi = zeta + nu(theta, zeta)` varies along a constant-`zeta`
+  curve, so the constant-`phi` cross section is *not* a coordinate curve and no
+  theta-map can make it uniform-arclength. The legacy definition must be restated
+  as a property of the constant-`zeta` curve.
+
+  **(b) The reparameterization must be applied before the Fourier fit.** The
+  entire point is that the good angle needs far fewer poloidal modes; building a
+  surface in the bad angle and then resampling/refitting pays the truncation we
+  were trying to avoid. But `regcoil_uniform_offset_surface` generates its
+  `theta_grid` internally, root-solves on it, and DFTs it in one subroutine,
+  returning only Fourier modes — there is no seam between point evaluation and
+  the fit, so on the `standard_toroidal_angle=True` path the map has nowhere to
+  go. That kernel is also a duplicate of `_fourier_transform_offset_surface`
+  (same Nyquist-halving, same mode ordering), and unlike `regcoil_build_g_and_h`
+  it is not hot: it is one-time `O(ntheta*nzeta*niter*mnmax)` setup, not the
+  `O(N^2)` pairwise sum that motivated ADR-020.
+- **Decisions:**
+  1. **Retire `regcoil_uniform_offset_surface`; do the root solve in numpy.**
+     Delete `fortran/regcoil_uniform_offset_surface_mod.f90`, `fortran/regcoil_fzero.f`,
+     the `regcoil_c_uniform_offset_surface` C entry, and its `_core.c` wrapper.
+     Fortran keeps only the two genuinely hot inductance kernels. Both
+     `standard_toroidal_angle` branches then share one Python flow: sample the
+     plasma, offset along the normal, optionally solve for `zeta`, apply the
+     theta-map, DFT **once**.
+  2. **Solve `phi(theta, zeta) = phi_target` with a vectorized bracketed
+     solver: Illinois-modified regula falsi on `[phi_target - 1, phi_target + 1]`**
+     (the bracket `fzero` used), converging on the residual rather than the
+     bracket width. Derivative-free, so it needs no second derivatives of the
+     plasma surface (which an exact Newton would, through the unit normal), and
+     it vectorizes over the whole grid. `fzero`'s no-sign-change failure
+     (`info=3`, the self-intersecting-offset guard) is preserved as a missing
+     sign change in the initial bracket, and raises.
+
+     *Revised during implementation.* This ADR originally proposed a damped
+     fixed-point iteration `zeta <- zeta - (phi - phi_target)`, on the argument
+     that `dphi/dzeta = 1 + dnu/dzeta` with `|dnu/dzeta| << 1`. Measurement
+     refuted the premise: `dphi/dzeta` spans `[0.80, 1.24]` for `d23p4_tm` at
+     `separation=0.5` (fine), but reaches **2.71** for the compact
+     `li383_1.4m` at `separation/a ~ 1.5`, outside the `(0, 2)` window a fixed
+     point needs, and the iteration diverges. Plain false position converges
+     but stagnates (~60 residual evaluations); the Illinois modification brings
+     that to 9-12. Cost is ~3x the OpenMP Fortran on a one-time setup step
+     (64x64: 0.30 s vs 0.11 s; 128x128: 1.2 s vs 0.43 s), which is the price of
+     decisions 1 and 9.
+  3. **Define uniform arclength on the constant-`zeta` curve, measured in 3D.**
+     `|dr/dtheta|_zeta = sqrt(R'^2 + Z'^2 + R^2 nu'^2)`, which is the
+     representation-independent statement and reduces to the legacy constant-`phi`
+     definition exactly when `nu = 0`. A `measure="poloidal"` option
+     (`sqrt(R'^2 + Z'^2)`, the R-Z projection — literally what the legacy Fortran
+     computed) is retained for legacy reproduction. Curvature likewise means the
+     3D curvature `kappa = |r' x r''| / |r'|^3` of the constant-`zeta` curve,
+     which is reparameterization-invariant.
+  4. **One quadrature, no fixed-point iteration over the map.** Both schemes are
+     `w(theta) = |dr/dtheta| * kappa^p` (`p=0` uniform arclength, `p=1` arclength
+     inversely proportional to curvature), with
+     `theta_new(theta_old) = 2*pi * int_0^theta_old w / int_0^2pi w`, inverted by
+     monotone interpolation on a refined theta grid. The legacy code iterated only
+     because it had grid finite differences; with an analytic curve this is a
+     single pass. The legacy `constant_arclength_tolerance` becomes a *reported
+     diagnostic* (achieved relative spread in `dl`), not a loop control.
+  5. **Get `dr/dtheta` and `kappa` by FFT differentiation along the refined theta
+     grid, from positions only.** The curve is smooth and periodic, so this is
+     spectrally accurate; it avoids threading second derivatives through
+     `Surface`/`FourierSurface` and the offset formula (the offset surface's
+     `d2r/dtheta2` would need the plasma's third derivatives). It also silently
+     handles the `standard_toroidal_angle=True` case, where the curve
+     `theta -> r(theta, zeta_target)` is defined by a per-point root solve and its
+     `dr/dtheta` carries an implicit-function correction through `dzeta_solve/dtheta`.
+  6. **Anchor the map at `theta_new = 0 -> theta_old = 0`** (start the cumulative
+     integral at 0). Without this the map breaks stellarator symmetry silently and
+     `rmns`/`zmnc` become nonzero.
+  7. **Regularize the curvature scheme.** `p=1` is singular: `kappa -> 0` on a
+     nearly straight segment allocates unbounded arclength. Apply a floor
+     `kappa -> kappa + floor*<kappa>` and expose a fractional `exponent`.
+  8. **Fit the map in `zeta` too.** Solving each `zeta` independently (as the
+     legacy code did) leaves the map only as smooth in `zeta` as the quadrature
+     noise, which pollutes the surface's `n`-mode spectrum. Represent
+     `g(theta, zeta) - theta` as a Fourier series (optionally mode-filtered);
+     this also makes the map a small serializable object.
+  9. **API: split the core from the integration points (a `curve` callable, not a
+     `Surface`).** New `regcoil/reparameterize.py` whose core takes
+     `curve(theta, zeta) -> (3, ntheta, nzeta)` positions and returns a
+     `ThetaMap`. Schemes are frozen dataclasses `UniformArclength` and
+     `CurvatureWeighted` (strings `"uniform_arclength"`/`"curvature"` accepted as
+     shorthand) — extensible without signature bloat, and serializable for
+     provenance. Two call sites: `CoilSurface.from_uniform_offset(...,
+     theta_reparameterization=None)`, which applies the map at the sampling stage
+     so the fit happens once in the good angle; and a generic
+     `Surface.reparameterize_theta(scheme, *, mpol, ntor) -> FourierSurface`
+     (resample + refit) for surfaces that already exist, e.g. from nescin.
+     Rejected: a lazy `ReparameterizedSurface` wrapper — it stops being a
+     `FourierSurface`, so `filter_modes`, `_serialize`, `cut`, and nescin export
+     all need parallel paths, and it defeats `FourierSurface._evaluate`'s
+     double-angle gemm, which assumes a tensor-product grid.
+  10. **`reparameterize_theta` is not exposed on `PlasmaSurface` without a
+     guard.** `Bnormal_from_plasma_current` is evaluated from bnorm/FOCUS modes on
+     the plasma theta grid; reparameterizing would silently invalidate it. Raise
+     if it is already set, or recompute it through the map.
+- **Consequences:**
+  - A theta-map does not touch `zeta` or `phi`, so `standard_toroidal_angle` is
+    preserved by reparameterization and no `nu` output is needed for it; the two
+    features are orthogonal and compose.
+  - **Staging: the numpy port lands first, as its own verifiable step,** confirmed
+    against the five `standard_toroidal_angle=True` regression tests and
+    `tests/unit/test_kernels.py` before any reparameterization code is written. If
+    the port disappoints, the fallback is to split the Fortran kernel into a
+    paired-point entry (`regcoil_c_offset_surface_points`) and keep decisions 3-10
+    unchanged.
+    *Done (2026-07-21):* the ported path reproduces the deleted kernel's Fourier
+    modes to **1.2e-12 relative** over `d23p4_tm` and `li383_1.4m` at several
+    separations and transform-grid sizes, and
+    `test_uniform_offset_surface_matches_legacy_golden` now checks the numpy
+    implementation directly against the original legacy-Fortran goldens.
+  - Doc/test debt from decision 1: ADR-020's entry-point list, `API.md`'s
+    "`standard_toroidal_angle=True` reproduces the root-solve path" note, the
+    "the only constructor that calls Fortran" line in `coil_surface.py`, and
+    `test_from_uniform_offset_logs_kernel_timing` (which asserts the kernel log
+    message) all need updating.
+  - The `..._geometry_option_coil_4_loRes` regression test stops being a
+    placeholder and becomes the acceptance test for the feature. Its premise —
+    that `f_B` is nearly parametrization-independent (`rtol=0.03`) — is itself the
+    correctness check on the reparameterization. Additional invariants:
+    `area`/`volume` unchanged to truncation error, stellarator symmetry preserved
+    (`rmns`/`zmnc` still zero), identity map on an already-uniform surface.
+  - The current-potential basis `sin(m*theta - n*zeta)` lives in the coil
+    surface's theta, so reparameterization changes the solution space and the
+    regularization. This is the point (a better-conditioned basis), but it is
+    physics-visible and the chosen scheme is recorded in the saved run.

@@ -36,9 +36,9 @@ plasma.set_bnormal_from_bnorm_file(ds.bnorm)
 
 The coil ("winding") surface can be loaded independently from a NESCIN file
 (`CoilSurface.from_nescin`), or computed as a uniform offset of the plasma
-surface. The offset construction calls the Fortran kernel
-(`regcoil_uniform_offset_surface`) once and returns ordinary Fourier
-coefficients, so the result is a plain `CoilSurface` from then on:
+surface. The offset construction samples the offset points once and returns
+ordinary Fourier coefficients, so the result is a plain `CoilSurface` from
+then on:
 
 ```{code-cell} ipython3
 coil = regcoil.CoilSurface.from_uniform_offset(

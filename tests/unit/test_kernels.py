@@ -175,46 +175,45 @@ def test_two_instances_different_sizes_do_not_interfere():
 
 
 def test_uniform_offset_surface_matches_legacy_golden():
-    """Plasma with an (m=1, n=1) helical bump, so the offset surface is not
-    a circular torus: this forces a genuine root solve in regcoil_fzero
+    """Plasma with an (m=1, n=1) helical bump, so the offset surface is not a
+    circular torus: this forces a genuine toroidal-angle root solve
     (`atan2(y, x)` is not linear in the root-solve variable, unlike the
     circular-cross-section case where the residual is identically zero).
-    """
-    xm = np.array([0, 1, 1])
-    xn = np.array([0, 0, 3])  # xn already includes the nfp=3 factor
-    rmnc = np.array([5.0, 1.0, 0.15])
-    rmns = np.zeros(3)
-    zmnc = np.zeros(3)
-    zmns = np.array([0.0, 1.0, 0.1])
 
-    xm_out, xn_out, rmnc_out, rmns_out, zmnc_out, zmns_out = _core.uniform_offset_surface(
-        xm, xn, rmnc, rmns, zmnc, zmns, False, 3, 0.4, 3, 2, 6, 5, 1e-10,
+    The golden values come from the legacy compiled Fortran. Since ADR-031 the
+    root solve is numpy (`_solve_zeta_for_phi`, Illinois-modified regula falsi)
+    rather than `regcoil_fzero`, so this is the direct legacy check on the
+    ported implementation.
+    """
+    plasma = PlasmaSurface(
+        xm=[0, 1, 1], xn=[0, 0, 3],  # xn already includes the nfp=3 factor
+        rmnc=[5.0, 1.0, 0.15], zmns=[0.0, 1.0, 0.1],
+        nfp=3, ntheta=8, nzeta=8,
+    )
+    coil = CoilSurface.from_uniform_offset(
+        plasma, separation=0.4, ntheta=8, nzeta=8, mpol=3, ntor=2,
+        standard_toroidal_angle=True, ntheta_transform=6, nzeta_transform=5, tol=1e-10,
     )
 
-    np.testing.assert_array_equal(xm_out, XM_OUT)
-    np.testing.assert_array_equal(xn_out, XN_OUT)
-    np.testing.assert_allclose(rmnc_out, RMNC_OUT, atol=1e-12, rtol=1e-10)
-    np.testing.assert_allclose(rmns_out, RMNS_OUT, atol=1e-12)
-    np.testing.assert_allclose(zmnc_out, ZMNC_OUT, atol=1e-12)
-    np.testing.assert_allclose(zmns_out, ZMNS_OUT, atol=1e-12, rtol=1e-10)
+    np.testing.assert_array_equal(coil.xm, XM_OUT)
+    np.testing.assert_array_equal(coil.xn, XN_OUT)
+    np.testing.assert_allclose(coil.rmnc, RMNC_OUT, atol=1e-12, rtol=1e-10)
+    np.testing.assert_allclose(coil.rmns, RMNS_OUT, atol=1e-12)
+    np.testing.assert_allclose(coil.zmnc, ZMNC_OUT, atol=1e-12)
+    np.testing.assert_allclose(coil.zmns, ZMNS_OUT, atol=1e-12, rtol=1e-10)
 
 
 def test_uniform_offset_surface_circular_torus_is_exact():
     """A circular-cross-section torus offset outward by `separation` stays a
     circular-cross-section torus of minor radius a + separation -- an exact
     analytic check independent of the golden legacy values above."""
-    xm = np.array([0, 1])
-    xn = np.array([0, 0])
-    rmnc = np.array([5.0, 1.0])
-    rmns = np.zeros(2)
-    zmnc = np.zeros(2)
-    zmns = np.array([0.0, 1.0])
-
-    xm_out, xn_out, rmnc_out, rmns_out, zmnc_out, zmns_out = _core.uniform_offset_surface(
-        xm, xn, rmnc, rmns, zmnc, zmns, False, 3, 0.3, 2, 1, 16, 16, 1e-10,
+    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
+    coil = CoilSurface.from_uniform_offset(
+        plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1,
+        standard_toroidal_angle=True, ntheta_transform=16, nzeta_transform=16,
     )
 
-    for m, n, rc, zs in zip(xm_out, xn_out, rmnc_out, zmns_out):
+    for m, n, rc, zs in zip(coil.xm, coil.xn, coil.rmnc, coil.zmns):
         if m == 0 and n == 0:
             assert rc == pytest.approx(5.0, abs=1e-9)
         elif m == 1 and n == 0:
@@ -223,30 +222,3 @@ def test_uniform_offset_surface_circular_torus_is_exact():
         else:
             assert rc == pytest.approx(0.0, abs=1e-8)
             assert zs == pytest.approx(0.0, abs=1e-8)
-
-
-def test_from_uniform_offset_wires_kernel_to_coil_surface():
-    """Integration check for `CoilSurface.from_uniform_offset` (also exercises
-    regcoil_fzero via a non-circular plasma shape, like the golden case
-    above)."""
-    plasma = PlasmaSurface(
-        xm=[0, 1, 1], xn=[0, 0, 3], rmnc=[5.0, 1.0, 0.15], zmns=[0.0, 1.0, 0.1],
-        nfp=3, ntheta=16, nzeta=16,
-    )
-    coil = CoilSurface.from_uniform_offset(
-        plasma, separation=0.4, ntheta=6, nzeta=5, mpol=3, ntor=2, standard_toroidal_angle=True
-    )
-
-    assert coil.nfp == 3
-    assert coil.standard_toroidal_angle is True
-    assert coil.mnmax == len(XM_OUT)
-    np.testing.assert_array_equal(np.sort(coil.xm), np.sort(XM_OUT))
-    np.testing.assert_allclose(np.sort(coil.rmnc), np.sort(RMNC_OUT), atol=1e-12, rtol=1e-10)
-
-
-def test_offset_surface_rejects_mismatched_mode_lengths():
-    with pytest.raises(ValueError, match="same length"):
-        _core.uniform_offset_surface(
-            np.array([0, 1]), np.array([0]), np.array([5.0, 1.0]), np.zeros(2), np.zeros(2), np.array([0.0, 1.0]),
-            False, 3, 0.3, 2, 1, 8, 8, 1e-10,
-        )
