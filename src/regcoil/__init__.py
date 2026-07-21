@@ -14,6 +14,7 @@ from .fourier_surface import FourierSurface
 from .log import log
 from .plasma_surface import PlasmaSurface
 from .regcoil import Regcoil, Solution, SolutionScan
+from .reparameterize import CurvatureWeighted, ThetaMap, UniformArclength
 from .surface import Surface
 from ._core import omp_max_threads
 from ._serialize import load, save
@@ -31,6 +32,9 @@ __all__ = [
     "Solution",
     "SolutionScan",
     "CutCoils",
+    "UniformArclength",
+    "CurvatureWeighted",
+    "ThetaMap",
     "ExampleDataset",
     "examples",
     "plot",

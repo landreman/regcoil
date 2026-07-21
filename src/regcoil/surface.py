@@ -35,6 +35,11 @@ class Surface(ABC):
     #: physical toroidal angle, and cross-section plots must not assume it
     #: is.
     standard_toroidal_angle: bool
+    #: The `ThetaMap` this surface was reparameterized by, or None if its
+    #: poloidal angle is whatever its constructor produced. Set by
+    #: `reparameterize_theta` and by
+    #: `CoilSurface.from_uniform_offset(theta_reparameterization=...)`.
+    theta_map = None
 
     @abstractmethod
     def _evaluate(self, theta: np.ndarray, zetal: np.ndarray) -> dict:
@@ -52,6 +57,95 @@ class Surface(ABC):
         (3, len(theta), len(zetal)) holding Cartesian (x, y, z) components.
         """
         raise NotImplementedError
+
+    def evaluate_at(self, theta_pts, zeta_pts) -> dict:
+        """Evaluate the surface at arbitrary *paired* `(theta, zeta)` points,
+        rather than the tensor-product grid `_evaluate` uses.
+
+        Returns a dict with keys 'r', 'drdtheta', 'drdzeta', each
+        `(3, len(theta_pts))`. Needed wherever points do not form a grid: a
+        contour (`regcoil.cut`), or a theta-reparameterized sampling, where
+        `theta` depends on `zeta`. There is no representation-independent way
+        to supply this from `_evaluate` alone, so subclasses must override it
+        (`FourierSurface` does).
+        """
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement `evaluate_at`, which is "
+            f"required for evaluation at paired (theta, zeta) points."
+        )
+
+    def reparameterize_theta(self, scheme, *, mpol=None, ntor=None, ntheta=None, nzeta=None):
+        """Return a `FourierSurface` describing the *same physical surface* as
+        `self`, with its poloidal angle reparameterized according to `scheme`
+        (see `regcoil.reparameterize`).
+
+        `scheme` is a `UniformArclength` or `CurvatureWeighted` instance, or
+        the shorthand string `"uniform_arclength"` / `"curvature"`.
+
+        `ntheta`/`nzeta` (default `self.ntheta`/`self.nzeta`) set the grid the
+        reparameterized surface is resampled on before being transformed to
+        `mpol`/`ntor` modes (defaulting to that grid's Nyquist limit).
+
+        Note that this **resamples and refits**, so the result carries one more
+        Fourier truncation than `self` did -- and reparameterizing generally
+        *widens* the spectrum, because composing a band-limited `R(theta)` with
+        a non-affine `g` is not band-limited. Expect to need a higher `mpol`
+        than the original surface used, especially for `CurvatureWeighted`.
+        Reparameterizing a VMEC plasma surface is therefore usually a net loss:
+        VMEC's own angle is already chosen for good spectral width. The win is
+        on a surface whose angle was inherited rather than chosen -- above all
+        the uniform-offset coil surface, where
+        `CoilSurface.from_uniform_offset(..., theta_reparameterization=...)`
+        should be preferred anyway, since it applies the map at the sampling
+        stage and so fits only once, in the good angle (ADR-031 decision 9).
+        """
+        from .coil_surface import _fourier_transform_offset_surface
+        from .fourier_surface import FourierSurface
+        from .reparameterize import theta_map
+
+        ntheta = self.ntheta if ntheta is None else int(ntheta)
+        nzeta = self.nzeta if nzeta is None else int(nzeta)
+        mpol = ntheta // 2 if mpol is None else int(mpol)
+        ntor = nzeta // 2 if ntor is None else int(ntor)
+
+        def curve(theta, zeta):
+            return self._evaluate(theta, zeta)["r"]
+
+        tmap = theta_map(
+            curve, scheme, nfp=self.nfp, ntheta=ntheta, nzeta=nzeta,
+            stellarator_symmetric=self.stellarator_symmetric,
+        )
+
+        theta_grid = 2 * np.pi * np.arange(ntheta) / ntheta
+        zeta_grid = (2 * np.pi / self.nfp) * np.arange(nzeta) / nzeta
+        theta_old = tmap(theta_grid, zeta_grid)
+        zeta_2d = np.broadcast_to(zeta_grid, theta_old.shape)
+
+        r = self.evaluate_at(np.ravel(theta_old), np.ravel(zeta_2d))["r"]
+        r = r.reshape((3,) + theta_old.shape)
+        major_r = np.hypot(r[0], r[1])
+        nu_val = np.arctan2(r[1], r[0]) - zeta_grid[None, :]
+        nu_val = np.mod(nu_val + np.pi, 2 * np.pi) - np.pi
+
+        lasym = not self.stellarator_symmetric
+        (
+            xm, xn, rmnc, rmns, zmnc, zmns, numns, numnc,
+        ) = _fourier_transform_offset_surface(
+            theta_grid, zeta_grid, major_r, r[2], nu_val, self.nfp, mpol, ntor, lasym
+        )
+        if self.standard_toroidal_angle:
+            # A theta-map does not touch zeta or phi, so phi = zeta survives it.
+            numns = numnc = None
+
+        surface = FourierSurface(
+            xm, xn, rmnc, zmns, rmns, zmnc,
+            nfp=self.nfp, ntheta=ntheta, nzeta=nzeta,
+            stellarator_symmetric=self.stellarator_symmetric,
+            standard_toroidal_angle=self.standard_toroidal_angle,
+            numns=numns, numnc=numnc,
+        )
+        surface.theta_map = tmap
+        return surface
 
     @property
     def nzetal(self) -> int:

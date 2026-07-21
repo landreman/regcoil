@@ -8,8 +8,7 @@
  * (no opaque handle -- see ADR-020). Large arrays (r_plasma, r_coil,
  * basis_functions, ...) must already be float64 and Fortran-contiguous: a
  * silent copy of a multi-MB array would be a hidden cost, so we raise
- * instead of casting (see API.md conventions). Small mode-number/coefficient
- * arrays for uniform_offset_surface are cast for convenience. */
+ * instead of casting (see API.md conventions). */
 
 static PyArrayObject *
 require_f64_farray(PyObject *obj, int ndim, const char *name)
@@ -226,114 +225,6 @@ core_build_g_and_h(PyObject *Py_UNUSED(self), PyObject *args)
     return Py_BuildValue("NN", g, h);
 }
 
-static PyObject *
-core_uniform_offset_surface(PyObject *Py_UNUSED(self), PyObject *args)
-{
-    PyObject *xm_in_o, *xn_in_o, *rmnc_in_o, *rmns_in_o, *zmnc_in_o, *zmns_in_o;
-    int lasym_flag, nfp, mpol_out, ntor_out, ntheta_transform, nzeta_transform;
-    double separation, tol;
-    PyArrayObject *xm_in = NULL, *xn_in = NULL, *rmnc_in = NULL, *rmns_in = NULL, *zmnc_in = NULL, *zmns_in = NULL;
-    npy_intp mnmax_in, mnmax_out;
-    npy_intp out_dims[1];
-    PyArrayObject *xm_out = NULL, *xn_out = NULL, *rmnc_out = NULL, *rmns_out = NULL, *zmnc_out = NULL, *zmns_out = NULL;
-    int ierr;
-
-    if (!PyArg_ParseTuple(args, "OOOOOOpidiiiid", &xm_in_o, &xn_in_o, &rmnc_in_o, &rmns_in_o, &zmnc_in_o, &zmns_in_o,
-                          &lasym_flag, &nfp, &separation, &mpol_out, &ntor_out,
-                          &ntheta_transform, &nzeta_transform, &tol)) {
-        return NULL;
-    }
-    if (nfp < 1) {
-        PyErr_SetString(PyExc_ValueError, "nfp must be a positive integer");
-        return NULL;
-    }
-    if (mpol_out < 0 || ntor_out < 0) {
-        PyErr_SetString(PyExc_ValueError, "mpol_out and ntor_out must be non-negative");
-        return NULL;
-    }
-
-    /* Small (mnmax-length) arrays: a cast/copy here is cheap, so accept any
-     * integer/float dtype rather than forcing the caller to match exactly
-     * (unlike the large arrays in build_inductance/build_g_and_h). */
-    xm_in = (PyArrayObject *)PyArray_FROM_OTF(xm_in_o, NPY_INT32, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_FORCECAST);
-    xn_in = (PyArrayObject *)PyArray_FROM_OTF(xn_in_o, NPY_INT32, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_FORCECAST);
-    rmnc_in = (PyArrayObject *)PyArray_FROM_OTF(rmnc_in_o, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_FORCECAST);
-    rmns_in = (PyArrayObject *)PyArray_FROM_OTF(rmns_in_o, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_FORCECAST);
-    zmnc_in = (PyArrayObject *)PyArray_FROM_OTF(zmnc_in_o, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_FORCECAST);
-    zmns_in = (PyArrayObject *)PyArray_FROM_OTF(zmns_in_o, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_FORCECAST);
-    if (!xm_in || !xn_in || !rmnc_in || !rmns_in || !zmnc_in || !zmns_in) {
-        goto fail;
-    }
-    if (PyArray_NDIM(xm_in) != 1 || PyArray_NDIM(xn_in) != 1 || PyArray_NDIM(rmnc_in) != 1
-        || PyArray_NDIM(rmns_in) != 1 || PyArray_NDIM(zmnc_in) != 1 || PyArray_NDIM(zmns_in) != 1) {
-        PyErr_SetString(PyExc_ValueError, "xm_in, xn_in, rmnc_in, rmns_in, zmnc_in, zmns_in must be 1-D");
-        goto fail;
-    }
-    mnmax_in = PyArray_DIM(xm_in, 0);
-    if (PyArray_DIM(xn_in, 0) != mnmax_in || PyArray_DIM(rmnc_in, 0) != mnmax_in || PyArray_DIM(rmns_in, 0) != mnmax_in
-        || PyArray_DIM(zmnc_in, 0) != mnmax_in || PyArray_DIM(zmns_in, 0) != mnmax_in) {
-        PyErr_SetString(PyExc_ValueError, "xm_in, xn_in, rmnc_in, rmns_in, zmnc_in, zmns_in must have the same length");
-        goto fail;
-    }
-
-    mnmax_out = (npy_intp)mpol_out * (2 * ntor_out + 1) + ntor_out + 1;
-    out_dims[0] = mnmax_out;
-    xm_out = (PyArrayObject *)PyArray_ZEROS(1, out_dims, NPY_INT32, 0);
-    xn_out = (PyArrayObject *)PyArray_ZEROS(1, out_dims, NPY_INT32, 0);
-    rmnc_out = (PyArrayObject *)PyArray_ZEROS(1, out_dims, NPY_DOUBLE, 0);
-    rmns_out = (PyArrayObject *)PyArray_ZEROS(1, out_dims, NPY_DOUBLE, 0);
-    zmnc_out = (PyArrayObject *)PyArray_ZEROS(1, out_dims, NPY_DOUBLE, 0);
-    zmns_out = (PyArrayObject *)PyArray_ZEROS(1, out_dims, NPY_DOUBLE, 0);
-    if (!xm_out || !xn_out || !rmnc_out || !rmns_out || !zmnc_out || !zmns_out) {
-        goto fail;
-    }
-
-    Py_BEGIN_ALLOW_THREADS
-    ierr = regcoil_c_uniform_offset_surface(
-        (int)mnmax_in, (const int *)PyArray_DATA(xm_in), (const int *)PyArray_DATA(xn_in),
-        (const double *)PyArray_DATA(rmnc_in), (const double *)PyArray_DATA(rmns_in),
-        (const double *)PyArray_DATA(zmnc_in), (const double *)PyArray_DATA(zmns_in),
-        lasym_flag, nfp, separation, mpol_out, ntor_out, ntheta_transform, nzeta_transform, tol,
-        (int)mnmax_out, (int *)PyArray_DATA(xm_out), (int *)PyArray_DATA(xn_out),
-        (double *)PyArray_DATA(rmnc_out), (double *)PyArray_DATA(rmns_out),
-        (double *)PyArray_DATA(zmnc_out), (double *)PyArray_DATA(zmns_out));
-    Py_END_ALLOW_THREADS
-
-    Py_DECREF(xm_in);
-    Py_DECREF(xn_in);
-    Py_DECREF(rmnc_in);
-    Py_DECREF(rmns_in);
-    Py_DECREF(zmnc_in);
-    Py_DECREF(zmns_in);
-
-    if (ierr != 0) {
-        Py_DECREF(xm_out);
-        Py_DECREF(xn_out);
-        Py_DECREF(rmnc_out);
-        Py_DECREF(rmns_out);
-        Py_DECREF(zmnc_out);
-        Py_DECREF(zmns_out);
-        return PyErr_Format(PyExc_RuntimeError, "regcoil_uniform_offset_surface failed with info=%d", ierr);
-    }
-
-    return Py_BuildValue("NNNNNN", xm_out, xn_out, rmnc_out, rmns_out, zmnc_out, zmns_out);
-
-fail:
-    Py_XDECREF(xm_in);
-    Py_XDECREF(xn_in);
-    Py_XDECREF(rmnc_in);
-    Py_XDECREF(rmns_in);
-    Py_XDECREF(zmnc_in);
-    Py_XDECREF(zmns_in);
-    Py_XDECREF(xm_out);
-    Py_XDECREF(xn_out);
-    Py_XDECREF(rmnc_out);
-    Py_XDECREF(rmns_out);
-    Py_XDECREF(zmnc_out);
-    Py_XDECREF(zmns_out);
-    return NULL;
-}
-
 static PyMethodDef core_methods[] = {
     {"omp_max_threads", core_omp_max_threads, METH_NOARGS,
      "omp_max_threads() -> int\n\n"
@@ -349,12 +240,6 @@ static PyMethodDef core_methods[] = {
      "              dtheta_coil, dzeta_coil) -> (g, h)\n\n"
      "Fused kernel: g = dtheta_coil*dzeta_coil * (inductance @ basis_functions), without\n"
      "materializing the full inductance matrix."},
-    {"uniform_offset_surface", core_uniform_offset_surface, METH_VARARGS,
-     "uniform_offset_surface(xm_in, xn_in, rmnc_in, rmns_in, zmnc_in, zmns_in, lasym, nfp,\n"
-     "                        separation, mpol_out, ntor_out, ntheta_transform, nzeta_transform,\n"
-     "                        tol) -> (xm_out, xn_out, rmnc_out, rmns_out, zmnc_out, zmns_out)\n\n"
-     "Fourier coefficients of the surface offset outward by `separation` along the plasma\n"
-     "normal (root-solved per grid point, then DFT'd)."},
     {NULL, NULL, 0, NULL},
 };
 

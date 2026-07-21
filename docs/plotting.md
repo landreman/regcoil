@@ -36,7 +36,7 @@ ds = regcoil.examples("W7-X")
 plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=64, nzeta=64)
 plasma.set_bnormal_from_bnorm_file(ds.bnorm)
 coil = regcoil.CoilSurface.from_uniform_offset(
-    plasma, separation=0.3, ntheta=64, nzeta=64, mpol=12, ntor=12
+    plasma, separation=0.5, ntheta=64, nzeta=64, mpol=12, ntor=12
 )
 problem = regcoil.Regcoil(plasma, coil, mpol_potential=12, ntor_potential=12)
 
@@ -119,11 +119,12 @@ regcoil.plot.bnormal_scan(scan);
 ## 3D interactive views
 
 `plot_3d` renders any subset of {plasma surface, winding surface, cut coils}
-in one Plotly scene; `winding_surface_style` is `'wireframe'` (default),
+in one Plotly scene.
+The argument `winding_surface_style` can be `'wireframe'` (default),
 `'translucent'`, or `'solid'`:
 
 ```{code-cell} ipython3
-regcoil.plot.plot_3d(plasma=plasma, winding_surface=coil, winding_surface_style="translucent")
+regcoil.plot.plot_3d(plasma, coil)
 ```
 
 ## Cutting into discrete coils
@@ -139,7 +140,7 @@ regcoil.plot.coil_3d(cut_coils)
 ```
 
 ```{code-cell} ipython3
-regcoil.plot.plot_3d(plasma=plasma, coils=cut_coils)
+regcoil.plot.plot_3d(plasma, coils=cut_coils)
 ```
 
 ```{code-cell} ipython3
@@ -168,10 +169,10 @@ figures = regcoil.plot.all(result)
 print(f"{len(figures)} figures")
 ```
 
-## The `regcoil` CLI
+## Command-line interface
 
-The same plots are reachable without writing any Python, via the console
-script installed with the package (`regcoil plot|compare|cut`):
+The same plots are reachable from a terminal without writing any Python, via the
+`regcoil` script installed with the package (`regcoil plot|compare|cut`):
 
 ```bash
 regcoil plot run.nc                      # full dashboard
