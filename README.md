@@ -49,7 +49,7 @@ ds = regcoil.examples("W7-X")  # Or "NCSX"
 # and coil winding surface in nescin format
 
 # Define the plasma boundary surface:
-plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=64, nzeta=64)
+plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=64, nzeta=64, mesh="full")
 # Assign B_normal data associated with the plasma current:
 plasma.set_bnormal_from_bnorm_file(ds.bnorm)
 
