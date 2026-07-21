@@ -78,15 +78,21 @@ jobs:
             archs: arm64
             # Must be >= the SDK Homebrew's gfortran was built against.
             deployment_target: "14.0"
-          - os: macos-13
+          # macos-15-intel is the current Intel runner; the old macos-13 image
+          # is being retired.  Homebrew's gfortran there is built against the
+          # macOS 15 SDK, which sets the deployment floor.
+          - os: macos-15-intel
             archs: x86_64
-            deployment_target: "13.0"
+            deployment_target: "15.0"
 
     steps:
       - uses: actions/checkout@v7
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v4
+        # cibuildwheel publishes no moving major tag (no bare `v4`), only exact
+        # patch tags and minor tags like `v4.1`.  Pin the exact release and bump
+        # it deliberately; upstream's own example does the same.
+        uses: pypa/cibuildwheel@v4.1.0
         env:
           CIBW_ARCHS: ${{ matrix.archs }}
           MACOSX_DEPLOYMENT_TARGET: ${{ matrix.deployment_target }}
