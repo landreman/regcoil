@@ -15,18 +15,15 @@ kernelspec:
 
 ## The 30-second version
 
-This is the same snippet as the repository README, checked here with
-{mod}`sphinx.ext.doctest` so it is guaranteed to keep working:
-
 ```{doctest}
 >>> import regcoil
->>> ds = regcoil.examples("NCSX")
->>> plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=24, nzeta=24)
+>>> ds = regcoil.examples("W7-X")
+>>> plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=64, nzeta=64)
 >>> plasma.set_bnormal_from_bnorm_file(ds.bnorm)
 >>> coil = regcoil.CoilSurface.from_uniform_offset(
-...     plasma, separation=0.3, ntheta=24, nzeta=24, mpol=8, ntor=8
+...     plasma, separation=0.3, ntheta=64, nzeta=64, mpol=12, ntor=12
 ... )
->>> problem = regcoil.Regcoil(plasma, coil, mpol_potential=8, ntor_potential=8)
+>>> problem = regcoil.Regcoil(plasma, coil, mpol_potential=12, ntor_potential=12)
 >>> solution = problem.solve(lam=1e-14)
 >>> print(f"f_B = {solution.f_B:.1e}, f_K = {solution.f_K:.1e}")
 f_B = 1.9e-01, f_K = 9.7e+13
@@ -47,7 +44,7 @@ regcoil.examples.available()
 ```
 
 ```{code-cell} ipython3
-ds = regcoil.examples("NCSX")
+ds = regcoil.examples("W7-X")
 ds
 ```
 
@@ -59,11 +56,11 @@ an independent NESCIN winding surface, or (as here) a uniform offset of the
 plasma surface computed by the Fortran kernel:
 
 ```{code-cell} ipython3
-plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=24, nzeta=24)
+plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=64, nzeta=64)
 plasma.set_bnormal_from_bnorm_file(ds.bnorm)
 
 coil = regcoil.CoilSurface.from_uniform_offset(
-    plasma, separation=0.3, ntheta=24, nzeta=24, mpol=8, ntor=8
+    plasma, separation=0.3, ntheta=64, nzeta=64, mpol=12, ntor=12
 )
 print(f"plasma nfp={plasma.nfp}, plasma area={plasma.area:.3g} m^2")
 print(f"coil area={coil.area:.3g} m^2")
@@ -79,7 +76,7 @@ their eigendecomposition once; solving for a particular regularization
 parameter λ, or scanning over many λ values, is then cheap:
 
 ```{code-cell} ipython3
-problem = regcoil.Regcoil(plasma, coil, mpol_potential=8, ntor_potential=8)
+problem = regcoil.Regcoil(plasma, coil, mpol_potential=12, ntor_potential=12)
 solution = problem.solve(lam=1e-14)
 print(f"f_B = {solution.f_B:.3e}")
 print(f"f_K = {solution.f_K:.3e}")

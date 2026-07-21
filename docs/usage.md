@@ -20,7 +20,7 @@ a λ family, hit a target coil-current density, and save/load the result.
 import numpy as np
 import regcoil
 
-ds = regcoil.examples("NCSX")
+ds = regcoil.examples("W7-X")
 ```
 
 ## 1. Surfaces
@@ -30,7 +30,7 @@ comes from a BNORM file (the contribution of in-plasma current to
 `Bnormal`, which the coils must cancel):
 
 ```{code-cell} ipython3
-plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=24, nzeta=24)
+plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=64, nzeta=64)
 plasma.set_bnormal_from_bnorm_file(ds.bnorm)
 ```
 
@@ -42,7 +42,7 @@ coefficients, so the result is a plain `CoilSurface` from then on:
 
 ```{code-cell} ipython3
 coil = regcoil.CoilSurface.from_uniform_offset(
-    plasma, separation=0.3, ntheta=24, nzeta=24, mpol=8, ntor=8
+    plasma, separation=0.3, ntheta=64, nzeta=64, mpol=12, ntor=12
 )
 ```
 
@@ -53,7 +53,7 @@ coil = regcoil.CoilSurface.from_uniform_offset(
 subsequent λ solve or scan cheap:
 
 ```{code-cell} ipython3
-problem = regcoil.Regcoil(plasma, coil, mpol_potential=8, ntor_potential=8)
+problem = regcoil.Regcoil(plasma, coil, mpol_potential=12, ntor_potential=12)
 ```
 
 ## 3. Scanning λ
@@ -74,7 +74,7 @@ the λ whose `Solution.<metric>` equals a requested value — for example, the
 value:
 
 ```{code-cell} ipython3
-target = problem.solve_for_target("max_K", 6.0e6)
+target = problem.solve_for_target("max_K", 4.0e6)
 print(f"lam = {target.lam:.3e}, max|K| = {target.max_K:.3e} A/m")
 ```
 

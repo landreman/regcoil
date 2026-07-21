@@ -44,7 +44,7 @@ pytest
 ```python
 import regcoil
 
-ds = regcoil.examples("NCSX")  # Or "W7-X"
+ds = regcoil.examples("W7-X")  # Or "NCSX"
 # ds then provides paths to a vmec wout file, bnorm file,
 # and coil winding surface in nescin format
 
