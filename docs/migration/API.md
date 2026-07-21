@@ -159,12 +159,12 @@ optional toroidal-angle-shift modes `numns, numnc` (default zero); its
 | coil 3 | `from_nescin(file)` |
 
 `from_uniform_offset`'s `standard_toroidal_angle` argument (default `False`,
-ADR-025) selects the construction; it does not distinguish legacy `coil 2` vs
-`coil 4` -- the constant-arclength theta reparametrization that separates them
-is not implemented (ADR-024 item 4), so both map to the same constructor call
-(`standard_toroidal_angle=True` reproduces the `coil 2`/`coil 4` root-solve
-behavior for regression purposes). A future `uniform_arclength` argument to
-add the `coil 4` reparametrization is a documented idea, not yet implemented.
+ADR-025) selects the construction: `standard_toroidal_angle=True` reproduces
+the legacy `coil 2`/`coil 4` root solve. `coil 2` vs `coil 4` is then the
+`theta_reparameterization` argument (ADR-031), which defaults to
+`"uniform_arclength"` -- so legacy `coil 4` is
+`from_uniform_offset(plasma, separation, standard_toroidal_angle=True, ...)`
+and legacy `coil 2` is that plus `theta_reparameterization=None`.
 
 ### `PlasmaSurface(FourierSurface)`
 

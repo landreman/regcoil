@@ -3,16 +3,19 @@
 (`geometry_option_coil=4`, uniform offset with the legacy constant-arclength
 theta reparametrization).
 
-The Phase 7 Fortran kernel (`regcoil_uniform_offset_surface`) only ports the
-plain uniform offset (legacy `geometry_option_coil=2`), not the
-constant-arclength iteration -- there is no Python constructor for it. The
-legacy example's own golden values for `geometry_option_coil=2`, `=4`, and
-the constant-arclength-nescin variant are numerically identical (that's the
-example's point: the physics does not depend on the coil-surface
-parametrization), with tolerances generous enough to cover the small
-differences between parametrizations. So this test reuses
-`CoilSurface.from_uniform_offset` (the `=2` construction) and the same
-golden values as `regcoilPaper_figure10d_but_geometry_option_coil_2_loRes`.
+Since ADR-031 this is the real `geometry_option_coil=4` construction:
+`standard_toroidal_angle=True` (the root-solved toroidal angle, legacy `=2`)
+plus `theta_reparameterization="uniform_arclength"` (the constant-arclength
+theta the legacy code reached by fixed-point iteration, reached here by a
+single quadrature).
+
+The golden values are the legacy example's own, which are shared with
+`geometry_option_coil=2` and the constant-arclength-nescin variant: they are
+numerically identical because *that is the example's point* -- the physics
+does not depend on the coil-surface parametrization. So this test is the
+acceptance test for the reparameterization: it checks both that the legacy
+`=4` numbers are reproduced, and (via the shared goldens) that reparameterizing
+did not move the physical surface.
 """
 
 import numpy as np
@@ -22,10 +25,15 @@ from regcoil import CoilSurface, PlasmaSurface, Regcoil
 from ..tests_common import EQUILIBRIA, lambda_array
 
 
-def test_uniform_offset_lores_matches_original_angle():
+def test_uniform_offset_lores_matches_constant_arclength_angle():
     plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=64, nzeta=64)
     plasma.set_bnormal_from_bnorm_file(str(EQUILIBRIA / "bnorm.d23p4_tm"))
-    coil = CoilSurface.from_uniform_offset(plasma, separation=0.5, ntheta=64, nzeta=64, standard_toroidal_angle=True)
+    coil = CoilSurface.from_uniform_offset(
+        plasma, separation=0.5, ntheta=64, nzeta=64, standard_toroidal_angle=True,
+        theta_reparameterization="uniform_arclength",
+    )
+    # The legacy `constant_arclength_tolerance` thresholded exactly this.
+    assert coil.theta_map.diagnostics["max_dl_spread"] < 1e-4
 
     prob = Regcoil(
         plasma, coil, mpol_potential=12, ntor_potential=12,

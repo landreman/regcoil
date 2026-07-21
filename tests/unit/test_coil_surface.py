@@ -77,6 +77,47 @@ def test_from_uniform_offset_circular_torus_is_exact(standard_toroidal_angle):
             assert zs == pytest.approx(0.0, abs=1e-8)
 
 
+def test_from_uniform_offset_standard_angle_converges_for_a_compact_plasma():
+    """Regression guard on the root solver (ADR-031 decision 2). `li383_1.4m`
+    at `separation/a ~ 1.5` drives `dphi/dzeta` up to ~2.7, which diverges a
+    plain fixed-point iteration `zeta <- zeta - residual` (that needs
+    `dphi/dzeta < 2`); the bracketed Illinois solver must still converge. The
+    check is that `zeta` really is the standard toroidal angle afterwards, so
+    `atan2(y, x)` on the coil grid reproduces `zetal` to the root-solve
+    tolerance.
+    """
+    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_li383_1.4m.nc"), ntheta=8, nzeta=8)
+    coil = CoilSurface.from_uniform_offset(
+        plasma, separation=0.4, ntheta=32, nzeta=32, mpol=16, ntor=12,
+        standard_toroidal_angle=True, ntheta_transform=48, nzeta_transform=40,
+    )
+
+    r = coil.r
+    phi = np.unwrap(np.arctan2(r[1], r[0]), axis=1)
+    # mpol/ntor here do not resolve the surface to machine precision, so this
+    # is a loose check that phi tracks zetal rather than an exact one.
+    np.testing.assert_allclose(phi, np.broadcast_to(coil.zetal, phi.shape), atol=2e-3)
+
+
+def test_from_uniform_offset_rejects_self_intersecting_offset_surface():
+    """A separation far larger than the minor radius makes `phi(zeta)`
+    non-monotone, so no `zeta` maps to some target angles. The legacy Fortran
+    signalled this as `fzero`'s missing sign change (`info=3`); the numpy
+    solver must raise rather than silently returning a garbage surface."""
+    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_li383_1.4m.nc"), ntheta=8, nzeta=8)
+
+    with pytest.raises(ValueError, match="self-intersecting"):
+        CoilSurface.from_uniform_offset(
+            plasma, separation=1.2, ntheta=16, nzeta=16, mpol=12, ntor=10,
+            standard_toroidal_angle=True, ntheta_transform=32, nzeta_transform=32,
+        )
+
+    # The normal-offset construction needs no root solve, so it still succeeds.
+    CoilSurface.from_uniform_offset(
+        plasma, separation=1.2, ntheta=16, nzeta=16, mpol=12, ntor=10,
+    )
+
+
 def test_from_uniform_offset_default_is_not_standard_toroidal_angle():
     plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
     coil = CoilSurface.from_uniform_offset(plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1)
@@ -109,7 +150,8 @@ def test_from_uniform_offset_reproduces_moved_points_nonaxisymmetric():
     )
     sep, nt, nz = 0.4, 16, 14
     coil = CoilSurface.from_uniform_offset(
-        plasma, separation=sep, ntheta=nt, nzeta=nz, mpol=nt // 2, ntor=nz // 2
+        plasma, separation=sep, ntheta=nt, nzeta=nz, mpol=nt // 2, ntor=nz // 2,
+        theta_reparameterization=None,
     )
 
     assert coil.standard_toroidal_angle is False
@@ -135,7 +177,7 @@ def test_from_uniform_offset_nu_has_sine_parity_for_stellarator_symmetric_plasma
     assert coil.stellarator_symmetric
 
 
-def test_from_uniform_offset_logs_kernel_timing(caplog):
+def test_from_uniform_offset_logs_root_solve_timing(caplog):
     plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
 
     with caplog.at_level("INFO"):
@@ -144,18 +186,17 @@ def test_from_uniform_offset_logs_kernel_timing(caplog):
         )
 
     messages = [record.getMessage() for record in caplog.records]
-    assert any("Starting uniform offset surface kernel" in message for message in messages)
-    assert any("Finished uniform offset surface kernel" in message for message in messages)
+    assert any("Starting uniform offset surface root solve" in message for message in messages)
+    assert any("Finished uniform offset surface root solve" in message for message in messages)
 
 
-def test_from_uniform_offset_default_does_not_log_kernel_timing(caplog):
-    """The default (`standard_toroidal_angle=False`) construction is pure
-    Python/numpy and never calls the Fortran kernel, so it must not emit the
-    kernel's timing log lines."""
+def test_from_uniform_offset_default_does_not_log_root_solve_timing(caplog):
+    """The default (`standard_toroidal_angle=False`) construction needs no
+    toroidal-angle root solve, so it must not emit its timing log lines."""
     plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
 
     with caplog.at_level("INFO"):
         CoilSurface.from_uniform_offset(plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1)
 
     messages = [record.getMessage() for record in caplog.records]
-    assert not any("uniform offset surface kernel" in message for message in messages)
+    assert not any("uniform offset surface root solve" in message for message in messages)

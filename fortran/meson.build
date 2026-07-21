@@ -7,9 +7,7 @@
 
 regcoil_lib_src = files(
   'regcoil_kinds_mod.f90',
-  'regcoil_fzero.f',
   'regcoil_kernels_mod.f90',
-  'regcoil_uniform_offset_surface_mod.f90',
   'regcoil_c_api.f90',
 )
 

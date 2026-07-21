@@ -14,7 +14,10 @@ from ..tests_common import EQUILIBRIA
 
 def test_solve_for_target_f_B():
     plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=64, nzeta=64)
-    coil = CoilSurface.from_uniform_offset(plasma, separation=0.5, ntheta=64, nzeta=64, standard_toroidal_angle=True)
+    coil = CoilSurface.from_uniform_offset(
+        plasma, separation=0.5, ntheta=64, nzeta=64, standard_toroidal_angle=True,
+        theta_reparameterization=None,
+    )
     prob = Regcoil(
         plasma, coil, mpol_potential=12, ntor_potential=12,
     )

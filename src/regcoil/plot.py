@@ -349,7 +349,8 @@ def plot_3d(plasma=None, winding_surface=None, coils=None, winding_surface_style
     if fig is None:
         fig = go.Figure()
     if plasma is not None:
-        _add_surface_trace(fig, plasma, "solid", "indianred", "plasma")
+        _add_surface_trace(fig, plasma, "solid", "hotpink", "plasma")
+        _add_surface_trace(fig, plasma, "wireframe", "darkred", "plasma")
     if winding_surface is not None:
         _add_surface_trace(fig, winding_surface, winding_surface_style, "steelblue", "winding surface")
     if coils is not None:

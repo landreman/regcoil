@@ -1,7 +1,7 @@
 ! C-compatible API for the Python extension (Phase 7: stateless kernels).
 !
 ! Every entry point below is a thin bind(C) wrapper around a pure Fortran
-! kernel (regcoil_kernels_mod / regcoil_uniform_offset_surface_mod): it
+! kernel (regcoil_kernels_mod): it
 ! reshapes the caller's raw buffers via c_f_pointer, calls the kernel, and
 ! turns a nonzero `info` into the returned error code.
 
@@ -10,7 +10,6 @@ module regcoil_c_api
   use regcoil_kinds_mod, only: dp
      use omp_lib, only: omp_get_max_threads
   use regcoil_kernels_mod, only: regcoil_build_inductance, regcoil_build_g_and_h
-  use regcoil_uniform_offset_surface_mod, only: regcoil_uniform_offset_surface
 
   implicit none
 
@@ -100,64 +99,5 @@ contains
     ierr = int(info, kind=c_int)
   end function regcoil_c_build_g_and_h
 
-  function regcoil_c_uniform_offset_surface( &
-       mnmax_in, xm_in, xn_in, rmnc_in, rmns_in, zmnc_in, zmns_in, lasym_flag, nfp, &
-       separation, mpol_out, ntor_out, ntheta_transform, nzeta_transform, tol, &
-       mnmax_out, xm_out, xn_out, rmnc_out, rmns_out, zmnc_out, zmns_out) result(ierr) &
-       bind(C, name="regcoil_c_uniform_offset_surface")
-
-    integer(c_int), value, intent(in) :: mnmax_in
-    type(c_ptr), value, intent(in) :: xm_in, xn_in
-    type(c_ptr), value, intent(in) :: rmnc_in, rmns_in, zmnc_in, zmns_in
-    integer(c_int), value, intent(in) :: lasym_flag, nfp
-    real(c_double), value, intent(in) :: separation
-    integer(c_int), value, intent(in) :: mpol_out, ntor_out, ntheta_transform, nzeta_transform
-    real(c_double), value, intent(in) :: tol
-    integer(c_int), value, intent(in) :: mnmax_out
-    type(c_ptr), value, intent(in) :: xm_out, xn_out
-    type(c_ptr), value, intent(in) :: rmnc_out, rmns_out, zmnc_out, zmns_out
-    integer(c_int) :: ierr
-
-    integer(c_int), pointer :: c_xm_in(:), c_xn_in(:), c_xm_out(:), c_xn_out(:)
-    real(c_double), pointer :: f_rmnc_in(:), f_rmns_in(:), f_zmnc_in(:), f_zmns_in(:)
-    real(c_double), pointer :: f_rmnc_out(:), f_rmns_out(:), f_zmnc_out(:), f_zmns_out(:)
-    integer, allocatable :: f_xm_in(:), f_xn_in(:), f_xm_out(:), f_xn_out(:)
-    integer :: mnmax_in_i, mnmax_out_i, info
-
-    mnmax_in_i = int(mnmax_in)
-    mnmax_out_i = int(mnmax_out)
-
-    call c_f_pointer(xm_in, c_xm_in, [mnmax_in_i])
-    call c_f_pointer(xn_in, c_xn_in, [mnmax_in_i])
-    call c_f_pointer(rmnc_in, f_rmnc_in, [mnmax_in_i])
-    call c_f_pointer(rmns_in, f_rmns_in, [mnmax_in_i])
-    call c_f_pointer(zmnc_in, f_zmnc_in, [mnmax_in_i])
-    call c_f_pointer(zmns_in, f_zmns_in, [mnmax_in_i])
-    call c_f_pointer(xm_out, c_xm_out, [mnmax_out_i])
-    call c_f_pointer(xn_out, c_xn_out, [mnmax_out_i])
-    call c_f_pointer(rmnc_out, f_rmnc_out, [mnmax_out_i])
-    call c_f_pointer(rmns_out, f_rmns_out, [mnmax_out_i])
-    call c_f_pointer(zmnc_out, f_zmnc_out, [mnmax_out_i])
-    call c_f_pointer(zmns_out, f_zmns_out, [mnmax_out_i])
-
-    allocate(f_xm_in(mnmax_in_i), f_xn_in(mnmax_in_i))
-    f_xm_in = int(c_xm_in)
-    f_xn_in = int(c_xn_in)
-    allocate(f_xm_out(mnmax_out_i), f_xn_out(mnmax_out_i))
-
-    call regcoil_uniform_offset_surface(mnmax_in_i, f_xm_in, f_xn_in, &
-         f_rmnc_in, f_rmns_in, f_zmnc_in, f_zmns_in, (lasym_flag /= 0), int(nfp), &
-         real(separation, kind=dp), int(mpol_out), int(ntor_out), &
-         int(ntheta_transform), int(nzeta_transform), real(tol, kind=dp), &
-         mnmax_out_i, f_xm_out, f_xn_out, &
-         f_rmnc_out, f_rmns_out, f_zmnc_out, f_zmns_out, info)
-
-    c_xm_out = int(f_xm_out, kind=c_int)
-    c_xn_out = int(f_xn_out, kind=c_int)
-
-    deallocate(f_xm_in, f_xn_in, f_xm_out, f_xn_out)
-
-    ierr = int(info, kind=c_int)
-  end function regcoil_c_uniform_offset_surface
 
 end module regcoil_c_api

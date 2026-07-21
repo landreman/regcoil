@@ -33,14 +33,6 @@ int regcoil_c_build_g_and_h(
     double dtheta_coil, double dzeta_coil,
     double *g, double *h);
 
-int regcoil_c_uniform_offset_surface(
-    int mnmax_in, const int *xm_in, const int *xn_in,
-    const double *rmnc_in, const double *rmns_in, const double *zmnc_in, const double *zmns_in,
-    int lasym_flag, int nfp,
-    double separation, int mpol_out, int ntor_out, int ntheta_transform, int nzeta_transform,
-    double tol,
-    int mnmax_out, int *xm_out, int *xn_out,
-    double *rmnc_out, double *rmns_out, double *zmnc_out, double *zmns_out);
 
 #ifdef __cplusplus
 }

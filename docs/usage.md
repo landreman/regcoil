@@ -36,15 +36,53 @@ plasma.set_bnormal_from_bnorm_file(ds.bnorm)
 
 The coil ("winding") surface can be loaded independently from a NESCIN file
 (`CoilSurface.from_nescin`), or computed as a uniform offset of the plasma
-surface. The offset construction calls the Fortran kernel
-(`regcoil_uniform_offset_surface`) once and returns ordinary Fourier
-coefficients, so the result is a plain `CoilSurface` from then on:
+surface. The offset construction samples the offset points once and returns
+ordinary Fourier coefficients, so the result is a plain `CoilSurface` from
+then on:
 
 ```{code-cell} ipython3
 coil = regcoil.CoilSurface.from_uniform_offset(
     plasma, separation=0.3, ntheta=64, nzeta=64, mpol=12, ntor=12
 )
 ```
+
+### Reparameterizing the poloidal angle
+
+If the offset surface simply inherited its poloidal angle from the plasma,
+that angle would often be poorly distributed -- points bunch up where the
+offset compresses the surface and spread out elsewhere. `from_uniform_offset`
+therefore relabels the points by default (`theta_reparameterization=
+"uniform_arclength"`), leaving the shape untouched but making the angle better
+behaved. Pass `theta_reparameterization=None` to keep the plasma's angle:
+
+```{code-cell} ipython3
+import numpy as np
+
+inherited = regcoil.CoilSurface.from_uniform_offset(
+    plasma, separation=0.3, ntheta=64, nzeta=64, mpol=12, ntor=12,
+    theta_reparameterization=None,
+)
+
+def arclength_spread(surf):
+    dr = surf.drdtheta[:, :, : surf.nzeta]
+    speed = np.sqrt(np.sum(dr * dr, axis=0))
+    return ((speed.max(axis=0) - speed.min(axis=0)) / speed.mean(axis=0)).max()
+
+print(f"inherited angle:         {arclength_spread(inherited):.3f}")
+print(f"uniform-arclength angle: {arclength_spread(coil):.3f}")
+```
+
+`"uniform_arclength"` makes `|dr/dtheta|` independent of `theta`;
+`"curvature"` instead concentrates points where the cross section bends
+sharply. For finer control pass a
+{class}`~regcoil.UniformArclength` or {class}`~regcoil.CurvatureWeighted`
+instance. The resulting {class}`~regcoil.ThetaMap` is kept on the surface as
+`coil.theta_map`, and its `diagnostics` report how well the target was met.
+
+Because the current-potential basis `sin(m*theta - n*zeta)` is defined in the
+coil surface's `theta`, this changes the solution space -- a better-conditioned
+basis is the reason to do it -- so it is a physics-visible choice, not a
+cosmetic one.
 
 ## 2. Assembling the problem
 
