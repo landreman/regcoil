@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Regularized current-potential method for stellarator coil shapes (Python package + Fortran extension)"
 readme = "README.md"
 license = { text = "BSD-2-Clause" }
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 authors = [{ name = "Matt Landreman" }]
 dependencies = [
     "numpy",
@@ -22,7 +22,7 @@ dependencies = [
 
 [project.optional-dependencies]
 # meson / ninja / meson-python needed in-env for editable installs (see README).
-dev = ["pytest", "ninja", "meson", "meson-python>=0.16.0"]
+dev = ["pytest", "ninja", "meson", "meson-python>=0.16.0", "tbump"]
 # Sphinx + Read the Docs stack, not runtime dependencies:
 docs = [
     "sphinx",
@@ -37,8 +37,69 @@ docs = [
 regcoil = "regcoil._cli:main"
 
 [project.urls]
-Homepage = "https://github.com/landreman/pyREGCOIL"
+Homepage = "https://github.com/landreman/regcoil"
 Documentation = "https://regcoil.readthedocs.io"
+
+# Release helper: `tbump 0.2.0` rewrites the version below, commits, tags
+# v0.2.0, and pushes both.  See RELEASING.md.  The version literal in
+# [project] above is the single source of truth -- src/regcoil/__init__.py
+# reads it back at runtime and meson.build's project() version is a
+# placeholder, so this is the only file tbump has to touch.
+[tool.tbump]
+github_url = "https://github.com/landreman/regcoil"
+
+[tool.tbump.version]
+current = "0.1.0"
+# PEP 440: X.Y.Z with an optional pre-release suffix (e.g. 0.2.0rc1).
+regex = '''
+  (?P<major>\d+)
+  \.
+  (?P<minor>\d+)
+  \.
+  (?P<patch>\d+)
+  (?P<pre>(a|b|rc)\d+)?
+  '''
+
+[tool.tbump.git]
+message_template = "Release {new_version}"
+tag_template = "v{new_version}"
+
+[[tool.tbump.file]]
+src = "pyproject.toml"
+search = 'version = "{current_version}"'
+
+# Fail the bump early rather than discovering a broken build after tagging.
+[[tool.tbump.before_commit]]
+name = "run the fast test suite"
+cmd = "pytest -m 'not slow' -q"
+
+# Binary wheel builds (.github/workflows/release.yml).  Every wheel is built in
+# an isolated image/runner and then smoke-tested against the fast suite, so a
+# wheel that cannot import its own Fortran extension never reaches PyPI.
+[tool.cibuildwheel]
+# PyPy has no working NumPy C-API story for this extension, and musllinux would
+# need a separate apk toolchain for gfortran + BLAS.  CPython 3.9/3.10 are
+# excluded automatically via requires-python above.
+skip = ["pp*", "*-musllinux_*"]
+build-frontend = "build"
+build-verbosity = 1
+test-requires = "pytest"
+# Regression tests marked slow take many minutes; the point here is to prove the
+# wheel imports and computes, not to re-run the science suite on every arch.
+test-command = "pytest -m 'not slow' {project}/tests"
+
+[tool.cibuildwheel.linux]
+# manylinux_2_28 is AlmaLinux 8: dnf, and openblas rather than reference blas.
+manylinux-x86_64-image = "manylinux_2_28"
+manylinux-aarch64-image = "manylinux_2_28"
+before-all = "dnf install -y gcc-gfortran openblas-devel"
+# auditwheel vendors libgfortran / libgomp / libopenblas into the wheel.
+
+[tool.cibuildwheel.macos]
+# Same toolchain the CI workflow uses; delocate vendors libgfortran + libgomp.
+# MACOSX_DEPLOYMENT_TARGET is set per-runner in release.yml -- it must match the
+# SDK the Homebrew gfortran was built against, or delocate rejects the wheel.
+before-all = "brew install gcc pkg-config"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

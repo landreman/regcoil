@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
-__version__ = "0.1.0"
+# Single source of truth for the version is [project.version] in pyproject.toml;
+# this reads it back out of the installed distribution metadata so the two can
+# never drift.  regcoil always has to be installed (it carries the compiled
+# _core extension), so there is no source-tree case to fall back on.
+from importlib.metadata import version as _version
+
+__version__ = _version("regcoil")
 
 from . import _core
 from . import cut

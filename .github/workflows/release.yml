@@ -1,0 +1,182 @@
+name: Release
+
+# Two ways in:
+#
+#   * Publishing a GitHub Release (the real thing).  The tag is the trigger, and
+#     the first job refuses to go further unless the tag matches the version in
+#     pyproject.toml -- that is what keeps GitHub, PyPI and regcoil.__version__
+#     in agreement.
+#   * Manual dispatch (a rehearsal).  Builds everything and, optionally, uploads
+#     to TestPyPI.  Use this before every real release; see RELEASING.md.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      publish_to_testpypi:
+        description: "Upload the built artifacts to TestPyPI"
+        type: boolean
+        default: true
+
+# Cancel a superseded rehearsal, but never a real release mid-upload.
+concurrency:
+  group: release-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'workflow_dispatch' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # Ten-second gate in front of a ~20 minute build matrix.
+  check-version:
+    name: Check version consistency
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Read version from pyproject.toml
+        id: get
+        run: |
+          version=$(python -c "import tomllib, pathlib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "pyproject.toml version: $version"
+
+      - name: Require the git tag to match
+        if: github.event_name == 'release'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          VERSION: ${{ steps.get.outputs.version }}
+        run: |
+          # Release tags are v-prefixed (tbump's tag_template); strip it.
+          if [ "${TAG#v}" != "$VERSION" ]; then
+            echo "::error::Tag '$TAG' does not match pyproject.toml version '$VERSION'."
+            echo "Delete the release and its tag, fix the version with 'tbump', then re-release."
+            exit 1
+          fi
+          echo "Tag '$TAG' matches pyproject.toml version '$VERSION'."
+
+  build-wheels:
+    name: Wheels (${{ matrix.os }})
+    needs: check-version
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            archs: x86_64
+          # Native arm64 runners: no QEMU emulation needed.
+          - os: ubuntu-24.04-arm
+            archs: aarch64
+          - os: macos-14
+            archs: arm64
+            # Must be >= the SDK Homebrew's gfortran was built against.
+            deployment_target: "14.0"
+          - os: macos-13
+            archs: x86_64
+            deployment_target: "13.0"
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v3
+        env:
+          CIBW_ARCHS: ${{ matrix.archs }}
+          MACOSX_DEPLOYMENT_TARGET: ${{ matrix.deployment_target }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}-${{ matrix.archs }}
+          path: wheelhouse/*.whl
+          retention-days: 14
+
+  build-sdist:
+    name: Source distribution
+    needs: check-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install build toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gfortran \
+            libblas-dev \
+            pkg-config
+          python -m pip install -U pip build
+
+      - name: Build sdist
+        run: python -m build --sdist
+
+      # An sdist that cannot be compiled is worse than no sdist: it is what
+      # every unsupported platform (Windows, musl, older Python) falls back to.
+      - name: Install the sdist from scratch and import it
+        run: |
+          python -m venv /tmp/sdist-check
+          /tmp/sdist-check/bin/pip install -U pip
+          /tmp/sdist-check/bin/pip install -v dist/*.tar.gz
+          /tmp/sdist-check/bin/python -c "import regcoil; print('regcoil', regcoil.__version__)"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+          retention-days: 14
+
+  publish-testpypi:
+    name: Publish to TestPyPI
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_to_testpypi
+    needs: [build-wheels, build-sdist]
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/regcoil
+    permissions:
+      # Trusted Publishing (OIDC): no API token is stored anywhere.
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          # Every artifact this run produced is a wheel or the sdist.
+          path: dist
+          merge-multiple: true
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          # Rehearsals get re-run against an already-uploaded version a lot.
+          skip-existing: true
+
+  publish-pypi:
+    name: Publish to PyPI
+    if: github.event_name == 'release'
+    needs: [build-wheels, build-sdist]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/regcoil
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          # Every artifact this run produced is a wheel or the sdist.
+          path: dist
+          merge-multiple: true
+
+      - name: List what is about to be uploaded
+        run: ls -l dist
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
