@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Regularized current-potential method for stellarator coil shapes (Python package + Fortran extension)"
 readme = "README.md"
 license = { text = "BSD-2-Clause" }
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 authors = [{ name = "Matt Landreman" }]
 dependencies = [
     "numpy",
@@ -36,7 +36,7 @@ docs = [
 regcoil = "regcoil._cli:main"
 
 [project.urls]
-Homepage = "https://github.com/landreman/pyREGCOIL"
+Homepage = "https://github.com/landreman/regcoil"
 Documentation = "https://regcoil.readthedocs.io"
 
 [tool.pytest.ini_options]
