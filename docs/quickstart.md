@@ -26,7 +26,7 @@ kernelspec:
 >>> problem = regcoil.Regcoil(plasma, coil, mpol_potential=12, ntor_potential=12)
 >>> solution = problem.solve(lam=1e-14)
 >>> print(f"f_B = {solution.f_B:.1e}, f_K = {solution.f_K:.1e}")
-f_B = 1.9e-01, f_K = 9.7e+13
+f_B = 2.7e-01, f_K = 1.1e+15
 ```
 
 The rest of this page walks through the same steps with more explanation.

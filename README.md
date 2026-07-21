@@ -63,7 +63,7 @@ solution = problem.solve(lam=1e-14)
 # You can also solve for a range of lambda values, or search for lambda that 
 # results in a desired f_B, f_K, max_K, etc
 print(f"f_B = {solution.f_B:.1e}, f_K = {solution.f_K:.1e}")
-# f_B = 1.9e-01, f_K = 9.7e+13
+# f_B = 2.7e-01, f_K = 1.1e+15
 
 # Results can then be saved and plotted.
 ```
