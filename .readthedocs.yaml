@@ -19,7 +19,11 @@ build:
     pre_build:
       # Fail fast (and legibly) if the compiled extension didn't build,
       # rather than during the first executed notebook page.
-      - python -c "import regcoil._core; print('regcoil._core OK')"
+      # No single quotes here: RTD wraps job commands in an outer layer of
+      # single quotes, so a nested `'...'` (e.g. inside print()) breaks the
+      # shell parsing ("Unterminated quoted string"). Keep this to plain
+      # double quotes only; a failed import already prints a legible traceback.
+      - python -c "import regcoil._core"
 
 sphinx:
   configuration: docs/conf.py
