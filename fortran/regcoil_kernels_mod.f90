@@ -1,6 +1,6 @@
 module regcoil_kernels_mod
 
-  ! Stateless Fortran kernels for the Python extension (Phase 7 / ADR-020).
+  ! Stateless Fortran kernels for the Python extension.
   !
   ! Pure subroutines: intent(in)/intent(out) arrays with explicit extents,
   ! no module state, no `stop` (callers get an `info` code instead), and no

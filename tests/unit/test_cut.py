@@ -1,4 +1,4 @@
-"""Unit tests for `regcoil.cut` (Phase 10, ADR-029): contouring the total
+"""Unit tests for `regcoil.cut`: contouring the total
 current potential into discrete coils and writing a MAKEGRID file. Replaces
 `cutCoilsFromRegcoil` / `cut_saddle_coil`.
 """

@@ -1,4 +1,4 @@
-"""Unit tests for `regcoil.save`/`regcoil.load` (Phase 9, ADR-028): object
+"""Unit tests for `regcoil.save`/`regcoil.load`: object
 serialization to NetCDF-4 via `h5netcdf`. No golden legacy comparison here
 (the legacy Fortran output format is not preserved, by design) -- these
 tests check the round trip is exact and that a loaded run needs no Fortran

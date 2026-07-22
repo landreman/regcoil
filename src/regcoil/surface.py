@@ -97,7 +97,7 @@ class Surface(ABC):
         the uniform-offset coil surface, where
         `CoilSurface.from_uniform_offset(..., theta_reparameterization=...)`
         should be preferred anyway, since it applies the map at the sampling
-        stage and so fits only once, in the good angle (ADR-031 decision 9).
+        stage and so fits only once, in the good angle.
         """
         from .coil_surface import _fourier_transform_offset_surface
         from .fourier_surface import FourierSurface
@@ -230,10 +230,10 @@ class Surface(ABC):
         """Surface cross section(s) at fixed *physical* toroidal angle(s).
 
         Unlike a constant-`zeta` slice, this is correct regardless of
-        `standard_toroidal_angle` (ADR-025): `phi = atan2(y, x)` is computed
+        `standard_toroidal_angle`: `phi = atan2(y, x)` is computed
         from the actual Cartesian `r` grid, and each theta-line is
         interpolated (periodically in the full-torus `zetal` direction) to
-        the requested physical angle(s) (ADR-029 decision 6).
+        the requested physical angle(s).
 
         Parameters
         ----------

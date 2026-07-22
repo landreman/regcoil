@@ -1,4 +1,4 @@
-! C-compatible API for the Python extension (Phase 7: stateless kernels).
+! C-compatible API for the Python extension.
 !
 ! Every entry point below is a thin bind(C) wrapper around a pure Fortran
 ! kernel (regcoil_kernels_mod): it

@@ -1,9 +1,4 @@
 # REGCOIL Fortran sources linked into the Python extension.
-#
-# The extension boundary is ~4 stateless kernels (Phase 7 / ADR-020); the
-# legacy regcoil_variables-coupled chain (namelist I/O, geometry init,
-# build_matrices/prepare_solve/solve/diagnostics, lambda scan) and
-# mini_libstell (ADR-005) are gone (Phase 13).
 
 regcoil_lib_src = files(
   'regcoil_kinds_mod.f90',

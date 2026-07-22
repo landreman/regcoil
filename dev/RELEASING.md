@@ -40,6 +40,11 @@ in GitHub secrets and nothing to rotate.
 
 ## Cutting a release
 
+The ``release.yml`` workflow in ``.github/workflows`` is used both for test
+releases to TestPyPI and for real releases to PyPI. If that workflow is
+triggered manually by a `workflow_dispatch`, the upload will be to TestPyPI. If
+that workflow is triggered by a release made in GitHub, the upload will be to PyPI.
+
 ### 1. Rehearse against TestPyPI
 
 From the GitHub Actions tab, run the **Release** workflow via *Run workflow*
@@ -58,11 +63,16 @@ python -m venv /tmp/rc && /tmp/rc/bin/pip install -U pip
 
 The `--extra-index-url` is required: TestPyPI does not mirror numpy/scipy/etc.
 
-For the very first release, do this with a pre-release version (`tbump 0.1.0rc1`)
-so a botched rehearsal does not burn the `0.1.0` version number — **a version can
+If you want to test the release system, you may wish to assign a pre-release /
+release-candidate version (`tbump 0.1.0rc1`)
+so a botched rehearsal does not burn the next clean version number — **a version can
 never be re-uploaded to PyPI, even after deletion.**
 
 ### 2. Bump and tag
+
+Version bumps are done using the ``tbump`` package which is pip-installed as
+part of regcoil's ``[dev]`` optional packages. You run ``tbump`` from the
+command line, providing the version number you wish to bump to:
 
 ```bash
 git checkout master && git pull      # tbump pushes to the current branch's upstream
@@ -82,8 +92,10 @@ branch, tbump renders an incomplete `git push` command and the push fails.
 Go to *Releases → Draft a new release*, choose the existing `v0.2.0` tag, use
 *Generate release notes*, edit as needed, and **Publish**.
 
-Publishing is what triggers the build-and-upload. Within ~20 minutes the wheels
-and sdist appear on PyPI.
+Publishing triggers the release workflow on GitHub actions.
+Once all the wheels are built (~20 minutes), GitHub requires you to approve the
+final upload to PyPI. Once you have confirmed, the wheels
+and sdist are uploaded to PyPI.
 
 ### 4. Verify
 
@@ -142,13 +154,9 @@ The sdist covers all of these for anyone with a Fortran compiler and BLAS.
 
 ---
 
-## Manual setup checklist
+## Steps that were done manually for the first release
 
-These require account access and cannot be scripted from the repository.
-
-- [ ] **Reserve the name on PyPI.** `regcoil` was unclaimed as of this writing.
-      Trusted Publishing can create the project on first upload (see below), so
-      no placeholder upload is needed — but the name is first-come, first-served.
+These required account access and cannot be scripted from the repository.
 
 - [ ] **Create the PyPI trusted publisher.** On PyPI → *Your projects* → (or
       *Publishing* → *Add a pending publisher* if the project does not exist yet):

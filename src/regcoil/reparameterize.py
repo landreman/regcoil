@@ -1,4 +1,4 @@
-"""Poloidal-angle reparameterization (ADR-031).
+"""Poloidal-angle reparameterization.
 
 A *theta reparameterization* replaces a surface's poloidal angle by a new one,
 
@@ -17,7 +17,7 @@ the constant-`phi` cross section. The two coincide exactly when `zeta` is the
 standard toroidal angle (`nu = 0`); when it is not, the constant-`phi` cross
 section is not a coordinate curve and no theta-map can control it.
 
-Both schemes are the same quadrature (ADR-031 decision 4). With
+Both schemes are the same quadrature. With
 
     w(theta_old, zeta) = |dr/dtheta| * kappa^exponent,
     theta_new(theta_old) = 2*pi * int_0^theta_old w / int_0^2pi w,
@@ -164,7 +164,7 @@ def _fft_derivative(field, order, axis=0):
     """`d^order field / dtheta^order` for a field sampled on a uniform periodic
     theta grid (`axis`), by spectral differentiation.
 
-    Positions are all we ever require of a curve this way (ADR-031 decision 5):
+    Positions are all we ever require of a curve this way:
     the alternative, analytic derivatives, would need the plasma surface's
     third derivatives on the `from_uniform_offset` path, and would miss the
     implicit-function correction on the `standard_toroidal_angle=True` path,
@@ -212,7 +212,7 @@ def _cumulative_integral(w):
     # leaves F[0] at roundoff rather than zero. Subtracting it makes the
     # anchor F(0) = 0 exact, which the periodic spline that inverts this map
     # requires to machine precision (and which is what preserves stellarator
-    # symmetry -- ADR-031 decision 6).
+    # symmetry).
     return result - result[0]
 
 
@@ -285,7 +285,7 @@ def theta_map(curve, scheme, *, nfp, ntheta, nzeta, mpol=None, ntor=None,
         limit, at which the transform round-trips exactly, so the default adds
         no truncation error. Lower values deliberately smooth the map -- mainly
         useful in `zeta`, since each `zeta` is solved independently and nothing
-        otherwise couples them (ADR-031 decision 8).
+        otherwise couples them.
     stellarator_symmetric : bool
         When True the cosine modes of `g - theta` are zeroed, enforcing the
         parity that the anchor `g(0, zeta) = 0` already produces analytically.
@@ -325,8 +325,7 @@ def theta_map(curve, scheme, *, nfp, ntheta, nzeta, mpol=None, ntor=None,
         )
 
     # theta_new as a function of theta_old, anchored at theta_new(0) = 0 so
-    # that stellarator symmetry survives the reparameterization (ADR-031
-    # decision 6).
+    # that stellarator symmetry survives the reparameterization.
     # The full-turn integral is exactly `mean(w) * 2*pi`, so normalizing by the
     # mean is both exact and free of any endpoint special-casing.
     integral = _cumulative_integral(w)
@@ -358,8 +357,8 @@ def _diagnostics(theta_new, theta_fine, speed, w, ntheta):
 
     `dl_spread` is the relative spread of the incremental arclength
     `dl/dtheta_new` -- the quantity the legacy `constant_arclength_tolerance`
-    thresholded, reported here rather than used to control a loop (ADR-031
-    decision 4). It is near zero for `UniformArclength` but *deliberately*
+    thresholded, reported here rather than used to control a loop.
+    It is near zero for `UniformArclength` but *deliberately*
     large for `CurvatureWeighted`, which asks for a non-uniform `dl`.
 
     `residual` is the scheme-neutral correctness check: by construction
