@@ -3,34 +3,32 @@
 `regcoil` is a Python package with a small compiled Fortran extension
 (`regcoil._core`) built by [meson-python](https://mesonbuild.com/meson-python).
 
-## Requirements
-
-Building the extension needs:
-
-- gfortran
-- BLAS (on macOS, the Accelerate framework is used automatically if no
-  BLAS `pkg-config` file is found)
-- OpenMP
-
 ## Install with pip
 
-Editable installs with meson-python need the build tools (`meson`, `ninja`,
-`meson-python`) installed in the *same* environment, since pip's isolated
-build environment is discarded after the install finishes:
-
+This package is available on pypi (which provides pre-compiled wheels), so it can be installed in the usual way with pip:
 ```bash
-pip install meson ninja "meson-python>=0.16" pytest
-pip install -e ".[dev]" --no-build-isolation
+pip install regcoil
 ```
 
-A plain, non-editable install (fine for CI or one-off use) can rely on pip's
-build isolation instead, and does not need the tools above pre-installed:
+If you want updates that are more recent than the most recent release, or if you want to edit the
+source code,
+you can also install regcoil from source.  To do so, first clone the repository and then
+pip-install from the local repository:
 
 ```bash
-pip install "regcoil[dev]"
+git clone https://github.com/landreman/regcoil.git
+cd regcoil
+pip install .[dev]
 ```
 
-Verify the extension built and imports correctly:
+For editable installs from source, it is necessary to include the ``--no-build-isolation``
+flag due to a quirk of the meson build system:
+
+```bash
+pip install --no-build-isolation -e .[dev]
+```
+
+To verify the extension built and imports correctly:
 
 ```bash
 python -c "import regcoil._core; print('regcoil._core OK')"
@@ -38,11 +36,13 @@ python -c "import regcoil._core; print('regcoil._core OK')"
 
 ## Running the test suite
 
+The tests can be run using
+
 ```bash
 pytest
 ```
 
-The high-resolution (`ntheta_plasma=nzeta_plasma=128`) regression cases are marked `slow`
+Several high-resolution (`ntheta_plasma=nzeta_plasma=128`) regression cases are marked `slow`
 and can be skipped if desired:
 
 ```bash

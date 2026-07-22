@@ -16,22 +16,32 @@ https://github.com/landreman/regcoil_fortran
 
 ### Installation
 
-This package is not yet available on pypi, but releases there are planned soon.
-To install, clone the repository and then pip-install:
+This package is available on pypi (which provides pre-compiled wheels), so it
+can be installed in the usual way with pip:
+
+```bash
+pip install regcoil
+```
+
+If you want updates that are more recent than the most recent release, or if you want to edit the
+source code,
+you can also install regcoil from source.  To do so, first clone the repository and then
+pip-install from the local repository:
+
 ```bash
 git clone https://github.com/landreman/regcoil.git
 cd regcoil
-pip install ".[dev]"
+pip install .[dev]
 ```
 
-For editable installs, it is necessary to include the ``--no-build-isolation``
+For editable installs from source, it is necessary to include the ``--no-build-isolation``
 flag due to a quirk of the meson build system:
 
 ```bash
-pip install --no-build-isolation -e ".[dev]"
+pip install --no-build-isolation -e .[dev]
 ```
 
-Tests can be run using
+From the cloned repository, tests can be run using
 
 ```bash
 pytest
