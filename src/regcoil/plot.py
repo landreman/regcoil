@@ -1,4 +1,4 @@
-"""`regcoil.plot`: visualization for the object model (Phase 10, ADR-029).
+"""`regcoil.plot`: 2D and 3D visualization.
 
 Consumes only in-memory objects (`PlasmaSurface`/`CoilSurface`/`Regcoil`/
 `Solution`/`SolutionScan`, or the `regcoil.load()` container) -- never file
@@ -55,7 +55,7 @@ def _pick_lambda_indices(solutions, nmax):
 def cross_sections_overlay(surf, phi=None, ax=None):
     """One surface's cross section(s) at fixed physical toroidal angle(s),
     overlaid on a single axes and colored by `phi`, via `Surface.cross_section`
-    (correct for both `standard_toroidal_angle` values, ADR-025). Default
+    (correct for both `standard_toroidal_angle` values). Default
     `phi = [0, 0.5, 1, 1.5] * pi / nfp`.
     """
     ax = _new_ax(ax)
@@ -204,8 +204,8 @@ def current_density(solution, ax=None):
 def bnormal(solution, component="total", ax=None):
     """`(theta, zeta)` contour map of B_normal on the plasma surface.
     `component` is `'plasma_current'`, `'net_coil'`, or `'total'` (default).
-    `'net_coil'` needs no Fortran kernel on a loaded run (ADR-028/ADR-029:
-    `Regcoil.Bnormal_from_net_coil_currents` is stored on disk).
+    `'net_coil'` needs no Fortran kernel on a loaded run
+    (`Regcoil.Bnormal_from_net_coil_currents` is stored on disk).
     """
     ax = _new_ax(ax)
     prob = solution.problem

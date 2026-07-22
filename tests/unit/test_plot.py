@@ -1,4 +1,4 @@
-"""Unit/smoke tests for `regcoil.plot` (Phase 10, ADR-029). Non-interactive
+"""Unit/smoke tests for `regcoil.plot`. Non-interactive
 matplotlib backend; checks the atomic-function contract (`ax=`/`fig=` in and
 out), that every function works on both a live run and a round-tripped saved
 run, and that the saved-run path needs no Fortran kernel / no `eigh`.

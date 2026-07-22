@@ -2,8 +2,8 @@
 `target_option='max_K'`, `target_value=8e6`).
 
 The legacy Brent search visits lambda in a different order than
-`Regcoil.solve_for_target` (a direct bisection on the closed-form family,
-ADR-021, see PHASES.md Phase 8), so only the converged endpoint and the
+`Regcoil.solve_for_target` (a direct bisection on the closed-form family),
+so only the converged endpoint and the
 lambda=0 / lambda=inf limits are checked here, not the intermediate
 sequence. Golden values are read by hand from `examples/lambda_search_1/tests.py`.
 """

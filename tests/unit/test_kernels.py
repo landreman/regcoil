@@ -1,9 +1,9 @@
-"""Unit tests for the Phase 7 stateless Fortran kernels
+"""Unit tests for the stateless Fortran kernels
 (`regcoil._core.build_g_and_h`, `.build_inductance`, `.uniform_offset_surface`).
 
 See `_golden_kernels.py` for how the golden reference values were generated
 (the legacy compiled Fortran, run standalone outside the package build --
-same pattern as `_golden.py` for the Phase 6 surface classes).
+same pattern as `_golden.py` for the surface classes).
 """
 
 import numpy as np

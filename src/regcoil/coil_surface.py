@@ -178,7 +178,7 @@ class CoilSurface(FourierSurface):
         self.numnc[mask] = 0
 
     def save(self, path):
-        """Save this coil surface to `path` (NetCDF-4 via `h5netcdf`; ADR-028)."""
+        """Save this coil surface to `path`."""
         from . import _serialize
         _serialize.save(path, coil=self)
 
@@ -240,8 +240,7 @@ def _solve_zeta_for_phi(plasma, separation, theta, phi_target, tol, max_iteratio
     """For each `(theta, phi_target)`, find the surface parameter `zeta` such
     that the offset point at `(theta, zeta)` has Cartesian toroidal angle
     `atan2(y, x) = phi_target` -- the legacy "cosm" construction that makes a
-    constant-`zeta` slice a constant-physical-angle cross section (ADR-031
-    decision 2; replaces the Fortran `regcoil_fzero` root solve).
+    constant-`zeta` slice a constant-physical-angle cross section.
 
     Vectorized bisection-safeguarded secant on the bracket
     `[phi_target - 1, phi_target + 1]` (the same bracket the Fortran kernel

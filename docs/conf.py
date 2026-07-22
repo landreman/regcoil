@@ -36,16 +36,13 @@ exclude_patterns = [
     ".DS_Store",
     ".jupyter_cache",
     "jupyter_execute",
-    # Internal migration/engineering planning docs, not part of the public
-    # user-facing manual (see docs/migration/DECISIONS.md ADR-030).
-    "migration",
     # Developer-facing build instructions (this README).
     "README.md",
     "m20170111_01_compareNescoilToRegcoilCoils.png",
 ]
 
 # MyST / notebook sources: both plain prose pages and executed tutorial pages
-# are authored as MyST Markdown (jupytext-compatible; see ADR-030). Any page
+# are authored as MyST Markdown (jupytext-compatible). Any page
 # containing a ``{code-cell}`` directive is treated as a notebook and executed.
 # (Do not set `source_suffix` explicitly: myst_nb registers the `.md` ->
 # MyST-NB source parser itself; overriding it here maps `.md` back to plain
@@ -76,7 +73,7 @@ doctest_global_setup = "import regcoil"
 
 # -- linkcode: per-object [source] links to GitHub -----------------------------
 
-_GITHUB_URL = "https://github.com/landreman/pyREGCOIL"
+_GITHUB_URL = "https://github.com/landreman/regcoil"
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
 

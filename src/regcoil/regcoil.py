@@ -1,7 +1,7 @@
 """`Regcoil`: assemble the current-potential regularization problem in
 numpy/scipy and solve the whole lambda family from one generalized
-eigendecomposition (Phase 8, ADR-021). The only Fortran call is
-`regcoil._core.build_g_and_h` (Phase 7); everything else -- basis functions,
+eigendecomposition. The only Fortran call is
+`regcoil._core.build_g_and_h`. Everything else -- basis functions,
 matrix assembly, the regularized solve, and the lambda scan -- is numpy/scipy.
 
 Conventions (see docs/migration/API.md): `xn` already includes the `nfp`
@@ -62,14 +62,14 @@ def _potential_fourier_modes(mpol, ntor, nfp):
 class Regcoil:
     """Assembles `matrix_B`, `matrix_K`, and the RHS vectors from a `plasma`
     and `coil` surface, then caches one generalized eigendecomposition so
-    every subsequent lambda is O(nbf**2) (ADR-021). Immutable after
+    every subsequent lambda is O(nbf**2). Immutable after
     construction -- mutating `coil`/`plasma` afterwards does not update a
     live `Regcoil`.
 
     `__init__` is split into a cheap assembly (surfaces, potential modes,
     `basis_functions`, `f_all`, `d_xyz` -- no Fortran, no big BLAS) and an
     expensive one (`_build_operators`: `build_g_and_h`, `matrix_B/K`,
-    `eigh`), so that `regcoil.load()` (ADR-028) can reconstruct a `Regcoil`
+    `eigh`), so that `regcoil.load()` can reconstruct a `Regcoil`
     from disk running only the cheap part -- its stored Solutions then plot
     with no kernel call. The operators are rebuilt lazily, via
     `_ensure_operators`, only if a *new* lambda is solved on such an object.
@@ -216,7 +216,7 @@ class Regcoil:
     def _ensure_operators(self):
         """Lazily rebuild the operators (Fortran kernel, big matrices,
         eigendecomposition) if this `Regcoil` came from `regcoil.load()`
-        without them (ADR-028)."""
+        without them."""
         if self.g is None:
             logger.info("Rebuilding operators for a loaded Regcoil (new lambda solve requested)")
             self._build_operators()
@@ -342,8 +342,7 @@ class Regcoil:
     def scan(self, lambdas):
         """Vectorized over an array of lambdas -- free after the
         eigendecomposition cached in `__init__`. Returns a `SolutionScan`
-        (a `Sequence[Solution]` with columnar `.lam`/`.f_B`/... accessors,
-        ADR-028)."""
+        (a `Sequence[Solution]` with columnar `.lam`/`.f_B`/... accessors)."""
         self._ensure_operators()
         logger.info("Starting lambda scan")
         start_time = perf_counter()
@@ -369,7 +368,7 @@ class Regcoil:
         lambda; the direction is read off the `lam=0`/`lam=inf` endpoints
         rather than hard-coded, replacing the legacy staged bracket-then-
         Brent search (`regcoil_auto_regularization_solve.f90`) with a direct
-        bisection on the closed-form family (ADR-021).
+        bisection on the closed-form family.
 
         Raises `ValueError` if `value` is not between the `lam=0` and
         `lam=inf` extremes (matching the legacy "target not achievable"
@@ -446,8 +445,7 @@ class Regcoil:
         )
 
     def save(self, path):
-        """Save this problem (plus its plasma and coil) to `path`
-        (NetCDF-4 via `h5netcdf`; ADR-028)."""
+        """Save this problem (plus its plasma and coil) to `path`."""
         from . import _serialize
         _serialize.save(path, problem=self)
 
@@ -455,7 +453,7 @@ class Regcoil:
     def load(cls, path):
         """Load a `Regcoil` (plus its plasma and coil) from `path`. The
         expensive operators are rebuilt lazily only if a new lambda is
-        solved (ADR-028)."""
+        solved."""
         from . import _serialize
         return _serialize.load_problem(path)
 
@@ -465,7 +463,7 @@ class Solution:
     """One regularized solve, at a single lambda. `current_potential()` /
     `current_density()` are lazy (grid-sized; expanding them for every
     lambda in a scan would be wasteful) for a freshly-computed `Solution`,
-    but a `Solution` reconstructed by `regcoil.load()` (ADR-028) carries the
+    but a `Solution` reconstructed by `regcoil.load()` carries the
     precomputed grids (`_current_potential`/`_current_density`, stored on
     disk to avoid materializing the ~0.5 GB `f_all` intermediate on load),
     so those accessors are O(1) for a loaded run.
@@ -514,8 +512,7 @@ class Solution:
         return _unflatten_grid(K_flat, prob.coil.ntheta, prob.coil.nzeta)
 
     def save(self, path):
-        """Save this solution (plus its problem, plasma, and coil) to `path`
-        (NetCDF-4 via `h5netcdf`; ADR-028)."""
+        """Save this solution (plus its problem, plasma, and coil) to `path`."""
         from . import _serialize
         _serialize.save(path, solutions=[self])
 
@@ -553,8 +550,8 @@ class Solution:
 class SolutionScan(Sequence):
     """A lambda scan: a `Sequence[Solution]` that iterates/indexes as
     ordinary `Solution` objects, plus columnar `.lam`/`.f_B`/`.f_K`/`.max_K`/
-    `.rms_K`/`.max_Bnormal` array accessors for direct Pareto/scan plotting
-    (ADR-028). Returned by `Regcoil.scan()` and `regcoil.load(...).solutions`.
+    `.rms_K`/`.max_Bnormal` array accessors for direct Pareto/scan plotting.
+    Returned by `Regcoil.scan()` and `regcoil.load(...).solutions`.
     """
 
     def __init__(self, solutions):

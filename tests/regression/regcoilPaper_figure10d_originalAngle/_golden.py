@@ -1,4 +1,4 @@
-"""Golden legacy-Fortran values extracted from `examples/regcoilPaper_figure10d_originalAngle/tests.py` (Phase 8).
+"""Golden legacy-Fortran values extracted from `examples/regcoilPaper_figure10d_originalAngle/tests.py`.
 
 Generated programmatically (see docs/migration -- not hand-transcribed) to avoid
 transcription errors in these large arrays."""

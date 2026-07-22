@@ -1,4 +1,4 @@
-"""`regcoil` command-line interface (Phase 10, ADR-029): one console script
+"""`regcoil` command-line interface: one console script
 with subcommands, each a thin `load() -> plot/cut -> show/save` wrapper. File
 paths are the CLI's concern only -- the library functions stay object-only.
 Replaces the separate `regcoilPlot`/`compareRegcoil`/`cutCoilsFromRegcoil`/

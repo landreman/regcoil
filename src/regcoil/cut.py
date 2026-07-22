@@ -1,5 +1,5 @@
 """`regcoil.cut`: cut discrete coils from a `Solution`'s total current
-potential (Phase 10, ADR-029). Cutting is a computation that produces coil
+potential. Cutting is a computation that produces coil
 geometry; plotting it (`regcoil.plot.plot_3d`/`coil_3d`) is downstream, and
 the irreversible MAKEGRID file write stays out of the plot path. Replaces
 `cutCoilsFromRegcoil` / `cut_saddle_coil`, plus the finite-thickness ribbon

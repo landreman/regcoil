@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-/* Phase 7 stateless kernels (ADR-020). All arrays are caller-allocated,
+/* Compiled stateless kernels. All arrays are caller-allocated,
  * Fortran-contiguous (column-major), float64 (int32 for mode-number
  * arrays), and passed as raw pointers; a nonzero return value is an error
  * code (see the corresponding Fortran `info`). No opaque handle, no

@@ -1,5 +1,5 @@
-"""Unit tests for the single `regcoil` console-script CLI (Phase 10,
-ADR-029): `regcoil plot|compare|cut`, each a thin `load() -> plot/cut ->
+"""Unit tests for the single `regcoil` console-script CLI:
+`regcoil plot|compare|cut`, each a thin `load() -> plot/cut ->
 show/save` wrapper. Replaces `regcoilPlot`/`compareRegcoil`/
 `cutCoilsFromRegcoil`/`cut_saddle_coil`.
 """

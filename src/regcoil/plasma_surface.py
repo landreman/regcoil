@@ -97,7 +97,7 @@ class PlasmaSurface(FourierSurface):
         )
 
     def save(self, path):
-        """Save this plasma surface to `path` (NetCDF-4 via `h5netcdf`; ADR-028)."""
+        """Save this plasma surface to `path`."""
         from . import _serialize
         _serialize.save(path, plasma=self)
 

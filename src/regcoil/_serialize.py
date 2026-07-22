@@ -1,5 +1,5 @@
-"""Save/load: object serialization to NetCDF-4 via `h5netcdf` (ADR-028,
-Phase 9). See docs/migration/API.md#saving-and-loading for the schema.
+"""Save/load: object serialization to NetCDF-4 via `h5netcdf`.
+See docs/migration/API.md#saving-and-loading for the schema.
 
 Files are grouped by object (`/plasma`, `/coil`, `/problem`, `/solutions`),
 each tagged with a `_class` attribute; the root carries `format_version`.
@@ -221,7 +221,7 @@ def save(path, *, plasma=None, coil=None, problem=None, solutions=None):
     """Write only the groups given, deduping the shared problem/surfaces:
     passing `solutions` (or `problem`) transitively carries its `problem` ->
     `coil`, `plasma`, so `save(path, solutions=scan)` writes the whole
-    bundle in one call (ADR-028).
+    bundle in one call.
     """
     if solutions is not None:
         solutions = list(solutions)

@@ -1,10 +1,10 @@
-"""Shared helpers for tests/regression/*/test_regression.py (Phase 8).
+"""Shared helpers for tests/regression/*/test_regression.py.
 
 These tests build the problem directly via the Python object model
 (`regcoil.PlasmaSurface`/`CoilSurface`/`Regcoil`) and compare against golden
 values taken by hand from the legacy Fortran solver -- the same reference
-values recorded in the corresponding `examples/*/tests.py` (see PHASES.md
-Phase 8). There is no more legacy-executable subprocess or netCDF output to
+values recorded in the corresponding `examples/*/tests.py`.
+There is no more legacy-executable subprocess or netCDF output to
 read.
 """
 

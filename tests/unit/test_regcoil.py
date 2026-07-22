@@ -1,4 +1,4 @@
-"""Unit tests for `Regcoil`/`Solution` (Phase 8): object-model behavior that
+"""Unit tests for `Regcoil`/`Solution`: object-model behavior that
 doesn't need a golden legacy comparison (see tests/regression/ for those).
 """
 

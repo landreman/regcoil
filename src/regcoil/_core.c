@@ -4,11 +4,11 @@
 #include <numpy/arrayobject.h>
 #include "regcoil_c_api.h"
 
-/* Phase 7: module-level functions wrapping the stateless Fortran kernels
- * (no opaque handle -- see ADR-020). Large arrays (r_plasma, r_coil,
- * basis_functions, ...) must already be float64 and Fortran-contiguous: a
- * silent copy of a multi-MB array would be a hidden cost, so we raise
- * instead of casting (see API.md conventions). */
+/* Module-level functions wrapping the stateless Fortran kernels.
+ * Large arrays (r_plasma, r_coil, basis_functions, ...) must already be
+ * float64 and Fortran-contiguous: a silent copy of a multi-MB array would
+ * be a hidden cost, so we raise an error instead of casting (see API.md conventions). 
+ * */
 
 static PyArrayObject *
 require_f64_farray(PyObject *obj, int ndim, const char *name)
@@ -246,7 +246,7 @@ static PyMethodDef core_methods[] = {
 static struct PyModuleDef core_module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "regcoil._core",
-    .m_doc = "Fortran REGCOIL core extension (stateless kernels, Phase 7).",
+    .m_doc = "Fortran REGCOIL core extension",
     .m_size = -1,
     .m_methods = core_methods,
 };
