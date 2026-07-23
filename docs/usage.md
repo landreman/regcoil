@@ -21,6 +21,7 @@ import numpy as np
 import regcoil
 
 ds = regcoil.examples("W7-X")
+this_is_a_bug!!!
 ```
 
 ## 1. Surfaces
