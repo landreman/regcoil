@@ -84,7 +84,7 @@ def test_from_ascii_table_roundtrip(tmp_path):
     table = tmp_path / "shape.txt"
     table.write_text("comment\n2\ncomment\n0 0 3.0 0.0 0.0 0.0\n1 0 1.5 1.5 0.0 0.0\n")
 
-    plasma = PlasmaSurface.from_ascii_table(str(table), nfp=5, ntheta=8, nzeta=8)
+    plasma = PlasmaSurface.from_ascii_table(str(table), nfp=5, ntheta=8, nzeta=9)
 
     assert plasma.nfp == 5
     assert not plasma.stellarator_symmetric  # legacy always sets lasym=True for this format
@@ -95,5 +95,5 @@ def test_from_ascii_table_roundtrip(tmp_path):
     # A plain circular cross-section: area should match circular_torus.
     from regcoil import FourierSurface
 
-    torus = FourierSurface.circular_torus(R0=3.0, a=1.5, nfp=5, ntheta=8, nzeta=8)
+    torus = FourierSurface.circular_torus(R0=3.0, a=1.5, nfp=5, ntheta=11, nzeta=10)
     np.testing.assert_allclose(plasma.area, torus.area, rtol=1e-12)

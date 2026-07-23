@@ -118,9 +118,9 @@ def test_unknown_name_message_lists_available():
 def test_paths_feed_the_real_loaders():
     """The resolved paths are usable by the from_* loaders end to end."""
     ds = examples("NCSX")
-    plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=16, nzeta=16)
+    plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=16, nzeta=17)
     plasma.set_bnormal_from_bnorm_file(ds.bnorm)
-    coil = regcoil.CoilSurface.from_nescin(ds.nescin, nfp=plasma.nfp, ntheta=16, nzeta=16)
+    coil = regcoil.CoilSurface.from_nescin(ds.nescin, nfp=plasma.nfp, ntheta=18, nzeta=19)
     assert plasma.nfp == 3
     assert coil.nfp == plasma.nfp
     assert len(coil.xm) > 0
@@ -129,6 +129,6 @@ def test_paths_feed_the_real_loaders():
 @pytest.mark.parametrize("canonical", list(_EXPECTED_FILES))
 def test_vcasing_path_feeds_the_real_loader(canonical):
     ds = examples(canonical)
-    plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=16, nzeta=16)
+    plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=17, nzeta=16)
     plasma.set_bnormal_from_virtual_casing(ds.vcasing)
-    assert plasma.Bnormal_from_plasma_current.shape == (16, 16)
+    assert plasma.Bnormal_from_plasma_current.shape == (17, 16)

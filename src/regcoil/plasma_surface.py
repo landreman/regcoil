@@ -28,7 +28,7 @@ class PlasmaSurface(FourierSurface):
         cls,
         wout_filename,
         ntheta=64,
-        nzeta=64,
+        nzeta=65,
     ):
         """Build a plasma surface from a VMEC `wout` file.
 
@@ -79,7 +79,7 @@ class PlasmaSurface(FourierSurface):
         return surf
 
     @classmethod
-    def from_ascii_table(cls, filename, nfp, ntheta=64, nzeta=64):
+    def from_ascii_table(cls, filename, nfp, ntheta=64, nzeta=65):
         """Read a plain ASCII-table plasma shape (legacy geometry_option_plasma=6)."""
         data = read_ascii_table(filename)
         return cls(
@@ -88,7 +88,7 @@ class PlasmaSurface(FourierSurface):
         )
 
     @classmethod
-    def from_focus(cls, filename, ntheta=64, nzeta=64):
+    def from_focus(cls, filename, ntheta=64, nzeta=65):
         """Read a FOCUS-format plasma boundary; also sets `Bnormal_from_plasma_current`
         from the file's Bn Fourier modes, if present.
         """

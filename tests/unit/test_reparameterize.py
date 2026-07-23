@@ -209,7 +209,7 @@ def test_measure_3d_and_poloidal_agree_when_nu_is_zero():
 def test_stellarator_symmetry_gives_the_map_sine_parity():
     """`g - theta` is odd for a stellarator-symmetric surface (a consequence of
     the theta=0 anchor), so the cosine modes vanish."""
-    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=8, nzeta=8)
+    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=9, nzeta=8)
     tmap = theta_map(
         lambda th, ze: plasma._evaluate(th, ze)["r"],
         UniformArclength(), nfp=plasma.nfp, ntheta=32, nzeta=16,
@@ -259,7 +259,7 @@ def test_theta_map_is_serializable_as_fourier_modes():
 
 
 def _plasma():
-    return PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=64, nzeta=64)
+    return PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=65, nzeta=64)
 
 
 @pytest.mark.parametrize("scheme", ["uniform_arclength", "curvature"])
@@ -376,9 +376,9 @@ def test_from_uniform_offset_reparameterization_preserves_the_surface(standard_t
     """The reparameterized offset surface is the same physical surface as the
     plain one -- checked by resolving both well enough that the remaining
     difference is the Fourier truncation, not the parameterization."""
-    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=8, nzeta=8)
+    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=9, nzeta=8)
     kwargs = dict(
-        separation=0.5, ntheta=128, nzeta=128, mpol=32, ntor=32,
+        separation=0.5, ntheta=129, nzeta=128, mpol=33, ntor=32,
         standard_toroidal_angle=standard_toroidal_angle,
     )
     plain = CoilSurface.from_uniform_offset(plasma, theta_reparameterization=None, **kwargs)
@@ -394,9 +394,9 @@ def test_from_uniform_offset_reparameterization_preserves_the_surface(standard_t
 
 
 def test_from_uniform_offset_without_reparameterization_has_no_theta_map():
-    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
+    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=9)
     coil = CoilSurface.from_uniform_offset(
-        plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1,
+        plasma, separation=0.3, ntheta=10, nzeta=11, mpol=2, ntor=1,
         theta_reparameterization=None,
     )
     assert coil.theta_map is None
@@ -405,16 +405,16 @@ def test_from_uniform_offset_without_reparameterization_has_no_theta_map():
 def test_from_uniform_offset_reparameterizes_by_default():
     """`theta_reparameterization` defaults to `"uniform_arclength"`, so the
     returned surface carries the corresponding `theta_map`."""
-    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
-    coil = CoilSurface.from_uniform_offset(plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1)
+    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=9, nzeta=8)
+    coil = CoilSurface.from_uniform_offset(plasma, separation=0.3, ntheta=11, nzeta=10, mpol=2, ntor=1)
     assert coil.theta_map is not None
     assert coil.theta_map.scheme == UniformArclength()
 
 
 def test_from_uniform_offset_reparameterization_equalizes_arclength():
     """The point of the feature, on the construction it exists for."""
-    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=8, nzeta=8)
-    kwargs = dict(separation=0.5, ntheta=64, nzeta=64, mpol=24, ntor=24)
+    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=8, nzeta=9)
+    kwargs = dict(separation=0.5, ntheta=64, nzeta=65, mpol=24, ntor=25)
     plain = CoilSurface.from_uniform_offset(plasma, theta_reparameterization=None, **kwargs)
     mapped = CoilSurface.from_uniform_offset(
         plasma, theta_reparameterization="uniform_arclength", **kwargs
@@ -430,9 +430,9 @@ def test_from_uniform_offset_reparameterization_equalizes_arclength():
 
 
 def test_from_uniform_offset_reparameterization_preserves_stellarator_symmetry():
-    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=8, nzeta=8)
+    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=9, nzeta=8)
     coil = CoilSurface.from_uniform_offset(
-        plasma, separation=0.5, ntheta=32, nzeta=32, mpol=12, ntor=12,
+        plasma, separation=0.5, ntheta=33, nzeta=32, mpol=13, ntor=12,
         theta_reparameterization="uniform_arclength",
     )
     assert coil.stellarator_symmetric
@@ -442,9 +442,9 @@ def test_from_uniform_offset_reparameterization_preserves_stellarator_symmetry()
 
 
 def test_from_uniform_offset_accepts_scheme_instances():
-    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
+    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=9)
     coil = CoilSurface.from_uniform_offset(
-        plasma, separation=0.3, ntheta=16, nzeta=16, mpol=4, ntor=2,
+        plasma, separation=0.3, ntheta=16, nzeta=17, mpol=4, ntor=2,
         theta_reparameterization=CurvatureWeighted(exponent=0.5, floor=0.1, refinement=4),
     )
     assert coil.theta_map.scheme == CurvatureWeighted(exponent=0.5, floor=0.1, refinement=4)

@@ -18,7 +18,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 EQUILIBRIA = REPO_ROOT / "equilibria"
 
 
-def _small_problem(ntheta=8, nzeta=8, mpol=3, ntor=2, nfp=3, standard_toroidal_angle=True):
+def _small_problem(ntheta=9, nzeta=8, mpol=3, ntor=2, nfp=3, standard_toroidal_angle=True):
     plasma = PlasmaSurface.circular_torus(R0=6.0, a=2.0, nfp=nfp, ntheta=ntheta, nzeta=nzeta)
     plasma.net_poloidal_current = 1.0e6
     plasma.curpol = 1.7
@@ -142,9 +142,9 @@ def test_round_trip_needs_no_kernel_no_eigh(tmp_path, monkeypatch):
 def test_non_standard_toroidal_angle_coil_round_trips(tmp_path):
     """A CoilSurface with nonzero nu (toroidal-angle-shift) modes round-trips
     only because they are part of the stored source of truth (ADR-026)."""
-    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_li383_1.4m.nc"), ntheta=8, nzeta=8)
+    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_li383_1.4m.nc"), ntheta=8, nzeta=9)
     coil = CoilSurface.from_uniform_offset(
-        plasma, separation=0.3, ntheta=8, nzeta=8, mpol=4, ntor=3, standard_toroidal_angle=False
+        plasma, separation=0.3, ntheta=10, nzeta=11, mpol=4, ntor=3, standard_toroidal_angle=False
     )
     assert np.any(coil.numns != 0)
 

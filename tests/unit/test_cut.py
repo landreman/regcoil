@@ -20,13 +20,13 @@ EQUILIBRIA = REPO_ROOT / "equilibria"
 def _realistic_solution(coils_per_half_period=3, **solve_kwargs):
     """A non-axisymmetric plasma (so the coils are non-trivial), resolved
     enough that contours don't cross theta=0."""
-    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=32, nzeta=32)
+    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=34, nzeta=32)
     plasma.set_bnormal_from_bnorm_file(str(EQUILIBRIA / "bnorm.d23p4_tm"))
     coil = CoilSurface.from_uniform_offset(
-        plasma, separation=0.3, ntheta=32, nzeta=32, mpol=8, ntor=8,
+        plasma, separation=0.3, ntheta=34, nzeta=32, mpol=9, ntor=8,
         standard_toroidal_angle=True,
     )
-    prob = Regcoil(plasma, coil, mpol_potential=8, ntor_potential=8)
+    prob = Regcoil(plasma, coil, mpol_potential=9, ntor_potential=8)
     return prob.solve(**solve_kwargs) if solve_kwargs else prob.solve(1e-13)
 
 

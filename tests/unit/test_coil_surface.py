@@ -34,7 +34,7 @@ def test_from_nescin_matches_legacy():
 
 
 def test_filter_modes_zeroes_high_harmonics():
-    coil = CoilSurface.from_nescin(str(NESCIN_FILE), nfp=5, ntheta=8, nzeta=8)
+    coil = CoilSurface.from_nescin(str(NESCIN_FILE), nfp=5, ntheta=9, nzeta=8)
     assert np.any(np.abs(coil.xm) > 2) or np.any(np.abs(coil.xn) > 2 * coil.nfp)
 
     coil.filter_modes(mpol_filter=2, ntor_filter=2)
@@ -46,8 +46,8 @@ def test_filter_modes_zeroes_high_harmonics():
 
 
 def test_from_nescin_filter_at_construction():
-    filtered = CoilSurface.from_nescin(str(NESCIN_FILE), nfp=5, ntheta=8, nzeta=8, mpol_filter=2, ntor_filter=2)
-    unfiltered = CoilSurface.from_nescin(str(NESCIN_FILE), nfp=5, ntheta=8, nzeta=8)
+    filtered = CoilSurface.from_nescin(str(NESCIN_FILE), nfp=5, ntheta=9, nzeta=8, mpol_filter=2, ntor_filter=2)
+    unfiltered = CoilSurface.from_nescin(str(NESCIN_FILE), nfp=5, ntheta=9, nzeta=8)
     assert not np.allclose(filtered.rmnc, unfiltered.rmnc)
 
 
@@ -59,9 +59,9 @@ def test_from_uniform_offset_circular_torus_is_exact(standard_toroidal_angle):
     default normal-offset method and the standard-toroidal-angle root solve
     agree exactly (see test_kernels.py for the golden-legacy-Fortran and
     non-circular-plasma coverage)."""
-    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
+    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=9)
     coil = CoilSurface.from_uniform_offset(
-        plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1,
+        plasma, separation=0.3, ntheta=10, nzeta=11, mpol=2, ntor=1,
         standard_toroidal_angle=standard_toroidal_angle,
     )
 
@@ -86,9 +86,9 @@ def test_from_uniform_offset_standard_angle_converges_for_a_compact_plasma():
     `atan2(y, x)` on the coil grid reproduces `zetal` to the root-solve
     tolerance.
     """
-    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_li383_1.4m.nc"), ntheta=8, nzeta=8)
+    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_li383_1.4m.nc"), ntheta=9, nzeta=8)
     coil = CoilSurface.from_uniform_offset(
-        plasma, separation=0.4, ntheta=32, nzeta=32, mpol=16, ntor=12,
+        plasma, separation=0.4, ntheta=33, nzeta=32, mpol=16, ntor=12,
         standard_toroidal_angle=True, ntheta_transform=48, nzeta_transform=40,
     )
 
@@ -104,23 +104,23 @@ def test_from_uniform_offset_rejects_self_intersecting_offset_surface():
     non-monotone, so no `zeta` maps to some target angles. The legacy Fortran
     signalled this as `fzero`'s missing sign change (`info=3`); the numpy
     solver must raise rather than silently returning a garbage surface."""
-    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_li383_1.4m.nc"), ntheta=8, nzeta=8)
+    plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / "wout_li383_1.4m.nc"), ntheta=8, nzeta=9)
 
     with pytest.raises(ValueError, match="self-intersecting"):
         CoilSurface.from_uniform_offset(
-            plasma, separation=1.2, ntheta=16, nzeta=16, mpol=12, ntor=10,
+            plasma, separation=1.2, ntheta=16, nzeta=17, mpol=12, ntor=10,
             standard_toroidal_angle=True, ntheta_transform=32, nzeta_transform=32,
         )
 
     # The normal-offset construction needs no root solve, so it still succeeds.
     CoilSurface.from_uniform_offset(
-        plasma, separation=1.2, ntheta=16, nzeta=16, mpol=12, ntor=10,
+        plasma, separation=1.2, ntheta=16, nzeta=17, mpol=12, ntor=10,
     )
 
 
 def test_from_uniform_offset_default_is_not_standard_toroidal_angle():
-    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
-    coil = CoilSurface.from_uniform_offset(plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1)
+    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=9, nzeta=8)
+    coil = CoilSurface.from_uniform_offset(plasma, separation=0.3, ntheta=9, nzeta=8, mpol=2, ntor=1)
     assert coil.standard_toroidal_angle is False
 
 
@@ -146,7 +146,7 @@ def test_from_uniform_offset_reproduces_moved_points_nonaxisymmetric():
     has a toroidal component."""
     plasma = PlasmaSurface(
         xm=[0, 1, 1], xn=[0, 0, 3], rmnc=[5.0, 1.0, 0.15], zmns=[0.0, 1.0, 0.1],
-        nfp=3, ntheta=32, nzeta=32,
+        nfp=3, ntheta=32, nzeta=33,
     )
     sep, nt, nz = 0.4, 16, 14
     coil = CoilSurface.from_uniform_offset(
@@ -168,7 +168,7 @@ def test_from_uniform_offset_nu_has_sine_parity_for_stellarator_symmetric_plasma
     sine (`numns`) angle-shift modes; the cosine part (`numnc`) is zero."""
     plasma = PlasmaSurface(
         xm=[0, 1, 1], xn=[0, 0, 3], rmnc=[5.0, 1.0, 0.15], zmns=[0.0, 1.0, 0.1],
-        nfp=3, ntheta=32, nzeta=32,
+        nfp=3, ntheta=33, nzeta=32,
     )
     assert plasma.stellarator_symmetric
     coil = CoilSurface.from_uniform_offset(plasma, separation=0.4, ntheta=16, nzeta=14, mpol=6, ntor=5)
@@ -178,11 +178,11 @@ def test_from_uniform_offset_nu_has_sine_parity_for_stellarator_symmetric_plasma
 
 
 def test_from_uniform_offset_logs_root_solve_timing(caplog):
-    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
+    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=9)
 
     with caplog.at_level("INFO"):
         CoilSurface.from_uniform_offset(
-            plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1, standard_toroidal_angle=True
+            plasma, separation=0.3, ntheta=8, nzeta=9, mpol=2, ntor=1, standard_toroidal_angle=True
         )
 
     messages = [record.getMessage() for record in caplog.records]
@@ -193,10 +193,10 @@ def test_from_uniform_offset_logs_root_solve_timing(caplog):
 def test_from_uniform_offset_default_does_not_log_root_solve_timing(caplog):
     """The default (`standard_toroidal_angle=False`) construction needs no
     toroidal-angle root solve, so it must not emit its timing log lines."""
-    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
+    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=9, nzeta=8)
 
     with caplog.at_level("INFO"):
-        CoilSurface.from_uniform_offset(plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1)
+        CoilSurface.from_uniform_offset(plasma, separation=0.3, ntheta=9, nzeta=8, mpol=2, ntor=1)
 
     messages = [record.getMessage() for record in caplog.records]
     assert not any("uniform offset surface root solve" in message for message in messages)
