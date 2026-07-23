@@ -79,10 +79,8 @@ sharply. For finer control pass a
 instance. The resulting {class}`~regcoil.ThetaMap` is kept on the surface as
 `coil.theta_map`, and its `diagnostics` report how well the target was met.
 
-Because the current-potential basis `sin(m*theta - n*zeta)` is defined in the
-coil surface's `theta`, this changes the solution space -- a better-conditioned
-basis is the reason to do it -- so it is a physics-visible choice, not a
-cosmetic one.
+Because the current-potential basis `sin(m*theta - n*zeta)` is defined in terms of the
+coil surface's `theta`, this reparameterization changes the solution space.
 
 ## 2. Assembling the problem
 
