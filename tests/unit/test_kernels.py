@@ -188,10 +188,10 @@ def test_uniform_offset_surface_matches_legacy_golden():
     plasma = PlasmaSurface(
         xm=[0, 1, 1], xn=[0, 0, 3],  # xn already includes the nfp=3 factor
         rmnc=[5.0, 1.0, 0.15], zmns=[0.0, 1.0, 0.1],
-        nfp=3, ntheta=8, nzeta=8,
+        nfp=3, ntheta=8, nzeta=9,
     )
     coil = CoilSurface.from_uniform_offset(
-        plasma, separation=0.4, ntheta=8, nzeta=8, mpol=3, ntor=2,
+        plasma, separation=0.4, ntheta=8, nzeta=9, mpol=3, ntor=2,
         standard_toroidal_angle=True, ntheta_transform=6, nzeta_transform=5, tol=1e-10,
         theta_reparameterization=None,
     )
@@ -208,10 +208,10 @@ def test_uniform_offset_surface_circular_torus_is_exact():
     """A circular-cross-section torus offset outward by `separation` stays a
     circular-cross-section torus of minor radius a + separation -- an exact
     analytic check independent of the golden legacy values above."""
-    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
+    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=9, nzeta=8)
     coil = CoilSurface.from_uniform_offset(
-        plasma, separation=0.3, ntheta=8, nzeta=8, mpol=2, ntor=1,
-        standard_toroidal_angle=True, ntheta_transform=16, nzeta_transform=16,
+        plasma, separation=0.3, ntheta=9, nzeta=8, mpol=2, ntor=1,
+        standard_toroidal_angle=True, ntheta_transform=17, nzeta_transform=16,
     )
 
     for m, n, rc, zs in zip(coil.xm, coil.xn, coil.rmnc, coil.zmns):

@@ -17,7 +17,7 @@ class CoilSurface(FourierSurface):
     """Coil-side Fourier filtering, plus `from_uniform_offset`."""
 
     @classmethod
-    def from_nescin(cls, filename, nfp, ntheta=64, nzeta=64, mpol_filter=None, ntor_filter=None):
+    def from_nescin(cls, filename, nfp, ntheta=66, nzeta=67, mpol_filter=None, ntor_filter=None):
         """Read a nescin-format coil surface. `nfp` must match the plasma
         surface's `nfp` (a nescin file does not encode it).
         """
@@ -32,7 +32,7 @@ class CoilSurface(FourierSurface):
 
     @classmethod
     def from_uniform_offset(
-        cls, plasma, separation, ntheta=64, nzeta=64, mpol=24, ntor=24,
+        cls, plasma, separation, ntheta=66, nzeta=67, mpol=24, ntor=25,
         standard_toroidal_angle=False,
         ntheta_transform=None, nzeta_transform=None, tol=1e-10,
         theta_reparameterization="uniform_arclength",

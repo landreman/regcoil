@@ -14,7 +14,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 EQUILIBRIA = REPO_ROOT / "equilibria"
 
 
-def _small_problem(ntheta=8, nzeta=8, mpol=3, ntor=2, R0=6.0, a_plasma=2.0, a_coil=3.0, nfp=3):
+def _small_problem(ntheta=9, nzeta=8, mpol=3, ntor=2, R0=6.0, a_plasma=2.0, a_coil=3.0, nfp=3):
     plasma = PlasmaSurface.circular_torus(R0=R0, a=a_plasma, nfp=nfp, ntheta=ntheta, nzeta=nzeta)
     plasma.net_poloidal_current = 1.0e6
     plasma.modB = np.ones((ntheta, nzeta))
@@ -52,10 +52,10 @@ def test_axisymmetric_solution_vanishes():
     This is a resolution-independent sanity check for the Fourier basis and
     matrix assembly.
     """
-    plasma = PlasmaSurface.circular_torus(R0=6.0, a=2.0, nfp=3, ntheta=32, nzeta=32)
+    plasma = PlasmaSurface.circular_torus(R0=6.0, a=2.0, nfp=3, ntheta=50, nzeta=48)
     plasma.net_poloidal_current = 1.0e6
-    plasma.modB = np.ones((32, 32))
-    coil = CoilSurface.circular_torus(R0=6.5, a=4.0, nfp=3, ntheta=32, nzeta=32)
+    plasma.modB = np.ones((50, 48))
+    coil = CoilSurface.circular_torus(R0=6.5, a=4.0, nfp=3, ntheta=54, nzeta=52)
     lambdas = np.geomspace(1e-15, 1e100, num=3)
 
     for stellarator_symmetric, expected_nbf in ((True, 97), (False, 194)):
@@ -88,10 +88,10 @@ def test_bnormal_over_B_diagnostics():
     """`max_Bnormal_over_B` / `avg_Bnormal_over_B` are max and area-mean of
     |B_n / |B|| on the plasma surface."""
     plasma = PlasmaSurface.from_wout(
-        str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=16, nzeta=16,
+        str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=17, nzeta=16,
     )
     coil = CoilSurface.from_uniform_offset(
-        plasma, separation=0.5, ntheta=16, nzeta=16, standard_toroidal_angle=True,
+        plasma, separation=0.5, ntheta=19, nzeta=18, standard_toroidal_angle=True,
     )
     prob = Regcoil(plasma, coil, mpol_potential=4, ntor_potential=4)
     sol = prob.solve(1e-3)
@@ -120,7 +120,7 @@ def test_two_problems_different_resolutions_do_not_interfere():
     """No shared state: interleaved solves on differently-sized problems
     must not corrupt each other (mirrors tests/unit/test_kernels.py's
     stateless-kernel check, one layer up)."""
-    prob_a = _small_problem(ntheta=8, nzeta=8, mpol=3, ntor=2)
+    prob_a = _small_problem(ntheta=8, nzeta=9, mpol=3, ntor=2)
     prob_b = _small_problem(ntheta=12, nzeta=10, mpol=5, ntor=4, R0=4.0, a_plasma=1.0, a_coil=1.8, nfp=2)
 
     sol_a1 = prob_a.solve(1e-3)
@@ -133,7 +133,7 @@ def test_two_problems_different_resolutions_do_not_interfere():
 
 
 def test_solve_for_target_matches_direct_solve_at_the_target():
-    prob = _small_problem(ntheta=12, nzeta=12, mpol=4, ntor=3)
+    prob = _small_problem(ntheta=13, nzeta=12, mpol=4, ntor=3)
     lo = prob.solve(0.0).f_B
     hi = prob.solve(np.inf).f_B
     target = 0.5 * (lo + hi)
@@ -151,11 +151,11 @@ def test_solve_for_target_raises_outside_achievable_range():
 def test_solve_for_target_rejects_unachievable_max_K_targets():
     plasma = PlasmaSurface.from_wout(
         str(EQUILIBRIA / "wout_d23p4_tm.nc"),
-        ntheta=64,
+        ntheta=65,
         nzeta=64,
     )
     coil = CoilSurface.from_uniform_offset(
-        plasma, separation=0.5, ntheta=64, nzeta=64, standard_toroidal_angle=True
+        plasma, separation=0.5, ntheta=67, nzeta=66, standard_toroidal_angle=True
     )
     prob = Regcoil(
         plasma, coil, mpol_potential=12, ntor_potential=12,
@@ -178,9 +178,9 @@ def test_current_potential_and_current_density_shapes():
 
 
 def test_regcoil_rejects_mismatched_nfp():
-    plasma = PlasmaSurface.circular_torus(R0=6.0, a=2.0, nfp=3, ntheta=8, nzeta=8)
+    plasma = PlasmaSurface.circular_torus(R0=6.0, a=2.0, nfp=3, ntheta=9, nzeta=8)
     plasma.net_poloidal_current = 1.0e6
-    coil = CoilSurface.circular_torus(R0=6.0, a=3.0, nfp=4, ntheta=8, nzeta=8)
+    coil = CoilSurface.circular_torus(R0=6.0, a=3.0, nfp=4, ntheta=11, nzeta=10)
     with pytest.raises(ValueError, match="nfp"):
         Regcoil(
             plasma, coil, mpol_potential=3, ntor_potential=2,
@@ -189,9 +189,9 @@ def test_regcoil_rejects_mismatched_nfp():
 
 
 def test_regcoil_defaults_net_poloidal_current_from_plasma():
-    plasma = PlasmaSurface.circular_torus(R0=6.0, a=2.0, nfp=3, ntheta=8, nzeta=8)
+    plasma = PlasmaSurface.circular_torus(R0=6.0, a=2.0, nfp=3, ntheta=8, nzeta=9)
     plasma.net_poloidal_current = 2.5e6
-    coil = CoilSurface.circular_torus(R0=6.0, a=3.0, nfp=3, ntheta=8, nzeta=8)
+    coil = CoilSurface.circular_torus(R0=6.0, a=3.0, nfp=3, ntheta=10, nzeta=11)
 
     prob = Regcoil(
         plasma, coil, mpol_potential=3, ntor_potential=2,

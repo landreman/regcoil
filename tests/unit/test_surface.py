@@ -16,7 +16,7 @@ def test_evaluate_hand_checked_case():
     rmns = [0.0, 0.5]
     zmnc = [0.0, 0.2]
     zmns = [0.0, 0.3]
-    surf = FourierSurface(xm, xn, rmnc, zmns, rmns, zmnc, nfp=2, ntheta=1, nzeta=1)
+    surf = FourierSurface(xm, xn, rmnc, zmns, rmns, zmnc, nfp=2, ntheta=2, nzeta=1)
 
     theta = np.array([0.0, np.pi / 2])
     zetal = np.array([0.0, np.pi / 2])
@@ -152,7 +152,7 @@ def test_cross_section_circular_torus_matches_analytic(nfp=3, R0=5.0, a=1.2):
 
 
 def test_cross_section_default_phi_is_half_field_period():
-    torus = FourierSurface.circular_torus(R0=5.0, a=1.0, nfp=4, ntheta=8, nzeta=8)
+    torus = FourierSurface.circular_torus(R0=5.0, a=1.0, nfp=4, ntheta=9, nzeta=8)
     R, Z = torus.cross_section()
     assert R.shape == (4, torus.ntheta)
 
@@ -165,10 +165,10 @@ def test_cross_section_nonstandard_toroidal_angle_matches_atan2():
     from regcoil import CoilSurface, PlasmaSurface
 
     plasma = PlasmaSurface.from_wout(
-        "equilibria/wout_li383_1.4m.nc", ntheta=12, nzeta=12,
+        "equilibria/wout_li383_1.4m.nc", ntheta=13, nzeta=12,
     )
     coil = CoilSurface.from_uniform_offset(
-        plasma, separation=0.3, ntheta=12, nzeta=12, mpol=6, ntor=5,
+        plasma, separation=0.3, ntheta=13, nzeta=12, mpol=6, ntor=5,
         standard_toroidal_angle=False,
     )
     assert coil.standard_toroidal_angle is False
@@ -191,7 +191,7 @@ def test_cross_section_nonstandard_toroidal_angle_matches_atan2():
 def test_evaluate_at_matches_grid_evaluate():
     """`FourierSurface.evaluate_at` (arbitrary paired points) must agree with
     `_evaluate` (tensor-product grid) at the same points."""
-    surf = FourierSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
+    surf = FourierSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=9)
     theta_grid = surf.theta
     zeta_grid = surf.zeta
     tt, zz = np.meshgrid(theta_grid, zeta_grid, indexing="ij")
@@ -215,9 +215,9 @@ def test_evaluate_at_derivatives_match_finite_differences_nonstandard_angle():
     toroidal angle), where the derivative formulas have extra terms."""
     from regcoil import CoilSurface, PlasmaSurface
 
-    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=8, nzeta=8)
+    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=9, nzeta=8)
     coil = CoilSurface.from_uniform_offset(
-        plasma, separation=0.3, ntheta=8, nzeta=8, mpol=5, ntor=4,
+        plasma, separation=0.3, ntheta=9, nzeta=8, mpol=5, ntor=4,
         standard_toroidal_angle=False,
     )
     theta = np.array([0.3, 1.2, 2.5, 4.0])

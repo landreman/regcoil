@@ -69,7 +69,7 @@ print(f"coil area={coil.area:.3g} m^2")
 
 ## Solving
 
-A {class}`~regcoil.Regcoil` problem assembles the inductance matrices and
+A {class}`~regcoil.Regcoil` problem assembles the system matrices and
 their eigendecomposition once; solving for a particular regularization
 parameter λ, or scanning over many λ values, is then cheap:
 

@@ -21,7 +21,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 EQUILIBRIA = REPO_ROOT / "equilibria"
 
 
-def _small_problem(ntheta=8, nzeta=8, mpol=3, ntor=2, nfp=3):
+def _small_problem(ntheta=8, nzeta=9, mpol=3, ntor=2, nfp=3):
     plasma = PlasmaSurface.circular_torus(R0=6.0, a=2.0, nfp=nfp, ntheta=ntheta, nzeta=nzeta)
     plasma.net_poloidal_current = 1.0e6
     plasma.Bnormal_from_plasma_current = np.random.RandomState(0).randn(ntheta, nzeta) * 1e-3

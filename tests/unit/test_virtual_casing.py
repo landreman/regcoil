@@ -77,7 +77,7 @@ def li383_vcasing(path, nphi, ntheta, use_stellsym, nfp=3):
     """Write a vcasing file holding the bundled li383 BNORM data, sampled on
     simsopt's target grid. Returns the file path.
     """
-    curpol = PlasmaSurface.from_wout(str(WOUT_LI383), ntheta=4, nzeta=4).curpol
+    curpol = PlasmaSurface.from_wout(str(WOUT_LI383), ntheta=4, nzeta=5).curpol
     phi = simsopt_phi_grid(nphi, nfp, use_stellsym)
     theta = np.linspace(0.0, 1.0, ntheta, endpoint=False)
     B = bnorm_series(
@@ -141,7 +141,7 @@ def test_accepts_virtual_casing_object(tmp_path):
     nfp = 3
     phi = simsopt_phi_grid(NPHI, nfp, use_stellsym=True)
     theta = np.linspace(0.0, 1.0, NTHETA, endpoint=False)
-    curpol = PlasmaSurface.from_wout(str(WOUT_LI383), ntheta=4, nzeta=4).curpol
+    curpol = PlasmaSurface.from_wout(str(WOUT_LI383), ntheta=5, nzeta=4).curpol
 
     vc = FakeVirtualCasing()
     vc.nfp = np.array(nfp)
@@ -196,13 +196,13 @@ def test_nfp_mismatch_raises(tmp_path):
         np.zeros((8, 8)),
     )
 
-    plasma = PlasmaSurface.from_wout(str(WOUT_LI383), ntheta=8, nzeta=8)
+    plasma = PlasmaSurface.from_wout(str(WOUT_LI383), ntheta=9, nzeta=8)
     with pytest.raises(ValueError, match="nfp"):
         plasma.set_bnormal_from_virtual_casing(str(path))
 
 
 def test_bad_source_type_raises():
-    plasma = PlasmaSurface.from_wout(str(WOUT_LI383), ntheta=4, nzeta=4)
+    plasma = PlasmaSurface.from_wout(str(WOUT_LI383), ntheta=5, nzeta=4)
     with pytest.raises(TypeError, match="B_external_normal"):
         plasma.set_bnormal_from_virtual_casing(object())
 
@@ -221,6 +221,10 @@ def test_matches_bnorm_file_for_bundled_examples(name):
     """
     ds = examples(name)
 
+    # nzeta is deliberately kept equal to ntheta (32) here: the bundled
+    # vcasing*.nc files were generated on a native 32-point toroidal grid, so
+    # any other nzeta forces real interpolation error onto the comparison,
+    # which is tuned tight enough (atol=0.19*rms) that it then fails.
     reference = PlasmaSurface.from_wout(str(ds.wout), ntheta=32, nzeta=32)
     reference.set_bnormal_from_bnorm_file(str(ds.bnorm))
 
