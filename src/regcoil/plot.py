@@ -331,6 +331,10 @@ def _add_coils_trace(fig, coils):
         )
     if coils.thickness is not None:
         for corners in coils.ribbons():
+            # Repeat the first corner curve so the 4 corners generate all 4
+            # side faces of the ribbon rather than only 3 (as in the legacy
+            # m20160811_01_plotCoilsFromRegcoil.m surf() call).
+            corners = np.concatenate([corners, corners[:1]], axis=0)
             X, Y, Z = corners[:, 0, :], corners[:, 1, :], corners[:, 2, :]
             fig.add_trace(
                 go.Surface(
