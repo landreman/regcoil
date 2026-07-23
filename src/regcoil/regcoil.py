@@ -420,6 +420,12 @@ class Regcoil:
             self.nfp * self._dtheta_plasma * self._dzeta_plasma
             * np.sum(Bnormal_total_flat * Bnormal_total_flat * self._norm_normal_plasma_flat)
         )
+        abs_Bnormal_over_B = np.abs(Bnormal_total / self.plasma.modB)
+        max_Bnormal_over_B = float(np.max(abs_Bnormal_over_B))
+        avg_Bnormal_over_B = float(
+            np.sum(abs_Bnormal_over_B * self.plasma.norm_normal)
+            / np.sum(self.plasma.norm_normal)
+        )
 
         K_diff = self._d_xyz - np.einsum("mcg,m->cg", self._f_all, solution)  # (3, ncoil_grid)
         K2_times_N = np.sum(K_diff * K_diff, axis=0) / self._norm_normal_coil_flat
@@ -441,6 +447,8 @@ class Regcoil:
             max_K=max_K,
             rms_K=rms_K,
             max_Bnormal=max_Bnormal,
+            max_Bnormal_over_B=max_Bnormal_over_B,
+            avg_Bnormal_over_B=avg_Bnormal_over_B,
             Bnormal_total=Bnormal_total,
         )
 
@@ -481,6 +489,8 @@ class Solution:
     max_K: float
     rms_K: float
     max_Bnormal: float
+    max_Bnormal_over_B: float
+    avg_Bnormal_over_B: float
     Bnormal_total: np.ndarray
     _current_potential: np.ndarray | None = field(default=None, repr=False)
     _current_density: np.ndarray | None = field(default=None, repr=False)
@@ -550,8 +560,9 @@ class Solution:
 class SolutionScan(Sequence):
     """A lambda scan: a `Sequence[Solution]` that iterates/indexes as
     ordinary `Solution` objects, plus columnar `.lam`/`.f_B`/`.f_K`/`.max_K`/
-    `.rms_K`/`.max_Bnormal` array accessors for direct Pareto/scan plotting.
-    Returned by `Regcoil.scan()` and `regcoil.load(...).solutions`.
+    `.rms_K`/`.max_Bnormal`/`.max_Bnormal_over_B`/`.avg_Bnormal_over_B` array
+    accessors for direct Pareto/scan plotting. Returned by `Regcoil.scan()`
+    and `regcoil.load(...).solutions`.
     """
 
     def __init__(self, solutions):
@@ -594,6 +605,14 @@ class SolutionScan(Sequence):
     @property
     def max_Bnormal(self):
         return self._column("max_Bnormal")
+
+    @property
+    def max_Bnormal_over_B(self):
+        return self._column("max_Bnormal_over_B")
+
+    @property
+    def avg_Bnormal_over_B(self):
+        return self._column("avg_Bnormal_over_B")
 
     def plot_pareto(self, x="f_K", y="f_B", ax=None):
         """Convenience delegate for `regcoil.plot.pareto`."""

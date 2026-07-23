@@ -20,6 +20,7 @@ class PlasmaSurface(FourierSurface):
         self.net_poloidal_current = net_poloidal_current
         self.curpol = curpol
         self.Bnormal_from_plasma_current = np.zeros((self.ntheta, self.nzeta))
+        self.modB = np.zeros((self.ntheta, self.nzeta))
 
     @classmethod
     def from_wout(
@@ -39,10 +40,13 @@ class PlasmaSurface(FourierSurface):
 
         rmnc = data["rmnc"][-1]
         zmns = data["zmns"][-1]
-        rmns = zmnc = None
+        # Extrapolate from half grid to boundary
+        bmnc = 1.5 * data["bmnc"][-1] - 0.5 * data["bmnc"][-2]
+        rmns = zmnc = bmns = None
         if lasym:
             rmns = data["rmns"][-1]
             zmnc = data["zmnc"][-1]
+            bmns = 1.5 * data["bmns"][-1] - 0.5 * data["bmns"][-2]
 
         surf = cls(
             data["xm"], data["xn"], rmnc, zmns, rmns, zmnc,
@@ -59,6 +63,18 @@ class PlasmaSurface(FourierSurface):
         surf.curpol = (2 * np.pi / nfp) * (
             1.5 * data["bsubvmnc"][-1, 0] - 0.5 * data["bsubvmnc"][-2, 0]
         )
+        # |B| on the boundary: same cosine/sine Fourier series as R, using the
+        # (possibly denser) Nyquist mode set that VMEC stores bmnc/bmns on.
+        if bmns is None:
+            bmns = np.zeros_like(bmnc)
+        angle = (
+            data["xm_nyq"][:, None, None] * surf.theta[None, :, None]
+            - data["xn_nyq"][:, None, None] * surf.zeta[None, None, :]
+        )
+        surf.modB = (
+            bmnc[:, None, None] * np.cos(angle) + bmns[:, None, None] * np.sin(angle)
+        ).sum(axis=0)
+
         return surf
 
     @classmethod

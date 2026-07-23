@@ -31,6 +31,7 @@ pip-install from the local repository:
 ```bash
 git clone https://github.com/landreman/regcoil.git
 cd regcoil
+pip install "meson-python>=0.16.0"
 pip install .[dev]
 ```
 

@@ -61,6 +61,10 @@ def _write_plasma(root, plasma):
         "Bnormal_from_plasma_current", ("ntheta_plasma", "nzeta_plasma"),
         data=plasma.Bnormal_from_plasma_current,
     )
+    group.create_variable(
+        "modB", ("ntheta_plasma", "nzeta_plasma"),
+        data=plasma.modB,
+    )
 
 
 def _read_plasma(root):
@@ -78,6 +82,7 @@ def _read_plasma(root):
     plasma.net_poloidal_current = float(group.attrs["net_poloidal_current"])
     plasma.curpol = float(group.attrs["curpol"])
     plasma.Bnormal_from_plasma_current = np.asarray(group.variables["Bnormal_from_plasma_current"][:])
+    plasma.modB = np.asarray(group.variables["modB"][:])
     return plasma
 
 
@@ -161,6 +166,8 @@ def _write_solutions(root, solutions):
     max_K = np.array([sol.max_K for sol in solutions])
     rms_K = np.array([sol.rms_K for sol in solutions])
     max_Bnormal = np.array([sol.max_Bnormal for sol in solutions])
+    max_Bnormal_over_B = np.array([sol.max_Bnormal_over_B for sol in solutions])
+    avg_Bnormal_over_B = np.array([sol.avg_Bnormal_over_B for sol in solutions])
     Bnormal_total = np.stack([sol.Bnormal_total for sol in solutions])
     current_potential = np.stack([sol.current_potential() for sol in solutions])
     current_density = np.stack([sol.current_density() for sol in solutions])
@@ -172,6 +179,8 @@ def _write_solutions(root, solutions):
     group.create_variable("max_K", ("lambda",), data=max_K)
     group.create_variable("rms_K", ("lambda",), data=rms_K)
     group.create_variable("max_Bnormal", ("lambda",), data=max_Bnormal)
+    group.create_variable("max_Bnormal_over_B", ("lambda",), data=max_Bnormal_over_B)
+    group.create_variable("avg_Bnormal_over_B", ("lambda",), data=avg_Bnormal_over_B)
     group.create_variable(
         "Bnormal_total", ("lambda", "ntheta_plasma", "nzeta_plasma"), data=Bnormal_total
     )
@@ -194,6 +203,8 @@ def _read_solutions(root, problem):
     max_K = np.asarray(group.variables["max_K"][:])
     rms_K = np.asarray(group.variables["rms_K"][:])
     max_Bnormal = np.asarray(group.variables["max_Bnormal"][:])
+    max_Bnormal_over_B = np.asarray(group.variables["max_Bnormal_over_B"][:])
+    avg_Bnormal_over_B = np.asarray(group.variables["avg_Bnormal_over_B"][:])
     Bnormal_total = np.asarray(group.variables["Bnormal_total"][:])
     current_potential = np.asarray(group.variables["current_potential"][:])
     current_density = np.asarray(group.variables["current_density"][:])
@@ -208,6 +219,8 @@ def _read_solutions(root, problem):
             max_K=float(max_K[i]),
             rms_K=float(rms_K[i]),
             max_Bnormal=float(max_Bnormal[i]),
+            max_Bnormal_over_B=float(max_Bnormal_over_B[i]),
+            avg_Bnormal_over_B=float(avg_Bnormal_over_B[i]),
             Bnormal_total=Bnormal_total[i],
             _current_potential=current_potential[i],
             _current_density=current_density[i],

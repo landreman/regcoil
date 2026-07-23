@@ -25,6 +25,7 @@ def _small_problem(ntheta=8, nzeta=8, mpol=3, ntor=2, nfp=3):
     plasma = PlasmaSurface.circular_torus(R0=6.0, a=2.0, nfp=nfp, ntheta=ntheta, nzeta=nzeta)
     plasma.net_poloidal_current = 1.0e6
     plasma.Bnormal_from_plasma_current = np.random.RandomState(0).randn(ntheta, nzeta) * 1e-3
+    plasma.modB = np.ones((ntheta, nzeta))
     coil = CoilSurface.circular_torus(R0=6.0, a=3.0, nfp=nfp, ntheta=ntheta, nzeta=nzeta)
     prob = Regcoil(plasma, coil, mpol_potential=mpol, ntor_potential=ntor)
     return plasma, coil, prob

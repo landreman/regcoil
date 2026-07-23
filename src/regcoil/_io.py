@@ -48,10 +48,18 @@ def read_vmec_wout(filename):
 
     xm = get("xm").astype(np.int64)
     xn = get("xn").astype(np.int64)
+    # |B| and other Nyquist quantities may use a denser mode set than R/Z.
+    if "xm_nyq" in variables:
+        xm_nyq = get("xm_nyq").astype(np.int64)
+        xn_nyq = get("xn_nyq").astype(np.int64)
+    else:
+        xm_nyq, xn_nyq = xm, xn
     rmnc = get("rmnc")
     zmns = get("zmns")
     rmns = get("rmns") if lasym and "rmns" in variables else None
     zmnc = get("zmnc") if lasym and "zmnc" in variables else None
+    bmnc = get("bmnc")
+    bmns = get("bmns") if lasym and "bmns" in variables else None
     bvco = get("bvco")
     bsubvmnc = get("bsubvmnc")
     lmns = get("lmns") if "lmns" in variables else None
@@ -59,7 +67,8 @@ def read_vmec_wout(filename):
     ntor = int(get("ntor"))
 
     return dict(
-        nfp=nfp, lasym=lasym, xm=xm, xn=xn, rmnc=rmnc, zmns=zmns, rmns=rmns, zmnc=zmnc,
+        nfp=nfp, lasym=lasym, xm=xm, xn=xn, xm_nyq=xm_nyq, xn_nyq=xn_nyq,
+        rmnc=rmnc, zmns=zmns, rmns=rmns, zmnc=zmnc, bmnc=bmnc, bmns=bmns,
         bvco=bvco, bsubvmnc=bsubvmnc, lmns=lmns, mpol=mpol, ntor=ntor,
     )
 
