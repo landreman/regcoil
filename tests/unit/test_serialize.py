@@ -23,6 +23,7 @@ def _small_problem(ntheta=8, nzeta=8, mpol=3, ntor=2, nfp=3, standard_toroidal_a
     plasma.net_poloidal_current = 1.0e6
     plasma.curpol = 1.7
     plasma.Bnormal_from_plasma_current = np.random.RandomState(0).randn(ntheta, nzeta) * 1e-3
+    plasma.modB = np.ones((ntheta, nzeta))
     if standard_toroidal_angle:
         coil = CoilSurface.circular_torus(R0=6.0, a=3.0, nfp=nfp, ntheta=ntheta, nzeta=nzeta)
     else:
@@ -76,6 +77,7 @@ def test_round_trip_all_four_object_kinds(tmp_path):
     np.testing.assert_allclose(
         data.plasma.Bnormal_from_plasma_current, plasma.Bnormal_from_plasma_current
     )
+    np.testing.assert_allclose(data.plasma.modB, plasma.modB)
 
     # Problem: scalar params + the one stored operator-derived grid.
     assert data.problem.mpol_potential == prob.mpol_potential
@@ -97,6 +99,8 @@ def test_round_trip_all_four_object_kinds(tmp_path):
         np.testing.assert_allclose(loaded.max_K, live.max_K)
         np.testing.assert_allclose(loaded.rms_K, live.rms_K)
         np.testing.assert_allclose(loaded.max_Bnormal, live.max_Bnormal)
+        np.testing.assert_allclose(loaded.max_Bnormal_over_B, live.max_Bnormal_over_B)
+        np.testing.assert_allclose(loaded.avg_Bnormal_over_B, live.avg_Bnormal_over_B)
         np.testing.assert_allclose(loaded.Bnormal_total, live.Bnormal_total)
         np.testing.assert_allclose(loaded.current_potential(), live.current_potential())
         np.testing.assert_allclose(loaded.current_density(), live.current_density())
@@ -107,6 +111,8 @@ def test_round_trip_all_four_object_kinds(tmp_path):
     np.testing.assert_allclose(data.solutions.max_K, scan.max_K)
     np.testing.assert_allclose(data.solutions.rms_K, scan.rms_K)
     np.testing.assert_allclose(data.solutions.max_Bnormal, scan.max_Bnormal)
+    np.testing.assert_allclose(data.solutions.max_Bnormal_over_B, scan.max_Bnormal_over_B)
+    np.testing.assert_allclose(data.solutions.avg_Bnormal_over_B, scan.avg_Bnormal_over_B)
 
 
 def test_round_trip_needs_no_kernel_no_eigh(tmp_path, monkeypatch):
@@ -130,6 +136,7 @@ def test_round_trip_needs_no_kernel_no_eigh(tmp_path, monkeypatch):
         _ = sol.current_potential()
         _ = sol.current_density()
     _ = data.solutions.f_B, data.solutions.f_K, data.solutions.max_K, data.solutions.max_Bnormal
+    _ = data.solutions.max_Bnormal_over_B, data.solutions.avg_Bnormal_over_B
 
 
 def test_non_standard_toroidal_angle_coil_round_trips(tmp_path):

@@ -17,6 +17,7 @@ EQUILIBRIA = REPO_ROOT / "equilibria"
 def _small_problem(ntheta=8, nzeta=8, mpol=3, ntor=2, R0=6.0, a_plasma=2.0, a_coil=3.0, nfp=3):
     plasma = PlasmaSurface.circular_torus(R0=R0, a=a_plasma, nfp=nfp, ntheta=ntheta, nzeta=nzeta)
     plasma.net_poloidal_current = 1.0e6
+    plasma.modB = np.ones((ntheta, nzeta))
     coil = CoilSurface.circular_torus(R0=R0, a=a_coil, nfp=nfp, ntheta=ntheta, nzeta=nzeta)
     return Regcoil(
         plasma, coil, mpol_potential=mpol, ntor_potential=ntor,
@@ -53,6 +54,7 @@ def test_axisymmetric_solution_vanishes():
     """
     plasma = PlasmaSurface.circular_torus(R0=6.0, a=2.0, nfp=3, ntheta=32, nzeta=32)
     plasma.net_poloidal_current = 1.0e6
+    plasma.modB = np.ones((32, 32))
     coil = CoilSurface.circular_torus(R0=6.5, a=4.0, nfp=3, ntheta=32, nzeta=32)
     lambdas = np.geomspace(1e-15, 1e100, num=3)
 
@@ -80,6 +82,27 @@ def test_scan_matches_per_lambda_direct_solves():
         assert sol.f_B == pytest.approx(direct.f_B, rel=1e-10)
         assert sol.f_K == pytest.approx(direct.f_K, rel=1e-10)
         assert sol.max_K == pytest.approx(direct.max_K, rel=1e-10)
+
+
+def test_bnormal_over_B_diagnostics():
+    """`max_Bnormal_over_B` / `avg_Bnormal_over_B` are max and area-mean of
+    |B_n / |B|| on the plasma surface."""
+    plasma = PlasmaSurface.from_wout(
+        str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=16, nzeta=16,
+    )
+    coil = CoilSurface.from_uniform_offset(
+        plasma, separation=0.5, ntheta=16, nzeta=16, standard_toroidal_angle=True,
+    )
+    prob = Regcoil(plasma, coil, mpol_potential=4, ntor_potential=4)
+    sol = prob.solve(1e-3)
+
+    ratio = np.abs(sol.Bnormal_total / plasma.modB)
+    assert sol.max_Bnormal_over_B == pytest.approx(float(np.max(ratio)), rel=1e-14)
+    expected_avg = float(
+        np.sum(ratio * plasma.norm_normal) / np.sum(plasma.norm_normal)
+    )
+    assert sol.avg_Bnormal_over_B == pytest.approx(expected_avg, rel=1e-14)
+    assert sol.max_Bnormal_over_B >= sol.avg_Bnormal_over_B >= 0.0
 
 
 def test_regcoil_constructor_logs_expensive_steps(caplog):

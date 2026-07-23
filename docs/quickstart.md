@@ -81,6 +81,10 @@ solution = problem.solve(lam=1e-14)
 print(f"f_B = {solution.f_B:.3e}")
 print(f"f_K = {solution.f_K:.3e}")
 print(f"max|K| = {solution.max_K:.3e} A/m")
+print(f"rms|K| = {solution.rms_K:.3e} A/m")
+print(f"max|Bnormal| = {solution.max_Bnormal:.3e} T")
+print(f"max|Bnormal|/|B| = {solution.max_Bnormal_over_B:.3e}")
+print(f"avg|Bnormal|/|B| = {solution.avg_Bnormal_over_B:.3e}")
 ```
 
 ```{code-cell} ipython3

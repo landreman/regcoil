@@ -99,10 +99,8 @@ sharply. For finer control pass a
 instance. The resulting {class}`~regcoil.ThetaMap` is kept on the surface as
 `coil.theta_map`, and its `diagnostics` report how well the target was met.
 
-Because the current-potential basis `sin(m*theta - n*zeta)` is defined in the
-coil surface's `theta`, this changes the solution space -- a better-conditioned
-basis is the reason to do it -- so it is a physics-visible choice, not a
-cosmetic one.
+Because the current-potential basis `sin(m*theta - n*zeta)` is defined in terms of the
+coil surface's `theta`, this reparameterization changes the solution space.
 
 ## 2. Assembling the problem
 
@@ -135,6 +133,16 @@ value:
 target = problem.solve_for_target("max_K", 4.0e6)
 print(f"lam = {target.lam:.3e}, max|K| = {target.max_K:.3e} A/m")
 ```
+
+Any of these `Solution` scalars can be used as the target metric:
+
+- `f_B` — ∫ (B·n)² over the plasma surface
+- `f_K` — ∫ K² over the coil surface
+- `max_K` — peak |K| on the coil surface
+- `rms_K` — RMS |K| on the coil surface
+- `max_Bnormal` — max |B·n| on the plasma surface
+- `max_Bnormal_over_B` — max( |B·n| / |B| ) on the plasma surface
+- `avg_Bnormal_over_B` — area-mean( |B·n| / |B| ) on the plasma surface
 
 `solve_for_target` raises `ValueError` if the requested value is not between
 the `lam=0` and `lam=inf` limits (i.e. the target is not achievable by any

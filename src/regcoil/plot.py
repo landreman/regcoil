@@ -166,10 +166,10 @@ def _single_valued_current_potential(solution):
     return _unflatten_grid(prob.basis_functions @ solution.solution, coil.ntheta, coil.nzeta)
 
 
-def current_potential(solution, kind="single_valued", ax=None):
+def current_potential(solution, kind="total", ax=None):
     """`(theta, zeta)` contour map of the current potential Phi, one
-    `Solution` (one lambda) at a time. `kind` is `'single_valued'` (default)
-    or `'total'` (includes the secular net-current term)."""
+    `Solution` (one lambda) at a time. `kind` is `'single_valued'`
+    or `'total'` (includes the secular net-current term, default)."""
     ax = _new_ax(ax)
     coil = solution.problem.coil
     if kind == "single_valued":
@@ -201,9 +201,9 @@ def current_density(solution, ax=None):
     return ax
 
 
-def bnormal(solution, component="total", ax=None):
+def bnormal(solution, component="total_over_modB", ax=None):
     """`(theta, zeta)` contour map of B_normal on the plasma surface.
-    `component` is `'plasma_current'`, `'net_coil'`, or `'total'` (default).
+    `component` is `'plasma_current'`, `'net_coil'`, `'total'` or `'total_over_modB'` (default).
     `'net_coil'` needs no Fortran kernel on a loaded run
     (`Regcoil.Bnormal_from_net_coil_currents` is stored on disk).
     """
@@ -216,9 +216,11 @@ def bnormal(solution, component="total", ax=None):
         data = prob.Bnormal_from_net_coil_currents
     elif component == "total":
         data = solution.Bnormal_total
+    elif component == "total_over_modB":
+        data = solution.Bnormal_total / plasma.modB
     else:
         raise ValueError(
-            f"component must be 'plasma_current', 'net_coil', or 'total', got {component!r}"
+            f"component must be 'plasma_current', 'net_coil', 'total' or 'total_over_modB', got {component!r}"
         )
 
     cf = ax.contourf(plasma.zeta, plasma.theta, data, 20)
