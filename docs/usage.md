@@ -114,6 +114,16 @@ target = problem.solve_for_target("max_K", 4.0e6)
 print(f"lam = {target.lam:.3e}, max|K| = {target.max_K:.3e} A/m")
 ```
 
+Any of these `Solution` scalars can be used as the target metric:
+
+- `f_B` — ∫ (B·n)² over the plasma surface
+- `f_K` — ∫ K² over the coil surface
+- `max_K` — peak |K| on the coil surface
+- `rms_K` — RMS |K| on the coil surface
+- `max_Bnormal` — max |B·n| on the plasma surface
+- `max_Bnormal_over_B` — max( |B·n| / |B| ) on the plasma surface
+- `avg_Bnormal_over_B` — area-mean( |B·n| / |B| ) on the plasma surface
+
 `solve_for_target` raises `ValueError` if the requested value is not between
 the `lam=0` and `lam=inf` limits (i.e. the target is not achievable by any
 choice of regularization).
