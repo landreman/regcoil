@@ -34,7 +34,7 @@ pio.renderers.default = "notebook_connected"
 
 ds = regcoil.examples("W7-X")
 plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=64, nzeta=64)
-plasma.set_bnormal_from_bnorm_file(ds.bnorm)
+plasma.set_bnormal_from_virtual_casing(ds.vcasing)
 coil = regcoil.CoilSurface.from_uniform_offset(
     plasma, separation=0.5, ntheta=64, nzeta=64, mpol=12, ntor=12
 )

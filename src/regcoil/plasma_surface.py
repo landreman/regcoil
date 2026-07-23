@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
+from . import _io
 from ._constants import MU0
 from ._io import bnormal_from_focus_modes, read_ascii_table, read_bnorm_file, read_focus_boundary, read_vmec_wout
 from .fourier_surface import FourierSurface
@@ -110,6 +111,37 @@ class PlasmaSurface(FourierSurface):
         """
         self.Bnormal_from_plasma_current = read_bnorm_file(
             filename, self.theta, self.zeta, self.nfp, self.curpol
+        )
+
+    def set_bnormal_from_virtual_casing(self, source):
+        """Set `Bnormal_from_plasma_current` from a simsopt virtual-casing result.
+
+        An alternative to `set_bnormal_from_bnorm_file`. `source` is either the
+        path to a simsopt virtual-casing NetCDF file (`vcasing*.nc`, written by
+        `simsopt.mhd.VirtualCasing.save` or by the `filename` argument of
+        `VirtualCasing.from_vmec`), or a `simsopt.mhd.VirtualCasing` object
+        itself. Files are read directly with NetCDF, so simsopt need not be
+        installed to use this.
+
+        Unlike a BNORM file, which holds Fourier modes that can be evaluated
+        anywhere, simsopt supplies `B_external_normal` on a fixed grid; it is
+        interpolated (spectrally, see `_io.bnormal_from_virtual_casing`) onto
+        this surface's `(theta, zeta)` grid. Both the usual `use_stellsym=True`
+        layout, where the data cover half a field period, and the
+        `use_stellsym=False` layout, where they cover a whole one, are accepted.
+
+        No `curpol` scaling is involved: simsopt stores `B_external_normal` in
+        Tesla, which is what REGCOIL wants, whereas BNORM writes its amplitudes
+        divided by `curpol`. The two agree in sign and magnitude, so the choice
+        of source is invisible downstream (see simsopt's
+        `tests/mhd/test_virtual_casing.py::test_bnorm_benchmark`).
+
+        The virtual-casing calculation must have been run on *this* plasma
+        boundary; only `nfp` can be checked here.
+        """
+        data = _io.virtual_casing_data(source)
+        self.Bnormal_from_plasma_current = _io.bnormal_from_virtual_casing(
+            data, self.theta, self.zeta, self.nfp
         )
 
     def save(self, path):

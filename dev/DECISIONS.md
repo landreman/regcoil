@@ -1097,3 +1097,66 @@ Status values: `proposed` | `accepted` | `superseded` | `rejected`
     surface's theta, so reparameterization changes the solution space and the
     regularization. This is the point (a better-conditioned basis), but it is
     physics-visible and the chosen scheme is recorded in the saved run.
+
+---
+
+## ADR-032: Reading B_normal from simsopt virtual-casing data
+
+- **Date:** 2026-07-22
+- **Status:** accepted
+- **Context:** BNORM files were the only source of
+  `PlasmaSurface.Bnormal_from_plasma_current`. simsopt's
+  `simsopt.mhd.VirtualCasing` is the modern replacement for the BNORM code, and
+  its results are commonly saved as `vcasing*.nc`. The two formats hold the same
+  physical quantity in the same sign convention (simsopt's
+  `tests/mhd/test_virtual_casing.py::test_bnorm_benchmark` asserts
+  `B_external_normal == bnorm_series * curpol` with no sign flip), and simsopt's
+  angles are the VMEC poloidal angle and the standard toroidal angle, the same
+  two REGCOIL uses, but normalized to a period of 1 rather than `2*pi`. Verified
+  independently here: REGCOIL's `plasma.evaluate_at(2*pi*src_theta, 2*pi*src_phi)`
+  reproduces the `gamma` stored in a real simsopt vcasing file to 5e-15 m.
+
+  The formats differ in one substantive way. BNORM stores Fourier modes, which can
+  be evaluated at any `(theta, zeta)`; simsopt stores `B_external_normal` sampled
+  on a fixed grid, which in general is not the `PlasmaSurface` grid. So a
+  resampling step is unavoidable, and its choice is the real decision here.
+
+- **Decisions:**
+  1. **New method, not a new `from_*` constructor.** `set_bnormal_from_virtual_casing`
+     mirrors `set_bnormal_from_bnorm_file`. A vcasing file carries `gamma` but not
+     the surface's Fourier modes, so it cannot build a `PlasmaSurface`; the wout
+     file remains the source of geometry.
+  2. **Accept a path or a `VirtualCasing` object.** Files are read with
+     `scipy.io.netcdf_file` via the shared `_open_netcdf`, so **simsopt is not a
+     dependency** — installing it just to read four NetCDF variables would be a
+     heavy addition. The object path is duck-typed on `nfp`, `trgt_theta`,
+     `trgt_phi`, `B_external_normal`, which also keeps the tests simsopt-free.
+  3. **Trigonometric interpolation**, not splines or nearest-neighbour. The data
+     are smooth and doubly periodic, so this converges spectrally and is *exact*
+     when the two grids coincide, which is the case a user who matched
+     `trgt_ntheta`/`trgt_nphi` to `ntheta`/`nzeta` will expect to be lossless.
+     For an even number of samples the Nyquist mode is split evenly between
+     `+N/2` and `-N/2` so the interpolant stays real.
+  4. **Both grid layouts are supported and detected automatically** from
+     `trgt_phi`, rather than asking the user for a `use_stellsym` flag: simsopt's
+     `range="half period"` grid is offset by half a spacing and so starts at
+     `0.25/(nfp*nphi)`, while `range="field period"` starts at exactly 0. For the
+     half-period case the data are extended to a full field period using
+     `B_n(-theta, -phi) = -B_n(theta, phi)` before interpolating.
+  5. **`B_external_normal_extended` is not used**, even though it is exactly the
+     full-torus array this code needs. It is wrong: its mirrored half is shifted
+     by one grid point in `phi` (its first appended row duplicates the last row of
+     the original block), which a synthetic band-limited stellarator-symmetric
+     field detects immediately — the extension implemented here reproduces such a
+     field to 8e-16, simsopt's to 0.23 in amplitude 0.3. It is also built with the
+     stellarator-symmetry flip regardless of `use_stellsym`, so it cannot be right
+     for the non-stellsym case either. Worth reporting upstream; REGCOIL extends
+     `B_external_normal` itself.
+  6. **No `curpol`.** simsopt stores Tesla, which is what REGCOIL wants; the
+     `curpol` division is a BNORM-specific quirk. This path therefore does not
+     require `from_wout` to have run, though in practice it always has.
+- **Consequences:** REGCOIL's result now depends on the virtual-casing run's
+  `trgt_nphi`/`trgt_ntheta`, which band-limit the data; interpolation cannot
+  recover structure that grid did not resolve. Documented in `usage.md`. Only
+  `nfp` can be checked against the surface — nothing in the file proves the
+  virtual-casing calculation was run on the same boundary.

@@ -27,9 +27,11 @@ py.install_sources(
   '../../equilibria/wout_li383_1.4m.nc',
   '../../equilibria/bnorm.li383_1.4m',
   '../../equilibria/nescin.li383_realWindingSurface',
+  '../../equilibria/vcasing_li383_1.4m_src_nphi_64_trgt_nphi_65_ntheta_66_use_stellsym_False_digits_11.nc',
   '../../equilibria/wout_d23p4_tm.nc',
   '../../equilibria/bnorm.d23p4_tm',
   '../../equilibria/nescin.w7x_winding_surface_from_Drevlak',
+  '../../equilibria/vcasing_d23p4_tm_src_nphi_64_trgt_nphi_65_ntheta_66_use_stellsym_True_digits_11.nc',
   subdir: 'regcoil/equilibria',
 )
 

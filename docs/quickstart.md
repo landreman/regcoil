@@ -19,7 +19,7 @@ kernelspec:
 >>> import regcoil
 >>> ds = regcoil.examples("W7-X")
 >>> plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=64, nzeta=64)
->>> plasma.set_bnormal_from_bnorm_file(ds.bnorm)
+>>> plasma.set_bnormal_from_virtual_casing(ds.vcasing)
 >>> coil = regcoil.CoilSurface.from_uniform_offset(
 ...     plasma, separation=0.3, ntheta=64, nzeta=64, mpol=12, ntor=12
 ... )
@@ -33,9 +33,10 @@ The rest of this page walks through the same steps with more explanation.
 
 ## Bundled example data
 
-`regcoil.examples` gives you ready-to-use VMEC (`wout`), plasma-current
-(`bnorm`), and winding-surface (`nescin`) files, so you don't need external
-data to try the package:
+`regcoil.examples` gives you ready-to-use data so you don't need external
+code or files to try regcoil. The example data includes VMEC equilibria (`wout`), 
+simsopt virtual casing files (`vcasing`), stellopt bnorm files
+(`bnorm`), and winding-surface (`nescin`) files.
 
 ```{code-cell} ipython3
 import regcoil
@@ -51,9 +52,9 @@ ds
 ## Building the plasma and coil surfaces
 
 A {class}`~regcoil.PlasmaSurface` is built from a VMEC `wout` file, and its
-target normal field from a BNORM file. A {class}`~regcoil.CoilSurface` can be
+target normal field from a virtual casing or BNORM file. A {class}`~regcoil.CoilSurface` can be
 an independent NESCIN winding surface, or (as here) a uniform offset of the
-plasma surface computed by the Fortran kernel:
+plasma surface:
 
 ```{code-cell} ipython3
 plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=64, nzeta=64)
@@ -65,9 +66,6 @@ coil = regcoil.CoilSurface.from_uniform_offset(
 print(f"plasma nfp={plasma.nfp}, plasma area={plasma.area:.3g} m^2")
 print(f"coil area={coil.area:.3g} m^2")
 ```
-
-(These resolutions are kept low so this page builds quickly; see
-[Usage](usage.md) and [Plotting](plotting.md) for more realistic settings.)
 
 ## Solving
 

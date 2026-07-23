@@ -8,8 +8,13 @@ Reach them at runtime through the :data:`examples` registry::
 
     ds = regcoil.examples("W7-X")
     plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=128, nzeta=128)
-    plasma.set_bnormal_from_bnorm_file(ds.bnorm)
+    plasma.set_bnormal_from_virtual_casing(ds.vcasing)
     coil = regcoil.CoilSurface.from_nescin(ds.nescin, nfp=plasma.nfp)
+
+``ds.bnorm`` is an equivalent source of B_normal, computed by stellopt's BNORM
+code rather than simsopt's virtual-casing module::
+
+    plasma.set_bnormal_from_bnorm_file(ds.bnorm)
 
 Lookups are case-insensitive. The accepted names (including aliases) are
 returned by ``regcoil.examples.available()``.
@@ -30,26 +35,30 @@ class ExampleDataset:
 
     ``name`` is the canonical dataset id; the other fields are absolute
     :class:`~pathlib.Path` objects that can be passed straight to the
-    ``from_wout`` / ``set_bnormal_from_bnorm_file`` / ``from_nescin`` loaders.
+    ``from_wout`` / ``set_bnormal_from_bnorm_file`` /
+    ``set_bnormal_from_virtual_casing`` / ``from_nescin`` loaders.
     """
 
     name: str
     wout: Path
     bnorm: Path
     nescin: Path
+    vcasing: Path
 
 
-# Canonical dataset id -> (wout, bnorm, nescin) filenames within equilibria/.
-_REGISTRY: dict[str, tuple[str, str, str]] = {
+# Canonical dataset id -> (wout, bnorm, nescin, vcasing) filenames within equilibria/.
+_REGISTRY: dict[str, tuple[str, str, str, str]] = {
     "li383_1.4m": (
         "wout_li383_1.4m.nc",
         "bnorm.li383_1.4m",
         "nescin.li383_realWindingSurface",
+        "vcasing_li383_1.4m_src_nphi_64_trgt_nphi_65_ntheta_66_use_stellsym_False_digits_11.nc",
     ),
     "d23p4_tm": (
         "wout_d23p4_tm.nc",
         "bnorm.d23p4_tm",
         "nescin.w7x_winding_surface_from_Drevlak",
+        "vcasing_d23p4_tm_src_nphi_64_trgt_nphi_65_ntheta_66_use_stellsym_True_digits_11.nc",
     ),
 }
 
@@ -100,12 +109,13 @@ class _Examples:
                 f"Unknown example dataset {name!r}. "
                 f"Available: {', '.join(_DISPLAY_NAMES)}."
             )
-        wout, bnorm, nescin = _REGISTRY[key]
+        wout, bnorm, nescin, vcasing = _REGISTRY[key]
         return ExampleDataset(
             name=key,
             wout=_resolve(wout),
             bnorm=_resolve(bnorm),
             nescin=_resolve(nescin),
+            vcasing=_resolve(vcasing),
         )
 
     @staticmethod
