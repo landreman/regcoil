@@ -34,6 +34,26 @@ plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=64, nzeta=64)
 plasma.set_bnormal_from_bnorm_file(ds.bnorm)
 ```
 
+If you computed the plasma's normal field with
+[simsopt](https://github.com/hiddenSymmetries/simsopt)'s virtual-casing module
+instead of the BNORM code, use `set_bnormal_from_virtual_casing` in place of
+`set_bnormal_from_bnorm_file`. It accepts either the path to a `vcasing*.nc`
+file or a `simsopt.mhd.VirtualCasing` object, and works whether the
+calculation was run with `use_stellsym=True` (the usual case) or `False`:
+
+```python
+plasma.set_bnormal_from_virtual_casing("vcasing_li383.nc")
+```
+
+Files are read with NetCDF directly, so simsopt need not be installed. Note
+that simsopt gives `B_external_normal` on its own fixed grid rather than as
+Fourier modes, so unless that grid happens to coincide with the plasma
+surface's, the data are interpolated onto `ntheta` x `nzeta`. The
+interpolation is trigonometric and so converges spectrally, but it cannot
+invent structure the virtual-casing grid did not resolve: choose
+`trgt_nphi`/`trgt_ntheta` in the virtual-casing run with the resolution you
+want here in mind.
+
 The coil ("winding") surface can be loaded independently from a NESCIN file
 (`CoilSurface.from_nescin`), or computed as a uniform offset of the plasma
 surface. The offset construction samples the offset points once and returns

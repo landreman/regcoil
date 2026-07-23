@@ -8,11 +8,17 @@ package for HDF5-based files.
 
 from __future__ import annotations
 
+import os
+
 import numpy as np
 
 
-def read_vmec_wout(filename):
-    """Read the subset of a VMEC `wout` file that REGCOIL needs."""
+def _open_netcdf(filename):
+    """Open a NetCDF file and return `(variables, get)`.
+
+    `get(name)` returns the named variable as a plain numpy array, for either
+    backend and for any rank (including 0-d scalars).
+    """
     filename = str(filename)
     try:
         from scipy.io import netcdf_file
@@ -39,6 +45,13 @@ def read_vmec_wout(filename):
 
         def get(name):
             return np.asarray(variables[name][:])
+
+    return variables, get
+
+
+def read_vmec_wout(filename):
+    """Read the subset of a VMEC `wout` file that REGCOIL needs."""
+    variables, get = _open_netcdf(filename)
 
     nfp = int(get("nfp"))
     if "lasym__logical__" in variables:
@@ -183,6 +196,172 @@ def read_bnorm_file(filename, theta, zeta, nfp, curpol):
             angle = m * theta[:, None] + n * nfp * zeta[None, :]
             Bnormal += bf * np.sin(angle)
     return Bnormal * curpol
+
+
+def read_virtual_casing_file(filename):
+    """Read a simsopt virtual-casing NetCDF file (`vcasing*.nc`).
+
+    Only the fields REGCOIL needs are returned: the target grid and
+    `B_external_normal` on it. Reading is done directly with NetCDF, so simsopt
+    need not be installed.
+    """
+    _, get = _open_netcdf(filename)
+    return dict(
+        nfp=int(get("nfp")),
+        trgt_theta=np.asarray(get("trgt_theta"), dtype=float).ravel(),
+        trgt_phi=np.asarray(get("trgt_phi"), dtype=float).ravel(),
+        B_external_normal=np.asarray(get("B_external_normal"), dtype=float),
+    )
+
+
+def virtual_casing_data(source):
+    """Normalize a simsopt virtual-casing result to the dict
+    `read_virtual_casing_file` returns.
+
+    `source` is either a path to a `vcasing*.nc` file, or a
+    `simsopt.mhd.VirtualCasing`-like object (anything carrying `nfp`,
+    `trgt_theta`, `trgt_phi`, and `B_external_normal` attributes -- note that
+    `VirtualCasing.load` leaves scalars as 0-d arrays, which is handled here).
+    """
+    if isinstance(source, (str, os.PathLike)):
+        return read_virtual_casing_file(source)
+
+    missing = [
+        name
+        for name in ("nfp", "trgt_theta", "trgt_phi", "B_external_normal")
+        if not hasattr(source, name)
+    ]
+    if missing:
+        raise TypeError(
+            f"{type(source).__name__} is neither a path to a simsopt virtual-casing "
+            f"NetCDF file nor a VirtualCasing-like object: missing attribute(s) "
+            f"{', '.join(missing)}."
+        )
+    return dict(
+        nfp=int(np.asarray(source.nfp).ravel()[0]),
+        trgt_theta=np.asarray(source.trgt_theta, dtype=float).ravel(),
+        trgt_phi=np.asarray(source.trgt_phi, dtype=float).ravel(),
+        B_external_normal=np.asarray(source.B_external_normal, dtype=float),
+    )
+
+
+def _uniform_grid_start(points, period, name):
+    """Check that `points` is a uniformly spaced grid covering `[start, start+period)`,
+    and return `start`. Raises if the grid is not uniform or does not tile the period.
+    """
+    n = len(points)
+    if n < 2:
+        raise ValueError(f"Need at least 2 {name} grid points, got {n}.")
+    spacing = period / n
+    expected = points[0] + spacing * np.arange(n)
+    if not np.allclose(points, expected, rtol=0, atol=1e-9 * period):
+        raise ValueError(
+            f"The virtual-casing {name} grid is not uniformly spaced over a span of "
+            f"{period}, as REGCOIL's spectral interpolation requires."
+        )
+    return float(points[0])
+
+
+def _spectral_interpolate(f, u_targets, v_targets):
+    """Trigonometric interpolation of `f` off its sampling grid.
+
+    `f[j, i]` is sampled at `u = j / f.shape[0]`, `v = i / f.shape[1]`, with both
+    `u` and `v` periodic with period 1. Returns `f` evaluated on the tensor
+    product of `u_targets` and `v_targets`, shape `(len(u_targets), len(v_targets))`.
+
+    This is exact for data band-limited below the Nyquist frequency of the
+    sampling grid, and reproduces `f` exactly at the sample points. For an even
+    number of samples the Nyquist mode is split evenly between `+N/2` and
+    `-N/2`, the standard choice that keeps the interpolant real and even about
+    the sample points.
+    """
+    nu, nv = f.shape
+    coeffs = np.fft.fft2(f) / (nu * nv)
+    ku = np.fft.fftfreq(nu, d=1.0 / nu)
+    kv = np.fft.fftfreq(nv, d=1.0 / nv)
+    if nu % 2 == 0:
+        j = nu // 2
+        coeffs = np.concatenate([coeffs, 0.5 * coeffs[[j]]], axis=0)
+        coeffs[j] *= 0.5
+        ku = np.concatenate([ku, [-ku[j]]])
+    if nv % 2 == 0:
+        j = nv // 2
+        coeffs = np.concatenate([coeffs, 0.5 * coeffs[:, [j]]], axis=1)
+        coeffs[:, j] *= 0.5
+        kv = np.concatenate([kv, [-kv[j]]])
+
+    basis_u = np.exp(2j * np.pi * np.outer(np.asarray(u_targets, dtype=float), ku))
+    basis_v = np.exp(2j * np.pi * np.outer(np.asarray(v_targets, dtype=float), kv))
+    return np.real(basis_u @ coeffs @ basis_v.T)
+
+
+def bnormal_from_virtual_casing(data, theta, zeta, nfp):
+    """Evaluate a simsopt virtual-casing `B_external_normal` on a REGCOIL
+    `(theta, zeta)` grid.
+
+    `data` is the dict returned by `virtual_casing_data`. `theta` and `zeta` are
+    REGCOIL's angle grids in radians (`zeta` covering one field period); simsopt
+    uses the same VMEC poloidal angle and the same standard toroidal angle, but
+    normalized to a period of 1 rather than 2*pi.
+
+    simsopt supplies `B_external_normal` on its own fixed uniform grid, which in
+    general differs from REGCOIL's, so the data are interpolated. The
+    interpolation is trigonometric (`_spectral_interpolate`) rather than
+    polynomial: the data are periodic and smooth, so this converges spectrally
+    and is exact where the two grids happen to coincide.
+
+    Two simsopt grid layouts are supported, and are distinguished automatically:
+
+    - `use_stellsym=True` (the usual case): `trgt_phi` covers *half* a field
+      period and is offset by half a grid spacing. The data are first extended
+      to a full field period using stellarator symmetry,
+      `B_n(-theta, -phi) = -B_n(theta, phi)`.
+    - `use_stellsym=False`: `trgt_phi` covers a full field period starting at
+      phi=0, and is used as-is.
+    """
+    B = np.asarray(data["B_external_normal"], dtype=float)
+    trgt_phi = data["trgt_phi"]
+    trgt_theta = data["trgt_theta"]
+    vc_nfp = data["nfp"]
+
+    if vc_nfp != nfp:
+        raise ValueError(
+            f"The virtual-casing data has nfp={vc_nfp} but this surface has nfp={nfp}. "
+            f"The virtual-casing calculation must be for the same plasma boundary."
+        )
+    if B.shape != (len(trgt_phi), len(trgt_theta)):
+        raise ValueError(
+            f"B_external_normal has shape {B.shape}, expected "
+            f"{(len(trgt_phi), len(trgt_theta))} = (trgt_nphi, trgt_ntheta)."
+        )
+
+    theta_start = _uniform_grid_start(trgt_theta, 1.0, "theta")
+    if abs(theta_start) > 1e-12:
+        raise ValueError(
+            f"The virtual-casing theta grid starts at {theta_start} rather than 0, "
+            f"which is not a grid simsopt produces."
+        )
+
+    # Half a field period (stellarator-symmetric) or a whole one? For the half
+    # period simsopt shifts the grid by half a spacing, so it never starts at 0.
+    nphi = len(trgt_phi)
+    # (the half-period grid starts at 0.25/(nfp*nphi), the full-period one at 0)
+    half_period = trgt_phi[0] > 0.125 / (nfp * nphi)
+    period = (0.5 if half_period else 1.0) / nfp
+    phi_start = _uniform_grid_start(trgt_phi, period, "phi")
+
+    if half_period:
+        # B_n(theta_i, phi + 1/(2*nfp)) = -B_n(-theta_i, 1/(2*nfp) - phi). On the
+        # index grid phi_j = (j + 1/2) / (2*nfp*nphi), the mirrored point of j is
+        # nphi-1-j, and -theta_i is theta at index (-i) % ntheta.
+        B = np.concatenate([B, -np.roll(B[::-1, ::-1], 1, axis=1)], axis=0)
+        period *= 2
+
+    # Fractional coordinates in which the (extended) samples sit at j/nphi, i/ntheta.
+    u_targets = (zeta / (2 * np.pi) - phi_start) / period
+    v_targets = theta / (2 * np.pi)
+    # (nzeta, ntheta) -> REGCOIL's (ntheta, nzeta).
+    return _spectral_interpolate(B, u_targets, v_targets).T
 
 
 def bnormal_from_focus_modes(bfm, bfn, bfc, bfs, theta, zeta):

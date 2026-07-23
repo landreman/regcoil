@@ -38,7 +38,8 @@ available as `Solution.current_density()`.
 
 Given the plasma surface's target normal field $B_{n}^{\mathrm{target}}$
 (typically from in-plasma current, loaded via
-`PlasmaSurface.set_bnormal_from_bnorm_file`), the coils must produce a normal
+`PlasmaSurface.set_bnormal_from_bnorm_file` or
+`PlasmaSurface.set_bnormal_from_virtual_casing`), the coils must produce a normal
 field that cancels it. REGCOIL minimizes a weighted sum of two objectives
 over the Fourier coefficients of $\Phi_{sv}$, for a chosen regularization
 parameter $\lambda$:
