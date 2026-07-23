@@ -19,7 +19,7 @@ import numpy as np
 import pytest
 from scipy.io import netcdf_file
 
-from regcoil import PlasmaSurface
+from regcoil import PlasmaSurface, examples
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EQUILIBRIA = REPO_ROOT / "equilibria"
@@ -205,3 +205,68 @@ def test_bad_source_type_raises():
     plasma = PlasmaSurface.from_wout(str(WOUT_LI383), ntheta=4, nzeta=4)
     with pytest.raises(TypeError, match="B_external_normal"):
         plasma.set_bnormal_from_virtual_casing(object())
+
+
+@pytest.mark.parametrize("name", ["li383_1.4m", "d23p4_tm"])
+def test_matches_bnorm_file_for_bundled_examples(name):
+    """The bundled `vcasing*.nc` files (real simsopt output, one per example
+    dataset) and the bundled BNORM files describe the same plasma boundaries,
+    so B_normal loaded from each should agree.
+
+    Unlike `test_matches_bnorm_file` above, these are two independent physical
+    calculations (the legacy BNORM code vs. simsopt's virtual-casing solve),
+    not the same series pushed through two code paths, so exact agreement
+    isn't expected -- only that they describe the same field to within the
+    discretization/method error between the two calculations.
+    """
+    ds = examples(name)
+
+    reference = PlasmaSurface.from_wout(str(ds.wout), ntheta=32, nzeta=32)
+    reference.set_bnormal_from_bnorm_file(str(ds.bnorm))
+
+    plasma = PlasmaSurface.from_wout(str(ds.wout), ntheta=32, nzeta=32)
+    plasma.set_bnormal_from_virtual_casing(str(ds.vcasing))
+
+    assert plasma.Bnormal_from_plasma_current.shape == (32, 32)
+    rms = np.sqrt(np.mean(reference.Bnormal_from_plasma_current**2))
+
+    # import matplotlib.pyplot as plt
+    # plt.figure(figsize=(14.5, 8.1))
+    # plt.subplot(2, 2, 1)
+    # plt.contourf(
+    #     reference.Bnormal_from_plasma_current,
+    #     levels=20,
+    #     cmap="RdBu_r",
+    #     extend="both",
+    # )
+    # plt.colorbar()
+    # plt.title("BNORM")
+
+    # plt.subplot(2, 2, 2)
+    # plt.contourf(
+    #     plasma.Bnormal_from_plasma_current,
+    #     levels=20,
+    #     cmap="RdBu_r",
+    #     extend="both",
+    # )
+    # plt.colorbar()
+    # plt.title("Virtual Casing")
+
+    # plt.subplot(2, 2, 3)
+    # plt.contourf(
+    #     plasma.Bnormal_from_plasma_current - reference.Bnormal_from_plasma_current,
+    #     levels=20,
+    #     cmap="RdBu_r",
+    #     extend="both",
+    # )
+    # plt.colorbar()
+    # plt.title("Difference (VC - BNORM)")
+
+    # plt.tight_layout()
+    # plt.show()
+
+    np.testing.assert_allclose(
+        plasma.Bnormal_from_plasma_current,
+        reference.Bnormal_from_plasma_current,
+        atol=0.19 * rms,
+    )

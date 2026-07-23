@@ -18,11 +18,13 @@ _EXPECTED_FILES = {
         "wout_li383_1.4m.nc",
         "bnorm.li383_1.4m",
         "nescin.li383_realWindingSurface",
+        "vcasing_li383_1.4m_src_nphi_64_trgt_nphi_65_ntheta_66_use_stellsym_False_digits_11.nc",
     ),
     "d23p4_tm": (
         "wout_d23p4_tm.nc",
         "bnorm.d23p4_tm",
         "nescin.w7x_winding_surface_from_Drevlak",
+        "vcasing_d23p4_tm_src_nphi_64_trgt_nphi_65_ntheta_66_use_stellsym_True_digits_11.nc",
     ),
 }
 
@@ -66,13 +68,14 @@ def test_lookup_is_case_insensitive_and_stripped(raw):
 @pytest.mark.parametrize("canonical", list(_EXPECTED_FILES))
 def test_resolved_files_exist_and_have_expected_names(canonical):
     ds = examples(canonical)
-    wout_name, bnorm_name, nescin_name = _EXPECTED_FILES[canonical]
+    wout_name, bnorm_name, nescin_name, vcasing_name = _EXPECTED_FILES[canonical]
 
     assert ds.wout.name == wout_name
     assert ds.bnorm.name == bnorm_name
     assert ds.nescin.name == nescin_name
+    assert ds.vcasing.name == vcasing_name
 
-    for path in (ds.wout, ds.bnorm, ds.nescin):
+    for path in (ds.wout, ds.bnorm, ds.nescin, ds.vcasing):
         assert isinstance(path, Path)
         assert path.is_absolute()
         assert path.is_file()
@@ -87,6 +90,7 @@ def test_aliases_return_identical_paths():
     assert a.wout == b.wout == c.wout
     assert a.bnorm == b.bnorm == c.bnorm
     assert a.nescin == b.nescin == c.nescin
+    assert a.vcasing == b.vcasing == c.vcasing
 
 
 def test_dataset_is_frozen():
@@ -120,3 +124,11 @@ def test_paths_feed_the_real_loaders():
     assert plasma.nfp == 3
     assert coil.nfp == plasma.nfp
     assert len(coil.xm) > 0
+
+
+@pytest.mark.parametrize("canonical", list(_EXPECTED_FILES))
+def test_vcasing_path_feeds_the_real_loader(canonical):
+    ds = examples(canonical)
+    plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=16, nzeta=16)
+    plasma.set_bnormal_from_virtual_casing(ds.vcasing)
+    assert plasma.Bnormal_from_plasma_current.shape == (16, 16)

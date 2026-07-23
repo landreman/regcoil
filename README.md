@@ -56,13 +56,13 @@ pytest
 import regcoil
 
 ds = regcoil.examples("W7-X")  # Or "NCSX"
-# ds then provides paths to a vmec wout file, bnorm file,
-# and coil winding surface in nescin format
+# ds then provides paths to a vmec wout file, simsopt virtual casing file,
+# stellopt bnorm file, and coil winding surface in nescin format.
 
 # Define the plasma boundary surface:
 plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=64, nzeta=64)
 # Assign B_normal data associated with the plasma current:
-plasma.set_bnormal_from_bnorm_file(ds.bnorm)
+plasma.set_bnormal_from_virtual_casing(ds.vcasing)
 
 # Define a coil winding surface:
 coil = regcoil.CoilSurface.from_uniform_offset(

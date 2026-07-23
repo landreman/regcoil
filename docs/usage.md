@@ -26,18 +26,19 @@ ds = regcoil.examples("W7-X")
 ## 1. Surfaces
 
 The plasma surface comes from a VMEC `wout` file; its target normal field
-comes from a BNORM file (the contribution of in-plasma current to
+comes from a virtual casing or bnorm file (the contribution of in-plasma current to
 `Bnormal`, which the coils must cancel):
 
 ```{code-cell} ipython3
 plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=64, nzeta=64)
-plasma.set_bnormal_from_bnorm_file(ds.bnorm)
+plasma.set_bnormal_from_virtual_casing(ds.vcasing)
+# or plasma.set_bnormal_from_bnorm_file(ds.bnorm)
 ```
 
 If you computed the plasma's normal field with
-[simsopt](https://github.com/hiddenSymmetries/simsopt)'s virtual-casing module
-instead of the BNORM code, use `set_bnormal_from_virtual_casing` in place of
-`set_bnormal_from_bnorm_file`. It accepts either the path to a `vcasing*.nc`
+[simsopt](https://github.com/hiddenSymmetries/simsopt)'s virtual-casing module,
+use `set_bnormal_from_virtual_casing`.
+This command accepts either the path to a `vcasing*.nc`
 file or a `simsopt.mhd.VirtualCasing` object, and works whether the
 calculation was run with `use_stellsym=True` (the usual case) or `False`:
 
@@ -165,7 +166,7 @@ result = regcoil.load(path)
 print(len(result.solutions), "solutions loaded")
 ```
 
-Loading is cheap and needs **no Fortran kernel and no expensive BLAS**: every
+Loading is cheap: every
 `Solution` already carries its own `current_potential`/`current_density`/
 `Bnormal_total` grids, computed once at solve time and stored on disk.
 
