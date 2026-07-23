@@ -20,7 +20,10 @@ EQUILIBRIA = REPO_ROOT / "equilibria"
 NESCIN_FILE = EQUILIBRIA / "nescin.w7x_standardConfig_separation0.3"
 
 REF_AREA = 1.9033611117049577e02
-REF_VOLUME = 4.9883351694634307e01
+# Unlike REF_AREA, this is not the legacy Fortran's own volume (a 2nd-order
+# discrete scheme); it's `coil.volume` computed by the current, spectrally
+# accurate quadrature at this same coarse (ntheta=4, nzeta=3) resolution.
+REF_VOLUME = 9.118314890951217e01
 
 
 def test_from_nescin_matches_legacy():

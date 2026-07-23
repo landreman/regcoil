@@ -213,18 +213,17 @@ class Surface(ABC):
 
     @cached_property
     def volume(self) -> float:
-        """Enclosed volume via int (1/2) R^2 dZ dzeta (R^2 interpolated
-        full -> half theta grid); `r` already spans all field periods, so no
-        extra factor of nfp is needed.
+        """Enclosed volume via int (1/2) R^2 (dZ/dtheta) dtheta dzeta, using
+        the analytic `dZ/dtheta` from `drdtheta` rather than a finite
+        difference of `Z`: since the integrand is smooth and periodic in
+        both theta and zeta, the plain periodic sum (the periodic trapezoid
+        rule) converges spectrally. `r` already spans all field periods, so
+        no extra factor of nfp is needed.
         """
         r = self.r
         major_R_squared = r[0] * r[0] + r[1] * r[1]
-        Z = r[2]
-        interior = np.sum(
-            0.5 * (major_R_squared[:-1, :] + major_R_squared[1:, :]) * (Z[1:, :] - Z[:-1, :])
-        )
-        wrap = np.sum(0.5 * (major_R_squared[0, :] + major_R_squared[-1, :]) * (Z[0, :] - Z[-1, :]))
-        return abs((interior + wrap) * self.dzeta / 2)
+        dZdtheta = self.drdtheta[2]
+        return abs(np.sum(major_R_squared * dZdtheta) * self.dtheta * self.dzeta / 2)
 
     def cross_section(self, phi=None):
         """Surface cross section(s) at fixed *physical* toroidal angle(s).

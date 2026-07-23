@@ -120,15 +120,12 @@ def test_circular_torus_area_and_shape():
     np.testing.assert_allclose(R, R0 + a * np.cos(theta), atol=1e-12)
     np.testing.assert_allclose(Z, a * np.sin(theta), atol=1e-12)
 
-    # The legacy volume formula (a 2nd-order-accurate discrete scheme, not a
-    # spectral quadrature -- see PR description) converges to the analytic
-    # volume 2*pi^2*R0*a^2 as resolution increases; it is not exact at
-    # moderate resolution, so check convergence rather than a tight match.
-    coarse = FourierSurface.circular_torus(R0=R0, a=a, nfp=nfp, ntheta=16, nzeta=12)
-    fine = FourierSurface.circular_torus(R0=R0, a=a, nfp=nfp, ntheta=256, nzeta=192)
+    # The volume formula is a spectral quadrature (periodic trapezoid rule
+    # applied to a smooth periodic integrand, using the analytic dZ/dtheta),
+    # so it should match the analytic volume 2*pi^2*R0*a^2 to near machine
+    # precision even at modest resolution.
     exact = 2 * np.pi**2 * R0 * a**2
-    assert abs(fine.volume - exact) < abs(coarse.volume - exact)
-    assert abs(fine.volume - exact) < 0.02
+    np.testing.assert_allclose(torus.volume, exact, rtol=1e-12)
 
 
 def test_cross_section_circular_torus_matches_analytic(nfp=3, R0=5.0, a=1.2):
