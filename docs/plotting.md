@@ -135,7 +135,7 @@ explicit step from plotting, and its `CutCoils.save_makegrid` is the only
 irreversible file write on this page:
 
 ```{code-cell} ipython3
-cut_coils = regcoil.cut.cut(solution, coils_per_half_period=5, thickness=0.05)
+cut_coils = regcoil.cut.cut(solution, coils_per_half_period=5, thickness=0.15)
 regcoil.plot.coil_3d(cut_coils)
 ```
 
