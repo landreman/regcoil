@@ -49,9 +49,43 @@ def _open_netcdf(filename):
     return variables, get
 
 
+def _vmec_wout_variables_and_get(filename):
+    """Return `(variables, get)` for a NetCDF path or a simsopt `Vmec` object.
+
+    simsopt is an optional dependency: for a non-path argument we only require a
+    duck-typed object with a `wout` attribute holding the usual VMEC wout fields.
+    simsopt's `Vmec.load_wout` transposes every 2-D array relative to the NetCDF
+    layout; `get` undoes that so callers see the same shapes as from a file.
+    """
+    if isinstance(filename, (str, os.PathLike)):
+        return _open_netcdf(filename)
+
+    if not hasattr(filename, "wout"):
+        raise TypeError(
+            f"{type(filename).__name__} is neither a path to a VMEC wout NetCDF "
+            f"file nor a simsopt.mhd.Vmec-like object (missing attribute 'wout')."
+        )
+    wout = filename.wout
+    variables = vars(wout)
+
+    def get(name):
+        val = np.asarray(getattr(wout, name)).copy()
+        if val.ndim == 2:
+            val = val.T
+        return val
+
+    return variables, get
+
+
 def read_vmec_wout(filename):
-    """Read the subset of a VMEC `wout` file that REGCOIL needs."""
-    variables, get = _open_netcdf(filename)
+    """Read the subset of a VMEC `wout` that REGCOIL needs.
+
+    `filename` is either a path to a NetCDF `wout` file, or a
+    `simsopt.mhd.Vmec`-like object (anything with a `wout` attribute carrying
+    the usual VMEC wout variables). simsopt is not required to be installed
+    unless you pass such an object.
+    """
+    variables, get = _vmec_wout_variables_and_get(filename)
 
     nfp = int(get("nfp"))
     if "lasym__logical__" in variables:

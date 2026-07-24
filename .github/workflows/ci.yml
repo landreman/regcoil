@@ -41,6 +41,13 @@ jobs:
           pip install -v ".[dev]"
           python -c "import regcoil._core; print('regcoil._core OK')"
 
+      # Optional dependency used by tests/unit/test_read_vmec_wout.py. Not a hard
+      # requirement of regcoil. Wheels exist for 3.10–3.13; 3.14 would fall back
+      # to a source build, so skip there and let importorskip cover that job.
+      - name: Install simsopt (for Vmec wout object tests)
+        if: matrix.python-version != '3.14'
+        run: pip install simsopt
+
       - name: Run pytest tests
         run: |
           if [ "${{ runner.os }}" = "Linux" ]; then

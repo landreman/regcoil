@@ -59,7 +59,7 @@ ds = regcoil.examples("W7-X")  # Or "NCSX"
 # ds then provides paths to a vmec wout file, simsopt virtual casing file,
 # stellopt bnorm file, and coil winding surface in nescin format.
 
-# Define the plasma boundary surface:
+# Define the plasma boundary surface (from_wout also accepts a simsopt.mhd.Vmec object):
 plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=64, nzeta=64)
 # Assign B_normal data associated with the plasma current:
 plasma.set_bnormal_from_virtual_casing(ds.vcasing)

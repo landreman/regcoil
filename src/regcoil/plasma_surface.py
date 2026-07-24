@@ -30,7 +30,11 @@ class PlasmaSurface(FourierSurface):
         ntheta=64,
         nzeta=65,
     ):
-        """Build a plasma surface from a VMEC `wout` file.
+        """Build a plasma surface from a VMEC `wout` file or a simsopt `Vmec` object.
+
+        `wout_filename` is either a path to a NetCDF `wout` file, or a
+        `simsopt.mhd.Vmec`-like object (anything with a `wout` attribute).
+        simsopt is not required unless you pass such an object.
 
         Uses the outermost point of VMEC's full radial mesh
         (legacy geometry_option_plasma=2).
