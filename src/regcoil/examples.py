@@ -98,6 +98,20 @@ def _resolve(filename: str) -> Path:
 class _Examples:
     """Callable registry of bundled example datasets.
 
+    There are two datasets: NCSX and W7-X.
+    The NCSX dataset has the aliases "NCSX", "li383", and "li383_1.4m".
+    The W7-X dataset has the aliases "W7-X", "W7X", and "d23p4_tm".
+    The aliases return exactly the same dataset.
+    Names and aliases are case-insensitive.
+
+    This NCSX configuration is the stage-1 fixed-boundary configuration from
+    before the coil design.
+    The corresponding configuration for W7-X has been lost to history,
+    but the "d23p4_tm" configuration here is close, and it does not include
+    any coil ripple.
+    Both the NCSX and W7-X configurations here are exactly the ones used
+    in the REGCOIL paper.
+
     Call it with a dataset name or alias to get an :class:`ExampleDataset`;
     call :meth:`available` to list the accepted names.
     """
