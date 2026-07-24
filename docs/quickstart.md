@@ -51,10 +51,10 @@ ds
 
 ## Building the plasma and coil surfaces
 
-A {class}`~regcoil.PlasmaSurface` is built from a VMEC `wout` file, and its
-target normal field from a virtual casing or BNORM file. A {class}`~regcoil.CoilSurface` can be
-an independent NESCIN winding surface, or (as here) a uniform offset of the
-plasma surface:
+A {class}`~regcoil.PlasmaSurface` is built from a VMEC `wout` file or a
+`simsopt.mhd.Vmec` object, and its target normal field from a virtual casing or
+BNORM file. A {class}`~regcoil.CoilSurface` can be an independent NESCIN winding
+surface, or (as here) a uniform offset of the plasma surface:
 
 ```{code-cell} ipython3
 plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=64, nzeta=64)

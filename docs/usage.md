@@ -25,9 +25,10 @@ ds = regcoil.examples("W7-X")
 
 ## 1. Surfaces
 
-The plasma surface comes from a VMEC `wout` file; its target normal field
-comes from a virtual casing or bnorm file (the contribution of in-plasma current to
-`Bnormal`, which the coils must cancel):
+The plasma surface comes from a VMEC `wout` file (or a
+[simsopt](https://github.com/hiddenSymmetries/simsopt) `Vmec` object); its
+target normal field comes from a virtual casing or bnorm file (the contribution
+of in-plasma current to `Bnormal`, which the coils must cancel):
 
 ```{code-cell} ipython3
 plasma = regcoil.PlasmaSurface.from_wout(ds.wout, ntheta=64, nzeta=64)
@@ -35,8 +36,17 @@ plasma.set_bnormal_from_virtual_casing(ds.vcasing)
 # or plasma.set_bnormal_from_bnorm_file(ds.bnorm)
 ```
 
-If you computed the plasma's normal field with
-[simsopt](https://github.com/hiddenSymmetries/simsopt)'s virtual-casing module,
+`PlasmaSurface.from_wout` accepts either a path to a NetCDF `wout` file or a
+`simsopt.mhd.Vmec` object. The file is read with NetCDF directly, so simsopt
+need not be installed unless you pass a `Vmec` object:
+
+```python
+from simsopt.mhd import Vmec
+
+plasma = regcoil.PlasmaSurface.from_wout(Vmec("wout_li383_1.4m.nc"), ntheta=64, nzeta=64)
+```
+
+If you computed the plasma's normal field with simsopt's virtual-casing module,
 use `set_bnormal_from_virtual_casing`.
 This command accepts either the path to a `vcasing*.nc`
 file or a `simsopt.mhd.VirtualCasing` object, and works whether the
