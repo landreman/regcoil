@@ -19,6 +19,7 @@ import logging
 from time import perf_counter
 from typing import cast
 
+from line_profiler import profile
 import numpy as np
 import scipy.linalg
 import scipy.linalg.blas
@@ -75,6 +76,7 @@ class Regcoil:
     `_ensure_operators`, only if a *new* lambda is solved on such an object.
     """
 
+    @profile
     def __init__(
         self,
         plasma,
@@ -112,6 +114,7 @@ class Regcoil:
         obj.Bnormal_from_net_coil_currents = Bnormal_from_net_coil_currents
         return obj
 
+    @profile
     def _init_cheap(
         self, plasma, coil, mpol_potential, ntor_potential,
         net_poloidal_current, net_toroidal_current, stellarator_symmetric,
@@ -221,6 +224,7 @@ class Regcoil:
             logger.info("Rebuilding operators for a loaded Regcoil (new lambda solve requested)")
             self._build_operators()
 
+    @profile
     def _build_operators(self):
         plasma, coil = self.plasma, self.coil
         nfp = self.nfp

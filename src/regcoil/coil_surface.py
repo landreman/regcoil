@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from time import perf_counter
 
+from line_profiler import profile
 import numpy as np
 
 from ._io import read_nescin
@@ -31,6 +32,7 @@ class CoilSurface(FourierSurface):
         return surf
 
     @classmethod
+    @profile
     def from_uniform_offset(
         cls, plasma, separation, ntheta=66, nzeta=67, mpol=24, ntor=25,
         standard_toroidal_angle=False,
@@ -189,6 +191,7 @@ class CoilSurface(FourierSurface):
         return _serialize.load_coil(path)
 
 
+@profile
 def _build_theta_map(scheme, curve, plasma, ntheta_transform, nzeta_transform):
     """`None` if no reparameterization was requested, else the `ThetaMap` for
     `curve`. Split out only so the two `from_uniform_offset` branches share it."""
