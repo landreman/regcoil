@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from regcoil import FourierSurface
+from regcoil import CoilSurface, FourierSurface, PlasmaSurface
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EQUILIBRIA = REPO_ROOT / "equilibria"
@@ -218,7 +218,6 @@ def test_radii_match_reference_values(wout):
     LandremanSenguptaPlunk_section5p3 (non-stellarator-symmetric) VMEC
     boundaries match hard-coded reference values (equal to simsopt's, but
     checkable without simsopt installed)."""
-    from regcoil import PlasmaSurface
 
     plasma = PlasmaSurface.from_wout(str(EQUILIBRIA / wout), ntheta=128, nzeta=128)
     for name, ref in RADII_REFERENCE[wout].items():
@@ -233,8 +232,6 @@ def test_radii_match_simsopt(wout):
     covers the no-simsopt case with the same numbers."""
     pytest.importorskip("simsopt")
     from simsopt.geo import SurfaceRZFourier
-
-    from regcoil import PlasmaSurface
 
     path = str(EQUILIBRIA / wout)
     plasma = PlasmaSurface.from_wout(path, ntheta=128, nzeta=128)
@@ -257,7 +254,6 @@ def test_radii_3d_nonzero_nu_match_cross_section_pipeline():
     the enclosed volume by polygon (Green's-theorem) integration. Agreement is
     limited by the linear interpolation in `cross_section`, hence the ~3e-3
     tolerance."""
-    from regcoil import CoilSurface, PlasmaSurface
 
     plasma = PlasmaSurface.from_wout(
         str(EQUILIBRIA / "wout_li383_1.4m.nc"), ntheta=64, nzeta=64
@@ -298,7 +294,6 @@ def test_uniform_offset_scalars_invariant_to_toroidal_angle_representation():
     two representations Fourier-truncate different functions at the same
     `mpol`/`ntor`; the residual is truncation error and shrinks ~4x per +8
     modes (checked separately), so a modest resolution matches to <2e-3."""
-    from regcoil import CoilSurface, PlasmaSurface
 
     plasma = PlasmaSurface.from_wout(
         str(EQUILIBRIA / "wout_d23p4_tm.nc"), ntheta=128, nzeta=128
@@ -354,7 +349,6 @@ def test_cross_section_nonstandard_toroidal_angle_matches_atan2():
     has a nonzero nu, so a constant-zeta slice is not a constant-phi cross
     section (ADR-025/ADR-026); cross_section must still return the surface's
     actual atan2(y, x) == phi points, not the naive constant-zeta slice."""
-    from regcoil import CoilSurface, PlasmaSurface
 
     plasma = PlasmaSurface.from_wout(
         "equilibria/wout_li383_1.4m.nc", ntheta=13, nzeta=12,
@@ -405,7 +399,6 @@ def test_evaluate_at_matches_grid_evaluate():
 def test_evaluate_at_derivatives_match_finite_differences_nonstandard_angle():
     """Same check as above, but for a surface with nonzero nu (nonstandard
     toroidal angle), where the derivative formulas have extra terms."""
-    from regcoil import CoilSurface, PlasmaSurface
 
     plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=9, nzeta=8)
     coil = CoilSurface.from_uniform_offset(
