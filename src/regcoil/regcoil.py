@@ -28,6 +28,9 @@ from . import _core
 
 logger = logging.getLogger(__name__)
 
+_F_ALL_MODE_BLOCK = 64
+_MATRIX_K_GRID_BLOCK = 2048
+
 
 def _flatten_grid(arr):
     """(..., ntheta, nzeta) -> (..., ntheta*nzeta), itheta fastest -- matches
@@ -38,6 +41,39 @@ def _flatten_grid(arr):
 def _unflatten_grid(arr, ntheta, nzeta):
     """Inverse of `_flatten_grid`."""
     return np.moveaxis(arr.reshape(*arr.shape[:-1], nzeta, ntheta), -1, -2)
+
+
+def _build_matrix_K(f_all, norm_normal_coil_flat, scale, grid_block=_MATRIX_K_GRID_BLOCK):
+    """Assemble the symmetric K Gram matrix without a full weighted copy of f_all."""
+    if grid_block < 1:
+        raise ValueError(f"grid_block must be positive, got {grid_block}")
+
+    nbf, _, ncoil_grid = f_all.shape
+    sqrtN_coil_flat = np.sqrt(norm_normal_coil_flat)
+    K_upper = np.zeros((nbf, nbf), dtype=np.float64, order="F")
+
+    first_block = True
+    for start in range(0, ncoil_grid, grid_block):
+        stop = min(start + grid_block, ncoil_grid)
+        weighted_block = (
+            f_all[:, :, start:stop]
+            / sqrtN_coil_flat[None, None, start:stop]
+        )
+        # weighted_block is C-contiguous, so this transpose is Fortran-contiguous
+        # without another copy. DSYRK then accumulates A.T @ A into one triangle.
+        A_block = np.asfortranarray(weighted_block.reshape(nbf, -1).T)
+        K_upper = scipy.linalg.blas.dsyrk(
+            alpha=scale,
+            a=A_block,
+            trans=1,
+            beta=0.0 if first_block else 1.0,
+            c=K_upper,
+            lower=0,
+            overwrite_c=1,
+        )
+        first_block = False
+
+    return np.triu(K_upper) + np.triu(K_upper, 1).T
 
 
 def _potential_fourier_modes(mpol, ntor, nfp):
@@ -143,40 +179,51 @@ class Regcoil:
 
         xm_potential, xn_potential = _potential_fourier_modes(self.mpol_potential, self.ntor_potential, nfp)
 
-        ntheta_coil, nzeta_coil = coil.ntheta, coil.nzeta
+        nzeta_coil = coil.nzeta
         theta_grid, zeta_grid = np.meshgrid(coil.theta, coil.zeta, indexing="ij")
         theta_flat = _flatten_grid(theta_grid)
         zeta_flat = _flatten_grid(zeta_grid)
 
         angle = xm_potential[:, None] * theta_flat[None, :] - xn_potential[:, None] * zeta_flat[None, :]
         sinangle = np.sin(angle)  # (mnmax_potential, ncoil_grid)
-        cosangle = np.cos(angle)
+        np.cos(angle, out=angle)
+        cosangle = angle
 
         drdtheta_flat = _flatten_grid(coil.drdtheta[:, :, :nzeta_coil])  # (3, ncoil_grid)
         drdzeta_flat = _flatten_grid(coil.drdzeta[:, :, :nzeta_coil])
         norm_normal_coil_flat = _flatten_grid(coil.norm_normal)  # (ncoil_grid,)
 
-        # Shared by f_x/f_y/f_z: xn*drdtheta + xm*drdzeta, per mode & Cartesian component.
-        coef = (
-            xn_potential[:, None, None] * drdtheta_flat[None, :, :]
-            + xm_potential[:, None, None] * drdzeta_flat[None, :, :]
-        )  # (mnmax_potential, 3, ncoil_grid)
-
-        basis_blocks = []
-        f_blocks = []
-        basis_blocks.append(sinangle)
-        f_blocks.append(cosangle[:, None, :] * coef)
-        if not self.stellarator_symmetric:
-            basis_blocks.append(cosangle)
-            f_blocks.append(-sinangle[:, None, :] * coef)
-
-        if not self.stellarator_symmetric:
+        if self.stellarator_symmetric:
+            # Building the full coef and then concatenating one-element lists
+            # used three simultaneous nmode*3*ngrid arrays. Fill the final
+            # allocation in mode blocks instead.
+            basis_all = sinangle
+            nbf = basis_all.shape[0]
+            f_all = np.empty((nbf, 3, theta_flat.size), dtype=np.float64)
+            for start in range(0, nbf, _F_ALL_MODE_BLOCK):
+                stop = min(start + _F_ALL_MODE_BLOCK, nbf)
+                sl = slice(start, stop)
+                coef_block = (
+                    xn_potential[sl, None, None] * drdtheta_flat[None, :, :]
+                    + xm_potential[sl, None, None] * drdzeta_flat[None, :, :]
+                )
+                np.multiply(cosangle[sl, None, :], coef_block, out=f_all[sl])
+                del coef_block
+        else:
+            # Shared by f_x/f_y/f_z: xn*drdtheta + xm*drdzeta, per mode
+            # and Cartesian component.
+            coef = (
+                xn_potential[:, None, None] * drdtheta_flat[None, :, :]
+                + xm_potential[:, None, None] * drdzeta_flat[None, :, :]
+            )
+            basis_all = np.concatenate([sinangle, cosangle], axis=0)
+            f_all = np.concatenate(
+                [cosangle[:, None, :] * coef, -sinangle[:, None, :] * coef],
+                axis=0,
+            )
             xm_potential = np.concatenate([xm_potential, xm_potential])
             xn_potential = np.concatenate([xn_potential, xn_potential])
-
-        basis_all = np.concatenate(basis_blocks, axis=0)  # (nbf, ncoil_grid)
-        f_all = np.concatenate(f_blocks, axis=0)  # (nbf, 3, ncoil_grid)
-        nbf = basis_all.shape[0]
+            nbf = basis_all.shape[0]
 
         d_xyz = (
             net_poloidal_current * drdtheta_flat - net_toroidal_current * drdzeta_flat
@@ -283,24 +330,20 @@ class Regcoil:
         matrix_B = dtheta_plasma * dzeta_plasma * (g.T @ g_over_N)
         logger.info("Finished matrix_B assembly in %.3f s", perf_counter() - start_time)
 
-        f_over_N = f_all / norm_normal_coil_flat[None, None, :]
         logger.info("Starting matrix_K assembly")
         start_time = perf_counter()
-        # matrix_K[m, n] = dtheta_coil * dzeta_coil * sum_{c,g} f_all[m,c,g] * f_over_N[n,c,g],
-        # i.e. a contraction over the combined (Cartesian component, grid point) axes -- equivalent
-        # to C @ C.T for C = f_all / sqrt(norm_normal_coil) flattened to (nbf, 3*ncoil_grid). Since
-        # the result is symmetric, dsyrk computes only the upper triangle in one BLAS call (~2x
-        # fewer flops than a full matmul, and vastly faster than np.einsum, which
-        # doesn't dispatch to BLAS).
-        sqrtN_coil_flat = np.sqrt(norm_normal_coil_flat)
-        f_over_sqrtN = f_all / sqrtN_coil_flat[None, None, :]
-        C = f_over_sqrtN.reshape(nbf, -1)
-        K_upper = scipy.linalg.blas.dsyrk(alpha=dtheta_coil * dzeta_coil, a=C, trans=0)
-        matrix_K = np.triu(K_upper) + np.triu(K_upper, 1).T
+        matrix_K = _build_matrix_K(
+            f_all,
+            norm_normal_coil_flat,
+            dtheta_coil * dzeta_coil,
+        )
         logger.info("Finished matrix_K assembly in %.3f s", perf_counter() - start_time)
         logger.info("Starting RHS_K assembly")
         start_time = perf_counter()
-        RHS_K = dtheta_coil * dzeta_coil * np.einsum("cg,mcg->m", d_xyz, f_over_N)
+        weighted_d_xyz = d_xyz / norm_normal_coil_flat[None, :]
+        RHS_K = dtheta_coil * dzeta_coil * np.einsum(
+            "cg,mcg->m", weighted_d_xyz, f_all, optimize=True,
+        )
         logger.info("Finished RHS_K assembly in %.3f s", perf_counter() - start_time)
 
         logger.info("Starting generalized eigensolve for %d basis functions", nbf)

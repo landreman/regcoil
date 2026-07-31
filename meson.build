@@ -41,7 +41,7 @@ endif
 # but no blas.pc, and RHEL-family systems may present FlexiBLAS instead.  Trying
 # all three by pkg-config keeps the wheel builds working without special-casing
 # the CI images here.
-blas_dep = dependency('blas', 'openblas', 'flexiblas', required: false)
+blas_dep = dependency('openblas', 'blas', 'flexiblas', required: false)
 if not blas_dep.found()
   if host_machine.system() == 'darwin'
     blas_dep = declare_dependency(link_args: ['-framework', 'Accelerate'])
