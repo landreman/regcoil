@@ -185,60 +185,85 @@ contains
       integer, intent(in) :: izeta_plasma
       integer :: itheta_plasma, itheta_coil, izeta_coil, izetal_coil, l_coil
       integer :: index_coil, row_start, row_end
-      real(dp) :: x, y, z, dx, dy, dz, dr2inv, dr32inv
+      real(dp) :: dx, dy, dz, dr2inv, dr32inv
       real(dp) :: dx_norm2, dx_norm3, dy_norm1, dy_norm3, dz_norm1, dz_norm2, this_h
+      real(dp) :: coil_x, coil_y, coil_z, coil_nx, coil_ny, coil_nz
+      real(dp) :: factor_hx, factor_hy, factor_hz
+      real(dp) :: normal_px, normal_py, normal_pz
+      real(dp) :: plasma_x(ntheta_plasma), plasma_y(ntheta_plasma), plasma_z(ntheta_plasma)
+      real(dp) :: plasma_nx(ntheta_plasma), plasma_ny(ntheta_plasma), plasma_nz(ntheta_plasma)
       real(dp) :: inductance_block(ntheta_plasma, ncoil)
       real(dp) :: h_block(ntheta_plasma)
       real(dp) :: g_block(ntheta_plasma, nbf)
       real(dp) :: blas_alpha, blas_beta
 
-      inductance_block = 0
-      h_block = 0
+      ! Pack the component-first surface arrays into unit-stride vectors once
+      ! per plasma-zeta block. These small arrays remain hot in cache throughout
+      ! the pairwise loop and give the compiler a contiguous SIMD target.
+      plasma_x = r_plasma(1, :, izeta_plasma)
+      plasma_y = r_plasma(2, :, izeta_plasma)
+      plasma_z = r_plasma(3, :, izeta_plasma)
+      plasma_nx = normal_plasma(1, :, izeta_plasma)
+      plasma_ny = normal_plasma(2, :, izeta_plasma)
+      plasma_nz = normal_plasma(3, :, izeta_plasma)
 
-      do itheta_plasma = 1, ntheta_plasma
-         x = r_plasma(1,itheta_plasma,izeta_plasma)
-         y = r_plasma(2,itheta_plasma,izeta_plasma)
-         z = r_plasma(3,itheta_plasma,izeta_plasma)
-         do izeta_coil = 1, nzeta_coil
-            do itheta_coil = 1, ntheta_coil
-               index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
-               do l_coil = 0, nfp-1
-                  izetal_coil = izeta_coil + l_coil*nzeta_coil
-                  dx = x - r_coil(1,itheta_coil,izetal_coil)
-                  dy = y - r_coil(2,itheta_coil,izetal_coil)
-                  dz = z - r_coil(3,itheta_coil,izetal_coil)
+      inductance_block = 0.0_dp
+      h_block = 0.0_dp
 
-                  dr2inv = 1/(dx*dx + dy*dy + dz*dz)
+      do izeta_coil = 1, nzeta_coil
+         do itheta_coil = 1, ntheta_coil
+            index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
+            do l_coil = 0, nfp-1
+               izetal_coil = izeta_coil + l_coil*nzeta_coil
+
+               ! These coil quantities are invariant across the plasma-theta
+               ! loop, so load them once rather than for every pair.
+               coil_x = r_coil(1,itheta_coil,izetal_coil)
+               coil_y = r_coil(2,itheta_coil,izetal_coil)
+               coil_z = r_coil(3,itheta_coil,izetal_coil)
+               coil_nx = normal_coil(1,itheta_coil,izetal_coil)
+               coil_ny = normal_coil(2,itheta_coil,izetal_coil)
+               coil_nz = normal_coil(3,itheta_coil,izetal_coil)
+               factor_hx = factor_for_h(1,itheta_coil,izetal_coil)
+               factor_hy = factor_for_h(2,itheta_coil,izetal_coil)
+               factor_hz = factor_for_h(3,itheta_coil,izetal_coil)
+
+               !$OMP SIMD PRIVATE(normal_px, normal_py, normal_pz, dx, dy, dz, dr2inv, dr32inv, &
+               !$OMP& dx_norm2, dx_norm3, dy_norm1, dy_norm3, dz_norm1, dz_norm2, this_h)
+               do itheta_plasma = 1, ntheta_plasma
+                  dx = plasma_x(itheta_plasma) - coil_x
+                  dy = plasma_y(itheta_plasma) - coil_y
+                  dz = plasma_z(itheta_plasma) - coil_z
+                  normal_px = plasma_nx(itheta_plasma)
+                  normal_py = plasma_ny(itheta_plasma)
+                  normal_pz = plasma_nz(itheta_plasma)
+
+                  dr2inv = 1.0_dp/(dx*dx + dy*dy + dz*dz)
                   dr32inv = dr2inv*sqrt(dr2inv)
 
-                  dy_norm3 = dy * normal_plasma(3,itheta_plasma,izeta_plasma)
-                  dz_norm1 = dz * normal_plasma(1,itheta_plasma,izeta_plasma)
-                  dx_norm2 = dx * normal_plasma(2,itheta_plasma,izeta_plasma)
-                  dy_norm1 = dy * normal_plasma(1,itheta_plasma,izeta_plasma)
-                  dz_norm2 = dz * normal_plasma(2,itheta_plasma,izeta_plasma)
-                  dx_norm3 = dx * normal_plasma(3,itheta_plasma,izeta_plasma)
+                  dy_norm3 = dy * normal_pz
+                  dz_norm1 = dz * normal_px
+                  dx_norm2 = dx * normal_py
+                  dy_norm1 = dy * normal_px
+                  dz_norm2 = dz * normal_py
+                  dx_norm3 = dx * normal_pz
 
-                  this_h = (factor_for_h(1,itheta_coil,izetal_coil) * dy_norm3 + &
-                       factor_for_h(2,itheta_coil,izetal_coil) * dz_norm1 + &
-                       factor_for_h(3,itheta_coil,izetal_coil) * dx_norm2  &
-                       - factor_for_h(3,itheta_coil,izetal_coil) * dy_norm1 &
-                       - factor_for_h(1,itheta_coil,izetal_coil) * dz_norm2 &
-                       - factor_for_h(2,itheta_coil,izetal_coil) * dx_norm3 ) * dr32inv
+                  this_h = (factor_hx * dy_norm3 + &
+                       factor_hy * dz_norm1 + &
+                       factor_hz * dx_norm2  &
+                       - factor_hz * dy_norm1 &
+                       - factor_hx * dz_norm2 &
+                       - factor_hy * dx_norm3) * dr32inv
 
                   inductance_block(itheta_plasma, index_coil) = inductance_block(itheta_plasma, index_coil) + &
-                       (normal_plasma(1,itheta_plasma,izeta_plasma)*normal_coil(1,itheta_coil,izetal_coil) &
-                       +normal_plasma(2,itheta_plasma,izeta_plasma)*normal_coil(2,itheta_coil,izetal_coil) &
-                       +normal_plasma(3,itheta_plasma,izeta_plasma)*normal_coil(3,itheta_coil,izetal_coil) &
-                       - (3*dr2inv) * &
-                       (normal_plasma(1,itheta_plasma,izeta_plasma)*dx &
-                       + normal_plasma(2,itheta_plasma,izeta_plasma)*dy &
-                       + normal_plasma(3,itheta_plasma,izeta_plasma)*dz) * &
-                       (normal_coil(1,itheta_coil,izetal_coil)*dx &
-                       +normal_coil(2,itheta_coil,izetal_coil)*dy &
-                       +normal_coil(3,itheta_coil,izetal_coil)*dz)) * dr32inv
+                       (normal_px*coil_nx + normal_py*coil_ny + normal_pz*coil_nz &
+                       - (3.0_dp*dr2inv) * &
+                       (normal_px*dx + normal_py*dy + normal_pz*dz) * &
+                       (coil_nx*dx + coil_ny*dy + coil_nz*dz)) * dr32inv
 
                   h_block(itheta_plasma) = h_block(itheta_plasma) + this_h
                end do
+               !$OMP END SIMD
             end do
          end do
       end do
@@ -253,8 +278,7 @@ contains
       ! each chunk against basis_functions faster than the `matmul`
       ! intrinsic would.
       blas_alpha = dtheta_coil*dzeta_coil*mu0/(4*pi)
-      blas_beta = 0
-      g_block = 0
+      blas_beta = 0.0_dp
       call DGEMM('N', 'N', ntheta_plasma, nbf, ncoil, blas_alpha, &
            inductance_block, ntheta_plasma, basis_functions, ncoil, blas_beta, g_block, ntheta_plasma)
 
