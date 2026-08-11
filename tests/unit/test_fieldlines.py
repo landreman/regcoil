@@ -59,6 +59,22 @@ def test_cylindrical_field_round_trip():
     )
 
 
+def test_successful_diagnostic_evaluates_magnetic_field_once():
+    evaluations = 0
+    field = rotating_field()
+
+    def counting_field(point):
+        nonlocal evaluations
+        evaluations += 1
+        return field(point)
+
+    diagnostic = ToroidalTracer(counting_field, nfp=1).diagnose(
+        0.23, [6.2, -0.1]
+    )
+    assert diagnostic.valid
+    assert evaluations == 1
+
+
 @pytest.mark.parametrize("sign", [1.0, -1.0])
 def test_sections_and_iota_work_in_both_toroidal_directions(sign):
     tracer = ToroidalTracer(
@@ -126,6 +142,45 @@ def test_finds_elliptic_axis_of_synthetic_return_map():
     assert axis.return_error < 1e-8
     assert axis.determinant == pytest.approx(1.0, abs=2e-6)
     assert np.allclose(np.abs(axis.eigenvalues), 1.0, atol=2e-6)
+
+
+def test_axis_options_inherit_tracer_guards_and_tighten_tolerances(monkeypatch):
+    tracer_options = ToroidalTracingOptions(
+        bphi_absolute_floor=2.0e-8,
+        bphi_relative_floor=2.0e-2,
+        maximum_rhs_norm=23.0,
+        minimum_field_magnitude=4.0e-12,
+        method="DOP853",
+        rtol=3.0e-6,
+        atol=4.0e-8,
+    )
+    tracer = ToroidalTracer(
+        rotating_field(), nfp=1, options=tracer_options
+    )
+    observed_options = []
+    angle = 0.4
+    return_map_jacobian = np.array([
+        [np.cos(angle), -np.sin(angle)],
+        [np.sin(angle), np.cos(angle)],
+    ])
+
+    def fake_first_return_map(rz, *, direction=1, options=None):
+        observed_options.append(options)
+        return AXIS + return_map_jacobian @ (np.asarray(rz) - AXIS)
+
+    monkeypatch.setattr(tracer, "first_return_map", fake_first_return_map)
+    tracer.find_magnetic_axis(CircularPlasma())
+
+    assert observed_options
+    axis_options = observed_options[0]
+    assert all(options is axis_options for options in observed_options)
+    assert axis_options.bphi_absolute_floor == 2.0e-8
+    assert axis_options.bphi_relative_floor == 2.0e-2
+    assert axis_options.maximum_rhs_norm == 23.0
+    assert axis_options.minimum_field_magnitude == 4.0e-12
+    assert axis_options.method == "DOP853"
+    assert axis_options.rtol == 1.0e-10
+    assert axis_options.atol == 1.0e-11
 
 
 @pytest.mark.parametrize(

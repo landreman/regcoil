@@ -9,7 +9,7 @@ field.
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import math
 import operator
 from time import perf_counter
@@ -192,7 +192,9 @@ def _invalid(reason, phi, R, Z, **values):
     raise ToroidalTracingError(diagnostic)
 
 
-def _evaluate_toroidal_rhs(phi, rz, magnetic_field, options):
+def _evaluate_toroidal_rhs(
+    phi, rz, magnetic_field, options, *, full_diagnostic=False
+):
     """Hot scalar RHS path; diagnostics are allocated only on failure."""
     R = float(rz[0])
     Z = float(rz[1])
@@ -287,12 +289,23 @@ def _evaluate_toroidal_rhs(phi, rz, magnetic_field, options):
             rhs_norm=rhs_norm,
             rhs=np.array([rhs_R, rhs_Z]),
         )
-    return (
-        np.array([rhs_R, rhs_Z]),
-        absolute_B_phi,
-        bphi_fraction,
-        rhs_norm,
-    )
+    rhs = np.array([rhs_R, rhs_Z])
+    if full_diagnostic:
+        return ToroidalDiagnostic(
+            valid=True,
+            reason="ok",
+            phi=float(phi),
+            R=R,
+            Z=Z,
+            B_R=B_R,
+            B_phi=B_phi,
+            B_Z=B_Z,
+            B_magnitude=magnitude,
+            bphi_fraction=bphi_fraction,
+            rhs_norm=rhs_norm,
+            rhs=rhs,
+        )
+    return rhs, absolute_B_phi, bphi_fraction, rhs_norm
 
 
 class _TraceMonitor:
@@ -378,31 +391,16 @@ class ToroidalTracer:
     def diagnose(self, phi, rz, *, options=None):
         """Return a complete diagnostic without propagating an invalid point."""
         options = options or self.options
-        R, Z = np.asarray(rz, dtype=float)
         try:
-            rhs, _, fraction, norm = _evaluate_toroidal_rhs(
-                phi, (R, Z), self.magnetic_field, options
+            return _evaluate_toroidal_rhs(
+                phi,
+                rz,
+                self.magnetic_field,
+                options,
+                full_diagnostic=True,
             )
         except ToroidalTracingError as error:
             return error.diagnostic
-        B_R, B_phi, B_Z = cylindrical_field(
-            phi, (R, Z), self.magnetic_field
-        )
-        magnitude = float(np.sqrt(B_R * B_R + B_phi * B_phi + B_Z * B_Z))
-        return ToroidalDiagnostic(
-            True,
-            "ok",
-            float(phi),
-            float(R),
-            float(Z),
-            B_R,
-            B_phi,
-            B_Z,
-            magnitude,
-            fraction,
-            norm,
-            rhs,
-        )
 
     def _resolve_direction(self, diagnostics, direction):
         if direction != "auto":
@@ -597,7 +595,11 @@ class ToroidalTracer:
         """Find and validate a local elliptic fixed point at physical phi=0."""
         from matplotlib.path import Path
 
-        options = options or ToroidalTracingOptions(rtol=1e-10, atol=1e-11)
+        options = options or replace(
+            self.options,
+            rtol=1.0e-10,
+            atol=1.0e-11,
+        )
         R_section, Z_section = plasma.cross_section(phi=0.0)
         R_boundary = np.asarray(R_section).squeeze()
         Z_boundary = np.asarray(Z_section).squeeze()
