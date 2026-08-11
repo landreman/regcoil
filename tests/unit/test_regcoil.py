@@ -368,6 +368,22 @@ def test_magnetic_field_rejects_nonpositive_chunk_size():
         sol.magnetic_field([6.0, 0.0, 0.0], chunk_size=0)
 
 
+@pytest.mark.parametrize("chunk_size", [True, 1.5, "2"])
+def test_magnetic_field_rejects_noninteger_chunk_size(chunk_size):
+    sol = _small_problem(ntheta=6, nzeta=5).solve(1e-3)
+    with pytest.raises(TypeError, match="chunk_size must be an integer"):
+        sol.magnetic_field([6.0, 0.0, 0.0], chunk_size=chunk_size)
+
+
+def test_magnetic_field_accepts_numpy_integer_chunk_size():
+    sol = _small_problem(ntheta=6, nzeta=5).solve(1e-3)
+    field = sol.magnetic_field(
+        [[6.0, 0.0, 0.0], [6.1, 0.0, 0.0]],
+        chunk_size=np.int64(1),
+    )
+    assert field.shape == (2, 3)
+
+
 def test_magnetic_field_rejects_surface_quadrature_point():
     sol = _small_problem(ntheta=6, nzeta=5).solve(1e-3)
     point = sol.problem.coil.r[:, 0, 0]

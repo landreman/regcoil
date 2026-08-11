@@ -183,13 +183,24 @@ class MagneticFieldEvaluator:
         ``8 * chunk_size * nsource`` bytes. Direct quadrature is singular on,
         and is not intended for evaluation very close to, the winding surface.
         """
+        if isinstance(chunk_size, bool):
+            raise TypeError(
+                f"chunk_size must be an integer, got {chunk_size!r}"
+            )
+        try:
+            chunk_size = operator.index(chunk_size)
+        except TypeError as exc:
+            raise TypeError(
+                f"chunk_size must be an integer, got {chunk_size!r}"
+            ) from exc
+        if chunk_size < 1:
+            raise ValueError("chunk_size must be positive")
+
         points = np.asarray(points, dtype=np.float64)
         if points.ndim == 0 or points.shape[-1] != 3:
             raise ValueError("points must have shape (..., 3)")
         if not np.all(np.isfinite(points)):
             raise ValueError("points must contain only finite values")
-        if chunk_size < 1:
-            raise ValueError("chunk_size must be positive")
 
         original_shape = points.shape
         points = points.reshape(-1, 3)
