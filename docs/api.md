@@ -62,6 +62,29 @@ Reparameterize a surface's poloidal angle without changing its shape --
    regcoil.plot.all
 ```
 
+## Magnetic fields and field lines
+
+```{eval-rst}
+.. autosummary::
+   :toctree: _api/
+   :recursive:
+
+   regcoil.MagneticFieldEvaluator
+   regcoil.fieldlines.ToroidalTracer
+   regcoil.fieldlines.ToroidalTracingOptions
+   regcoil.fieldlines.ToroidalDiagnostic
+   regcoil.fieldlines.PoincareTrace
+   regcoil.fieldlines.PoincareBatch
+   regcoil.fieldlines.MagneticAxisResult
+   regcoil.fieldlines.IotaProfile
+   regcoil.fieldlines.cylindrical_field
+   regcoil.fieldlines.estimate_iota
+   regcoil.plot.current_potential_spectrum
+   regcoil.plot.magnetic_field_cross_section
+   regcoil.plot.poincare
+   regcoil.plot.iota_profile
+```
+
 ## Cutting into discrete coils
 
 ```{eval-rst}

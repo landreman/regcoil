@@ -12,6 +12,7 @@ __version__ = _version("regcoil")
 
 from . import _core
 from . import cut
+from . import fieldlines
 from . import plot
 from .coil_surface import CoilSurface
 from .cut import CutCoils
@@ -19,7 +20,8 @@ from .examples import ExampleDataset, examples
 from .fourier_surface import FourierSurface
 from .log import log
 from .plasma_surface import PlasmaSurface
-from .regcoil import MagneticFieldEvaluator, Regcoil, Solution, SolutionScan
+from .magnetic_field import MagneticFieldEvaluator
+from .regcoil import Regcoil, Solution, SolutionScan
 from .reparameterize import CurvatureWeighted, ThetaMap, UniformArclength
 from .surface import Surface
 from ._core import omp_max_threads
@@ -46,6 +48,7 @@ __all__ = [
     "examples",
     "plot",
     "cut",
+    "fieldlines",
     "save",
     "load",
 ]

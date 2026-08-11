@@ -21,6 +21,7 @@ quickstart
 theory
 usage
 plotting
+fieldlines
 ```
 
 ```{toctree}

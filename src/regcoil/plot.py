@@ -117,6 +117,115 @@ def cross_sections(plasma, coil, phi=None, fig=None):
     return fig
 
 
+def poincare(
+    batch,
+    *,
+    plasma=None,
+    winding_surface=None,
+    axis_trace=None,
+    fig=None,
+):
+    """Plot every physical section stored in a ``PoincareBatch``."""
+    import matplotlib.pyplot as plt
+
+    nrows, ncols = _grid_shape(len(batch.phase_fractions))
+    if fig is None:
+        fig = plt.figure(figsize=DEFAULT_FIGSIZE)
+    axes = _make_grid_axes(fig, nrows, ncols).ravel()
+    physical_phi = batch.phase_fractions * (2 * np.pi / batch.nfp)
+
+    boundary_data = []
+    for surface in (plasma, winding_surface):
+        if surface is None:
+            boundary_data.append(None)
+        else:
+            boundary_data.append(surface.cross_section(phi=physical_phi))
+
+    successful = batch.successful
+    initial_R = np.array([trace.initial_rz[0] for trace in successful])
+    if len(initial_R):
+        upper = initial_R.max() if np.ptp(initial_R) else initial_R.min() + 1
+        colors = plt.colormaps["hsv"](
+            plt.Normalize(initial_R.min(), upper)(initial_R)
+        )
+    else:
+        colors = []
+
+    for phase_index, (ax, fraction) in enumerate(
+        zip(axes, batch.phase_fractions)
+    ):
+        for data, color, label in (
+            (boundary_data[0], "red", "plasma boundary"),
+            (boundary_data[1], "blue", "winding surface"),
+        ):
+            if data is not None:
+                boundary_R, boundary_Z = data
+                ax.plot(
+                    np.asarray(boundary_R[phase_index]).squeeze(),
+                    np.asarray(boundary_Z[phase_index]).squeeze(),
+                    color=color, linewidth=1.5, label=label,
+                )
+        for color, trace in zip(colors, successful):
+            _, points = trace.section(
+                phase_index,
+                omit_initial=np.isclose(fraction, 0.0),
+            )
+            ax.scatter(
+                points[:, 0], points[:, 1], s=5, alpha=0.8, color=color,
+                label=f"R0={trace.initial_rz[0]:.3f}" if phase_index == 0 else None,
+            )
+        if axis_trace is not None and axis_trace.success:
+            _, points = axis_trace.section(phase_index)
+            if len(points):
+                ax.scatter(
+                    *points[0], marker="*", s=100, color="black", zorder=6,
+                    label="elliptic magnetic axis" if phase_index == 0 else None,
+                )
+        ax.set_title(rf"$\phi={fraction:g}\,(2\pi/n_{{\rm fp}})$")
+        ax.set_xlabel("R [m]")
+        ax.set_ylabel("Z [m]")
+        ax.set_aspect("equal")
+        ax.grid(alpha=0.3)
+
+    for ax in axes[len(batch.phase_fractions):]:
+        ax.set_visible(False)
+    failed = batch.failed
+    if failed:
+        points = np.stack([trace.initial_rz for trace in failed])
+        axes[0].scatter(
+            points[:, 0], points[:, 1], marker="x", s=60,
+            color="tab:orange", label="unsuccessful initial condition", zorder=7,
+        )
+    handles, labels = axes[0].get_legend_handles_labels()
+    if handles:
+        fig.legend(handles, labels, loc="center right", fontsize="small")
+        fig.subplots_adjust(right=0.82)
+    fig.suptitle(f"Poincare sections over {batch.periods} field periods")
+    return fig
+
+
+def iota_profile(profile, ax=None):
+    """Plot convergence of a geometric ``IotaProfile`` with trace length."""
+    ax = _new_ax(ax)
+    for column, count in enumerate(profile.period_counts):
+        longest = column == len(profile.period_counts) - 1
+        ax.plot(
+            profile.radius,
+            profile.iota[:, column],
+            marker="o",
+            linewidth=2.2 if longest else 1.2,
+            alpha=1.0 if longest else 0.55,
+            label=f"{count} field periods",
+        )
+    ax.set_xlabel(r"Geometric radius from magnetic axis at $\phi=0$ [m]")
+    ax.set_ylabel(r"Rotational transform $\iota$")
+    ax.set_title("Rotational-transform radial profile")
+    ax.grid(alpha=0.3)
+    if len(profile.period_counts):
+        ax.legend(title="Fit length")
+    return ax
+
+
 def pareto(scans, x="f_K", y="f_B", labels=None, ax=None):
     """Pareto front(s): `x`/`y` chosen among `f_B`, `f_K`, `max_K`,
     `max_Bnormal`. `scans` is a single `SolutionScan` or a list of them

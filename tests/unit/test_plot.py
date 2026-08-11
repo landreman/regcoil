@@ -14,6 +14,7 @@ import pytest
 
 import regcoil
 from regcoil import CoilSurface, PlasmaSurface, Regcoil
+from regcoil.fieldlines import IotaProfile, ToroidalTracer
 from regcoil import plot
 
 
@@ -67,6 +68,31 @@ def test_cross_sections_grid_is_one_subplot_per_phi_red_plasma_blue_coil():
     for ax in fig.axes:
         colors = {line.get_color() for line in ax.get_lines()}
         assert colors == {"red", "blue"}
+
+def test_poincare_and_iota_profile_plot_result_objects():
+    def toroidal_field(point):
+        x, y, _ = np.asarray(point)
+        radius = np.hypot(x, y)
+        return np.array([-y / radius, x / radius, 0.0])
+
+    batch = ToroidalTracer(toroidal_field, nfp=2).trace_poincare(
+        [[5.8, 0.0], [6.2, 0.0]],
+        periods=2,
+        phase_fractions=(0.0, 0.25, 0.5, 0.75),
+    )
+    fig = plot.poincare(batch)
+    assert len(fig.axes) == 4
+
+    profile = IotaProfile(
+        radius=np.array([0.1, 0.2]),
+        initial_rz=np.array([[6.1, 0.0], [6.2, 0.0]]),
+        period_counts=np.array([10, 20]),
+        iota=np.array([[0.4, 0.41], [0.35, 0.36]]),
+        axis_rz=np.array([6.0, 0.0]),
+    )
+    fig, ax = plt.subplots()
+    assert plot.iota_profile(profile, ax=ax) is ax
+    assert len(ax.lines) == 2
 
 
 def test_pareto_overlays_multiple_scans_on_one_axes():
