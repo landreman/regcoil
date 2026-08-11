@@ -79,8 +79,6 @@ Reparameterize a surface's poloidal angle without changing its shape --
    regcoil.fieldlines.IotaProfile
    regcoil.fieldlines.cylindrical_field
    regcoil.fieldlines.estimate_iota
-   regcoil.plot.current_potential_spectrum
-   regcoil.plot.magnetic_field_cross_section
    regcoil.plot.poincare
    regcoil.plot.iota_profile
 ```
