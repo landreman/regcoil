@@ -19,7 +19,7 @@ from .examples import ExampleDataset, examples
 from .fourier_surface import FourierSurface
 from .log import log
 from .plasma_surface import PlasmaSurface
-from .regcoil import Regcoil, Solution, SolutionScan
+from .regcoil import MagneticFieldEvaluator, Regcoil, Solution, SolutionScan
 from .reparameterize import CurvatureWeighted, ThetaMap, UniformArclength
 from .surface import Surface
 from ._core import omp_max_threads
@@ -35,6 +35,7 @@ __all__ = [
     "PlasmaSurface",
     "CoilSurface",
     "Regcoil",
+    "MagneticFieldEvaluator",
     "Solution",
     "SolutionScan",
     "CutCoils",

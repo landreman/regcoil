@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 from regcoil import CoilSurface, PlasmaSurface, Regcoil
-from regcoil.regcoil import _build_matrix_K
+from regcoil.regcoil import _build_matrix_K, _flatten_grid
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -193,6 +193,186 @@ def test_current_potential_and_current_density_shapes():
     assert sol.current_potential().shape == (coil.ntheta, coil.nzeta)
     assert sol.current_density().shape == (3, coil.ntheta, coil.nzeta)
     np.testing.assert_array_equal(sol.single_valued_current_potential_mn, sol.solution)
+
+
+def _direct_magnetic_field_reference(
+    solution, points, *, theta_stride=1, zeta_stride=1
+):
+    """Temporary-heavy expression retained here as an independent oracle."""
+    coil = solution.problem.coil
+    K_one_period = solution.current_density()
+    source_blocks = []
+    current_blocks = []
+    weight_blocks = []
+    for period in range(coil.nfp):
+        start = period * coil.nzeta
+        stop = start + coil.nzeta
+        source_blocks.append(_flatten_grid(coil.r[:, :, start:stop]).T)
+
+        angle = 2 * np.pi * period / coil.nfp
+        c = np.cos(angle)
+        s = np.sin(angle)
+        K_period = np.empty_like(K_one_period)
+        K_period[0] = c * K_one_period[0] - s * K_one_period[1]
+        K_period[1] = s * K_one_period[0] + c * K_one_period[1]
+        K_period[2] = K_one_period[2]
+        current_blocks.append(_flatten_grid(K_period).T)
+        weight_blocks.append(
+            _flatten_grid(coil.norm_normal) * coil.dtheta * coil.dzeta
+        )
+
+    full_grid_shape = (coil.nfp * coil.nzeta, coil.ntheta, 3)
+    source_points = np.concatenate(source_blocks).reshape(full_grid_shape)[
+        ::zeta_stride, ::theta_stride
+    ].reshape(-1, 3)
+    surface_current = np.concatenate(current_blocks).reshape(full_grid_shape)[
+        ::zeta_stride, ::theta_stride
+    ].reshape(-1, 3)
+    weights = np.concatenate(weight_blocks).reshape(full_grid_shape[:-1])[
+        ::zeta_stride, ::theta_stride
+    ].reshape(-1) * theta_stride * zeta_stride
+    points = np.asarray(points, dtype=float)
+    original_shape = points.shape
+    points = points.reshape(-1, 3)
+    displacement = points[:, None, :] - source_points[None, :, :]
+    distance_squared = np.einsum(
+        "ijk,ijk->ij", displacement, displacement
+    )
+    result = 1.0e-7 * np.einsum(
+        "ijk,ij,j->ik",
+        np.cross(surface_current[None, :, :], displacement),
+        distance_squared ** -1.5,
+        weights,
+        optimize=True,
+    )
+    return result.reshape(original_shape)
+
+
+def test_prepared_magnetic_field_matches_direct_quadrature():
+    sol = _small_problem(ntheta=6, nzeta=5).solve(1e-3)
+    points = np.array(
+        [
+            [[6.0, 0.0, 0.0], [6.5, 0.2, -0.1]],
+            [[5.5, -0.3, 0.2], [7.0, 0.1, 0.3]],
+        ]
+    )
+    expected = _direct_magnetic_field_reference(sol, points)
+
+    evaluator = sol.prepare_magnetic_field()
+    np.testing.assert_allclose(
+        evaluator(points, chunk_size=1), expected, rtol=2e-13, atol=2e-13
+    )
+    np.testing.assert_allclose(
+        evaluator(points, chunk_size=3), expected, rtol=2e-13, atol=2e-13
+    )
+    np.testing.assert_allclose(
+        sol.magnetic_field(points), expected, rtol=2e-13, atol=2e-13
+    )
+
+
+def test_magnetic_field_evaluator_is_cached():
+    sol = _small_problem(ntheta=6, nzeta=5).solve(1e-3)
+    evaluator = sol.prepare_magnetic_field()
+    assert sol.prepare_magnetic_field() is evaluator
+    sol.magnetic_field([6.0, 0.0, 0.0])
+    assert sol.prepare_magnetic_field() is evaluator
+
+
+def test_single_point_magnetic_field_matches_batched_and_direct_quadrature():
+    sol = _small_problem(ntheta=8, nzeta=6, nfp=2).solve(1e-3)
+    evaluator = sol.prepare_magnetic_field(theta_stride=2, zeta_stride=2)
+    point = np.array([6.5, 0.2, -0.1])
+    expected = _direct_magnetic_field_reference(
+        sol, point, theta_stride=2, zeta_stride=2
+    )
+
+    single = evaluator(point)
+    single_from_list = evaluator(point.tolist())
+    batched = evaluator(point[None, :])
+
+    assert single.shape == (3,)
+    assert single_from_list.shape == (3,)
+    assert batched.shape == (1, 3)
+    assert evaluator._source_points_c.flags.c_contiguous
+    assert evaluator._weighted_surface_current_c.flags.c_contiguous
+    np.testing.assert_allclose(single, expected, rtol=2e-13, atol=2e-13)
+    np.testing.assert_allclose(single_from_list, expected, rtol=2e-13, atol=2e-13)
+    np.testing.assert_allclose(batched[0], expected, rtol=2e-13, atol=2e-13)
+
+
+def test_reduced_magnetic_field_quadrature_matches_direct_sum():
+    sol = _small_problem(ntheta=8, nzeta=6, nfp=2).solve(1e-3)
+    points = np.array([[6.0, 0.0, 0.0], [6.5, 0.2, -0.1]])
+    expected = _direct_magnetic_field_reference(
+        sol, points, theta_stride=2, zeta_stride=2
+    )
+
+    evaluator = sol.prepare_magnetic_field(
+        theta_stride=2, zeta_stride=2
+    )
+    assert evaluator.theta_stride == 2
+    assert evaluator.zeta_stride == 2
+    assert evaluator.quadrature_shape == (6, 4)
+    assert evaluator.nsource == 24
+    assert evaluator.source_points.shape == (24, 3)
+    np.testing.assert_allclose(
+        evaluator(points), expected, rtol=2e-13, atol=2e-13
+    )
+    np.testing.assert_allclose(
+        sol.magnetic_field(points, theta_stride=2, zeta_stride=2),
+        expected,
+        rtol=2e-13,
+        atol=2e-13,
+    )
+    assert sol.prepare_magnetic_field(
+        theta_stride=2, zeta_stride=2
+    ) is evaluator
+    assert sol.prepare_magnetic_field() is not evaluator
+
+
+@pytest.mark.parametrize(
+    "kwargs, error, message",
+    [
+        ({"theta_stride": 0}, ValueError, "positive"),
+        ({"theta_stride": 3}, ValueError, "divide"),
+        ({"zeta_stride": 5}, ValueError, "divide"),
+        ({"zeta_stride": 1.5}, TypeError, "integer"),
+        ({"theta_stride": True}, TypeError, "integer"),
+    ],
+)
+def test_magnetic_field_rejects_invalid_quadrature_strides(
+    kwargs, error, message
+):
+    sol = _small_problem(ntheta=8, nzeta=6, nfp=2).solve(1e-3)
+    with pytest.raises(error, match=message):
+        sol.prepare_magnetic_field(**kwargs)
+
+
+@pytest.mark.parametrize(
+    "points, message",
+    [
+        (1.0, "shape"),
+        ([1.0, 2.0], "shape"),
+        ([np.nan, 0.0, 0.0], "finite"),
+    ],
+)
+def test_magnetic_field_rejects_invalid_points(points, message):
+    sol = _small_problem(ntheta=6, nzeta=5).solve(1e-3)
+    with pytest.raises(ValueError, match=message):
+        sol.magnetic_field(points)
+
+
+def test_magnetic_field_rejects_nonpositive_chunk_size():
+    sol = _small_problem(ntheta=6, nzeta=5).solve(1e-3)
+    with pytest.raises(ValueError, match="chunk_size"):
+        sol.magnetic_field([6.0, 0.0, 0.0], chunk_size=0)
+
+
+def test_magnetic_field_rejects_surface_quadrature_point():
+    sol = _small_problem(ntheta=6, nzeta=5).solve(1e-3)
+    point = sol.problem.coil.r[:, 0, 0]
+    with pytest.raises(ValueError, match="quadrature point"):
+        sol.magnetic_field(point)
 
 
 def test_regcoil_rejects_mismatched_nfp():

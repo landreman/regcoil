@@ -1,5 +1,6 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include <math.h>
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/arrayobject.h>
 #include "regcoil_c_api.h"
@@ -35,6 +36,30 @@ require_f64_farray(PyObject *obj, int ndim, const char *name)
     return arr;
 }
 
+static PyArrayObject *
+require_f64_carray(PyObject *obj, int ndim, const char *name)
+{
+    PyArrayObject *arr;
+    if (!PyArray_Check(obj)) {
+        PyErr_Format(PyExc_TypeError, "%s must be a numpy array", name);
+        return NULL;
+    }
+    arr = (PyArrayObject *)obj;
+    if (PyArray_TYPE(arr) != NPY_DOUBLE) {
+        PyErr_Format(PyExc_TypeError, "%s must have dtype float64", name);
+        return NULL;
+    }
+    if (PyArray_NDIM(arr) != ndim) {
+        PyErr_Format(PyExc_ValueError, "%s must have ndim=%d, got %d", name, ndim, PyArray_NDIM(arr));
+        return NULL;
+    }
+    if (!PyArray_IS_C_CONTIGUOUS(arr)) {
+        PyErr_Format(PyExc_ValueError, "%s must be C-contiguous", name);
+        return NULL;
+    }
+    return arr;
+}
+
 static int
 dims_match(PyArrayObject *a, PyArrayObject *b)
 {
@@ -54,6 +79,94 @@ static PyObject *
 core_omp_max_threads(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromLong((long)regcoil_c_omp_max_threads());
+}
+
+static PyObject *
+core_magnetic_field_single(PyObject *Py_UNUSED(self), PyObject *args)
+{
+    PyObject *source_points_o, *weighted_current_o, *point_o;
+    PyArrayObject *source_points, *weighted_current, *point, *result;
+    npy_intp result_dims[1] = {3};
+    npy_intp nsource, j;
+    const double *sources, *currents, *p;
+    double *B;
+    double Bx = 0.0, By = 0.0, Bz = 0.0;
+    int singular = 0;
+
+    if (!PyArg_ParseTuple(args, "OOO", &source_points_o, &weighted_current_o, &point_o)) {
+        return NULL;
+    }
+    source_points = require_f64_carray(source_points_o, 2, "source_points");
+    weighted_current = require_f64_carray(weighted_current_o, 2, "weighted_surface_current");
+    point = require_f64_carray(point_o, 1, "point");
+    if (!source_points || !weighted_current || !point) {
+        return NULL;
+    }
+    if (!dims_match(source_points, weighted_current) ||
+        PyArray_DIM(source_points, 1) != 3) {
+        PyErr_SetString(
+            PyExc_ValueError,
+            "source_points and weighted_surface_current must have shape (nsource, 3)"
+        );
+        return NULL;
+    }
+    if (PyArray_DIM(point, 0) != 3) {
+        PyErr_SetString(PyExc_ValueError, "point must have shape (3,)");
+        return NULL;
+    }
+
+    result = (PyArrayObject *)PyArray_EMPTY(1, result_dims, NPY_DOUBLE, 0);
+    if (!result) {
+        return NULL;
+    }
+    nsource = PyArray_DIM(source_points, 0);
+    sources = (const double *)PyArray_DATA(source_points);
+    currents = (const double *)PyArray_DATA(weighted_current);
+    p = (const double *)PyArray_DATA(point);
+
+    /* Fused singleton Biot--Savart sum. Releasing the GIL is important: the
+     * notebook traces independent field lines with Python threads. */
+    Py_BEGIN_ALLOW_THREADS
+    for (j = 0; j < nsource; ++j) {
+        const npy_intp offset = 3 * j;
+        const double dx = p[0] - sources[offset];
+        const double dy = p[1] - sources[offset + 1];
+        const double dz = p[2] - sources[offset + 2];
+        const double distance_squared = dx * dx + dy * dy + dz * dz;
+        double inverse_distance_cubed;
+
+        if (distance_squared <= 0.0) {
+            singular = 1;
+            break;
+        }
+        inverse_distance_cubed = 1.0 / (
+            distance_squared * sqrt(distance_squared)
+        );
+        Bx += (
+            currents[offset + 1] * dz - currents[offset + 2] * dy
+        ) * inverse_distance_cubed;
+        By += (
+            currents[offset + 2] * dx - currents[offset] * dz
+        ) * inverse_distance_cubed;
+        Bz += (
+            currents[offset] * dy - currents[offset + 1] * dx
+        ) * inverse_distance_cubed;
+    }
+    Py_END_ALLOW_THREADS
+
+    if (singular) {
+        Py_DECREF(result);
+        PyErr_SetString(
+            PyExc_ValueError,
+            "Biot-Savart evaluation point lies on a coil-surface quadrature point"
+        );
+        return NULL;
+    }
+    B = (double *)PyArray_DATA(result);
+    B[0] = 1.0e-7 * Bx;
+    B[1] = 1.0e-7 * By;
+    B[2] = 1.0e-7 * Bz;
+    return (PyObject *)result;
 }
 
 static PyObject *
@@ -229,6 +342,10 @@ static PyMethodDef core_methods[] = {
     {"omp_max_threads", core_omp_max_threads, METH_NOARGS,
      "omp_max_threads() -> int\n\n"
      "Return omp_get_max_threads() from the compiled extension. This function is useful for determining how many threads are seen by the compiled kernels."},
+    {"magnetic_field_single", core_magnetic_field_single, METH_VARARGS,
+     "magnetic_field_single(source_points, weighted_surface_current, point) -> B\n\n"
+     "Fused direct-quadrature Biot--Savart evaluation at one Cartesian point.\n"
+     "All arrays must be C-contiguous float64 arrays."},
     {"build_inductance", core_build_inductance, METH_VARARGS,
      "build_inductance(r_plasma, normal_plasma, r_coil, normal_coil, drdtheta_coil, drdzeta_coil,\n"
      "                  nfp, net_poloidal_current, net_toroidal_current, dtheta_coil, dzeta_coil)\n"
