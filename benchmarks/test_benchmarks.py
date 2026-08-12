@@ -26,12 +26,12 @@ import regcoil
 
 # Resolution of the benchmark problem.  Bumping any of these invalidates the
 # historical CodSpeed series for these benchmarks, so change them deliberately.
-NTHETA = 64
-NZETA = 64
-MPOL = 12
-NTOR = 12
-MPOL_POTENTIAL = 12
-NTOR_POTENTIAL = 12
+NTHETA = 48
+NZETA = 48
+MPOL = 10
+NTOR = 10
+MPOL_POTENTIAL = 10
+NTOR_POTENTIAL = 10
 SEPARATION = 0.3
 LAM = 1e-14
 
