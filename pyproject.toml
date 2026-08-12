@@ -4,7 +4,7 @@ build-backend = "mesonpy"
 
 [project]
 name = "regcoil"
-version = "0.1.1"
+version = "0.1.2"
 description = "Regularized current-potential method for stellarator coil shapes (Python package + Fortran extension)"
 readme = "README.md"
 license = { text = "BSD-2-Clause" }
@@ -51,7 +51,7 @@ Documentation = "https://regcoil.readthedocs.io"
 github_url = "https://github.com/landreman/regcoil"
 
 [tool.tbump.version]
-current = "0.1.1"
+current = "0.1.2"
 # PEP 440: X.Y.Z with an optional pre-release suffix (e.g. 0.2.0rc1).
 regex = '''
   (?P<major>\d+)
