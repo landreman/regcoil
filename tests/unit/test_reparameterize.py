@@ -67,6 +67,32 @@ def test_fft_derivative_matches_analytic():
     np.testing.assert_allclose(_fft_derivative(f, 2, axis=1), d2, atol=1e-11)
 
 
+def test_periodic_spline_matches_scipy():
+    """`_periodic_spline` exists only to do what a loop over
+    `scipy.interpolate.CubicSpline(..., bc_type="periodic")` does, for every
+    zeta at once, so pin it against that loop -- on deliberately uneven knots,
+    since the ones it is given (the reparameterized angle) are never uniform.
+    """
+    from scipy.interpolate import CubicSpline
+
+    from regcoil.reparameterize import _periodic_spline
+
+    rng = np.random.default_rng(0)
+    ncol, n = 5, 32
+    knots = np.concatenate([np.zeros((1, ncol)), np.cumsum(rng.uniform(0.2, 1.0, (n, ncol)), 0)])
+    knots *= 2 * np.pi / knots[-1]
+    values = rng.normal(size=(n + 1, ncol))
+    values[-1] = values[0]  # the periodicity the boundary condition assumes
+    query = np.sort(rng.uniform(0, 2 * np.pi, 11))
+
+    result = _periodic_spline(knots, values, query)
+
+    expected = np.column_stack(
+        [CubicSpline(knots[:, j], values[:, j], bc_type="periodic")(query) for j in range(ncol)]
+    )
+    np.testing.assert_allclose(result, expected, atol=1e-13)
+
+
 def test_cumulative_integral_matches_analytic_and_is_anchored():
     n = 64
     theta = 2 * np.pi * np.arange(n) / n

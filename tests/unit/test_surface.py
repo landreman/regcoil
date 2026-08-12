@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from regcoil import CoilSurface, FourierSurface, PlasmaSurface
+from regcoil.surface import Surface
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EQUILIBRIA = REPO_ROOT / "equilibria"
@@ -393,6 +394,43 @@ def test_evaluate_at_matches_grid_evaluate():
     )
     np.testing.assert_allclose(
         pointwise["drdzeta"].reshape(3, surf.ntheta, surf.nzeta), grid["drdzeta"], atol=1e-12
+    )
+
+
+@pytest.mark.parametrize("standard_toroidal_angle", [True, False])
+def test_evaluate_columns_matches_evaluate_at(standard_toroidal_angle):
+    """`_evaluate_columns` is the fast path for a theta that varies with zeta
+    (what a theta reparameterization produces); it must agree with the general
+    `evaluate_at` on the same points, including the nonzero-nu case."""
+    plasma = PlasmaSurface.circular_torus(R0=5.0, a=1.0, nfp=3, ntheta=9, nzeta=8)
+    surf = CoilSurface.from_uniform_offset(
+        plasma, separation=0.3, ntheta=9, nzeta=8, mpol=5, ntor=4,
+        standard_toroidal_angle=standard_toroidal_angle,
+    )
+    zeta = np.array([0.0, 0.35, 0.9, 1.7])
+    # A different theta in each zeta column, which is the whole point.
+    theta = np.array([0.0, 1.0, 2.5, 4.4])[:, None] + np.array([0.0, 0.1, -0.2, 0.3])[None, :]
+
+    columns = surf._evaluate_columns(theta, zeta)
+    paired = surf.evaluate_at(theta.ravel(), np.broadcast_to(zeta, theta.shape).ravel())
+
+    for key in ("r", "drdtheta", "drdzeta"):
+        np.testing.assert_allclose(
+            columns[key], paired[key].reshape((3,) + theta.shape), atol=1e-12
+        )
+
+
+def test_evaluate_columns_default_uses_evaluate_at():
+    """The `Surface` default is `evaluate_at` on the flattened points; a
+    representation that cannot do better inherits it unchanged."""
+    surf = FourierSurface.circular_torus(R0=5.0, a=1.0, nfp=2, ntheta=8, nzeta=8)
+    zeta = np.array([0.2, 0.8])
+    theta = np.array([[0.1, 0.4], [1.5, 2.0], [3.0, 3.3]])
+
+    np.testing.assert_allclose(
+        Surface._evaluate_columns(surf, theta, zeta)["r"],
+        surf._evaluate_columns(theta, zeta)["r"],
+        atol=1e-12,
     )
 
 

@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import numpy as np
 
+from ._transforms import evaluate_modes, evaluate_modes_by_column
 from .surface import Surface
 
 
@@ -95,121 +96,52 @@ class FourierSurface(Surface):
         self.numns = numns
         self.numnc = numnc
 
-    def _evaluate(self, theta, zetal):
-        # The double-angle expansion turns the (mnmax, ntheta, nzetal) sum
-        # into a handful of (ntheta, mnmax) @ (mnmax, nzetal) gemms.
-        m = self.xm.astype(np.float64)[:, None]
-        n = self.xn.astype(np.float64)[:, None]
-        cos_mtheta = np.cos(np.outer(self.xm, theta))  # (mnmax, ntheta)
-        sin_mtheta = np.sin(np.outer(self.xm, theta))
-        cos_nzeta = np.cos(np.outer(self.xn, zetal))  # (mnmax, nzetal)
-        sin_nzeta = np.sin(np.outer(self.xn, zetal))
+    def _amplitudes(self):
+        """The Fourier amplitudes of everything an evaluation needs -- `R`,
+        `Z`, and (unless `zeta` is the standard toroidal angle) `nu`, each
+        followed by its `theta`- and `zeta`-derivative -- as the rows of one
+        `(3*nfields, mnmax)` cosine array and one sine array.
 
-        rmnc = self.rmnc[:, None]
-        rmns = self.rmns[:, None]
-        zmnc = self.zmnc[:, None]
-        zmns = self.zmns[:, None]
+        Every one of those quantities is a series
+        `sum_mn cmn*cos(m*theta - n*zeta) + smn*sin(...)` in the same modes,
+        differing only in its amplitudes: differentiating gives the `d/dtheta`
+        pair `(m*smn, -m*cmn)` and the `d/dzeta` pair `(-n*smn, n*cmn)`. So
+        stacking them lets one pass over the grid produce them all.
+        """
+        m = self.xm.astype(np.float64)
+        n = self.xn.astype(np.float64)
+        fields = [(self.rmnc, self.rmns), (self.zmnc, self.zmns)]
+        if not self.standard_toroidal_angle:
+            fields.append((self.numnc, self.numns))
+        cmn = np.array([row for fc, fs in fields for row in (fc, m * fs, -n * fs)])
+        smn = np.array([row for fc, fs in fields for row in (fs, -m * fc, n * fc)])
+        return cmn, smn
 
-        # R = P1^T @ cos_nzeta + P2^T @ sin_nzeta; Z likewise with Q1, Q2.
-        P1 = rmnc * cos_mtheta + rmns * sin_mtheta
-        P2 = rmnc * sin_mtheta - rmns * cos_mtheta
-        Q1 = zmns * sin_mtheta + zmnc * cos_mtheta
-        Q2 = zmnc * sin_mtheta - zmns * cos_mtheta
+    def _cartesian(self, values, zeta):
+        """Assemble the `r`/`drdtheta`/`drdzeta` dict from the stacked
+        `R`/`Z`/`nu` values and derivatives returned for `_amplitudes`, at
+        points whose toroidal parameter is `zeta` (broadcast against them).
+        """
+        R, dRdtheta, dRdzeta = values[0], values[1], values[2]
+        Z, dZdtheta, dZdzeta = values[3], values[4], values[5]
 
-        dP1dtheta = -m * P2
-        dP2dtheta = m * P1
-        dQ1dtheta = -m * Q2
-        dQ2dtheta = m * Q1
-
-        dcos_nzeta = -n * sin_nzeta
-        dsin_nzeta = n * cos_nzeta
-
-        R = P1.T @ cos_nzeta + P2.T @ sin_nzeta
-        Z = Q1.T @ cos_nzeta + Q2.T @ sin_nzeta
-        dRdtheta = dP1dtheta.T @ cos_nzeta + dP2dtheta.T @ sin_nzeta
-        dZdtheta = dQ1dtheta.T @ cos_nzeta + dQ2dtheta.T @ sin_nzeta
-        dRdzeta = P1.T @ dcos_nzeta + P2.T @ dsin_nzeta
-        dZdzeta = Q1.T @ dcos_nzeta + Q2.T @ dsin_nzeta
-
-        # Toroidal angle shift nu (same mode structure as Z): phi = zeta + nu.
-        # dphidtheta = dnudtheta, dphidzeta = 1 + dnudzeta. The common case
-        # (nu identically zero -> phi = zeta) keeps the original fast path.
+        # Toroidal angle shift nu (same mode structure as Z): phi = zeta + nu,
+        # so dphidtheta = dnudtheta and dphidzeta = 1 + dnudzeta. The common
+        # case (nu identically zero -> phi = zeta) skips the nu series
+        # entirely, in `_amplitudes`.
         if self.standard_toroidal_angle:
-            nu = 0.0
-            dnudtheta = 0.0
-            dnudzeta = 0.0
-            phi = zetal[None, :]
+            phi = zeta
+            dphidtheta = 0.0
+            dphidzeta = 1.0
         else:
-            numns = self.numns[:, None]
-            numnc = self.numnc[:, None]
-            N1 = numns * sin_mtheta + numnc * cos_mtheta
-            N2 = numnc * sin_mtheta - numns * cos_mtheta
-            dN1dtheta = -m * N2
-            dN2dtheta = m * N1
-            nu = N1.T @ cos_nzeta + N2.T @ sin_nzeta
-            dnudtheta = dN1dtheta.T @ cos_nzeta + dN2dtheta.T @ sin_nzeta
-            dnudzeta = N1.T @ dcos_nzeta + N2.T @ dsin_nzeta
-            phi = zetal[None, :] + nu
+            nu, dnudtheta, dnudzeta = values[6], values[7], values[8]
+            phi = zeta + nu
+            dphidtheta = dnudtheta
+            dphidzeta = 1.0 + dnudzeta
 
         cosphi = np.cos(phi)
         sinphi = np.sin(phi)
 
-        X = R * cosphi
-        Y = R * sinphi
-        dXdtheta = dRdtheta * cosphi - R * sinphi * dnudtheta
-        dYdtheta = dRdtheta * sinphi + R * cosphi * dnudtheta
-        dXdzeta = dRdzeta * cosphi - R * sinphi * (1.0 + dnudzeta)
-        dYdzeta = dRdzeta * sinphi + R * cosphi * (1.0 + dnudzeta)
-
-        r = np.stack([X, Y, Z], axis=0)
-        drdtheta = np.stack([dXdtheta, dYdtheta, dZdtheta], axis=0)
-        drdzeta = np.stack([dXdzeta, dYdzeta, dZdzeta], axis=0)
-        return {"r": r, "drdtheta": drdtheta, "drdzeta": drdzeta}
-
-    def evaluate_at(self, theta_pts, zeta_pts):
-        """Evaluate the surface (and its first theta/zeta derivatives) at
-        arbitrary *paired* `(theta, zeta)` points, rather than the
-        tensor-product grid `_evaluate`/`r` use. Used where points come from
-        a contour (`regcoil.cut`) rather than a regular grid.
-
-        Returns a dict with keys 'r', 'drdtheta', 'drdzeta', each
-        `(3, len(theta_pts))`, matching `_evaluate`'s per-point contract.
-        """
-        theta_pts = np.asarray(theta_pts, dtype=np.float64)
-        zeta_pts = np.asarray(zeta_pts, dtype=np.float64)
-        m = self.xm[:, None].astype(np.float64)
-        n = self.xn[:, None].astype(np.float64)
-        angle = self.xm[:, None] * theta_pts[None, :] - self.xn[:, None] * zeta_pts[None, :]
-        cos_a = np.cos(angle)
-        sin_a = np.sin(angle)
-
-        rmnc, rmns = self.rmnc[:, None], self.rmns[:, None]
-        zmnc, zmns = self.zmnc[:, None], self.zmns[:, None]
-
-        R = np.sum(rmnc * cos_a + rmns * sin_a, axis=0)
-        Z = np.sum(zmns * sin_a + zmnc * cos_a, axis=0)
-        R_term = -rmnc * sin_a + rmns * cos_a
-        Z_term = zmns * cos_a - zmnc * sin_a
-        dRdtheta = np.sum(m * R_term, axis=0)
-        dRdzeta = np.sum(-n * R_term, axis=0)
-        dZdtheta = np.sum(m * Z_term, axis=0)
-        dZdzeta = np.sum(-n * Z_term, axis=0)
-
-        if self.standard_toroidal_angle:
-            phi = zeta_pts
-            dphidtheta = np.zeros_like(theta_pts)
-            dphidzeta = np.ones_like(zeta_pts)
-        else:
-            numns, numnc = self.numns[:, None], self.numnc[:, None]
-            nu = np.sum(numns * sin_a + numnc * cos_a, axis=0)
-            nu_term = numns * cos_a - numnc * sin_a
-            dnudtheta = np.sum(m * nu_term, axis=0)
-            dnudzeta = np.sum(-n * nu_term, axis=0)
-            phi = zeta_pts + nu
-            dphidtheta = dnudtheta
-            dphidzeta = 1.0 + dnudzeta
-
-        cosphi, sinphi = np.cos(phi), np.sin(phi)
         X = R * cosphi
         Y = R * sinphi
         dXdtheta = dRdtheta * cosphi - R * sinphi * dphidtheta
@@ -221,6 +153,46 @@ class FourierSurface(Surface):
         drdtheta = np.stack([dXdtheta, dYdtheta, dZdtheta], axis=0)
         drdzeta = np.stack([dXdzeta, dYdzeta, dZdzeta], axis=0)
         return {"r": r, "drdtheta": drdtheta, "drdzeta": drdzeta}
+
+    def _evaluate(self, theta, zetal):
+        # The angle `m*theta - n*zeta` separates, so the (mnmax, ntheta,
+        # nzetal) sum never has to be built; see `_transforms`.
+        cmn, smn = self._amplitudes()
+        values = evaluate_modes(cmn, smn, self.xm, self.xn, theta, zetal)
+        return self._cartesian(values, zetal[None, :])
+
+    def _evaluate_columns(self, theta, zeta):
+        """`Surface._evaluate_columns`, overridden: a shared `zeta` grid is
+        still enough for the angle to separate, so this costs little more than
+        `_evaluate` rather than as much as `evaluate_at`.
+        """
+        cmn, smn = self._amplitudes()
+        values = evaluate_modes_by_column(cmn, smn, self.xm, self.xn, theta, zeta)
+        return self._cartesian(values, zeta[None, :])
+
+    def evaluate_at(self, theta_pts, zeta_pts):
+        """Evaluate the surface (and its first theta/zeta derivatives) at
+        arbitrary *paired* `(theta, zeta)` points, rather than the
+        tensor-product grid `_evaluate`/`r` use. Used where points come from
+        a contour (`regcoil.cut`) rather than a regular grid.
+
+        Returns a dict with keys 'r', 'drdtheta', 'drdzeta', each
+        `(3, len(theta_pts))`, matching `_evaluate`'s per-point contract.
+
+        Points this general leave nothing to separate, so this is the one
+        evaluator that does pay for a `(mnmax, npoints)` array of angles;
+        prefer `_evaluate` or `_evaluate_columns` when the points are
+        structured.
+        """
+        theta_pts = np.asarray(theta_pts, dtype=np.float64)
+        zeta_pts = np.asarray(zeta_pts, dtype=np.float64)
+        angle = self.xm[:, None] * theta_pts[None, :] - self.xn[:, None] * zeta_pts[None, :]
+        cos_a = np.cos(angle)
+        sin_a = np.sin(angle, out=angle)  # `angle` is dead after this
+
+        cmn, smn = self._amplitudes()
+        values = cmn @ cos_a + smn @ sin_a
+        return self._cartesian(values, zeta_pts)
 
     @classmethod
     def circular_torus(cls, R0, a, nfp, ntheta=64, nzeta=64):

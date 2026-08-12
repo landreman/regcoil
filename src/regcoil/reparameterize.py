@@ -45,6 +45,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from ._transforms import dft_weight, evaluate_modes, fit_modes
+
 __all__ = ["UniformArclength", "CurvatureWeighted", "ThetaMap", "theta_map"]
 
 
@@ -150,13 +152,7 @@ class ThetaMap:
         """
         theta = np.atleast_1d(np.asarray(theta, dtype=float))
         zeta = np.atleast_1d(np.asarray(zeta, dtype=float))
-        angle = (
-            self.xm[:, None, None] * theta[None, :, None]
-            - self.xn[:, None, None] * zeta[None, None, :]
-        )
-        periodic = np.tensordot(self.gmns, np.sin(angle), axes=(0, 0)) + np.tensordot(
-            self.gmnc, np.cos(angle), axes=(0, 0)
-        )
+        periodic = evaluate_modes(self.gmnc, self.gmns, self.xm, self.xn, theta, zeta)
         return theta[:, None] + periodic
 
 
@@ -214,6 +210,105 @@ def _cumulative_integral(w):
     # requires to machine precision (and which is what preserves stellarator
     # symmetry).
     return result - result[0]
+
+
+def _periodic_spline(x, y, xq):
+    """Evaluate, for every column `j`, the periodic cubic spline through the
+    knots `(x[:, j], y[:, j])` at the query points `xq`, shared by all columns.
+
+    Same spline as `scipy.interpolate.CubicSpline(x[:, j], y[:, j],
+    bc_type="periodic")(xq)` -- and agrees with it to machine precision, which
+    `test_reparameterize.py` pins -- but for every column at once. scipy has no
+    batched interface, and one `zeta` at a time its per-call Python and
+    validation overhead dwarfs the banded solve itself.
+
+    `x` must increase down each column, and `y[0] == y[-1]` to machine
+    precision -- the periodicity the boundary condition assumes, rejected here
+    on the same terms scipy rejects it, since the exactness of the anchor
+    `_cumulative_integral` provides is what makes it hold. Query points outside
+    the knots are evaluated on the nearest end interval's cubic rather than
+    wrapped.
+    """
+    from scipy.linalg import solve_banded
+
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    xq = np.asarray(xq, dtype=float)
+    if not np.allclose(y[0], y[-1], rtol=1e-15, atol=1e-15):
+        raise ValueError(
+            "A periodic spline requires y[0] == y[-1] to machine precision; the "
+            f"largest endpoint mismatch is {np.max(np.abs(y[0] - y[-1])):.3e}."
+        )
+    n = x.shape[0] - 1  # intervals per column; also unknowns, since s_n = s_0
+    ncol = x.shape[1]
+    h = np.diff(x, axis=0)
+    slope = np.diff(y, axis=0) / h
+
+    # The knot derivatives s_i solve the usual C2-continuity system, here with
+    # every index taken mod n so that it closes on itself:
+    #
+    #   h_i s_{i-1} + 2 (h_{i-1} + h_i) s_i + h_{i-1} s_{i+1}
+    #       = 3 (h_i d_{i-1} + h_{i-1} d_i),   d_i = (y_{i+1} - y_i) / h_i.
+    h_prev = np.roll(h, 1, axis=0)
+    slope_prev = np.roll(slope, 1, axis=0)
+    sub = h.copy()  # coefficient of s_{i-1}; sub[0] is the wrap-around corner
+    dia = 2 * (h_prev + h)
+    sup = h_prev.copy()  # coefficient of s_{i+1}; sup[n-1] is the other corner
+    rhs = 3 * (h * slope_prev + h_prev * slope)
+
+    # Sherman-Morrison: peel the two corners off as a rank-one update
+    # `A = T + u v^T` with `u = (gamma, 0, ..., 0, alpha)` and
+    # `v = (1, 0, ..., 0, beta/gamma)`, leaving `T` tridiagonal. `gamma` is
+    # free; `-dia[0]` is the standard choice, and it leaves `T` strictly
+    # diagonally dominant (as `A` already is), so both solves are stable.
+    alpha = sup[-1].copy()  # A[n-1, 0], the coefficient of s_n = s_0
+    beta = sub[0].copy()  # A[0, n-1], the coefficient of s_-1 = s_{n-1}
+    gamma = -dia[0]
+    dia[0] -= gamma
+    dia[-1] -= alpha * beta / gamma
+    sub[0] = 0.0
+    sup[-1] = 0.0
+
+    # The columns are independent, so their tridiagonal systems stack into one
+    # banded matrix (the zeroed corners above are exactly the entries that
+    # would otherwise link neighboring blocks) and one `solve_banded` call,
+    # with the two Sherman-Morrison right-hand sides as its two columns.
+    u = np.zeros((n, ncol))
+    u[0] = gamma
+    u[-1] = alpha
+    banded = np.zeros((3, n * ncol))
+    banded[0, 1:] = sup.T.reshape(-1)[:-1]  # superdiagonal: A[k-1, k]
+    banded[1] = dia.T.reshape(-1)
+    banded[2, :-1] = sub.T.reshape(-1)[1:]  # subdiagonal: A[k+1, k]
+    solved = solve_banded(
+        (1, 1), banded, np.column_stack([rhs.T.reshape(-1), u.T.reshape(-1)])
+    )
+    solved_rhs = solved[:, 0].reshape(ncol, n).T
+    solved_u = solved[:, 1].reshape(ncol, n).T
+
+    # s = T^-1 rhs - (T^-1 u) (v.T^-1 rhs) / (1 + v.T^-1 u), the rank-one
+    # correction that turns the two tridiagonal solves back into the cyclic one.
+    v_rhs = solved_rhs[0] + (beta / gamma) * solved_rhs[-1]
+    v_u = solved_u[0] + (beta / gamma) * solved_u[-1]
+    s = solved_rhs - solved_u * (v_rhs / (1.0 + v_u))
+
+    # Evaluate the cubic Hermite form on the interval containing each query
+    # point. `searchsorted` is per column, since the knots differ, but that is
+    # 64-odd calls on small arrays rather than a spline construction each.
+    interval = np.empty((xq.shape[0], ncol), dtype=np.intp)
+    for j in range(ncol):
+        interval[:, j] = np.searchsorted(x[:, j], xq, side="right") - 1
+    np.clip(interval, 0, n - 1, out=interval)
+    column = np.arange(ncol)[None, :]
+
+    s_left = s[interval, column]
+    s_right = np.roll(s, -1, axis=0)[interval, column]  # s_n = s_0 closes it
+    width = h[interval, column]
+    secant = slope[interval, column]
+    t = xq[:, None] - x[interval, column]
+    c2 = (3 * secant - 2 * s_left - s_right) / width
+    c3 = (s_left + s_right - 2 * secant) / width**2
+    return y[interval, column] + t * (s_left + t * (c2 + t * c3))
 
 
 def _weight(positions, scheme):
@@ -297,8 +392,6 @@ def theta_map(curve, scheme, *, nfp, ntheta, nzeta, mpol=None, ntor=None,
     `constant_arclength_tolerance` measured) and `residual` (the scheme-neutral
     correctness check).
     """
-    from scipy.interpolate import CubicSpline
-
     scheme = _as_scheme(scheme)
     refinement = int(scheme.refinement)
     if refinement < 1:
@@ -334,12 +427,9 @@ def theta_map(curve, scheme, *, nfp, ntheta, nzeta, mpol=None, ntor=None,
     # Invert. The interpolated quantity is theta_old - theta_new, which is
     # periodic (both advance by 2*pi over a poloidal turn) -- the same trick
     # the legacy Fortran used with its periodic spline.
-    theta_old = np.empty((int(ntheta), int(nzeta)))
-    for j in range(int(nzeta)):
-        knots = np.concatenate([theta_new[:, j], [2 * np.pi]])
-        values = np.concatenate([theta_fine - theta_new[:, j], [0.0]])
-        spline = CubicSpline(knots, values, bc_type="periodic")
-        theta_old[:, j] = spline(theta_out) + theta_out
+    knots = np.concatenate([theta_new, np.full((1, int(nzeta)), 2 * np.pi)])
+    values = np.concatenate([theta_fine[:, None] - theta_new, np.zeros((1, int(nzeta)))])
+    theta_old = _periodic_spline(knots, values, theta_out) + theta_out[:, None]
 
     diagnostics = _diagnostics(theta_new, theta_fine, speed, w, int(ntheta))
 
@@ -389,18 +479,10 @@ def _fit_map(periodic_part, theta_grid, zeta_grid, nfp, mpol, ntor, stellarator_
     nzeta = zeta_grid.shape[0]
     xm, xn = _uniform_offset_modes(nfp, mpol, ntor)
 
-    angle = (
-        xm[:, None, None] * theta_grid[None, :, None]
-        - xn[:, None, None] * zeta_grid[None, None, :]
-    )
-    weight = np.full(xm.shape[0], 2.0 / (ntheta * nzeta))
-    if ntheta % 2 == 0:
-        weight[xm == ntheta // 2] /= 2
-    if nzeta % 2 == 0:
-        weight[np.abs(xn) == nfp * (nzeta // 2)] /= 2
-
-    gmnc = np.tensordot(np.cos(angle), periodic_part, axes=([1, 2], [0, 1])) * weight
-    gmns = np.tensordot(np.sin(angle), periodic_part, axes=([1, 2], [0, 1])) * weight
+    weight = dft_weight(xm, xn, ntheta, nzeta, nfp)
+    gmnc, gmns = fit_modes(periodic_part, xm, xn, theta_grid, zeta_grid)
+    gmnc *= weight
+    gmns *= weight
     gmnc[0] = periodic_part.mean()
     gmns[0] = 0.0
     if stellarator_symmetric:

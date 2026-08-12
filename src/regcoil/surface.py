@@ -74,6 +74,23 @@ class Surface(ABC):
             f"required for evaluation at paired (theta, zeta) points."
         )
 
+    def _evaluate_columns(self, theta, zeta) -> dict:
+        """Evaluate the surface at `(theta[i, j], zeta[j])`: one `zeta` grid,
+        but a poloidal angle that may differ from column to column -- the
+        sampling a theta reparameterization produces.
+
+        Returns a dict with keys 'r', 'drdtheta', 'drdzeta', each of shape
+        `(3,) + theta.shape`.
+
+        This is `evaluate_at` on the flattened points, which is what the
+        default below does; a representation that can exploit the shared
+        `zeta` grid (`FourierSurface` can) should override it.
+        """
+        theta = np.asarray(theta, dtype=float)
+        zeta_2d = np.broadcast_to(zeta, theta.shape)
+        evaluated = self.evaluate_at(np.ravel(theta), np.ravel(zeta_2d))
+        return {k: v.reshape((3,) + theta.shape) for k, v in evaluated.items()}
+
     def reparameterize_theta(self, scheme, *, mpol=None, ntor=None, ntheta=None, nzeta=None):
         """Return a `FourierSurface` describing the *same physical surface* as
         `self`, with its poloidal angle reparameterized according to `scheme`
