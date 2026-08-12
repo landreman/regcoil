@@ -17,13 +17,19 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # OpenBLAS rather than libblas-dev: the operator build spends most of its
+      # time in DGEMM, and the netlib reference BLAS that libblas-dev provides
+      # runs it about an order of magnitude slower.  This is what made the slow
+      # tests so painful on the Linux runners.  The release wheels already
+      # build against openblas (see [tool.cibuildwheel.linux] in
+      # pyproject.toml), so this also brings CI in line with what ships.
       - name: Install system deps (Ubuntu)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             gfortran \
-            libblas-dev \
+            libopenblas-dev \
             pkg-config
 
       - name: Install system deps (macOS)
@@ -68,7 +74,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             gfortran \
-            libblas-dev \
+            libopenblas-dev \
             pkg-config
 
       - uses: actions/setup-python@v6
