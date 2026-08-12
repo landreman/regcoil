@@ -21,8 +21,11 @@ REF_AREA = 2.4910821007084863e01
 # Unlike the other REF_* values, this is not the legacy Fortran's own volume
 # (which used a 2nd-order-accurate discrete scheme); it's `plasma.volume`
 # computed by the current, spectrally accurate quadrature at this same
-# coarse (ntheta=4, nzeta=3) resolution.
-REF_VOLUME = 3.007600177899088e00
+# coarse (ntheta=4, nzeta=3) resolution. (The two spectral volume quadratures
+# -- the old (1/2) R^2 dZ/dtheta form and the current coordinate-free
+# Z (dr/dzeta x dr/dtheta)_z form -- agree to machine precision once
+# converged, but differ at this deliberately coarse resolution.)
+REF_VOLUME = 3.113198107778819e00
 REF_G = 1.1884578094260072e07
 REF_CURPOL = 4.9782004309255496e00
 

@@ -213,17 +213,73 @@ class Surface(ABC):
 
     @cached_property
     def volume(self) -> float:
-        """Enclosed volume via int (1/2) R^2 (dZ/dtheta) dtheta dzeta, using
-        the analytic `dZ/dtheta` from `drdtheta` rather than a finite
-        difference of `Z`: since the integrand is smooth and periodic in
-        both theta and zeta, the plain periodic sum (the periodic trapezoid
-        rule) converges spectrally. `r` already spans all field periods, so
-        no extra factor of nfp is needed.
+        """Enclosed volume via the coordinate-free surface integral
+        `V = |int Z (dr/dzeta x dr/dtheta)_z dtheta dzeta|` (the divergence
+        theorem applied to the field `(0, 0, Z)`, whose divergence is 1).
+
+        This form is valid for *any* parameterization, including a surface
+        whose `zeta` is not the standard toroidal angle (nonzero `nu`); the
+        simpler `int (1/2) R^2 (dZ/dtheta) dtheta dzeta` is only correct when
+        `zeta == phi`, and the two agree to machine precision in that case.
+        The integrand is smooth and periodic in both theta and zeta, so the
+        plain periodic sum (the periodic trapezoid rule) converges spectrally,
+        and the analytic derivatives from `drdtheta`/`drdzeta` are used rather
+        than a finite difference of the grid. `r` already spans all field
+        periods, so no extra factor of nfp is needed.
+        """
+        Z = self.r[2]
+        drdtheta = self.drdtheta
+        drdzeta = self.drdzeta
+        # z-component of the (un-normalized) surface normal dr/dzeta x dr/dtheta:
+        normal_z = drdzeta[0] * drdtheta[1] - drdzeta[1] * drdtheta[0]
+        return abs(np.sum(Z * normal_z) * self.dtheta * self.dzeta)
+
+    @cached_property
+    def mean_cross_sectional_area(self) -> float:
+        r"""Mean cross-sectional area, averaged over the physical toroidal
+        angle:
+
+        .. math::
+            \overline{A} = \frac{1}{2\pi} \int_0^{2\pi} \left(
+                \int_{S_\phi} dR\, dZ \right) d\phi,
+
+        matching simsopt's `Surface.mean_cross_sectional_area`. The change of
+        variables from the physical angle `phi` to the surface's own `zeta`
+        parameter turns this into an average over the `(theta, zeta)` grid, so
+        it is correct even when `zeta` is not the standard toroidal angle.
         """
         r = self.r
-        major_R_squared = r[0] * r[0] + r[1] * r[1]
-        dZdtheta = self.drdtheta[2]
-        return abs(np.sum(major_R_squared * dZdtheta) * self.dtheta * self.dzeta / 2)
+        drdtheta = self.drdtheta
+        drdzeta = self.drdzeta
+        x, y = r[0], r[1]
+        x2y2 = x * x + y * y
+        # d(phi)/d(zeta) and d(phi)/d(theta) with phi = atan2(y, x):
+        dphi_dzeta = (x * drdzeta[1] - y * drdzeta[0]) / x2y2
+        dphi_dtheta = (x * drdtheta[1] - y * drdtheta[0]) / x2y2
+        # R * dZ/d(theta) * |d(phi,theta)/d(zeta,theta)| after change of vars:
+        integrand = np.sqrt(x2y2) * (drdtheta[2] * dphi_dzeta - drdzeta[2] * dphi_dtheta)
+        return 2 * np.pi * abs(np.mean(integrand))
+
+    @cached_property
+    def minor_radius(self) -> float:
+        r"""Minor radius, :math:`R_\text{minor} = \sqrt{\overline{A} / \pi}`,
+        where :math:`\overline{A}` is `mean_cross_sectional_area`. Same
+        definition as simsopt and VMEC."""
+        return np.sqrt(self.mean_cross_sectional_area / np.pi)
+
+    @cached_property
+    def major_radius(self) -> float:
+        r"""Major radius,
+        :math:`R_\text{major} = V / (2 \pi^2 R_\text{minor}^2)`, where `V` is
+        the enclosed `volume`. Same definition as simsopt and VMEC."""
+        return abs(self.volume) / (2 * np.pi**2 * self.minor_radius**2)
+
+    @cached_property
+    def aspect_ratio(self) -> float:
+        r"""Aspect ratio,
+        :math:`R_\text{major} / R_\text{minor}`, using the VMEC definition.
+        Same definition as simsopt."""
+        return self.major_radius / self.minor_radius
 
     def cross_section(self, phi=None):
         """Surface cross section(s) at fixed *physical* toroidal angle(s).
