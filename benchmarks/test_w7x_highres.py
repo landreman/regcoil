@@ -58,26 +58,48 @@ def _make_problem(plasma, coil):
     )
 
 
+# Objects handed down from one benchmark to the next.  `benchmark(f, ...)`
+# returns f's real return value, so the coil surface built while benchmarking
+# `from_uniform_offset` is the same object the `Regcoil` benchmark needs, and
+# likewise for the Regcoil object and `solve`.  Reusing them keeps the wall
+# clock of the whole job down: a fresh `Regcoil()` here would cost as much as
+# a whole extra measured round.  The fixtures below fall back to building the
+# object if its producing benchmark did not run (e.g. `pytest -k solve`).
+_built: dict = {}
+
+
 @pytest.fixture(scope="session")
 def coil(plasma):
-    """Winding surface, built once and shared by the later benchmarks."""
-    return _make_coil(plasma)
+    """Winding surface, from test_from_uniform_offset if it has run."""
+    if "coil" not in _built:
+        _built["coil"] = _make_coil(plasma)
+    return _built["coil"]
 
 
 @pytest.fixture(scope="session")
 def problem(plasma, coil):
-    """Regcoil object with its operators already assembled."""
-    return _make_problem(plasma, coil)
+    """Regcoil object with its operators assembled, from test_regcoil_init."""
+    if "problem" not in _built:
+        _built["problem"] = _make_problem(plasma, coil)
+    return _built["problem"]
+
+
+# NOTE ON CALL COUNTS: pytest-codspeed's walltime instrument calls the measured
+# function at least three times -- once untimed to capture the return value,
+# at least once for warmup, then at least one timed round.  Only that last
+# group appears in the "Run time" column of the results table, so a benchmark
+# reported as 141 s costs upwards of 7 minutes of job time.  The floor of three
+# is structural in the plugin and cannot be configured away.
 
 
 def test_from_uniform_offset(benchmark, plasma):
-    coil = benchmark(_make_coil, plasma)
-    assert coil.ntheta == NTHETA
+    _built["coil"] = benchmark(_make_coil, plasma)
+    assert _built["coil"].ntheta == NTHETA
 
 
 def test_regcoil_init(benchmark, plasma, coil):
-    problem = benchmark(_make_problem, plasma, coil)
-    assert problem.nbf > 0
+    _built["problem"] = benchmark(_make_problem, plasma, coil)
+    assert _built["problem"].nbf > 0
 
 
 def test_solve(benchmark, problem):

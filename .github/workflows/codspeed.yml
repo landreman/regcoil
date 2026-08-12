@@ -28,12 +28,17 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # OpenBLAS, not the libblas-dev of ci.yml.  regcoil_kernels_mod builds the
+      # g matrix with a DGEMM per zeta_plasma block, which dominates the
+      # Regcoil() init benchmark (hundreds of GFLOP at this resolution).
+      # libblas-dev is the unblocked netlib reference implementation and runs
+      # that at a few GFLOP/s; OpenBLAS is roughly an order of magnitude faster.
       - name: Install system deps
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             gfortran \
-            libblas-dev \
+            libopenblas-dev \
             pkg-config
 
       - uses: actions/setup-python@v6
