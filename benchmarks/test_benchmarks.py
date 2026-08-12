@@ -51,6 +51,16 @@ def _make_coil(plasma):
     )
 
 
+def _make_coil_standard_angle(plasma):
+    """Legacy `geometry_option_coil=2` construction: every grid point is a
+    root solve for the offset-surface point whose Cartesian toroidal angle
+    equals the coil `zeta`, rather than a direct move along the normal."""
+    return regcoil.CoilSurface.from_uniform_offset(
+        plasma, separation=SEPARATION, ntheta=NTHETA, nzeta=NZETA,
+        mpol=MPOL, ntor=NTOR, standard_toroidal_angle=True,
+    )
+
+
 def _make_problem(plasma, coil):
     return regcoil.Regcoil(
         plasma, coil,
@@ -95,6 +105,13 @@ def problem(plasma, coil):
 def test_from_uniform_offset(benchmark, plasma):
     _built["coil"] = benchmark(_make_coil, plasma)
     assert _built["coil"].ntheta == NTHETA
+
+
+def test_from_uniform_offset_standard_toroidal_angle(benchmark, plasma):
+    # Not fed into the chain below: the rest of the benchmarks deliberately
+    # stay on the default (normal-offset) winding surface.
+    coil = benchmark(_make_coil_standard_angle, plasma)
+    assert coil.ntheta == NTHETA
 
 
 def test_regcoil_init(benchmark, plasma, coil):
