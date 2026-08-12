@@ -17,10 +17,11 @@ jobs:
       contents: read
       id-token: write # OpenID Connect authentication with CodSpeed
     env:
-      # The benchmarks are pinned to a single thread. The shared GitHub runners
-      # give us 4 noisy vCPUs, and letting OpenMP/BLAS spread across them adds
-      # far more run-to-run scatter than the regressions we want to detect.
-      # Raise these (and accept the noise) if you ever want to track scaling.
+      # The benchmarks are pinned to a single thread. CodSpeed's CPU-simulation
+      # instrument measures the benchmark inside a CPU simulator, where the
+      # thread count changes what is counted without saying anything useful
+      # about a real machine, so keeping OpenMP/BLAS on one thread is what
+      # makes the numbers comparable from run to run.
       OMP_NUM_THREADS: "1"
       OPENBLAS_NUM_THREADS: "1"
       MKL_NUM_THREADS: "1"
@@ -49,5 +50,5 @@ jobs:
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v5
         with:
-          mode: walltime
+          mode: simulation
           run: pytest benchmarks/ --codspeed

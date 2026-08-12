@@ -1,5 +1,7 @@
 ### REGCOIL
 
+[![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://app.codspeed.io/landreman/regcoil?utm_source=badge)
+
 A regularized current potential method for fast computation of the shapes of stellarator coils
 
 ![](https://github.com/landreman/regcoil/blob/master/docs/m20170111_01_compareNescoilToRegcoilCoils.png)
@@ -47,6 +49,24 @@ From the cloned repository, tests can be run using
 ```bash
 pytest
 ```
+
+### Benchmarks
+
+The `benchmarks/` directory holds a performance suite for the W7-X quickstart
+case, covering the geometry front end, the operator assembly and solve, and the
+post-processing (coil cutting, save/load).  It lives outside `tests/` (see
+`testpaths` in `pyproject.toml`), so a plain `pytest` run never picks it up.
+Run it locally with:
+
+```bash
+pip install ".[bench]"
+pytest benchmarks/ --codspeed
+```
+
+Every push to `master` and every pull request runs the same suite on
+[CodSpeed](https://app.codspeed.io/landreman/regcoil) via
+`.github/workflows/codspeed.yml`, so a pull request is compared against
+`master`.
 
 ### Quickstart
 
