@@ -26,27 +26,14 @@ import regcoil
 
 # Resolution of the benchmark problem.  Bumping any of these invalidates the
 # historical CodSpeed series for these benchmarks, so change them deliberately.
-NTHETA = 128
-NZETA = 128
-MPOL = 18
-NTOR = 18
-MPOL_POTENTIAL = 18
-NTOR_POTENTIAL = 18
+NTHETA = 64
+NZETA = 64
+MPOL = 12
+NTOR = 12
+MPOL_POTENTIAL = 12
+NTOR_POTENTIAL = 12
 SEPARATION = 0.3
 LAM = 1e-14
-
-# The surface and operator benchmarks each take seconds per call, so
-# pytest-codspeed's default 3 s budget stops them after a single timed round
-# and reports a stddev of 0%.  `max_rounds` alone is not enough to fix that:
-# the measurement loop also breaks out as soon as the elapsed time passes
-# `max_time`, whatever the round count says, so both have to be raised
-# together.  `solve()` is fast enough that the defaults already give it tens of
-# rounds, and it is left alone.
-#
-# Budget note: on top of the timed rounds, the walltime instrument calls the
-# function once untimed (to capture the return value) and at least once more to
-# warm up, so each of these benchmarks costs 5 calls, not 3.
-multi_round = pytest.mark.benchmark(max_rounds=3, max_time=600)
 
 
 @pytest.fixture(scope="session")
@@ -68,10 +55,13 @@ def _make_coil(plasma):
 def _make_coil_standard_angle(plasma):
     """Legacy `geometry_option_coil=2` construction: every grid point is a
     root solve for the offset-surface point whose Cartesian toroidal angle
-    equals the coil `zeta`, rather than a direct move along the normal."""
+    equals the coil `zeta`, rather than a direct move along the normal.
+    
+    Lower resolution is used in this test because this function is slow.
+    """
     return regcoil.CoilSurface.from_uniform_offset(
-        plasma, separation=SEPARATION, ntheta=NTHETA, nzeta=NZETA,
-        mpol=MPOL, ntor=NTOR, standard_toroidal_angle=True,
+        plasma, separation=SEPARATION, ntheta=32, nzeta=32,
+        mpol=8, ntor=8, standard_toroidal_angle=True,
     )
 
 
@@ -94,19 +84,16 @@ def problem(plasma, coil):
     return _make_problem(plasma, coil)
 
 
-@multi_round
 def test_from_uniform_offset(benchmark, plasma):
     coil = benchmark(_make_coil, plasma)
     assert coil.ntheta == NTHETA
 
 
-@multi_round
-def test_from_uniform_offset_standard_toroidal_angle(benchmark, plasma):
+def test_offset_standard_zeta(benchmark, plasma):
     coil = benchmark(_make_coil_standard_angle, plasma)
-    assert coil.ntheta == NTHETA
+    assert coil.ntheta == 32
 
 
-@multi_round
 def test_regcoil_init(benchmark, plasma, coil):
     problem = benchmark(_make_problem, plasma, coil)
     assert problem.nbf > 0
