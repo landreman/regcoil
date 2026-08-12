@@ -54,5 +54,5 @@ jobs:
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v5
         with:
-          mode: walltime
+          mode: simulation
           run: pytest benchmarks/ --codspeed

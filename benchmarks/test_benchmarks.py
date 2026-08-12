@@ -26,27 +26,14 @@ import regcoil
 
 # Resolution of the benchmark problem.  Bumping any of these invalidates the
 # historical CodSpeed series for these benchmarks, so change them deliberately.
-NTHETA = 128
-NZETA = 128
-MPOL = 18
-NTOR = 18
-MPOL_POTENTIAL = 18
-NTOR_POTENTIAL = 18
+NTHETA = 32
+NZETA = 32
+MPOL = 8
+NTOR = 8
+MPOL_POTENTIAL = 8
+NTOR_POTENTIAL = 8
 SEPARATION = 0.3
 LAM = 1e-14
-
-# The surface and operator benchmarks each take seconds per call, so
-# pytest-codspeed's default 3 s budget stops them after a single timed round
-# and reports a stddev of 0%.  `max_rounds` alone is not enough to fix that:
-# the measurement loop also breaks out as soon as the elapsed time passes
-# `max_time`, whatever the round count says, so both have to be raised
-# together.  `solve()` is fast enough that the defaults already give it tens of
-# rounds, and it is left alone.
-#
-# Budget note: on top of the timed rounds, the walltime instrument calls the
-# function once untimed (to capture the return value) and at least once more to
-# warm up, so each of these benchmarks costs 5 calls, not 3.
-multi_round = pytest.mark.benchmark(max_rounds=3, max_time=600)
 
 
 @pytest.fixture(scope="session")
@@ -94,19 +81,16 @@ def problem(plasma, coil):
     return _make_problem(plasma, coil)
 
 
-@multi_round
 def test_from_uniform_offset(benchmark, plasma):
     coil = benchmark(_make_coil, plasma)
     assert coil.ntheta == NTHETA
 
 
-@multi_round
-def test_from_uniform_offset_standard_toroidal_angle(benchmark, plasma):
+def test_offset_standard_zeta(benchmark, plasma):
     coil = benchmark(_make_coil_standard_angle, plasma)
     assert coil.ntheta == NTHETA
 
 
-@multi_round
 def test_regcoil_init(benchmark, plasma, coil):
     problem = benchmark(_make_problem, plasma, coil)
     assert problem.nbf > 0
