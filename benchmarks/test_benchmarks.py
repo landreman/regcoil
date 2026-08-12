@@ -26,12 +26,12 @@ import regcoil
 
 # Resolution of the benchmark problem.  Bumping any of these invalidates the
 # historical CodSpeed series for these benchmarks, so change them deliberately.
-NTHETA = 48
-NZETA = 48
-MPOL = 10
-NTOR = 10
-MPOL_POTENTIAL = 10
-NTOR_POTENTIAL = 10
+NTHETA = 64
+NZETA = 64
+MPOL = 12
+NTOR = 12
+MPOL_POTENTIAL = 12
+NTOR_POTENTIAL = 12
 SEPARATION = 0.3
 LAM = 1e-14
 
@@ -55,10 +55,13 @@ def _make_coil(plasma):
 def _make_coil_standard_angle(plasma):
     """Legacy `geometry_option_coil=2` construction: every grid point is a
     root solve for the offset-surface point whose Cartesian toroidal angle
-    equals the coil `zeta`, rather than a direct move along the normal."""
+    equals the coil `zeta`, rather than a direct move along the normal.
+    
+    Lower resolution is used in this test because this function is slow.
+    """
     return regcoil.CoilSurface.from_uniform_offset(
-        plasma, separation=SEPARATION, ntheta=NTHETA, nzeta=NZETA,
-        mpol=MPOL, ntor=NTOR, standard_toroidal_angle=True,
+        plasma, separation=SEPARATION, ntheta=32, nzeta=32,
+        mpol=8, ntor=8, standard_toroidal_angle=True,
     )
 
 
@@ -88,7 +91,7 @@ def test_from_uniform_offset(benchmark, plasma):
 
 def test_offset_standard_zeta(benchmark, plasma):
     coil = benchmark(_make_coil_standard_angle, plasma)
-    assert coil.ntheta == NTHETA
+    assert coil.ntheta == 32
 
 
 def test_regcoil_init(benchmark, plasma, coil):
