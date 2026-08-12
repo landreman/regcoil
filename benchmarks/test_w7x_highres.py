@@ -27,10 +27,10 @@ import regcoil
 # historical CodSpeed series for these benchmarks, so change them deliberately.
 NTHETA = 128
 NZETA = 128
-MPOL = 32
-NTOR = 32
-MPOL_POTENTIAL = 32
-NTOR_POTENTIAL = 32
+MPOL = 18
+NTOR = 18
+MPOL_POTENTIAL = 18
+NTOR_POTENTIAL = 18
 SEPARATION = 0.3
 LAM = 1e-14
 
