@@ -15,6 +15,7 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .pymon
+.codspeed/
 .venv/
 .venv_phase5/
 venv/
@@ -31,3 +32,5 @@ docs/_build/
 docs/_api/
 docs/.jupyter_cache/
 .jupyter_cache/
+
+.DS_Store

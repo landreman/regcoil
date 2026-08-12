@@ -36,12 +36,20 @@ else
   openmp_dep = dependency('openmp')
 endif
 
-# BLAS lookup, most specific first.  Debian/Ubuntu ship blas.pc (libblas-dev);
-# the manylinux images are AlmaLinux, where openblas-devel installs openblas.pc
-# but no blas.pc, and RHEL-family systems may present FlexiBLAS instead.  Trying
-# all three by pkg-config keeps the wheel builds working without special-casing
-# the CI images here.
-blas_dep = dependency('openblas', 'blas', 'flexiblas', required: false)
+
+# BLAS lookup, fastest implementation first.  regcoil_build_g_and_h contracts
+# each inductance-matrix block against the basis functions with DGEMM, which
+# dominates the cost of building the operators, so which BLAS gets picked here
+# is worth hundreds of GFLOP of throughput.  The blas.pc that Debian/Ubuntu
+# ship with libblas-dev is the unblocked netlib reference implementation
+# (single-digit GFLOP/s); openblas.pc and FlexiBLAS are roughly an order of
+# magnitude faster, so try those first and fall back to reference blas only if
+# neither is installed.  The manylinux images are AlmaLinux, where
+# openblas-devel installs openblas.pc but no blas.pc, and RHEL-family systems
+# may present FlexiBLAS instead; trying all three by pkg-config keeps the wheel
+# builds working without special-casing the CI images here.
+blas_dep = dependency('openblas', 'flexiblas', 'blas', required: false)
+
 if not blas_dep.found()
   if host_machine.system() == 'darwin'
     blas_dep = declare_dependency(link_args: ['-framework', 'Accelerate'])
