@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 
 from regcoil import CoilSurface, PlasmaSurface, Regcoil
+from regcoil.regcoil import _build_matrix_K
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -42,6 +43,23 @@ def test_symmetry_both_is_twice_stellarator_symmetric():
         net_toroidal_current=0.0, stellarator_symmetric=False,
     )
     assert both.nbf == 2 * sin_only.nbf
+
+
+def test_blocked_matrix_K_matches_direct_contraction():
+    rng = np.random.default_rng(1)
+    f_all = rng.standard_normal((5, 3, 11))
+    norm_normal = rng.uniform(0.5, 2.0, size=11)
+    scale = 0.37
+
+    expected = scale * np.einsum(
+        "mcg,ncg,g->mn",
+        f_all,
+        f_all,
+        1.0 / norm_normal,
+    )
+    for grid_block in (1, 4, 100):
+        actual = _build_matrix_K(f_all, norm_normal, scale, grid_block=grid_block)
+        np.testing.assert_allclose(actual, expected, rtol=2e-15, atol=2e-15)
 
 
 def test_axisymmetric_solution_vanishes():

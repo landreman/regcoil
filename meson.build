@@ -36,6 +36,7 @@ else
   openmp_dep = dependency('openmp')
 endif
 
+
 # BLAS lookup, fastest implementation first.  regcoil_build_g_and_h contracts
 # each inductance-matrix block against the basis functions with DGEMM, which
 # dominates the cost of building the operators, so which BLAS gets picked here
@@ -48,6 +49,7 @@ endif
 # may present FlexiBLAS instead; trying all three by pkg-config keeps the wheel
 # builds working without special-casing the CI images here.
 blas_dep = dependency('openblas', 'flexiblas', 'blas', required: false)
+
 if not blas_dep.found()
   if host_machine.system() == 'darwin'
     blas_dep = declare_dependency(link_args: ['-framework', 'Accelerate'])
