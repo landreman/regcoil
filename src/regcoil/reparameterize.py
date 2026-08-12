@@ -222,12 +222,12 @@ def _periodic_spline(x, y, xq):
     batched interface, and one `zeta` at a time its per-call Python and
     validation overhead dwarfs the banded solve itself.
 
-    `x` must increase down each column, and `y[0] == y[-1]` to machine
-    precision -- the periodicity the boundary condition assumes, rejected here
-    on the same terms scipy rejects it, since the exactness of the anchor
-    `_cumulative_integral` provides is what makes it hold. Query points outside
-    the knots are evaluated on the nearest end interval's cubic rather than
-    wrapped.
+    `x` must increase down each column, and `y[0]` must equal `y[-1]` to
+    machine precision -- the periodicity the boundary condition assumes. That
+    is checked on the same terms scipy checks it, since it is the check
+    `_cumulative_integral`'s exactly-zero anchor exists to satisfy. Query
+    points outside the knots are evaluated on the nearest end interval's cubic
+    rather than wrapped.
     """
     from scipy.linalg import solve_banded
 

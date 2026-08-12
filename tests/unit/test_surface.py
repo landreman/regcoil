@@ -352,7 +352,7 @@ def test_cross_section_nonstandard_toroidal_angle_matches_atan2():
     actual atan2(y, x) == phi points, not the naive constant-zeta slice."""
 
     plasma = PlasmaSurface.from_wout(
-        "equilibria/wout_li383_1.4m.nc", ntheta=13, nzeta=12,
+        str(EQUILIBRIA / "wout_li383_1.4m.nc"), ntheta=13, nzeta=12,
     )
     coil = CoilSurface.from_uniform_offset(
         plasma, separation=0.3, ntheta=13, nzeta=12, mpol=6, ntor=5,
