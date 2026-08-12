@@ -56,12 +56,7 @@ jobs:
 
       - name: Run pytest tests
         run: |
-          if [ "${{ runner.os }}" = "Linux" ]; then
-            # Slow tests are REALLY slow on the Linux runners so only run them on macOS.
-            pytest -m "not slow"
-          else
-            pytest
-          fi
+          pytest
 
   docs:
     name: docs (build + doctest + nbmake)
