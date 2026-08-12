@@ -5,6 +5,7 @@ py.install_sources(
   '_constants.py',
   '_io.py',
   '_serialize.py',
+  '_transforms.py',
   'log.py',
   'surface.py',
   'fourier_surface.py',

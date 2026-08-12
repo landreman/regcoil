@@ -8,6 +8,7 @@ from time import perf_counter
 import numpy as np
 
 from ._io import read_nescin
+from ._transforms import dft_weight, fit_modes
 from .fourier_surface import FourierSurface
 
 logger = logging.getLogger(__name__)
@@ -130,8 +131,10 @@ class CoilSurface(FourierSurface):
         else:
 
             def curve(theta, zeta):
-                theta_2d, zeta_2d = np.meshgrid(theta, zeta, indexing="ij")
-                return _offset_points(plasma, separation, theta_2d, zeta_2d)
+                # A tensor grid, so the (much cheaper) grid evaluation applies;
+                # only the final sampling, whose theta depends on zeta, needs
+                # the per-point `_offset_points`.
+                return _offset_on_grid(plasma, separation, theta, zeta)
 
             tmap = _build_theta_map(
                 theta_reparameterization, curve, plasma,
@@ -213,15 +216,9 @@ def _map_theta(tmap, ntheta_transform, nzeta_transform, nfp):
     return tmap(theta_grid, zeta_grid)
 
 
-def _offset_points(plasma, separation, theta, zeta):
-    """Move `plasma` a distance `separation` along its local unit normal, at
-    *paired* `(theta, zeta)` points of any matching shape (unlike
-    `_offset_along_normal`, which works on a tensor-product grid).
-
-    Returns a `(3,) + theta.shape` array of Cartesian positions.
-    """
-    shape = np.shape(theta)
-    evaluated = plasma.evaluate_at(np.ravel(theta), np.ravel(zeta))
+def _moved_along_normal(evaluated, separation):
+    """`r + separation * unit_normal` from an `_evaluate`/`evaluate_at` dict,
+    whatever shape its fields have."""
     r = evaluated["r"]
     drdtheta = evaluated["drdtheta"]
     drdzeta = evaluated["drdzeta"]
@@ -233,7 +230,43 @@ def _offset_points(plasma, separation, theta, zeta):
     normal[2] = drdzeta[0] * drdtheta[1] - drdtheta[0] * drdzeta[1]
     normal /= np.sqrt(np.sum(normal * normal, axis=0))
 
-    return (r + separation * normal).reshape((3,) + shape)
+    return r + separation * normal
+
+
+def _offset_on_grid(plasma, separation, theta, zeta):
+    """Move `plasma` a distance `separation` along its local unit normal, on
+    the tensor-product grid `theta x zeta` (1D arrays).
+
+    Returns a `(3, len(theta), len(zeta))` array of Cartesian positions. This
+    is the same geometry as `_offset_points`, but a tensor grid lets
+    `Surface._evaluate` factor the Fourier sums by angle, which is far cheaper
+    than the per-point evaluation -- and is all `evaluate_at`'s extra
+    generality would buy here.
+    """
+    return _moved_along_normal(plasma._evaluate(theta, zeta), separation)
+
+
+def _offset_by_column(plasma, separation, theta, zeta):
+    """Move `plasma` along its local unit normal at `(theta[i, j], zeta[j])`:
+    a shared `zeta` grid, with a poloidal angle that varies from column to
+    column because a theta reparameterization made it depend on `zeta`.
+
+    Returns a `(3,) + theta.shape` array of Cartesian positions. Still enough
+    structure for `Surface._evaluate_columns` to separate the two angles.
+    """
+    return _moved_along_normal(plasma._evaluate_columns(theta, zeta), separation)
+
+
+def _offset_points(plasma, separation, theta, zeta):
+    """Move `plasma` a distance `separation` along its local unit normal, at
+    *paired* `(theta, zeta)` points of any matching shape (unlike
+    `_offset_on_grid`, which works on a tensor-product grid).
+
+    Returns a `(3,) + theta.shape` array of Cartesian positions.
+    """
+    shape = np.shape(theta)
+    evaluated = plasma.evaluate_at(np.ravel(theta), np.ravel(zeta))
+    return _moved_along_normal(evaluated, separation).reshape((3,) + shape)
 
 
 def _solve_zeta_for_phi(plasma, separation, theta, phi_target, tol, max_iterations=100):
@@ -362,8 +395,9 @@ def _offset_along_normal(plasma, separation, ntheta_transform, nzeta_transform, 
 
     `theta` (default: the uniform grid) is the `(ntheta_transform,
     nzeta_transform)` array of plasma poloidal angles to sample at, which is
-    how a theta reparameterization enters. Supplying it requires `plasma` to
-    implement `evaluate_at`, since the sample points no longer form a grid.
+    how a theta reparameterization enters. Supplying it means the sample points
+    no longer form a tensor grid, so `plasma` must then support the
+    column-at-a-time `_evaluate_columns` (whose default needs `evaluate_at`).
 
     Relies on `plasma`'s nfp-periodicity (the Fourier representation's `xn`
     is a multiple of `nfp`) to guarantee that the moved points are themselves
@@ -379,23 +413,11 @@ def _offset_along_normal(plasma, separation, ntheta_transform, nzeta_transform, 
     if theta is None:
         # The sample points form a tensor grid, so use the (faster) grid
         # evaluation, which every Surface supports.
-        evaluated = plasma._evaluate(theta_grid, zeta_grid)
-        r = evaluated["r"]
-        drdtheta = evaluated["drdtheta"]
-        drdzeta = evaluated["drdzeta"]
-
-        # N = dr/dzeta x dr/dtheta, matching Surface.normal's sign convention.
-        normal = np.empty_like(r)
-        normal[0] = drdzeta[1] * drdtheta[2] - drdtheta[1] * drdzeta[2]
-        normal[1] = drdzeta[2] * drdtheta[0] - drdtheta[2] * drdzeta[0]
-        normal[2] = drdzeta[0] * drdtheta[1] - drdtheta[0] * drdzeta[1]
-        normal /= np.sqrt(np.sum(normal * normal, axis=0))
-
-        r_offset = r + separation * normal
+        r_offset = _offset_on_grid(plasma, separation, theta_grid, zeta_grid)
     else:
-        theta_2d = np.asarray(theta, dtype=float)
-        zeta_2d = np.broadcast_to(zeta_grid, theta_2d.shape)
-        r_offset = _offset_points(plasma, separation, theta_2d, zeta_2d)
+        r_offset = _offset_by_column(
+            plasma, separation, np.asarray(theta, dtype=float), zeta_grid
+        )
 
     major_r = np.hypot(r_offset[0], r_offset[1])
     z_val = r_offset[2]
@@ -430,9 +452,12 @@ def _uniform_offset_modes(nfp, mpol, ntor):
 def _fourier_transform_offset_surface(theta_grid, zeta_grid, major_r, z_val, nu_val, nfp, mpol, ntor, lasym):
     """DFT `major_r`/`z_val`/`nu_val` (each `(ntheta_transform,
     nzeta_transform)`, one field period, sampled at `theta_grid`/`zeta_grid`)
-    onto `mpol`/`ntor` Fourier modes, with the same normalization as the
-    legacy Fortran `regcoil_uniform_offset_surface` kernel (not performance-critical,
-    so plain trigonometric sums rather than an FFT, matching the legacy code).
+    onto `mpol`/`ntor` Fourier modes, with the same normalization as the legacy
+    Fortran `regcoil_uniform_offset_surface` kernel. Trigonometric sums rather
+    than an FFT, matching the legacy code and imposing no constraint on the
+    grid, but separated in theta and zeta (`_transforms.fit_modes`) so the cost
+    is a few small matrix products rather than a `(mnmax, ntheta, nzeta)`
+    reduction.
 
     `nu_val` (the toroidal-angle shift) transforms with the same sin/cos
     convention as `Z`: `numns` is the sine (stellarator-even) part, `numnc`
@@ -441,25 +466,16 @@ def _fourier_transform_offset_surface(theta_grid, zeta_grid, major_r, z_val, nu_
     ntheta_transform = theta_grid.shape[0]
     nzeta_transform = zeta_grid.shape[0]
     xm, xn = _uniform_offset_modes(nfp, mpol, ntor)
-    mnmax = xm.shape[0]
 
-    angle = xm[:, None, None] * theta_grid[None, :, None] - xn[:, None, None] * zeta_grid[None, None, :]
-    cosangle = np.cos(angle)
-    sinangle = np.sin(angle)
-
-    weight = np.full(mnmax, 2.0 / (ntheta_transform * nzeta_transform))
     # Halve the weight of the Nyquist mode so inverse-transform(transform(.)) is the identity.
-    if ntheta_transform % 2 == 0:
-        weight[xm == ntheta_transform // 2] /= 2
-    if nzeta_transform % 2 == 0:
-        weight[np.abs(xn) == nfp * (nzeta_transform // 2)] /= 2
+    weight = dft_weight(xm, xn, ntheta_transform, nzeta_transform, nfp)
 
     def _dft(field):
-        cmn = np.zeros(mnmax)
-        smn = np.zeros(mnmax)
-        cmn[1:] = np.tensordot(cosangle[1:], field, axes=([1, 2], [0, 1])) * weight[1:]
-        smn[1:] = np.tensordot(sinangle[1:], field, axes=([1, 2], [0, 1])) * weight[1:]
+        cmn, smn = fit_modes(field, xm, xn, theta_grid, zeta_grid)
+        cmn *= weight
+        smn *= weight
         cmn[0] = field.mean()  # m=n=0: DC term is the plain average, not 2x.
+        smn[0] = 0.0
         return cmn, smn
 
     rmnc, rmns = _dft(major_r)
