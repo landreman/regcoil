@@ -8,9 +8,13 @@ grids, plotting) is supplied here identically for every representation.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+import copy
 from functools import cached_property
+import logging
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 class Surface(ABC):
@@ -298,6 +302,123 @@ class Surface(ABC):
         Same definition as simsopt."""
         return self.major_radius / self.minor_radius
 
+    def scale(
+        self,
+        *,
+        length_factor=None,
+        minor_radius=None,
+        major_radius=None,
+        volume=None,
+        area=None,
+    ):
+        """Return a new surface, geometrically similar to `self`, with every
+        length multiplied by a common factor.
+
+        Give at most one of the keyword arguments:
+
+        - `length_factor`: the factor itself, e.g. ``2.0`` to double all lengths.
+        - `minor_radius`, `major_radius`, `volume`, `area`: the *desired* value
+          of that property. The factor needed to reach it is computed here
+          (`area` needs `sqrt`, `volume` a cube root), so
+          `surf.scale(volume=12.0).volume == 12.0`.
+
+        With no argument the surface is returned unchanged (factor 1).
+
+        `self` is never modified; a new object of the same class is returned.
+
+        Notes
+        -----
+        Only lengths scale: all angles, and hence the shape itself, are
+        untouched, so `aspect_ratio` is invariant. `PlasmaSurface` overrides
+        this to also scale the quantities that carry a length
+        (`net_poloidal_current` and `curpol`, both `~ B * L`), and to accept
+        magnetic-field targets.
+
+        Scaling a `PlasmaSurface` does **not** scale a `CoilSurface` already
+        built from it: scale (or rebuild) the coil surface with the same
+        factor, remembering that a `from_uniform_offset` `separation` scales
+        by that factor too. Similarly, scale the surfaces *before* building a
+        `Regcoil`, which copies `net_poloidal_current` at construction and
+        does not track later changes to its surfaces.
+        """
+        return self._scaled(
+            self._length_scale_factor(
+                length_factor=length_factor,
+                minor_radius=minor_radius,
+                major_radius=major_radius,
+                volume=volume,
+                area=area,
+            )
+        )
+
+    def scale_length(self, factor):
+        """Return a new surface with every length multiplied by `factor`.
+        Shorthand for `scale(length_factor=factor)`."""
+        return self.scale(length_factor=factor)
+
+    def _length_scale_factor(
+        self, *, length_factor, minor_radius, major_radius, volume, area
+    ):
+        """Resolve the mutually exclusive length keywords of `scale` to a
+        single factor. Each target is reached by scaling lengths by
+        `(target/current)**(1/power)`, where `power` is the target's dimension
+        in length."""
+        targets = {
+            "length_factor": length_factor,
+            "minor_radius": minor_radius,
+            "major_radius": major_radius,
+            "volume": volume,
+            "area": area,
+        }
+        key, value = _single_target(targets, "length")
+        if key is None:
+            return 1.0
+        if key == "length_factor":
+            return value
+        power = {"minor_radius": 1, "major_radius": 1, "area": 2, "volume": 3}[key]
+        return (value / getattr(self, key)) ** (1.0 / power)
+
+    def _scaled(self, length_factor=1.0, field_factor=1.0):
+        """The one place a scaled copy is made: deep-copy, then apply the
+        factors in place on the copy. Splitting the two lets a field-only
+        scaling keep the (still valid, possibly expensive) geometry cache."""
+        if length_factor != 1.0 or field_factor != 1.0:
+            logger.info(
+                "Scaling %s by length factor %g and field factor %g",
+                type(self).__name__, length_factor, field_factor,
+            )
+        new = copy.deepcopy(self)
+        if length_factor != 1.0:
+            new._clear_cached_properties()
+            new._apply_length_scaling(length_factor)
+        if field_factor != 1.0:
+            new._apply_field_scaling(field_factor)
+        return new
+
+    def _clear_cached_properties(self):
+        """Drop every `cached_property` value memoized in `self.__dict__`.
+        Geometry scaling invalidates all of them (`r`, `normal`, `area`, ...),
+        and they are recomputed lazily on next access."""
+        for klass in type(self).__mro__:
+            for name, value in vars(klass).items():
+                if isinstance(value, cached_property):
+                    self.__dict__.pop(name, None)
+
+    def _apply_length_scaling(self, factor):
+        """Multiply every length held by this surface by `factor`, in place.
+        Representation-specific, so subclasses implement it; only ever called
+        on a fresh copy made by `_scaled`."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement length scaling."
+        )
+
+    def _apply_field_scaling(self, factor):
+        """Multiply every magnetic field quantity by `factor`, in place. Only
+        `PlasmaSurface` carries any; see `PlasmaSurface.scale`."""
+        raise TypeError(
+            f"{type(self).__name__} has no magnetic field quantities to scale."
+        )
+
     def cross_section(self, phi=None):
         """Surface cross section(s) at fixed *physical* toroidal angle(s).
 
@@ -377,3 +498,22 @@ class Surface(ABC):
 
         plasma, coil = (self, other) if isinstance(self, PlasmaSurface) else (other, self)
         return plot.cross_sections(plasma, coil, phi=phi)
+
+
+def _single_target(targets, kind):
+    """Validate the mutually exclusive `scale` keywords of one kind (`length`
+    or `field`) and return the single `(key, positive float value)` given, or
+    `(None, None)` if none was."""
+    given = {k: v for k, v in targets.items() if v is not None}
+    if len(given) > 1:
+        raise ValueError(
+            f"At most one {kind} target may be given to scale(), got "
+            + ", ".join(sorted(given))
+        )
+    if not given:
+        return None, None
+    ((key, value),) = given.items()
+    value = float(value)
+    if not value > 0:
+        raise ValueError(f"scale() argument {key} must be positive, got {value}")
+    return key, value

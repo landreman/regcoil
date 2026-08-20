@@ -113,6 +113,34 @@ instance. The resulting {class}`~regcoil.ThetaMap` is kept on the surface as
 Because the current-potential basis `sin(m*theta - n*zeta)` is defined in terms of the
 coil surface's `theta`, this reparameterization changes the solution space.
 
+### Rescaling size and field strength
+
+Any surface can be scaled by a length factor with `scale`, and a
+{class}`~regcoil.PlasmaSurface` can also be scaled in magnetic field strength.
+You can either specify the scale factors directly, or you can give the value you want a property
+to take -- `minor_radius`, `major_radius`, `volume` or `area` for the length,
+and `volume_averaged_B` or `max_modB` for the field. In this case, the factor needed
+to reach the target value is worked out for you:
+
+```{code-cell} ipython3
+plasma_big = plasma.scale(minor_radius=1.7, volume_averaged_B=5.7)
+
+print(f"minor radius:  {plasma.minor_radius:.4f} -> {plasma_big.minor_radius:.4f} m")
+print(f"<B>:           {plasma.volume_averaged_B:.4f} -> {plasma_big.volume_averaged_B:.4f} T")
+print(f"poloidal current: {plasma.net_poloidal_current:.4g} -> {plasma_big.net_poloidal_current:.4g} A")
+```
+
+`scale` returns a new surface and never modifies the original. Only lengths
+and field-carrying quantities change, so the shape (e.g. `aspect_ratio`) and the
+resolution parameters are untouched.
+
+Scaling a plasma surface does not scale a coil surface already
+built from it. So, you would typically scale the plasma surface before
+generating a `from_uniform_offset` coil winding surface. Note that the `separation`
+you specify should be scaled by the same length factor. Do all the scaling
+before building a `Regcoil` object, which copies `net_poloidal_current` from the
+plasma surface at construction.
+
 ## 2. Assembling the problem
 
 `Regcoil` builds the basis functions, calls the Fortran kernel
