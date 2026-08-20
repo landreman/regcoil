@@ -69,14 +69,24 @@ coil = regcoil.CoilSurface.from_uniform_offset(
     plasma, separation=0.3, ntheta=64, nzeta=64, mpol=12, ntor=12
 )
 
-problem = regcoil.Regcoil(plasma, coil, mpol_potential=12, ntor_potential=12)
-solution = problem.solve(lam=1e-14)
-# You can also solve for a range of lambda values, or search for lambda that 
-# results in a desired f_B, f_K, max_K, etc
-print(f"f_B = {solution.f_B:.1e}, f_K = {solution.f_K:.1e}")
-# f_B = 2.7e-01, f_K = 1.1e+15
+# Visualize the plasma and coil winding surfaces before solving:
+regcoil.plot.cross_sections(plasma, coil)
+regcoil.plot.plot_3d(plasma=plasma, winding_surface=coil)
 
-# Results can then be saved and plotted.
+problem = regcoil.Regcoil(plasma, coil, mpol_potential=12, ntor_potential=12)
+# You can solve the system with a specific value of the regularization parameter
+# lambda, or scan over a range of lambdas, or search for the lambda that achieves
+# a desired value of a metric such as f_B, f_K, max_K, or avg_Bnormal_over_B:
+solution = problem.solve_for_target("avg_Bnormal_over_B", 0.005)
+print(f"f_B = {solution.f_B:.1e}, f_K = {solution.f_K:.1e}")
+# f_B = 5.0e-02, f_K = 1.1e+15
+
+# Save the plasma and coil surfaces along with the solution:
+solution.save("regcoil_out.nc")
+
+# Cut discrete coils from the current potential and plot them:
+cut_coils = solution.cut(coils_per_half_period=5)
+regcoil.plot.plot_3d(plasma=plasma, coils=cut_coils)
 ```
 
 <!-- quickstart-end -->
