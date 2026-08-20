@@ -194,6 +194,18 @@ class FourierSurface(Surface):
         values = cmn @ cos_a + smn @ sin_a
         return self._cartesian(values, zeta_pts)
 
+    def _apply_length_scaling(self, factor):
+        """`Surface._apply_length_scaling` for a Fourier surface: `R` and `Z`
+        carry one power of length each, while `nu` is an angle and so is
+        scale-invariant. Multiplication is out-of-place because two amplitude
+        arrays may legitimately be the same object (e.g. the same array passed
+        for `rmns` and `zmnc`), which an in-place `*=` would scale twice.
+        """
+        self.rmnc = self.rmnc * factor
+        self.rmns = self.rmns * factor
+        self.zmnc = self.zmnc * factor
+        self.zmns = self.zmns * factor
+
     @classmethod
     def circular_torus(cls, R0, a, nfp, ntheta=64, nzeta=64):
         """A plain circular-cross-section torus of major radius R0, minor radius a."""

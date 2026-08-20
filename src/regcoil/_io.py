@@ -112,11 +112,13 @@ def read_vmec_wout(filename):
     lmns = get("lmns") if "lmns" in variables else None
     mpol = int(get("mpol"))
     ntor = int(get("ntor"))
+    volavgB = float(get("volavgB"))
 
     return dict(
         nfp=nfp, lasym=lasym, xm=xm, xn=xn, xm_nyq=xm_nyq, xn_nyq=xn_nyq,
         rmnc=rmnc, zmns=zmns, rmns=rmns, zmnc=zmnc, bmnc=bmnc, bmns=bmns,
         bvco=bvco, bsubvmnc=bsubvmnc, lmns=lmns, mpol=mpol, ntor=ntor,
+        volavgB=volavgB,
     )
 
 

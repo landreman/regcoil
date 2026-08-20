@@ -50,9 +50,19 @@ jobs:
       # Optional dependency used by tests/unit/test_read_vmec_wout.py. Not a hard
       # requirement of regcoil. Wheels exist for 3.10–3.13; 3.14 would fall back
       # to a source build, so skip there and let importorskip cover that job.
+      #
+      # Pinned below 1.11: the 1.11.0 manylinux_2_28 x86_64 wheels have simsoptpp
+      # compiled with -march=native on an AVX-512 build host, so `import simsopt`
+      # dies with SIGILL ("Illegal instruction (core dumped)", exit 132) on the
+      # AVX-512-less machines in the ubuntu-latest runner pool.  Which matrix jobs
+      # land on such a machine is luck of the draw, so this shows up as random
+      # per-python-version failures.  Drop the pin once upstream ships wheels
+      # built for a baseline microarchitecture again (simsopt CMakeLists.txt
+      # targets westmere when CI is set, but that variable does not reach the
+      # cibuildwheel container).
       - name: Install simsopt (for Vmec wout object tests)
         if: matrix.python-version != '3.14'
-        run: pip install simsopt
+        run: pip install "simsopt<1.11"
 
       - name: Run pytest tests
         run: |
