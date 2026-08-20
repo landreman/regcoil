@@ -55,6 +55,9 @@ def _write_plasma(root, plasma):
     _write_fourier_surface(group, plasma, "plasma")
     group.attrs["net_poloidal_current"] = float(plasma.net_poloidal_current)
     group.attrs["curpol"] = float(plasma.curpol)
+    group.attrs["volume_averaged_B"] = (
+        np.nan if plasma.volume_averaged_B is None else float(plasma.volume_averaged_B)
+    )
     group.dimensions["ntheta_plasma"] = plasma.ntheta
     group.dimensions["nzeta_plasma"] = plasma.nzeta
     group.create_variable(
@@ -81,6 +84,8 @@ def _read_plasma(root):
     )
     plasma.net_poloidal_current = float(group.attrs["net_poloidal_current"])
     plasma.curpol = float(group.attrs["curpol"])
+    volume_averaged_B = float(group.attrs["volume_averaged_B"])
+    plasma.volume_averaged_B = None if np.isnan(volume_averaged_B) else volume_averaged_B
     plasma.Bnormal_from_plasma_current = np.asarray(group.variables["Bnormal_from_plasma_current"][:])
     plasma.modB = np.asarray(group.variables["modB"][:])
     return plasma

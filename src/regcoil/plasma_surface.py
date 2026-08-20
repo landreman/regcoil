@@ -22,6 +22,7 @@ class PlasmaSurface(FourierSurface):
         self.curpol = curpol
         self.Bnormal_from_plasma_current = np.zeros((self.ntheta, self.nzeta))
         self.modB = np.zeros((self.ntheta, self.nzeta))
+        self.volume_averaged_B = None
 
     @classmethod
     def from_wout(
@@ -79,6 +80,8 @@ class PlasmaSurface(FourierSurface):
         surf.modB = (
             bmnc[:, None, None] * np.cos(angle) + bmns[:, None, None] * np.sin(angle)
         ).sum(axis=0)
+
+        surf.volume_averaged_B = float(data["volavgB"])
 
         return surf
 
